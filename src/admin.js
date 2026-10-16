@@ -1,4 +1,4 @@
-import{fail,now,newId,str,body,clamp,limit,json,sha,safeEq}from'./util.js'
+import{fail,now,newId,str,body,clamp,limit,json}from'./util.js'
 import{invalidateMaintenance}from'./worker.js'
 
 const guard=c=>{if(!c.user.admin)fail(404,'Not found')}
@@ -26,17 +26,6 @@ q('select count(*) n from sessions where expires_at>'+now())
 ])
 return{users:u.n,servers:s.n,messages:m.n,storage_bytes:f.n,files:f.c,open_reports:rp.n,open_appeals:ap.n,maintenance:mt?.v==='1',sessions:sess.n,
 note:'Provider quota usage (D1 rows, requests, R2 operations) is shown in the Cloudflare dashboard; Workers do not expose it to the application.'}
-})
-
-r.add('POST','/api/maintenance/bypass',async c=>{
-limit('mb:'+c.user.id,5,600000)
-limit('mbi:'+(c.req.headers.get('cf-connecting-ip')||'local'),10,600000)
-const want=c.env.MAINTENANCE_BYPASS_CODE
-if(!want)fail(400,'No bypass code is set on this deployment')
-const b=await body(c.req,200)
-if(!safeEq(await sha(String(b.code||'')),await sha(want)))fail(403,'Wrong code')
-await c.env.DB.prepare('insert or ignore into maint_bypass(session_id,created_at) values(?,?)').bind(c.user.sid,now()).run()
-return{ok:true}
 })
 
 r.add('POST','/api/admin/maintenance',async c=>{

@@ -3,7 +3,8 @@ import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
 
 export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
-export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.created_at`
+export const GTAG="(select s.tag from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_tag"
+export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,${GTAG},u.created_at`
 const SESSION_MS=30*86400000
 const NAME=/^[a-zA-Z0-9_.-]{3,24}$/
 
@@ -79,7 +80,7 @@ return{label,url:u.href}
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,created_at:u.created_at}
+return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
 }
 
 const tokenOf=(req,name)=>{
@@ -258,6 +259,14 @@ add('status_until',Math.floor(t))
 }
 if('links'in b)add('links',JSON.stringify(cleanLinks(b.links)))
 if('accent'in b)add('accent',gradient(b.accent,'Accent'))
+if('tag_server'in b){
+if(b.tag_server===null)add('tag_server',null)
+else{
+const ok=await c.env.DB.prepare('select 1 x from members m join servers s on s.id=m.server_id where m.server_id=? and m.user_id=? and s.tag is not null').bind(String(b.tag_server),c.user.id).first()
+if(!ok)fail(400,'Pick a server you are in that has a tag')
+add('tag_server',String(b.tag_server))
+}
+}
 if('presence'in b){if(!['online','idle','busy','invisible'].includes(b.presence))fail(400,'Invalid presence');add('presence',b.presence)}
 if('settings'in b){
 const cur=JSON.parse(c.user.settings||'{}')

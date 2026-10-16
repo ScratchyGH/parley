@@ -1,13 +1,14 @@
 import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
-import{PUBLIC,STATUS}from'./auth.js'
+import{PUBLIC,STATUS,GTAG}from'./auth.js'
 import{explicitText,serverText}from'./safety.js'
 import{runJoin}from'./blocks.js'
+import{caseStmt}from'./cases.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
 const themeOf=v=>{try{return v?JSON.parse(v):null}catch{return null}}
-const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,theme,welcome,rules,verification,vanity,age_restricted,scan_explicit,created_at'
+const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,theme,tag,welcome,rules,verification,vanity,age_restricted,scan_explicit,created_at'
 const CATS=['gaming','tech','art','music','education','science','community','other']
 
 async function mem(c,sid){
@@ -16,7 +17,7 @@ if(!m)fail(404,'Server not found')
 return m
 }
 const must=(m,bit,msg='You do not have permission to do that')=>{if(!(m.base&bit))fail(403,msg)}
-async function target(c,sid,uid,m){
+export async function target(c,sid,uid,m){
 const t=await loadMember(c.env,sid,uid)
 if(!t)fail(404,'Member not found')
 if(t.owner)fail(403,'The server owner cannot be targeted')
@@ -75,7 +76,7 @@ return json({id:sid,default_channel:gen},201)
 })
 
 r.add('GET','/api/servers',async c=>{
-const rows=(await c.env.DB.prepare('select s.id,s.name,s.icon_id,s.banner_id,s.owner_id,s.is_public,s.accent,m.joined_at from members m join servers s on s.id=m.server_id where m.user_id=? order by m.joined_at').bind(c.user.id).all()).results
+const rows=(await c.env.DB.prepare('select s.id,s.name,s.tag,s.icon_id,s.banner_id,s.owner_id,s.is_public,s.accent,m.joined_at from members m join servers s on s.id=m.server_id where m.user_id=? order by m.joined_at').bind(c.user.id).all()).results
 return{servers:rows}
 })
 
@@ -88,7 +89,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where server_
 const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
 const s=m.server
 return{
-server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,theme:themeOf(s.theme),vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
+server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,tag:s.tag||null,theme:themeOf(s.theme),vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
 me:{perms:m.base,role_ids:m.roleIds,owner:m.owner,nickname:m.nickname,timeout_until:m.timeout_until,top:m.owner?9999:m.top},
 categories:cats,
 channels:vis.map(({ch,perms})=>({id:ch.id,category_id:ch.category_id,name:ch.name,type:ch.type,topic:ch.topic,position:ch.position,readonly:ch.readonly,locked:ch.locked,slowmode:ch.slowmode,last_msg:ch.last_msg,perms})),
@@ -109,6 +110,12 @@ if('description'in b)add('description',clean(opt(b.description,500,'Description'
 if('is_public'in b)add('is_public',b.is_public?1:0)
 if('category'in b){if(b.category&&!CATS.includes(b.category))fail(400,'Invalid category');add('category',b.category||'')}
 if('accent'in b)add('accent',color(b.accent,'Accent'))
+if('tag'in b){
+const tg=String(b.tag||'').trim().toUpperCase()
+if(tg&&!/^[A-Z0-9]{2,4}$/.test(tg))fail(400,'A tag is 2 to 4 letters or numbers')
+if(tg&&explicitText(tg))fail(400,'That tag is not allowed on Parley')
+add('tag',tg||null)
+}
 if('theme'in b){
 if(b.theme===null)add('theme',null)
 else{
@@ -436,7 +443,7 @@ const args=[m.server.id]
 let where=''
 if(q){where=" and (u.username like ? escape '\\' or u.display_name like ? escape '\\' or m.nickname like ? escape '\\')";args.push(like(q),like(q),like(q))}
 args.push(after,lim)
-const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
 return{members:rows.map(x=>({...x,roles:x.roles?x.roles.split(','):[]})),next:rows.length===lim?rows[rows.length-1].id:null}
 })
 
@@ -468,7 +475,8 @@ const m=await mem(c,c.p.sid)
 must(m,P.KICK)
 await target(c,m.server.id,c.p.uid,m)
 const b=await body(c.req).catch(()=>({}))
-await removeMember(c,m,c.p.uid,'member.kick',opt(b.reason,300,'Reason'))
+const kr=opt(b.reason,300,'Reason')
+await removeMember(c,m,c.p.uid,'member.kick',kr,[caseStmt(c,m.server.id,c.p.uid,'kick',kr)])
 return{ok:true}
 })
 
@@ -479,14 +487,14 @@ if(c.p.uid===c.user.id)fail(400,'You cannot ban yourself')
 await target(c,m.server.id,c.p.uid,m)
 const b=await body(c.req).catch(()=>({}))
 const reason=opt(b.reason,300,'Reason')
-await removeMember(c,m,c.p.uid,'member.ban',reason,[c.env.DB.prepare('insert or replace into bans(server_id,user_id,reason,by_id,created_at) values(?,?,?,?,?)').bind(m.server.id,c.p.uid,reason,c.user.id,now())])
+await removeMember(c,m,c.p.uid,'member.ban',reason,[c.env.DB.prepare('insert or replace into bans(server_id,user_id,reason,by_id,created_at) values(?,?,?,?,?)').bind(m.server.id,c.p.uid,reason,c.user.id,now()),caseStmt(c,m.server.id,c.p.uid,'ban',reason)])
 return{ok:true}
 })
 
 r.add('DELETE','/api/servers/:sid/bans/:uid',async c=>{
 const m=await mem(c,c.p.sid)
 must(m,P.BAN)
-await c.env.DB.batch([c.env.DB.prepare('delete from bans where server_id=? and user_id=?').bind(m.server.id,c.p.uid),c.logStmt(m.server.id,'member.unban',c.p.uid)])
+await c.env.DB.batch([c.env.DB.prepare('delete from bans where server_id=? and user_id=?').bind(m.server.id,c.p.uid),c.logStmt(m.server.id,'member.unban',c.p.uid),caseStmt(c,m.server.id,c.p.uid,'unban','')])
 return{ok:true}
 })
 
@@ -505,7 +513,7 @@ await target(c,m.server.id,c.p.uid,m)
 const b=await body(c.req)
 const mins=int(b.minutes,0,40320,'Duration')
 const until=mins?now()+mins*60000:0
-await c.env.DB.batch([c.env.DB.prepare('update members set timeout_until=? where server_id=? and user_id=?').bind(until,m.server.id,c.p.uid),c.logStmt(m.server.id,mins?'member.timeout':'member.untimeout',c.p.uid,`${mins} min ${opt(b.reason,300,'Reason')}`)])
+await c.env.DB.batch([c.env.DB.prepare('update members set timeout_until=? where server_id=? and user_id=?').bind(until,m.server.id,c.p.uid),c.logStmt(m.server.id,mins?'member.timeout':'member.untimeout',c.p.uid,`${mins} min ${opt(b.reason,300,'Reason')}`),...(mins?[caseStmt(c,m.server.id,c.p.uid,'timeout',`${mins} min. ${opt(b.reason,300,'Reason')}`)]:[])])
 c.pubClose('s_'+m.server.id,{close:[c.p.uid]})
 c.pub('u_'+c.p.uid,{t:'notice',text:mins?`You were timed out in ${m.server.name} for ${mins} minutes`:`Your timeout in ${m.server.name} was lifted`})
 return{ok:true}
@@ -607,7 +615,7 @@ limit('sappeal:'+c.user.id,5,3600000)
 const ban=await c.env.DB.prepare('select 1 x from bans where server_id=? and user_id=?').bind(c.p.sid,c.user.id).first()
 if(!ban)fail(404,'You are not banned from this server')
 const b=await body(c.req)
-await c.env.DB.prepare('insert into appeals(id,user_id,server_id,message,created_at) values(?,?,?,?,?)').bind(newId('ap'),c.user.id,c.p.sid,str(b.message,10,2000,'Message'),now()).run()
+await c.env.DB.batch([c.env.DB.prepare('insert into appeals(id,user_id,server_id,message,created_at) values(?,?,?,?,?)').bind(newId('ap'),c.user.id,c.p.sid,str(b.message,10,2000,'Message'),now()),c.env.DB.prepare("update mod_cases set status='appealed',updated_at=? where server_id=? and user_id=? and type='ban' and num=(select max(num) from mod_cases where server_id=? and user_id=? and type='ban')").bind(now(),c.p.sid,c.user.id,c.p.sid,c.user.id)])
 return{ok:true}
 })
 
@@ -628,7 +636,8 @@ const accept=b.accept===true
 await c.env.DB.batch([
 c.env.DB.prepare('update appeals set status=? where id=?').bind(accept?'accepted':'denied',a.id),
 ...(accept?[c.env.DB.prepare('delete from bans where server_id=? and user_id=?').bind(m.server.id,a.user_id)]:[]),
-c.logStmt(m.server.id,accept?'appeal.accept':'appeal.deny',a.user_id)
+c.logStmt(m.server.id,accept?'appeal.accept':'appeal.deny',a.user_id),
+c.env.DB.prepare("update mod_cases set status=?,updated_at=? where server_id=? and user_id=? and type='ban' and status='appealed'").bind(accept?'overturned':'resolved',now(),m.server.id,a.user_id)
 ])
 c.pub('u_'+a.user_id,{t:'notice',text:`Your appeal for ${m.server.name} was ${accept?'accepted. You can rejoin with an invite.':'denied.'}`})
 return{ok:true}
