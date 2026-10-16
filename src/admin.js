@@ -35,13 +35,14 @@ const b=await body(c.req)
 const prompt=str(b.prompt,10,12000,'Brief')
 const msgs=[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]
 const key=c.env.OPENROUTER_API_KEY
+if(!key)fail(400,'OPENROUTER_API_KEY is not set on this Worker. Add it as a Secret on the parley Worker (Settings, Variables and Secrets), then try again')
 let res
-try{res=key?await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model:c.env.OPENROUTER_MODEL||'openrouter/free',messages:msgs}),signal:AbortSignal.timeout(90000)}):await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:msgs}),signal:AbortSignal.timeout(90000)})}catch{fail(502,'The AI service did not answer. Try again')}
-if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,300);fail(502,(key?'OpenRouter ':'Pollinations ')+res.status+': '+t)}
+try{res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model:c.env.OPENROUTER_MODEL||'openrouter/free',messages:msgs,max_tokens:6000,temperature:0.7}),signal:AbortSignal.timeout(100000)})}catch{fail(502,'OpenRouter did not answer. Try again')}
+if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,300);fail(502,'OpenRouter '+res.status+': '+t)}
 const j=await res.json().catch(()=>null)
 const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
 if(typeof text!=='string'||!text)fail(502,'The AI service returned nothing. Try again')
-return{text,via:key?'openrouter':'pollinations'}
+return{text,via:'OpenRouter'}
 })
 
 r.add('POST','/api/admin/maintenance',async c=>{
