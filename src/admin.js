@@ -37,7 +37,7 @@ const msgs=[{role:'system',content:'You reply with one valid JSON object only. N
 const key=c.env.OPENROUTER_API_KEY
 let res
 try{res=key?await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model:c.env.OPENROUTER_MODEL||'openrouter/free',messages:msgs}),signal:AbortSignal.timeout(90000)}):await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:msgs}),signal:AbortSignal.timeout(90000)})}catch{fail(502,'The AI service did not answer. Try again')}
-if(!res.ok)fail(502,key&&(res.status===401||res.status===402||res.status===403)?'OpenRouter rejected the key or the account has no credit':'The AI service returned an error. Try again')
+if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,300);fail(502,(key?'OpenRouter ':'Pollinations ')+res.status+': '+t)}
 const j=await res.json().catch(()=>null)
 const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
 if(typeof text!=='string'||!text)fail(502,'The AI service returned nothing. Try again')
