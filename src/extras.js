@@ -2,6 +2,7 @@ import{fail,now,newId,msgId,str,opt,int,limit,body,json,clamp,sha,randHex,placeh
 import{P,resolveRoom,loadMember,need}from'./perms.js'
 import{hydrate,publishMsg}from'./messages.js'
 import{signMsg,pubKey}from'./sign.js'
+import{messageExplicit,filterOn,wordHit}from'./safety.js'
 
 const nm=(v,n)=>{
 const s=str(v,1,80,n)
@@ -9,16 +10,22 @@ if(/[\u0000-\u001f]/.test(s))fail(400,n+' contains invalid characters')
 return s
 }
 
+export function automodVerdict(server,content,exempt){
+if(filterOn(server)&&messageExplicit(content))return'Explicit content is not allowed here'
+if(exempt)return''
+let a
+try{a=JSON.parse(server.automod||'{}')}catch{return''}
+if(!a||!Object.keys(a).length)return''
+for(const w of a.words||[])if(wordHit(content,w))return'Your message was blocked by this server\'s AutoMod'
+if(a.block_links&&/https?:\/\/|discord\.gg\//i.test(content))return'Links are not allowed in this server'
+if(a.max_mentions>0){const n=(content.match(/<@[&a-z0-9_]+>/g)||[]).length;if(n>a.max_mentions)return`Too many mentions (max ${a.max_mentions})`}
+return''
+}
 export async function automod(env,rr,content){
 if(rr.kind!=='channel')return
-if(rr.m.admin||(rr.perms&(P.MANAGE_MESSAGES|P.MODERATE)))return
-let a
-try{a=JSON.parse(rr.m.server.automod||'{}')}catch{return}
-if(!a||!Object.keys(a).length)return
-const low=content.toLowerCase()
-for(const w of a.words||[])if(w&&low.includes(w))fail(422,'Your message was blocked by this server\'s AutoMod')
-if(a.block_links&&/https?:\/\/|discord\.gg\//i.test(content))fail(422,'Links are not allowed in this server')
-if(a.max_mentions>0){const n=(content.match(/<@[&a-z0-9_]+>/g)||[]).length;if(n>a.max_mentions)fail(422,`Too many mentions (max ${a.max_mentions})`)}
+const exempt=!!(rr.m.admin||(rr.perms&(P.MANAGE_MESSAGES|P.MODERATE)))
+const why=automodVerdict(rr.m.server,content,exempt)
+if(why)fail(422,why)
 }
 
 async function chanOf(c,cid,bit){
@@ -127,6 +134,7 @@ need(rr.perms,P.SEND,'You cannot post here')
 limit('poll:'+c.user.id,6,60000)
 const b=await body(c.req)
 const q=str(b.question,1,300,'Question')
+await automod(c.env,rr,[q,...(Array.isArray(b.options)?b.options:[])].join('\n'))
 if(!Array.isArray(b.options)||b.options.length<2||b.options.length>10)fail(400,'A poll needs 2 to 10 options')
 const opts=b.options.map(o=>str(o,1,100,'Option'))
 if(new Set(opts.map(o=>o.toLowerCase())).size!==opts.length)fail(400,'Options must be different')
@@ -272,6 +280,12 @@ let a={}
 try{a=JSON.parse(m.server.automod||'{}')}catch{}
 return{automod:{words:a.words||[],block_links:!!a.block_links,max_mentions:a.max_mentions||0,raid_joins:a.raid_joins||0}}
 })
+r.add('POST','/api/servers/:sid/automod/test',async c=>{
+const m=await srv(c,c.p.sid,P.MANAGE_SERVER)
+const b=await body(c.req,2000)
+const why=automodVerdict(m.server,String(b.text||''),false)
+return{blocked:!!why,reason:why,nsfw_filter:filterOn(m.server)}
+})
 r.add('PUT','/api/servers/:sid/automod',async c=>{
 const m=await srv(c,c.p.sid,P.MANAGE_SERVER)
 const b=await body(c.req)
@@ -316,6 +330,8 @@ const b=await body(c.req,20000)
 const content=str(b.content,1,2000,'Content')
 const ch=await c.env.DB.prepare('select * from channels where id=?').bind(w.channel_id).first()
 if(!ch)fail(404,'Channel no longer exists')
+const wsrv=await c.env.DB.prepare('select * from servers where id=?').bind(ch.server_id).first()
+if(wsrv&&filterOn(wsrv)&&messageExplicit(content))fail(422,'Explicit content is not allowed here')
 const id=msgId(),t=now()
 const msg={id,room:ch.id,author_id:w.bot_user_id,created_at:t,edited_at:null,content}
 const sig=await signMsg(c.env,msg)

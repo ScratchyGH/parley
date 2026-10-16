@@ -210,7 +210,7 @@ const b=await body(c.req,60000)
 const g=cleanGraph(b.blocks)
 if(!g)fail(400,'Add some blocks first')
 const text=typeof b.text==='string'?b.text.slice(0,500):''
-return dryRun(g,text,{id:c.user.id,username:c.user.username,display_name:c.user.display_name})
+return dryRun(g,text,{id:c.user.id,username:c.user.username,display_name:c.user.display_name},b.event==='join'?'join':'')
 })
 r.add('POST','/api/bothub/:id/token',async c=>{
 const p=await mine(c,c.p.id)

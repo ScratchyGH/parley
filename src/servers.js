@@ -3,6 +3,7 @@ import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}f
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
 import{PUBLIC,STATUS}from'./auth.js'
 import{explicitText,serverText}from'./safety.js'
+import{runJoin}from'./blocks.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
 const themeOf=v=>{try{return v?JSON.parse(v):null}catch{return null}}
@@ -574,6 +575,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where user_id
 if(count.n>=100)fail(400,'You have reached the safety limit of 100 servers')
 await c.env.DB.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(sid,c.user.id,now()).run()
 c.pub('s_'+sid,{t:'member.join',uid:c.user.id})
+try{await runJoin(c,sid,c.user)}catch{}
 }
 
 r.add('POST','/api/invites/:code/join',async c=>{

@@ -74,3 +74,24 @@ return false
 export function serverText(s){
 return[s.name,s.description,s.welcome,s.rules,s.vanity].filter(Boolean).join(' ')
 }
+
+const AMBIG=new Set(['sex','anal','cum','jav','nude','loli','shota'])
+const TOKEN_MSG_RE=new RegExp('(?:^|[^a-z])(?:'+TOKEN.filter(t=>!AMBIG.has(t)).join('|')+')(?![a-z])')
+export function messageExplicit(s){
+if(!s||typeof s!=='string')return false
+const f=fold(s)
+if(STRONG_RE.some(r=>r.test(f)))return true
+if(SQUASH_RE.test(f.replace(/[^a-z]/g,'')))return true
+if(urlsIn(s).some(u=>{try{return badHost(new URL(u).hostname)}catch{return false}}))return true
+return TOKEN_MSG_RE.test(f.replace(/[_\-.*~']+/g,' '))
+}
+export const filterOn=server=>!!server&&(!server.age_restricted||!!server.scan_explicit)
+export function wordHit(text,word){
+const f=fold(String(text||'')),w=fold(String(word||'')).trim()
+if(!w)return false
+const esc=w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')
+if(w.replace(/[^a-z0-9]/g,'').length<4)return new RegExp('(?:^|[^a-z0-9])'+esc.replace(/\s+/g,'\\s+')+'(?![a-z0-9])').test(f)
+if(f.includes(w))return true
+const sq=w.replace(/[^a-z0-9]/g,'')
+return f.replace(/[^a-z0-9]/g,'').includes(sq)
+}

@@ -5,7 +5,7 @@ import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
 import{runBlocks}from'./blocks.js'
 import{pushTo}from'./push.js'
-import{urlsIn,inspectLink,imageExplicit}from'./safety.js'
+import{urlsIn,inspectLink,imageExplicit,filterOn}from'./safety.js'
 
 const MAX_LEN=10000
 const floorId=t=>t.toString(36).padStart(9,'0')
@@ -182,7 +182,7 @@ await c.env.DB.batch(stmts)
 const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
 const[message]=await hydrate(c.env,[row],c.user.id)
 await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEveryone,roles:roleIds}})
-if(rr.kind==='channel'&&rr.m.server.scan_explicit&&rr.m.server.age_restricted)c.ec.waitUntil(scanMsg(c,rr,id,content))
+if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})
 if(c.env.VAPID_PRIVATE_JWK){
