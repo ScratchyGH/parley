@@ -9,7 +9,7 @@ const str=(v,n)=>typeof v==='string'?v.replace(/[\u0000-\u0008\u000b\u000c\u000e
 
 function parse(text){
 const a=text.indexOf('{'),b=text.lastIndexOf('}')
-if(a<0||b<a)throw new Error('The AI did not return JSON. Try again')
+if(a<0||b<a)throw new Error('The AI did not return JSON (got: '+text.trim().slice(0,160)+'). Try again')
 let o
 try{o=JSON.parse(text.slice(a,b+1))}catch{throw new Error('The AI returned JSON that could not be read. Try again')}
 const theme={}
@@ -91,7 +91,7 @@ h('label',{class:'perm'},withText,h('span',null,'Set description, welcome messag
 h('div',{class:'row',style:{marginTop:'10px'}},apply))
 }
 mount(pg,h('h3',null,'Server studio'),
-h('p',{class:'hint'},'Uses OpenRouter (the Worker secret OPENROUTER_API_KEY; without it, the keyless Pollinations service) to design a styled server: colour theme, server tag, categories with decorated names, channels, roles, welcome text and rules. Nothing changes until you press Build this server. Building only adds channels and roles; it never deletes or overwrites existing ones, and the theme and tag replace the current ones.'),
+h('p',{class:'hint'},'Uses OpenRouter through the Worker secret OPENROUTER_API_KEY to design a styled server: colour theme, server tag, categories with decorated names, channels, roles, welcome text and rules. Nothing changes until you press Build this server. Building only adds channels and roles; it never deletes or overwrites existing ones, and the theme and tag replace the current ones.'),
 field('Server to build',target),field('Brief',brief,'Pre-filled for Parley Community. Edit it to design a different server.'),
 h('div',{class:'row',style:{gap:'8px',margin:'8px 0'}},gen,status),
 field('Change request',note),redo,out)
