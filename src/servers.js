@@ -43,6 +43,12 @@ for(const s of hit)await purgeServer(env,s.id)
 return hit.map(s=>s.id)
 }
 const resync=(c,sid)=>c.pubClose('s_'+sid,{closeAll:true})
+const INVIS=/[\u00AD\u034F\u115F\u1160\u180E\u200B-\u200F\u2028-\u202F\u2060-\u206F\u3164\uFE00-\uFE0E\uFEFF\uFFA0]/g
+const nameOk=v=>{
+const t=v.replace(INVIS,'').replace(/\s+/g,' ').trim()
+if(/\p{M}{3,}/u.test(t))fail(400,'Too many stacked marks in that name')
+if((t.match(/\p{Extended_Pictographic}/gu)||[]).length>3)fail(400,'Use at most 3 emoji in a server name')
+return t}
 const clean=v=>{if(explicitText(v))fail(400,'That text is not allowed on Parley');return v}
 const channelName=v=>{const n=clean(str(v,1,50,'Channel name'));if(/[\u0000-\u001f]/.test(n))fail(400,'Invalid channel name');return n}
 
@@ -56,7 +62,7 @@ export default function(r){
 r.add('POST','/api/servers',async c=>{
 limit('mksrv:'+c.user.id,10,3600000)
 const b=await body(c.req)
-const name=clean(str(b.name,2,60,'Server name'))
+const name=clean(nameOk(str(b.name,2,60,'Server name')))
 const desc=clean(opt(b.description,500,'Description'))
 const pub=b.is_public?1:0
 const cat=b.category&&CATS.includes(b.category)?b.category:''
@@ -105,7 +111,7 @@ must(m,P.MANAGE_SERVER)
 const b=await body(c.req)
 const sets=[],vals=[]
 const add=(k,v)=>{sets.push(k+'=?');vals.push(v)}
-if('name'in b)add('name',clean(str(b.name,2,60,'Server name')))
+if('name'in b)add('name',clean(nameOk(str(b.name,2,60,'Server name'))))
 if('description'in b)add('description',clean(opt(b.description,500,'Description')))
 if('is_public'in b)add('is_public',b.is_public?1:0)
 if('category'in b){if(b.category&&!CATS.includes(b.category))fail(400,'Invalid category');add('category',b.category||'')}
@@ -118,7 +124,7 @@ add('tag',tg||null)
 }
 if('tag_emoji'in b){
 const em=String(b.tag_emoji||'').trim()
-if(em&&(em.length>16||!/^\p{Extended_Pictographic}/u.test(em)||/[A-Za-z0-9]/.test(em)))fail(400,'Pick a single emoji for the tag')
+if(em&&([...new Intl.Segmenter().segment(em)].length!==1||em.length>16||!/^\p{Extended_Pictographic}/u.test(em)||/[A-Za-z0-9]/.test(em)))fail(400,'Pick one emoji for the tag')
 add('tag_emoji',em||null)
 }
 if('theme'in b){
@@ -656,7 +662,7 @@ let where=c.user.adult_ok?'s.is_public=1':'s.is_public=1 and s.age_restricted=0'
 if(q){where+=" and (s.name like ? escape '\\' or s.description like ? escape '\\')";args.push(like(q),like(q))}
 if(cat){if(!CATS.includes(cat))fail(400,'Invalid category');where+=' and s.category=?';args.push(cat)}
 args.push(clamp(c.url.searchParams.get('limit'),24,1,50),clamp(c.url.searchParams.get('offset'),0,0,5000))
-const rows=(await c.env.DB.prepare(`select s.id,s.name,s.description,s.icon_id,s.banner_id,s.category,s.age_restricted,(select count(*) from members m where m.server_id=s.id) members from servers s where ${where} order by members desc,s.created_at desc limit ? offset ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select s.id,s.name,s.description,s.icon_id,s.banner_id,s.accent,s.tag,s.tag_emoji,s.tag_icon_id,s.category,s.age_restricted,(select count(*) from members m where m.server_id=s.id) members from servers s where ${where} order by members desc,s.created_at desc limit ? offset ?`).bind(...args).all()).results
 return{servers:rows,categories:CATS}
 })
 
@@ -669,6 +675,6 @@ const ovs=(await c.env.DB.prepare('select o.* from overrides o join channels c o
 const pseudo={admin:false,base:ev.perms,everyone:ev.id,roleIds:[],userId:'',timeout_until:0}
 const preview=chs.filter(ch=>chanPerms(pseudo,ch,ovs.filter(o=>o.channel_id===ch.id))&P.VIEW).map(ch=>({id:ch.id,name:ch.name,type:ch.type}))
 const n=await c.env.DB.prepare('select count(*) n from members where server_id=?').bind(s.id).first()
-return{server:{id:s.id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,category:s.category,rules:s.rules,welcome:s.welcome,members:n.n,age_restricted:s.age_restricted},channels:preview}
+return{server:{id:s.id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,accent:s.accent,tag:s.tag||null,tag_emoji:s.tag_emoji||null,tag_icon_id:s.tag_icon_id||null,category:s.category,rules:s.rules,welcome:s.welcome,members:n.n,age_restricted:s.age_restricted},channels:preview}
 })
 }
