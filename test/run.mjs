@@ -10,15 +10,17 @@ const run=Math.random().toString(36).slice(2,8)
 const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')
 
 class U{
-constructor(n){this.name=n+run;this.ip=`10.${Math.floor(Math.random()*250)}.${Math.floor(Math.random()*250)}.${Math.floor(Math.random()*250)}`;this.cookie=''}
+constructor(n){this.name=n+run;this.ip=`10.${Math.floor(Math.random()*250)}.${Math.floor(Math.random()*250)}.${Math.floor(Math.random()*250)}`;this.cookie='';this.jar={}}
 async req(method,path,body,extra={}){
 const h={'cf-connecting-ip':this.ip,...extra}
 if(this.cookie)h.cookie=this.cookie
 let b
 if(body!==undefined&&!(body instanceof Buffer)){h['content-type']='application/json';b=JSON.stringify(body)}else if(body instanceof Buffer)b=body
 const r=await fetch(BASE+path,{method,headers:h,body:b})
-const sc=r.headers.get('set-cookie')
-if(sc){const m=sc.match(/sid=([^;]*)/);this.cookie=m&&m[1]?'sid='+m[1]:''}
+for(const sc of r.headers.getSetCookie()){
+const m=sc.match(/^(sid|sx)=([^;]*)/)
+if(m){this.jar[m[1]]=m[2];if(m[1]==='sid'&&!m[2])delete this.jar.sid;if(m[1]==='sx'&&!m[2])delete this.jar.sx;this.cookie=Object.entries(this.jar).map(([k,v])=>k+'='+v).join('; ')}
+}
 let j=null
 const ct=r.headers.get('content-type')||''
 if(ct.includes('json'))j=await r.json().catch(()=>null)
@@ -598,7 +600,7 @@ try{
 const{DatabaseSync}=await import('node:sqlite')
 const fs=await import('node:fs')
 const dir='.wrangler/state/v3/d1/miniflare-D1DatabaseObject/'
-const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).sort((a,b)=>fs.statSync(b).size-fs.statSync(a).size)[0]
+const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).find(x=>{const t=new DatabaseSync(x);const has=t.prepare("select 1 x from sqlite_master where name='users'").get();t.close();return!!has})
 const db=new DatabaseSync(f)
 db.prepare('update users set labs=1 where id=?').run(A.id)
 db.close()
@@ -629,7 +631,7 @@ try{
 const{DatabaseSync}=await import('node:sqlite')
 const fs=await import('node:fs')
 const dir='.wrangler/state/v3/d1/miniflare-D1DatabaseObject/'
-const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).sort((a,b)=>fs.statSync(b).size-fs.statSync(a).size)[0]
+const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).find(x=>{const t=new DatabaseSync(x);const has=t.prepare("select 1 x from sqlite_master where name='users'").get();t.close();return!!has})
 const db=new DatabaseSync(f)
 db.prepare('update servers set name=? where id=?').run('Hentai Zone',ssid)
 db.close()
@@ -637,6 +639,164 @@ await fetch(BASE+'/cdn-cgi/handler/scheduled')
 await sleep(1500)
 eq((await A.get('/api/servers/'+ssid)).s,404,'nightly sweep deletes an existing explicit server')
 }catch(e){console.log('sweep test skipped',e.message)}
+
+console.log('profile, accounts, gifs, admin database')
+const OWN='testowner'
+const O=new U('own');O.name=OWN
+r=await O.post('/api/auth/register',{username:OWN,password:'correct horse battery'})
+if(r.s===409)r=await O.post('/api/auth/login',{username:OWN,password:'correct horse battery'})
+O.id=r.j.user.id
+eq(r.j.user.owner,true,'owner flag follows OWNER_USERNAME')
+eq(r.j.user.admin,true,'owner is an admin')
+eq((await A.get('/api/me')).j.user.owner,false,'ordinary user is not owner')
+eq((await O.get('/api/users/'+O.id)).j.user.badges.includes('owner'),true,'owner badge on profile')
+eq((await A.patch('/api/me',{links:[{label:'Site',url:'https://example.com/a'}]})).s,200,'save a profile link')
+eq((await B.get('/api/users/'+A.id)).j.user.links[0].url,'https://example.com/a','links visible to others')
+eq((await A.patch('/api/me',{links:[{label:'x',url:'http://example.com'}]})).s,400,'http links rejected')
+eq((await A.patch('/api/me',{links:[{label:'x',url:'javascript:alert(1)'}]})).s,400,'script links rejected')
+eq((await A.patch('/api/me',{links:Array.from({length:6},(_,i)=>({label:'l'+i,url:'https://example.com/'+i}))})).s,400,'more than 5 links rejected')
+eq((await A.patch('/api/me',{status_text:'heads down',status_until:Date.now()+3600000})).s,200,'status with expiry')
+eq((await B.get('/api/users/'+A.id)).j.user.status_text,'heads down','status shown before expiry')
+eq((await A.patch('/api/me',{status_until:Date.now()-1000})).s,400,'past expiry rejected')
+eq((await A.patch('/api/me',{status_until:Date.now()+40*86400000})).s,400,'expiry beyond 30 days rejected')
+try{
+const{DatabaseSync}=await import('node:sqlite')
+const fs=await import('node:fs')
+const dir='.wrangler/state/v3/d1/miniflare-D1DatabaseObject/'
+const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).find(x=>{const t=new DatabaseSync(x);const has=t.prepare("select 1 x from sqlite_master where name='users'").get();t.close();return!!has})
+const d3=new DatabaseSync(f)
+d3.prepare('update users set status_until=1 where id=?').run(A.id)
+d3.close()
+eq((await B.get('/api/users/'+A.id)).j.user.status_text,'','expired status is hidden')
+}catch(e){console.log('status expiry check skipped',e.message)}
+eq((await A.patch('/api/me',{status_text:'back'})).j.user.status_text,'back','setting a status clears the old expiry')
+const png=async kind=>(await A.req('POST','/api/upload?kind='+kind,PNG,{'x-filename':'a.png','content-type':'image/png'})).j
+const base0=(await A.get('/api/me/images?kind=avatar')).j.images.length
+const av1=await png('avatar'),av2=await png('avatar')
+eq((await A.patch('/api/me',{avatar_id:av1.id})).s,200,'set first avatar')
+eq((await A.patch('/api/me',{avatar_id:av2.id})).s,200,'set second avatar')
+let hist=(await A.get('/api/me/images?kind=avatar')).j.images
+eq(hist.length,base0+2,'avatar history keeps both images')
+eq(hist.find(x=>x.current).id,av2.id,'current avatar is flagged')
+eq((await A.del('/api/me/images/'+av2.id+'?kind=avatar')).s,400,'cannot delete the current avatar')
+eq((await A.patch('/api/me',{avatar_id:av1.id})).s,200,'switch back to an older avatar')
+eq((await A.del('/api/me/images/'+av2.id+'?kind=avatar')).s,200,'delete an old avatar')
+eq((await A.get('/api/me/images?kind=avatar')).j.images.length,base0+1,'history shrinks after delete')
+eq((await A.get('/api/files/'+av2.id)).s,404,'deleted avatar file is gone')
+eq((await B.get('/api/me/images?kind=avatar')).j.images.length,0,'history is per user')
+eq((await A.get('/api/me/images?kind=other')).s,400,'history kind validated')
+const bn1=await png('banner')
+eq((await A.patch('/api/me',{banner_id:bn1.id})).s,200,'set banner')
+eq((await A.get('/api/me/images?kind=banner')).j.images.length,1,'banner history recorded')
+eq((await A.patch('/api/me',{banner_id:av1.id})).s,400,'avatar file cannot be used as banner')
+
+const M=new U('multi')
+await M.register()
+const M2=new U('multi2')
+await M2.register()
+eq((await M.post('/api/auth/login',{username:M2.name,password:'correct horse battery'})).s,200,'sign in to a second account on the same browser')
+eq((await M.get('/api/me')).j.user.id,M2.id,'second account is active')
+let acc=(await M.get('/api/accounts')).j.accounts
+eq(acc.length,2,'both accounts listed')
+eq(acc.find(x=>x.current).id,M2.id,'active account flagged')
+eq((await M.post('/api/accounts/switch',{user_id:M.id})).s,200,'switch back to the first account')
+eq((await M.get('/api/me')).j.user.id,M.id,'first account is active again')
+eq((await M.get('/api/accounts')).j.accounts.length,2,'both accounts still saved after switching')
+eq((await M.post('/api/accounts/switch',{user_id:C.id})).s,404,'cannot switch to an account that is not saved')
+const keep=M.jar.sx
+eq((await M.post('/api/accounts/remove',{user_id:M2.id})).s,200,'remove a saved account')
+eq((await M.get('/api/accounts')).j.accounts.length,1,'removed account is gone from the list')
+const ghost=new U('ghost');ghost.jar={sx:keep};ghost.cookie='sx='+keep
+eq((await ghost.post('/api/accounts/switch',{user_id:M2.id})).s,401,'a removed account session no longer works')
+eq((await M.post('/api/auth/logout')).s,200,'log out')
+eq((await M.get('/api/me')).s,401,'logged out')
+const L=new U('login');L.jar={};await L.register()
+eq((await A.get('/api/accounts')).j.accounts.length,1,'a single sign-in lists one account')
+
+eq((await A.put('/api/users/'+B.id+'/note',{note:'met at the meetup'})).s,200,'save a private note')
+eq((await A.get('/api/users/'+B.id+'/note')).j.note,'met at the meetup','read the note back')
+eq((await B.get('/api/users/'+B.id+'/note')).j.note,'','notes are private to their author')
+await A.put('/api/users/'+B.id+'/note',{note:''})
+eq((await A.get('/api/users/'+B.id+'/note')).j.note,'','clearing a note removes it')
+
+eq((await A.get('/api/gifs/status')).j.enabled,false,'GIF search reports it is not configured')
+eq((await A.get('/api/gifs/search?q=cat')).s,503,'search without a provider fails clearly')
+eq((await A.post('/api/gifs/import',{url:'https://evil.example.com/a.gif',kind:'avatar'})).s,400,'import rejects unlisted hosts')
+eq((await A.post('/api/gifs/import',{url:'http://media.tenor.com/a.gif',kind:'avatar'})).s,400,'import rejects http')
+eq((await A.post('/api/gifs/import',{url:'https://user@media.tenor.com/a.gif',kind:'avatar'})).s,400,'import rejects credentials in the address')
+eq((await A.get('/api/gifs/media?u='+encodeURIComponent('https://127.0.0.1/a.gif'))).s,400,'media proxy rejects other hosts')
+eq((await A.post('/api/gifs/favs',{id:'g1',title:'cat',preview:'https://media.tenor.com/p.gif',url:'https://media.tenor.com/g.gif'})).s,200,'save a favourite GIF')
+eq((await A.get('/api/gifs/favs')).j.results.length,1,'favourites listed')
+eq((await B.get('/api/gifs/favs')).j.results.length,0,'favourites are per user')
+eq((await A.post('/api/gifs/favs',{id:'g2',title:'x',preview:'https://evil.example.com/p.gif',url:'https://media.tenor.com/g.gif'})).s,400,'favourites reject unlisted hosts')
+await A.del('/api/gifs/favs/g1')
+eq((await A.get('/api/gifs/favs')).j.results.length,0,'remove a favourite')
+
+const uA=await A.ws('u_'+A.id)
+eq((await B.post(`/api/conversations/${cv}/ring/decline`,{busy:true})).s,200,'decline a call')
+const dec=await waitFor(uA,e=>e.t==='call.declined')
+ok(dec&&dec.busy===true&&dec.by.id===B.id,'caller is told the call was declined')
+eq((await B.post(`/api/conversations/${cv}/ring/cancel`)).s,200,'cancel a call')
+ok(await waitFor(uA,e=>e.t==='call.cancel'),'other side is told the call was cancelled')
+eq((await C.post(`/api/conversations/${cv}/ring/decline`)).s,404,'outsiders cannot decline calls in someone else DM')
+eq((await B.post(`/api/conversations/${cv}/ring/other`)).s,404,'unknown ring action')
+uA.close()
+
+r=await A.post('/api/servers',{name:'Hand Hall '+run});const hsid=r.j.id
+const hch=(await A.get('/api/servers/'+hsid)).j.channels.find(x=>x.type==='voice').id
+const hv=await A.ws('s_'+hsid),hv2=hv
+send(hv,{t:'voice.join',ch:hch});await waitFor(hv,e=>e.t==='voice.joined')
+send(hv,{t:'voice.state',h:true})
+const hand=await waitFor(hv2,e=>e.t==='voice.state'&&e.users[A.id]&&e.users[A.id].h===true)
+ok(hand,'raised hand is broadcast to the channel')
+send(hv,{t:'voice.state',h:false})
+ok(await waitFor(hv2,e=>e.t==='voice.state'&&e.users[A.id]&&e.users[A.id].h===false),'lowered hand is broadcast')
+send(hv,{t:'voice.leave'})
+hv.close()
+
+eq((await A.get('/api/admin/db/tables')).s,404,'database editor hidden from ordinary users')
+eq((await A.post('/api/admin/db/sql',{sql:'select 1'})).s,404,'SQL console hidden from ordinary users')
+const tb=await O.get('/api/admin/db/tables')
+eq(tb.s,200,'owner lists tables')
+ok(tb.j.tables.some(x=>x.name==='users')&&!tb.j.tables.some(x=>x.name==='_migrations'),'tables listed without internal ones')
+const rows=await O.get('/api/admin/db/rows?table=users&limit=5')
+eq(rows.s,200,'owner reads rows')
+ok(rows.j.rows[0].values.pass_hash==='••••','secret columns are masked')
+ok(rows.j.columns.find(x=>x.name==='pass_hash').secret,'secret columns are flagged')
+eq((await O.get('/api/admin/db/rows?table=nope')).s,404,'unknown tables rejected')
+eq((await O.get('/api/admin/db/rows?table='+encodeURIComponent('users;drop table users'))).s,404,'table names are whitelisted')
+const found=await O.get('/api/admin/db/rows?table=users&q='+encodeURIComponent(A.name))
+eq(found.j.rows.length,1,'search finds the row')
+const rowKey=found.j.rows[0].key
+eq((await O.post('/api/admin/db/update',{table:'users',key:rowKey,set:{pass_hash:'x'}})).s,400,'secret columns cannot be edited')
+eq((await O.post('/api/admin/db/update',{table:'users',key:rowKey,set:{nope:'x'}})).s,400,'unknown columns rejected')
+eq((await O.post('/api/admin/db/update',{table:'users',key:rowKey,set:{display_name:'Edited By Owner'}})).s,200,'owner edits a row')
+eq((await B.get('/api/users/'+A.id)).j.user.display_name,'Edited By Owner','edit is live')
+eq((await O.post('/api/admin/db/update',{table:'users',key:{id:'u_missing'},set:{display_name:'x'}})).s,404,'missing rows 404')
+eq((await O.post('/api/admin/db/insert',{table:'app_settings',values:{k:'test_key_'+run,v:'1'}})).s,201,'owner inserts a row')
+const ks=(await O.get('/api/admin/db/rows?table=app_settings&q=test_key_'+run)).j.rows
+eq(ks.length,1,'inserted row is found')
+eq((await O.post('/api/admin/db/delete',{table:'app_settings',key:ks[0].key})).s,400,'delete needs confirmation')
+eq((await O.post('/api/admin/db/delete',{table:'app_settings',key:ks[0].key,confirm:true})).s,200,'owner deletes a row')
+const sq=await O.post('/api/admin/db/sql',{sql:'select count(*) n from users'})
+eq(sq.s,200,'read-only SQL runs')
+ok(sq.j.rows[0].n>=3,'SQL returns rows')
+eq((await O.post('/api/admin/db/sql',{sql:'select pass_hash from users'})).s,400,'SQL cannot read secret columns')
+eq((await O.post('/api/admin/db/sql',{sql:'select 1; select 2'})).s,400,'only one statement per run')
+eq((await O.post('/api/admin/db/sql',{sql:'drop table users'})).s,400,'schema changes are refused')
+eq((await O.post('/api/admin/db/sql',{sql:'pragma writable_schema=1'})).s,400,'pragmas are refused')
+eq((await O.post('/api/admin/db/sql',{sql:"delete from app_settings where k='nothing_"+run+"'"})).s,400,'SQL writes need confirmation')
+eq((await O.post('/api/admin/db/sql',{sql:"delete from app_settings where k='nothing_"+run+"'",confirm:true})).s,200,'confirmed SQL write runs')
+const lg=(await O.get('/api/admin/log')).j.entries
+ok(lg.some(e=>e.action==='db.update')&&lg.some(e=>e.action==='db.sql'),'database edits are written to the audit log')
+
+r=await A.get(`/api/servers/${hsid}/template`)
+eq(r.s,200,'export server layout')
+ok(r.j.layout.categories.length>0,'layout lists categories')
+const tlay={categories:[{name:'Imported',channels:[{name:'from-template',type:'text',topic:'hi'}]}],roles:[]}
+eq((await B.post(`/api/servers/${hsid}/template`,{layout:tlay})).s,404,'non-members cannot apply a layout')
+eq((await A.post(`/api/servers/${hsid}/template`,{layout:tlay})).s,200,'import a layout outside Labs')
+ok((await A.get('/api/servers/'+hsid)).j.channels.some(x=>x.name==='from-template'),'imported channel exists')
 for(const w of[wa,wb,wc,ub,va,vb,vc])try{w.close()}catch{}
 console.log(`\n${pass} passed, ${failn} failed`)
 process.exit(failn?1:0)
