@@ -8,6 +8,7 @@ import{buildShell,renderRail,renderCtx,setPanel,currentPanel,chatTop,topBar,layo
 import{openChat,closeChat,chatEvent,currentRoom,resyncChat,refreshComposer,chatAtBottom}from'./chat.js'
 import{V,voiceEvent,joinVoice,toggleMute,toggleDeaf,mountVoiceRoom,ringToast,voiceSettingsView}from'./voice.js'
 import{friendsPage,discoverPage,welcomePage,forumPage}from'./pages.js'
+import{botsPage}from'./botspage.js'
 import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,channelDialog,categoryDialog,groupSettingsDialog}from'./dialogs.js'
 import{openSettings}from'./settings.js'
 import{ping,desktop}from'./notify.js'
@@ -20,6 +21,8 @@ let routeGen=0
 
 async function boot(){
 const r=parse()
+const ae=new URLSearchParams(location.search).get('autherror')
+if(ae){history.replaceState(null,'','/');setTimeout(()=>toast(ae,'err'),600)}
 if(r.name==='appeal'){renderAppeal(root,()=>{history.replaceState(null,'','/');boot()});return}
 try{
 const d=await GET('/api/me')
@@ -84,6 +87,15 @@ syncChrome()
 const p=discoverPage()
 layoutMain(...p.nodes)
 document.title='Discover • Parley'
+return
+}
+if(r.name==='bots'){
+S.nav={kind:'bots'}
+syncChrome()
+const p=botsPage(r)
+layoutMain(...p.nodes)
+document.title=p.title
+await p.ready
 return
 }
 if(r.name==='server'){

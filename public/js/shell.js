@@ -77,6 +77,7 @@ kids.push(h('div',{class:'wwrap'},on_?h('span',{class:'pip',style:{height:'20px'
 }
 kids.push(h('button',{class:'wbtn',title:'Create or join a server','aria-label':'Create or join a server',on:{click:()=>createServerDialog()}},icon('plus')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='discover'?' on':''),title:'Discover servers','aria-label':'Discover servers',on:{click:()=>go('/discover')}},icon('compass')))
+kids.push(h('button',{class:'wbtn'+(S.nav.kind==='bots'?' on':''),title:'Bots','aria-label':'Bots','aria-current':S.nav.kind==='bots'?'page':null,on:{click:()=>go('/bots')}},icon('bot')))
 mount(el.rail,kids)
 }
 const initialsOf=n=>String(n).trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()
@@ -225,7 +226,7 @@ const sbtn=h('button',{class:'ctx-h',style:{width:'100%',textAlign:'left',border
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{
-head=h('div',{class:'ctx-h'},h('span',null,'Home'))
+head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':'Home'))
 body=homeBody()
 }
 mount(el.ctx,head,body,userPanel())
@@ -286,7 +287,12 @@ const title=info?info.thread?`${info.parent.name} › ${info.ch.name}`:info.ch.n
 return topBar({lead:info?icon(info.thread||info.ch.type==='forum'?'chat':info.ch.type==='announce'?'mega':'hash'):c?(c.type==='group'?icon('users'):avatar(convOther(c)||{},'sm')):null,title,topic:info?.ch.topic||'',actions})
 }
 
-export function layoutMain(...kids){mount(el.main,kids)}
+export function layoutMain(...kids){
+mount(el.main,kids)
+el.main.classList.remove('enter')
+void el.main.offsetWidth
+el.main.classList.add('enter')
+}
 
 on('unread',()=>{renderRail();renderCtx()})
 on('servers',renderRail)

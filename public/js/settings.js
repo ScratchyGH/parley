@@ -1,7 +1,9 @@
-import{h,mount,icon,GET,POST,PATCH,DEL,avatar,accentBg,toast,fail,dialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,DEL,avatar,accentBg,toast,fail,dialog,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
 import{S,P,can,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
 import{uploadImage}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
+import{passkeysSupported,registerPasskey}from'./webauthn.js'
+import{go}from'./nav.js'
 import{voiceSettingsView}from'./voice.js'
 import{requestDesktop}from'./notify.js'
 import{pref,setPref}from'./prefs.js'
@@ -96,6 +98,29 @@ try{await POST('/api/me/2fa/disable',{password:pw.value,code:code.value.trim()})
 }
 }
 
+async function signin(box){
+let d
+try{d=await GET('/api/me/security')}catch{return}
+const redraw=()=>signin(box)
+const del=async(url,msg)=>{try{await DEL(url);toast(msg,'ok');redraw()}catch(e){fail(e)}}
+const linked=new Set(d.identities.map(i=>i.provider))
+const pw1=h('input',{class:'inp',type:'password',autocomplete:'new-password',placeholder:'New password (10+ characters)','aria-label':'New password'})
+const out=h('div')
+mount(box,h('h3',{style:{marginTop:'24px'}},'Sign-in methods'),
+d.has_password?null:h('div',{class:'card',style:{marginBottom:'8px'}},h('p',{class:'hint',style:{marginTop:0}},'This account signs in through a linked service or passkey and has no password. Set one to be able to recover it and to delete the account with it.'),h('div',{class:'row'},pw1,h('button',{class:'btn',on:{click:async()=>{
+try{const r=await POST('/api/me/setpassword',{password:pw1.value});mount(out,h('p',null,'Password set. Your recovery code, shown once:'),h('div',{class:'card',style:{fontFamily:'var(--mono)',userSelect:'all'}},r.recovery_code));pw1.value=''}catch(e){fail(e)}
+}}},'Set password')),out),
+h('div',{class:'list'},
+d.identities.map(i=>h('div',{class:'li'},h('div',{class:'grow'},h('b',null,i.name),h('small',null,i.label||'Linked')),h('button',{class:'btn sm dng',on:{click:()=>del('/api/me/identities/'+i.provider,i.name+' unlinked')}},'Unlink'))),
+d.providers.filter(p=>!linked.has(p.id)).map(p=>h('div',{class:'li'},h('div',{class:'grow'},h('b',null,p.name),h('small',null,'Not linked')),h('a',{class:'btn sm',href:'/api/auth/oauth/'+p.id+'/start?mode=link'},'Link'))),
+d.passkeys.map(k=>h('div',{class:'li'},icon('lock'),h('div',{class:'grow'},h('b',null,k.name),h('small',null,'Added '+fmtRel(k.created_at)+(k.last_used?' · used '+fmtRel(k.last_used):''))),h('button',{class:'btn sm dng',on:{click:()=>del('/api/me/passkeys/'+encodeURIComponent(k.id),'Passkey removed')}},'Remove')))),
+passkeysSupported()?h('div',{style:{marginTop:'8px'}},h('button',{class:'btn',on:{click:async e=>{
+const b=e.currentTarget
+b.disabled=true
+try{await registerPasskey(S.me.username+' passkey');toast('Passkey added','ok');redraw()}catch(x){if(!x.cancelled)fail(x);b.disabled=false}
+}}},icon('plus','s'),'Add a passkey'),h('div',{class:'hint'},'Passkeys use your device lock or a security key. Only ES256 keys are supported.')):h('div',{class:'hint'},'This browser does not support passkeys.'))
+}
+
 function account(pg){
 const err=h('div',{class:'err'})
 const un=h('input',{class:'inp',value:S.me.username,maxLength:24})
@@ -111,6 +136,7 @@ h('div',{style:{marginTop:'8px'}},h('button',{class:'btn pri',on:{click:async()=
 try{await POST('/api/me/password',{current_password:cp.value,new_password:np.value});cp.value=np.value='';toast('Password changed','ok')}catch(e){fail(e)}
 }}},'Change password')),
 h('div',{id:'tfa'}),
+h('div',{id:'sgn'}),
 h('h3',{style:{marginTop:'24px'}},'Recovery code'),
 h('p',{class:'hint'},'Generating a new code invalidates the previous one. Store it somewhere safe; it is the only way to reset a forgotten password.'),
 h('div',{class:'row'},(()=>{
@@ -125,6 +151,7 @@ mount(out,h('div',{class:'card',style:{fontFamily:'var(--mono)',fontSize:'16px',
 return[pw,b]
 })()),out)
 twofa(pg.querySelector('#tfa'))
+signin(pg.querySelector('#sgn'))
 }
 
 function profile(pg){
@@ -236,11 +263,11 @@ saveBlob(await r.blob(),'parley-export.json')
 }}},icon('download','s'),'Export my data'),
 h('h3',{style:{marginTop:'28px',color:'var(--err)'}},'Delete account'),
 h('p',null,'Your profile is removed and your messages are anonymised. You must transfer or delete servers you own first. This cannot be undone.'),
-field('Password',pw),err,
+field('Password',pw,'If your account has no password, type your username instead.'),err,
 h('div',{style:{marginTop:'8px'}},h('button',{class:'btn dng',on:{click:async()=>{
 err.textContent=''
 if(!await confirmBox('Delete account','This permanently deletes your account.','Delete account',true))return
-try{await POST('/api/me/delete',{password:pw.value});location.href='/'}
+try{await POST('/api/me/delete',{password:pw.value,confirm:pw.value});location.href='/'}
 catch(e){err.textContent=e.message+(e.data?.servers?': '+e.data.servers.map(s=>s.name).join(', '):'')}
 }}},'Delete my account')))
 }
@@ -303,6 +330,7 @@ h('button',{class:'btn sm dng',on:{click:async()=>{if(!await confirmBox('Delete 
 }catch(e){mount(list,h('div',{class:'err'},e.message))}
 }
 mount(pg,h('h3',null,'Bots'),
+h('div',{style:{marginBottom:'8px'}},h('button',{class:'btn pri',on:{click:()=>{closeTopDialog();go('/bots/mine')}}},'Open the Bots hub'),h('span',{class:'hint',style:{marginLeft:'8px'}},'Build, describe and list bots')),
 h('p',{class:'hint'},'A bot is an account that posts through the HTTP API with an Authorization header: Bot <token>. Bots can read and send messages, react and upload files in servers they are added to, limited by their permissions. There is no gateway: bots poll the REST API or receive nothing in real time. Up to 5 bots.'),
 h('div',{class:'row'},name,h('button',{class:'btn pri',on:{click:async()=>{try{const r=await POST('/api/bots',{name:name.value.trim()});name.value='';showToken(r.token,'Bot created. Copy the token now; it is shown once.');draw()}catch(e){fail(e)}}}},'Create bot')),out,list)
 draw()

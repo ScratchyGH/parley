@@ -1,7 +1,18 @@
-import{h,mount,icon,POST,field,copyText,saveBlob}from'./util.js'
+import{h,mount,icon,GET,POST,field,copyText,saveBlob,toast}from'./util.js'
+import{passkeysSupported,signInWithPasskey}from'./webauthn.js'
 
 export function renderAuth(root,onDone,note){
 let tab='login'
+const social=h('div',{class:'oauth'})
+GET('/api/auth/providers').then(d=>{
+const kids=d.oauth.map(p=>h('a',{class:'btn',href:'/api/auth/oauth/'+p.id+'/start'},'Continue with '+p.name))
+if(passkeysSupported())kids.unshift(h('button',{class:'btn',type:'button',on:{click:async e=>{
+const b=e.currentTarget
+b.disabled=true
+try{onDone(await signInWithPasskey())}catch(x){if(!x.cancelled)toast(x.message,'err');b.disabled=false}
+}}},icon('lock','s'),'Sign in with a passkey'))
+if(kids.length)mount(social,h('div',{class:'or'},'or'),kids)
+}).catch(()=>{})
 const card=h('div',{class:'card'})
 mount(root,h('div',{class:'auth'},card))
 draw()
@@ -63,6 +74,7 @@ note?h('div',{class:'ban',style:{margin:'0 0 12px',borderRadius:'6px',border:'1p
 tab==='recover'?null:tabs,
 tab==='recover'?h('h2',{style:{margin:'0 0 8px',fontSize:'16px',color:'var(--strong)'}},'Reset your password'):null,
 form,
+tab==='recover'?null:social,
 h('div',{class:'row',style:{justifyContent:'center',marginTop:'12px'}},
 tab==='recover'?h('button',{class:'btn sm',on:{click:()=>{tab='login';draw()}}},'Back to sign in'):h('button',{class:'btn sm',on:{click:()=>{tab='recover';draw()}}},'Forgot password?')))
 }

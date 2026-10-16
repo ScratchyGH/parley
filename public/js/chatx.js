@@ -39,6 +39,28 @@ location.href=u
 })
 return a
 }
+function textFile(f,m){
+const box=h('div',{class:'tfile'})
+const pre=h('pre',{class:'tprev',hidden:true})
+const btn=h('button',{class:'btn sm',type:'button','aria-expanded':'false',on:{click:async()=>{
+if(!pre.hidden){pre.hidden=true;btn.textContent='Preview';btn.setAttribute('aria-expanded','false');return}
+btn.disabled=true
+try{
+if(!pre.dataset.done){
+const r=await fetch(fileUrl(f.id),{credentials:'same-origin'})
+if(!r.ok)throw new Error('Could not load the file')
+pre.textContent=(await r.text()).slice(0,60000)
+pre.dataset.done='1'
+}
+pre.hidden=false
+btn.textContent='Hide'
+btn.setAttribute('aria-expanded','true')
+}catch(e){fail(e)}
+btn.disabled=false
+}}},'Preview')
+box.append(h('div',{class:'row'},fileLink(f,m),btn),pre)
+return box
+}
 export function renderAttachments(m){
 const a=h('div',{class:'att'})
 for(const f of m.attachments){
@@ -50,6 +72,7 @@ a.append(img)
 }
 else if(f.mime.startsWith('video/'))a.append(h('video',{src:u,controls:true,preload:'metadata','aria-label':f.name}))
 else if(f.mime.startsWith('audio/'))a.append(h('div',null,h('div',{class:'hint'},f.name),h('audio',{src:u,controls:true,preload:'none'})))
+else if(f.mime.startsWith('text/plain')&&f.size<=262144)a.append(textFile(f,m))
 else a.append(fileLink(f,m))
 }
 return a

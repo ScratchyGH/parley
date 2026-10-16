@@ -702,6 +702,7 @@ if(ev.m.author.id!==S.me.id){clearTimeout(C.typers.get(ev.m.author.id));C.typers
 const prev=!C.moreAfter?C.list.filter(x=>!x.pending&&!x.failed).pop():null
 if(ev.m.sig)recordMessages(ev.m.room,[ev.m],prev?[prev.id,ev.m.id]:null)
 insertMsg(ev.m)
+C.wraps.get(ev.m.id)?.querySelector('.m')?.classList.add('new-in')
 }else if(ev.t==='msg.update'){if(ev.m.room===C.room){if(ev.m.sig)recordMessages(ev.m.room,[ev.m],null);patchMsg(ev.m)}}
 else if(ev.t==='msg.delete'){if(ev.room===C.room){forgetMessage(ev.room,ev.id);removeMsg(ev.id)}}
 else if(ev.t==='poll.update'){
