@@ -1,0 +1,25 @@
+import{createECDH,createDecipheriv,hkdfSync}from'node:crypto'
+import{encryptPayload}from'../src/push.js'
+let pass=0,fail=0
+const ok=(c,n)=>{c?pass++:fail++;console.log((c?'  ok  ':'FAIL  ')+n)}
+const ua=createECDH('prime256v1');ua.generateKeys()
+const uaPub=ua.getPublicKey()
+const auth=crypto.getRandomValues(new Uint8Array(16))
+const msg=Buffer.from(JSON.stringify({title:'hi',body:'there ünicode'}))
+const body=Buffer.from(await encryptPayload(new Uint8Array(uaPub),auth,new Uint8Array(msg)))
+const salt=body.subarray(0,16)
+ok(body.readUInt32BE(16)===4096,'record size header')
+ok(body[20]===65,'key id length')
+const asPub=body.subarray(21,86)
+const ct=body.subarray(86)
+const secret=ua.computeSecret(asPub)
+const ikm=Buffer.from(hkdfSync('sha256',secret,auth,Buffer.concat([Buffer.from('WebPush: info\0'),uaPub,asPub]),32))
+const cek=Buffer.from(hkdfSync('sha256',ikm,salt,Buffer.from('Content-Encoding: aes128gcm\0'),16))
+const nonce=Buffer.from(hkdfSync('sha256',ikm,salt,Buffer.from('Content-Encoding: nonce\0'),12))
+const d=createDecipheriv('aes-128-gcm',cek,nonce)
+d.setAuthTag(ct.subarray(ct.length-16))
+const plain=Buffer.concat([d.update(ct.subarray(0,ct.length-16)),d.final()])
+ok(plain[plain.length-1]===2,'padding delimiter')
+ok(plain.subarray(0,plain.length-1).equals(msg),'payload decrypts with an independent implementation')
+console.log(`\n${pass} passed, ${fail} failed`)
+process.exit(fail?1:0)

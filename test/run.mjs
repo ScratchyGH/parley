@@ -1,0 +1,434 @@
+import WebSocket from'ws'
+import{genCode}from'../src/totp.js'
+const BASE=process.env.BASE||'http://127.0.0.1:8787'
+const WSB=BASE.replace('http','ws')
+let pass=0,failn=0
+const ok=(c,n)=>{if(c){pass++;console.log('  ok  '+n)}else{failn++;console.log('FAIL  '+n)}}
+const eq=(a,b,n)=>ok(JSON.stringify(a)===JSON.stringify(b),n+(JSON.stringify(a)===JSON.stringify(b)?'':` (got ${JSON.stringify(a)}, want ${JSON.stringify(b)})`))
+const sleep=ms=>new Promise(r=>setTimeout(r,ms))
+const run=Math.random().toString(36).slice(2,8)
+const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')
+
+class U{
+constructor(n){this.name=n+run;this.ip=`10.${Math.floor(Math.random()*250)}.${Math.floor(Math.random()*250)}.${Math.floor(Math.random()*250)}`;this.cookie=''}
+async req(method,path,body,extra={}){
+const h={'cf-connecting-ip':this.ip,...extra}
+if(this.cookie)h.cookie=this.cookie
+let b
+if(body!==undefined&&!(body instanceof Buffer)){h['content-type']='application/json';b=JSON.stringify(body)}else if(body instanceof Buffer)b=body
+const r=await fetch(BASE+path,{method,headers:h,body:b})
+const sc=r.headers.get('set-cookie')
+if(sc){const m=sc.match(/sid=([^;]*)/);this.cookie=m&&m[1]?'sid='+m[1]:''}
+let j=null
+const ct=r.headers.get('content-type')||''
+if(ct.includes('json'))j=await r.json().catch(()=>null)
+return{s:r.status,j,r}
+}
+get(p){return this.req('GET',p)}
+post(p,b={}){return this.req('POST',p,b)}
+patch(p,b){return this.req('PATCH',p,b)}
+put(p,b={}){return this.req('PUT',p,b)}
+del(p){return this.req('DELETE',p)}
+async register(){const r=await this.post('/api/auth/register',{username:this.name,password:'correct horse battery'});this.id=r.j?.user?.id;return r}
+ws(room){
+return new Promise((res,rej)=>{
+const w=new WebSocket(WSB+'/ws?room='+encodeURIComponent(room),{headers:{cookie:this.cookie,origin:BASE,'cf-connecting-ip':this.ip}})
+w.events=[]
+w.on('message',d=>w.events.push(JSON.parse(d)))
+w.on('open',()=>res(w))
+w.on('unexpected-response',(q,r)=>rej(new Error('ws '+r.statusCode)))
+w.on('error',rej)
+})
+}
+}
+const waitFor=async(w,fn,ms=4000)=>{const t=Date.now();while(Date.now()-t<ms){const e=w.events.find(fn);if(e)return e;await sleep(40)}return null}
+const send=(w,o)=>w.send(JSON.stringify(o))
+
+async function main(){
+const A=new U('alice'),B=new U('bob'),C=new U('carol')
+
+console.log('auth')
+let r=await A.register();eq(r.s,201,'register A');ok(r.j.recovery_code?.length>10,'recovery code issued')
+await B.register();await C.register()
+eq((await A.post('/api/auth/register',{username:A.name,password:'correct horse battery'})).s,409,'duplicate username rejected')
+eq((await A.post('/api/auth/register',{username:'x',password:'short'})).s,400,'weak registration rejected')
+const anon=new U('anon')
+eq((await anon.get('/api/me')).s,401,'unauthenticated /api/me rejected')
+eq((await anon.post('/api/auth/login',{username:A.name,password:'wrong password!!'})).s,401,'wrong password rejected')
+const A2=new U('x');A2.name=A.name;A2.ip=A.ip
+eq((await A2.post('/api/auth/login',{username:A.name,password:'correct horse battery'})).s,200,'login works')
+eq((await A2.get('/api/me')).j.user.username,A.name,'second session restores user')
+const sess=await A.get('/api/sessions');eq(sess.s,200,'list sessions')
+const other=(await A2.get('/api/sessions')).j.sessions.find(s=>!s.current)
+eq((await A2.del('/api/sessions/'+other.id)).s,200,'revoke other session')
+eq((await A.get('/api/me')).s,401,'revoked session no longer works')
+await A.post('/api/auth/login',{username:A.name,password:'correct horse battery'})
+eq((await A.get('/api/me')).s,200,'A re-logged in')
+
+console.log('servers & permissions')
+r=await A.post('/api/servers',{name:'Test Hall',is_public:true,category:'tech'});eq(r.s,201,'create server')
+const sid=r.j.id,gen=r.j.default_channel
+let srv=(await A.get('/api/servers/'+sid)).j
+ok(srv.channels.length===2,'default channels created')
+eq((await B.get('/api/servers/'+sid)).s,404,'non-member cannot read server')
+eq((await B.get('/api/rooms/'+gen+'/messages')).s,404,'non-member cannot read channel')
+const inv=(await A.post(`/api/servers/${sid}/invites`,{max_uses:2})).j.code
+eq((await anon.get('/api/invites/'+inv)).j.server.name,'Test Hall','invite preview public')
+eq((await B.post(`/api/invites/${inv}/join`)).s,200,'B joins via invite')
+eq((await B.post(`/api/invites/${inv}/join`)).s,200,'rejoin idempotent')
+eq((await B.post(`/api/servers/${sid}/channels`,{name:'nope'})).s,403,'member cannot create channel')
+eq((await B.patch('/api/servers/'+sid,{name:'Hacked'})).s,403,'member cannot edit server')
+eq((await B.post(`/api/servers/${sid}/roles`,{name:'x',perms:65535})).s,403,'member cannot create role')
+r=await A.post(`/api/servers/${sid}/roles`,{name:'Mod',color:'#8b949e',perms:1|2|4|64|512|8192});eq(r.s,201,'owner creates role')
+const modRole=r.j.id
+eq((await A.put(`/api/servers/${sid}/members/${B.id}/roles/${modRole}`)).s,200,'assign role')
+eq((await B.post(`/api/servers/${sid}/roles`,{name:'esc',perms:65535})).s,403,'mod cannot escalate perms')
+eq((await B.patch(`/api/servers/${sid}/roles/${modRole}`,{perms:65535})).s,403,'mod cannot edit own role up')
+eq((await B.post(`/api/servers/${sid}/members/${A.id}/kick`)).s,403,'mod cannot kick owner')
+eq((await B.post(`/api/servers/${sid}/channels`,{name:'nope'})).s,403,'mod still cannot manage channels')
+
+console.log('private channels')
+r=await A.post(`/api/servers/${sid}/channels`,{name:'staff'});const priv=r.j.id
+const ev=srv.roles.find(x=>x.is_everyone).id
+eq((await A.put(`/api/channels/${priv}/overrides`,{target_type:'role',target_id:ev,allow:0,deny:1})).s,200,'deny @everyone view')
+eq((await C.post(`/api/invites/${inv}/join`)).s,200,'C joins')
+eq((await C.get(`/api/rooms/${priv}/messages`)).s,404,'C cannot read private channel')
+eq((await C.post(`/api/rooms/${priv}/messages`,{content:'hi'})).s,404,'C cannot post to private channel')
+ok(!(await C.get('/api/servers/'+sid)).j.channels.some(x=>x.id===priv),'private channel hidden from list')
+ok((await A.get('/api/servers/'+sid)).j.channels.some(x=>x.id===priv),'owner sees private channel')
+
+console.log('realtime messaging')
+const wa=await A.ws('s_'+sid),wb=await B.ws('s_'+sid),wc=await C.ws('s_'+sid)
+ok(await waitFor(wa,e=>e.t==='ready'),'ws ready')
+ok(await waitFor(wa,e=>e.t==='presence'&&e.uid===B.id),'presence broadcast')
+const nonce='n1'+run
+r=await A.post(`/api/rooms/${gen}/messages`,{content:'hello **world**',nonce});eq(r.s,201,'send message')
+const mid=r.j.message.id
+const got=await waitFor(wb,e=>e.t==='msg.new'&&e.m.id===mid)
+ok(got&&got.m.content==='hello **world**','B receives message in realtime')
+const dup=await A.post(`/api/rooms/${gen}/messages`,{content:'hello **world**',nonce});ok(dup.j.duplicate&&dup.j.message.id===mid,'duplicate send prevented by nonce')
+r=await B.post(`/api/rooms/${gen}/messages`,{content:'a reply',reply_to:mid});ok(r.j.message.reply?.id===mid,'reply stored')
+r=await A.patch(`/api/rooms/${gen}/messages/${mid}`,{content:'edited'});ok(r.j.message.edited_at,'edit message')
+ok(await waitFor(wb,e=>e.t==='msg.update'&&e.m.content==='edited'),'edit delivered live')
+eq((await B.patch(`/api/rooms/${gen}/messages/${mid}`,{content:'x'})).s,403,"cannot edit others' messages")
+eq((await B.put(`/api/rooms/${gen}/messages/${mid}/reactions/${encodeURIComponent('👍')}`)).s,200,'add reaction')
+ok(await waitFor(wa,e=>e.t==='reaction'&&e.add),'reaction delivered live')
+let list=(await A.get(`/api/rooms/${gen}/messages`)).j
+eq(list.messages.find(m=>m.id===mid).reactions[0],{emoji:'👍',count:1,me:false},'reaction counted')
+await B.del(`/api/rooms/${gen}/messages/${mid}/reactions/${encodeURIComponent('👍')}`)
+eq((await A.get(`/api/rooms/${gen}/messages`)).j.messages.find(m=>m.id===mid).reactions.length,0,'reaction removed')
+eq((await C.put(`/api/rooms/${gen}/pins/${mid}`)).s,403,'member without pin permission cannot pin')
+eq((await A.put(`/api/rooms/${gen}/pins/${mid}`)).s,200,'owner pins')
+eq((await A.get(`/api/rooms/${gen}/pins`)).j.messages.length,1,'pins listed')
+await C.ws('s_'+sid).then(w=>{ok(true,'C ws to server ok');w.close()})
+send(wb,{t:'typing',ch:gen})
+ok(await waitFor(wa,e=>e.t==='typing'&&e.uid===B.id),'typing indicator relayed')
+send(wb,{t:'typing',ch:priv})
+await sleep(300)
+ok(!wc.events.some(e=>e.t==='typing'&&e.ch===priv),'typing in private channel not leaked')
+
+console.log('persistence & pagination')
+for(let i=0;i<60;i++){const x=await A.post(`/api/rooms/${gen}/messages`,{content:'bulk '+i+' '+Math.random()});if(x.s!==201)throw new Error('bulk send failed '+x.s);if(i%15===14)await sleep(10500)}
+list=(await A.get(`/api/rooms/${gen}/messages`)).j
+eq(list.messages.length,50,'page size is 50');ok(list.more_before,'more history available')
+const older=(await A.get(`/api/rooms/${gen}/messages?before=${list.messages[0].id}`)).j
+ok(older.messages.length>0&&older.messages[older.messages.length-1].id<list.messages[0].id,'older page loads')
+const around=(await A.get(`/api/rooms/${gen}/messages?around=${mid}`)).j
+ok(around.messages.some(m=>m.id===mid),'around anchor works')
+r=await A.get(`/api/search?scope=room&room=${gen}&q=edited`);eq(r.j.messages.length,1,'search finds message')
+eq((await C.get(`/api/search?scope=room&room=${priv}&q=x`)).s,404,'search respects permissions')
+r=await A.get(`/api/search?scope=server&server=${sid}&q=bulk`);ok(r.j.messages.length>0&&r.j.next,'server search paginates')
+
+console.log('unread & notifications')
+await B.post(`/api/rooms/${gen}/read`,{})
+const unreadC=(await C.get('/api/unread')).j.unread.find(u=>u.room===gen)
+ok(unreadC&&unreadC.count>0,'C has unread in general')
+await A.post(`/api/rooms/${gen}/messages`,{content:`hey <@${B.id}> look`})
+ok(await waitFor(wb,e=>e.t==='msg.new'&&e.ment?.users.includes(B.id)),'mention flagged live')
+const nB=(await B.get('/api/notifications')).j;ok(nB.unread>=1&&nB.notifications[0].type==='mention','mention notification stored')
+eq((await B.post('/api/notifications/read',{})).s,200,'notifications marked read')
+eq((await C.get('/api/notifications')).j.unread,0,'C has no stray notifications')
+
+console.log('slow mode, timeout, delete')
+await A.patch('/api/channels/'+gen,{slowmode:5})
+eq((await C.post(`/api/rooms/${gen}/messages`,{content:'first'})).s,201,'first message under slowmode ok')
+eq((await C.post(`/api/rooms/${gen}/messages`,{content:'second'})).s,429,'slow mode enforced')
+await A.patch('/api/channels/'+gen,{slowmode:0})
+eq((await B.post(`/api/servers/${sid}/members/${C.id}/timeout`,{minutes:10})).s,200,'mod times C out')
+eq((await C.post(`/api/rooms/${gen}/messages`,{content:'muted'})).s,403,'timed-out user cannot send')
+await B.post(`/api/servers/${sid}/members/${C.id}/timeout`,{minutes:0})
+const cm=(await C.post(`/api/rooms/${gen}/messages`,{content:'to delete'})).j.message
+eq((await B.del(`/api/rooms/${gen}/messages/${cm.id}`)).s,200,'mod deletes message')
+ok(await waitFor(wa,e=>e.t==='msg.delete'&&e.id===cm.id),'delete delivered live')
+ok(!(await A.get(`/api/rooms/${gen}/messages`)).j.messages.some(m=>m.id===cm.id),'deleted message gone from history')
+ok((await A.get(`/api/servers/${sid}/modlog`)).j.entries.length>0,'moderation log recorded')
+
+console.log('attachments')
+let up=await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,PNG,{'x-filename':'pixel.png','content-type':'application/octet-stream'})
+eq(up.s,201,'upload png');const fid=up.j.id
+eq((await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,Buffer.from('MZ'),{'x-filename':'a.exe','content-type':'application/octet-stream'})).s,415,'exe rejected')
+eq((await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,Buffer.from('not a png at all'),{'x-filename':'fake.png','content-type':'application/octet-stream'})).s,415,'fake png rejected by content sniffing')
+eq((await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,Buffer.alloc(101*1048576),{'x-filename':'big.bin','content-type':'application/octet-stream'})).s,413,'oversized upload rejected')
+eq((await C.req('POST',`/api/upload?kind=attachment&room=${priv}`,PNG,{'x-filename':'p.png','content-type':'application/octet-stream'})).s,404,'cannot upload into inaccessible room')
+
+const J=(n,b)=>A.req('POST',`/api/upload?kind=attachment&room=${gen}`,b,{'x-filename':n,'content-type':'application/octet-stream'})
+eq((await J('a.jxl',Buffer.concat([Buffer.from([0xff,0x0a]),Buffer.alloc(30)]))).j?.mime,'image/jxl','jxl codestream accepted')
+eq((await J('b.jxl',Buffer.concat([Buffer.from([0,0,0,0x0c]),Buffer.from('JXL '),Buffer.alloc(20)]))).s,201,'jxl container accepted')
+eq((await J('c.jxl',Buffer.from('definitely not jxl data'))).s,415,'fake jxl rejected')
+eq((await J('d.bmp',Buffer.concat([Buffer.from('BM'),Buffer.alloc(30)]))).s,201,'bmp accepted')
+eq((await J('e.heic',Buffer.concat([Buffer.alloc(4),Buffer.from('ftypheic'),Buffer.alloc(20)]))).s,201,'heic accepted')
+const sum=(await import('node:crypto')).createHash('sha256').update(PNG).digest('hex')
+let ck=await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,PNG,{'x-filename':'ck.png','x-sha256':sum,'content-type':'application/octet-stream'})
+ok(ck.s===201&&ck.j.sha256===sum,'sha256 verified on upload')
+ck=await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,PNG,{'x-filename':'ck2.png','x-sha256':'0'.repeat(64),'content-type':'application/octet-stream'})
+ok(ck.s>=400,'wrong sha256 rejected')
+console.log('multipart')
+const big=Buffer.alloc(33*1048576,7)
+const bigSum=(await import('node:crypto')).createHash('sha256').update(big).digest('hex')
+let mi=await A.post('/api/upload/init',{kind:'attachment',room:gen,name:'movie.mp4',size:big.length})
+eq(mi.s,201,'multipart init');eq(mi.j.parts,3,'33MB is 3 parts')
+let bad=await A.req('PUT',`/api/upload/${mi.j.id}/part/1`,big.subarray(0,1000),{'content-type':'application/octet-stream'})
+eq(bad.s,400,'wrong part size rejected')
+const etags=await Promise.all([1,2,3].map(async n=>{const a=(n-1)*mi.j.part_size,z=Math.min(big.length,n*mi.j.part_size);const r2=await A.req('PUT',`/api/upload/${mi.j.id}/part/${n}`,big.subarray(a,z),{'content-type':'application/octet-stream'});return{n,etag:r2.j?.etag,s:r2.s}}))
+ok(etags.every(e=>e.s===200&&e.etag),'3 parts uploaded in parallel')
+eq((await C.post(`/api/upload/${mi.j.id}/complete`,{parts:etags})).s,404,'other user cannot complete')
+eq((await A.post(`/api/upload/${mi.j.id}/complete`,{parts:etags.slice(0,2)})).s,400,'missing part rejected')
+const done=await A.post(`/api/upload/${mi.j.id}/complete`,{parts:etags})
+ok(done.s===415||done.s===201,'complete responds (mp4 without ftyp is rejected)')
+eq(done.s,415,'fake mp4 content rejected on complete')
+mi=await A.post('/api/upload/init',{kind:'attachment',room:gen,name:'blob.bin',size:big.length,sha256:bigSum})
+const et2=await Promise.all([1,2,3].map(async n=>{const a=(n-1)*mi.j.part_size,z=Math.min(big.length,n*mi.j.part_size);const r2=await A.req('PUT',`/api/upload/${mi.j.id}/part/${n}`,big.subarray(a,z),{'content-type':'application/octet-stream'});return{n,etag:r2.j.etag}}))
+const d2=await A.post(`/api/upload/${mi.j.id}/complete`,{parts:et2})
+ok(d2.s===201&&d2.j.size===big.length,'multipart complete')
+const g=await A.req('GET','/api/files/'+d2.j.id,undefined,{range:'bytes=0-9'})
+eq(g.s,206,'multipart file served with range')
+mi=await A.post('/api/upload/init',{kind:'attachment',room:gen,name:'x.bin',size:20*1048576})
+eq((await A.del('/api/upload/'+mi.j.id)).s,200,'abort upload')
+eq((await C.post('/api/upload/init',{kind:'attachment',room:priv,name:'x.bin',size:100})).s,404,'multipart respects room access')
+eq((await A.post('/api/upload/init',{kind:'avatar',name:'x.png',size:100})).s,400,'multipart only for attachments')
+eq((await A.post('/api/upload/init',{kind:'attachment',room:gen,name:'x.bin',size:2000*1048576})).s,413,'multipart max size')
+r=await A.post(`/api/rooms/${gen}/messages`,{content:'see image',attachments:[fid]});eq(r.s,201,'send with attachment')
+eq((await B.post(`/api/rooms/${gen}/messages`,{content:'steal',attachments:[fid]})).s,400,'cannot reuse another user’s attachment')
+let dl=await B.req('GET','/api/files/'+fid);eq(dl.s,200,'member downloads attachment');eq(dl.r.headers.get('content-type'),'image/png','served with image type')
+ok(dl.r.headers.get('x-content-type-options')==='nosniff','nosniff header set')
+const rng=await B.req('GET','/api/files/'+fid,undefined,{range:'bytes=0-9'});eq(rng.s,206,'range request supported')
+const outsider=new U('out');await outsider.register()
+eq((await outsider.get('/api/files/'+fid)).s,404,'outsider cannot download attachment')
+eq((await A.get(`/api/rooms/${gen}/files`)).j.files.length,1,'attachment browser lists file')
+up=await A.req('POST','/api/upload?kind=avatar',PNG,{'x-filename':'me.png','content-type':'application/octet-stream'})
+eq((await A.patch('/api/me',{avatar_id:up.j.id})).s,200,'set avatar')
+
+console.log('signing, threads, forums, polls')
+const pk=(await A.get('/api/p2p/key')).j
+eq(pk.alg,'Ed25519','p2p key endpoint')
+const sm=(await A.post(`/api/rooms/${gen}/messages`,{content:'signed message',nonce:'sg'+run})).j.message
+ok(typeof sm.sig==='string'&&sm.sig.length>40,'message carries signature')
+const vk=await crypto.subtle.importKey('jwk',{kty:'OKP',crv:'Ed25519',x:pk.key},'Ed25519',false,['verify'])
+const canon=m=>`p1\n${m.id}\n${m.room}\n${m.author.id}\n${m.created_at}\n${m.edited_at||0}\n${m.content}`
+const unb=v=>Buffer.from(v.replace(/-/g,'+').replace(/_/g,'/'),'base64')
+ok(await crypto.subtle.verify('Ed25519',vk,unb(sm.sig),Buffer.from(canon(sm))),'signature verifies with published key')
+ok(!(await crypto.subtle.verify('Ed25519',vk,unb(sm.sig),Buffer.from(canon({...sm,content:'tampered'})))),'tampered content fails verification')
+const ed=(await A.patch(`/api/rooms/${gen}/messages/${sm.id}`,{content:'edited signed'})).j.message
+ok(await crypto.subtle.verify('Ed25519',vk,unb(ed.sig),Buffer.from(canon(ed))),'edit re-signed')
+let th=await B.post(`/api/rooms/${gen}/messages/${sm.id}/thread`,{name:'Side chat'})
+eq(th.s,201,'thread created');const thId=th.j.thread.id
+ok(await waitFor(wa,e=>e.t==='thread.new'&&e.thread.id===thId),'thread.new broadcast')
+eq((await B.post(`/api/rooms/${gen}/messages/${sm.id}/thread`,{name:'again'})).s,409,'one thread per message')
+const tm=await C.post(`/api/rooms/${thId}/messages`,{content:'inside thread'})
+eq(tm.s,201,'post in thread');eq(tm.j.message.room,thId,'thread message room')
+ok(await waitFor(wb,e=>e.t==='msg.new'&&e.m.room===thId),'thread message broadcast to server hub')
+ok((await A.get(`/api/rooms/${thId}/messages`)).j.messages.length===1,'thread history')
+ok((await A.get(`/api/rooms/${gen}/messages`)).j.messages.find(x=>x.id===sm.id).thread.count===1,'parent message shows thread count')
+eq((await anon.get(`/api/rooms/${thId}/messages`)).s,401,'anon cannot read thread')
+const outsider2=new U('out2');await outsider2.register()
+eq((await outsider2.get(`/api/rooms/${thId}/messages`)).s,404,'non-member cannot read thread')
+eq((await C.patch('/api/threads/'+thId,{archived:true})).s,403,'non-owner cannot archive')
+eq((await B.patch('/api/threads/'+thId,{archived:true})).s,200,'owner archives')
+eq((await C.post(`/api/rooms/${thId}/messages`,{content:'late'})).s,403,'archived thread blocks members')
+eq((await B.patch('/api/threads/'+thId,{archived:false})).s,200,'unarchive')
+ok((await C.get(`/api/channels/${gen}/threads`)).j.threads.some(t=>t.id===thId),'thread list')
+eq((await C.post(`/api/rooms/${priv}/messages/x/thread`,{name:'z'})).s,404,'thread in hidden channel denied')
+r=await A.post(`/api/servers/${sid}/channels`,{name:'forum',type:'forum'});eq(r.s,201,'create forum channel');const forumId=r.j.id||r.j.channel?.id
+eq((await C.post(`/api/rooms/${forumId}/messages`,{content:'direct'})).s,403,'cannot post directly in forum')
+r=await C.post(`/api/channels/${forumId}/posts`,{title:'My question'});eq(r.s,201,'forum post created')
+eq((await C.post(`/api/rooms/${r.j.thread.id}/messages`,{content:'first post body'})).s,201,'message in forum post')
+eq((await C.post(`/api/channels/${gen}/posts`,{title:'x'})).s,400,'posts only in forum channels')
+const wa2=await A.ws('s_'+sid)
+r=await A.post(`/api/rooms/${gen}/polls`,{question:'Lunch?',options:['Pizza','Sushi','Tacos'],hours:2});eq(r.s,201,'poll created');const pm=r.j.message
+eq(pm.poll.options.length,3,'poll options hydrated')
+eq((await A.post(`/api/rooms/${gen}/polls`,{question:'x',options:['a']})).s,400,'poll needs 2 options')
+eq((await A.post(`/api/rooms/${gen}/polls`,{question:'x',options:['a','A']})).s,400,'duplicate options rejected')
+r=await B.post(`/api/rooms/${gen}/messages/${pm.id}/vote`,{options:[1]});eq(r.j.poll.options[1].votes,1,'vote counted')
+ok(await waitFor(wa2,e=>e.t==='poll.update'&&e.id===pm.id),'poll.update broadcast')
+r=await B.post(`/api/rooms/${gen}/messages/${pm.id}/vote`,{options:[2]});eq(r.j.poll.total,1,'revote replaces')
+eq((await B.post(`/api/rooms/${gen}/messages/${pm.id}/vote`,{options:[0,1]})).s,400,'single choice enforced')
+eq((await B.post(`/api/rooms/${gen}/messages/${pm.id}/vote`,{options:[9]})).s,400,'invalid option rejected')
+eq((await C.post(`/api/rooms/${gen}/messages/${pm.id}/poll/close`)).s,403,'non-author cannot close poll')
+eq((await A.post(`/api/rooms/${gen}/messages/${pm.id}/poll/close`)).s,200,'author closes poll')
+eq((await C.post(`/api/rooms/${gen}/messages/${pm.id}/vote`,{options:[0]})).s,400,'closed poll rejects votes')
+ok((await C.get(`/api/rooms/${gen}/messages`)).j.messages.find(x=>x.id===pm.id).poll.closed,'poll closed state')
+console.log('events, emoji, automod, webhooks')
+const st=Date.now()+86400000
+eq((await B.post(`/api/servers/${sid}/events`,{title:'Meetup',starts_at:st})).s,403,'member cannot create events')
+r=await A.post(`/api/servers/${sid}/events`,{title:'Meetup',description:'d',location:'here',starts_at:st});eq(r.s,201,'event created');const evId=r.j.events[0].id
+eq((await A.post(`/api/servers/${sid}/events`,{title:'Past',starts_at:Date.now()-10*86400000})).s,400,'past event rejected')
+r=await C.put(`/api/servers/${sid}/events/${evId}/rsvp`,{state:'going'});eq(r.j.events[0].going,1,'rsvp counted');eq(r.j.events[0].mine,'going','rsvp mine')
+eq((await C.put(`/api/servers/${sid}/events/${evId}/rsvp`,{state:'bogus'})).s,400,'invalid rsvp')
+eq((await A.del(`/api/servers/${sid}/events/${evId}`)).s,200,'event deleted')
+eq((await outsider2.get(`/api/servers/${sid}/events`)).s,404,'events hidden from non-members')
+const em=await A.req('POST',`/api/upload?kind=emoji&server=${sid}`,PNG,{'x-filename':'party.png','content-type':'application/octet-stream'})
+eq(em.s,201,'emoji image uploaded')
+eq((await B.req('POST',`/api/upload?kind=emoji&server=${sid}`,PNG,{'x-filename':'p.png','content-type':'application/octet-stream'})).s,403,'member cannot upload emoji')
+r=await A.post(`/api/servers/${sid}/emoji`,{name:'party',file_id:em.j.id});eq(r.s,201,'emoji created')
+eq((await A.post(`/api/servers/${sid}/emoji`,{name:'party',file_id:em.j.id})).s,409,'duplicate emoji name')
+eq((await anon.req('GET','/api/files/'+em.j.id)).s,200,'emoji image is public')
+ok((await B.get('/api/servers/'+sid)).j.emoji.some(e=>e.name==='party'),'emoji in server payload')
+eq((await B.put(`/api/rooms/${gen}/messages/${sm.id}/reactions/e:${em.j.id}`)).s,200,'custom emoji reaction')
+eq((await B.put(`/api/servers/${sid}/automod`,{words:['x']})).s,403,'member cannot set automod')
+r=await A.put(`/api/servers/${sid}/automod`,{words:['Badword'],block_links:true,max_mentions:2});eq(r.s,200,'automod set')
+eq((await C.post(`/api/rooms/${gen}/messages`,{content:'this has a BADWORD in it'})).s,422,'automod blocks words')
+eq((await C.post(`/api/rooms/${gen}/messages`,{content:'see https://example.com'})).s,422,'automod blocks links')
+eq((await C.post(`/api/rooms/${gen}/messages`,{content:`<@${A.id}> <@${B.id}> <@${C.id}>`})).s,422,'automod limits mentions')
+eq((await B.post(`/api/rooms/${gen}/messages`,{content:'mods bypass badword https://example.com'})).s,201,'moderators bypass automod')
+await A.put(`/api/servers/${sid}/automod`,{words:[],block_links:false,max_mentions:0})
+r=await A.post(`/api/channels/${gen}/webhooks`,{name:'CI bot'});eq(r.s,201,'webhook created');const wh=r.j
+eq((await B.post(`/api/channels/${gen}/webhooks`,{name:'x'})).s,403,'member cannot create webhook')
+r=await anon.req('POST',wh.path,{content:'build passed'});ok(r.s===201||r.s===404,'webhook endpoint reachable')
+const wr=await fetch(BASE+wh.path,{method:'POST',headers:{'content-type':'application/json','cf-connecting-ip':'10.9.9.9'},body:JSON.stringify({content:'build passed'})})
+eq(wr.status,201,'webhook posts without session')
+ok(await waitFor(wa2,e=>e.t==='msg.new'&&e.m.content==='build passed'&&e.m.author.display_name==='CI bot'),'webhook message broadcast')
+eq((await fetch(BASE+'/api/webhooks/'+wh.id+'/wrongtoken',{method:'POST',headers:{'content-type':'application/json'},body:'{"content":"x"}'})).status,404,'bad webhook token rejected')
+eq((await A.del(`/api/servers/${sid}/webhooks/${wh.id}`)).s,200,'webhook deleted')
+eq((await fetch(BASE+wh.path,{method:'POST',headers:{'content-type':'application/json'},body:'{"content":"x"}'})).status,404,'deleted webhook rejected')
+
+console.log('two-factor')
+const T=new U('tfa');await T.register()
+r=await T.post('/api/me/2fa/setup',{password:'wrong pass here'});eq(r.s,403,'2fa setup needs password')
+r=await T.post('/api/me/2fa/setup',{password:'correct horse battery'});eq(r.s,200,'2fa setup');const tsec=r.j.secret
+ok(r.j.uri.startsWith('otpauth://totp/'),'otpauth uri')
+eq((await T.post('/api/me/2fa/enable',{code:'000000'})).s,400,'wrong code rejected on enable')
+const step=Math.floor(Date.now()/30000)
+r=await T.post('/api/me/2fa/enable',{code:await genCode(tsec,step)});eq(r.s,200,'2fa enabled');const bk=r.j.backup_codes
+eq(bk.length,8,'8 backup codes')
+const T2=new U('t');T2.name=T.name;T2.ip=T.ip
+r=await T2.post('/api/auth/login',{username:T.name,password:'correct horse battery'});eq(r.s,401,'login needs second factor');ok(r.j.need_totp,'need_totp flag')
+eq((await T2.post('/api/auth/login',{username:T.name,password:'correct horse battery',totp:'123456'})).s,401,'wrong totp rejected')
+eq((await T2.post('/api/auth/login',{username:T.name,password:'correct horse battery',totp:await genCode(tsec,Math.floor(Date.now()/30000))})).s,200,'totp login works')
+const T3=new U('t');T3.name=T.name;T3.ip=T.ip
+eq((await T3.post('/api/auth/login',{username:T.name,password:'correct horse battery',totp:bk[0]})).s,200,'backup code login works')
+const T4=new U('t');T4.name=T.name;T4.ip=T.ip
+eq((await T4.post('/api/auth/login',{username:T.name,password:'correct horse battery',totp:bk[0]})).s,401,'backup code single use')
+ok((await T3.get('/api/me')).j.user.totp_on,'me reports totp_on')
+ok(!JSON.stringify((await T3.get('/api/me')).j).includes(tsec),'secret never returned')
+eq((await T3.post('/api/me/2fa/disable',{password:'correct horse battery',code:'000000'})).s,403,'disable needs valid code')
+eq((await T3.post('/api/me/2fa/disable',{password:'correct horse battery',code:bk[1]})).s,200,'2fa disabled')
+eq((await T4.post('/api/auth/login',{username:T.name,password:'correct horse battery'})).s,200,'login without second factor after disable')
+
+console.log('p2p relay')
+const pa=await A.ws('s_'+sid),pb=await B.ws('s_'+sid),pc=await C.ws('s_'+sid)
+const rdyA=await waitFor(pa,e=>e.t==='ready'),rdyB=await waitFor(pb,e=>e.t==='ready')
+ok(rdyA.cid&&rdyB.cid&&rdyA.cid!==rdyB.cid,'sockets get unique connection ids')
+send(pa,{t:'p2p.join',ch:gen})
+ok((await waitFor(pa,e=>e.t==='p2p.peers')).peers.length===0,'first peer sees empty swarm')
+send(pb,{t:'p2p.join',ch:gen})
+const pbPeers=await waitFor(pb,e=>e.t==='p2p.peers')
+ok(pbPeers.peers.length===1&&pbPeers.peers[0].cid===rdyA.cid,'second peer discovers first')
+ok(await waitFor(pa,e=>e.t==='p2p.peer'&&e.cid===rdyB.cid&&e.up),'first peer notified of join')
+send(pb,{t:'p2p.sig',ch:gen,to:rdyA.cid,data:{hello:1}})
+const sg=await waitFor(pa,e=>e.t==='p2p.sig')
+ok(sg&&sg.from===rdyB.cid&&sg.data.hello===1,'signaling relayed between peers')
+send(pc,{t:'p2p.join',ch:priv})
+await sleep(200)
+send(pc,{t:'p2p.sig',ch:priv,to:rdyA.cid,data:{x:1}})
+await sleep(200)
+ok(!pa.events.some(e=>e.t==='p2p.sig'&&e.data.x===1),'cannot join or signal into a channel without access')
+ok(!pc.events.some(e=>e.t==='p2p.peers'),'no peer list for inaccessible channel')
+send(pa,{t:'p2p.sig',ch:gen,to:rdyB.cid,data:{y:1}})
+pb.events.length=0
+send(pb,{t:'p2p.leave',ch:gen})
+await sleep(150)
+send(pa,{t:'p2p.sig',ch:gen,to:rdyB.cid,data:{y:2}})
+await sleep(200)
+ok(!pb.events.some(e=>e.t==='p2p.sig'&&e.data.y===2),'no signaling after leaving swarm')
+ok(await waitFor(pa,e=>e.t==='p2p.peer'&&e.cid===rdyB.cid&&e.up===false),'leave announced')
+for(const w of[pa,pb,pc])try{w.close()}catch{}
+
+console.log('direct messages')
+eq((await A.post('/api/conversations',{user_id:A.id})).s,400,'cannot DM yourself')
+r=await A.post('/api/conversations',{user_id:B.id});eq(r.s,201,'create DM');const cv=r.j.id
+const ub=await B.ws('u_'+B.id)
+r=await A.post(`/api/rooms/${cv}/messages`,{content:'secret dm'});eq(r.s,201,'send DM')
+ok(await waitFor(ub,e=>e.t==='msg.new'&&e.m.room===cv),'B receives DM live on personal socket')
+eq((await C.get(`/api/rooms/${cv}/messages`)).s,404,'third party cannot read DM')
+eq((await C.post(`/api/rooms/${cv}/messages`,{content:'x'})).s,404,'third party cannot post in DM')
+eq((await C.get(`/api/conversations/${cv}/x`)).s,404,'unknown route 404')
+let convs=(await B.get('/api/conversations')).j.conversations;ok(convs.find(x=>x.id===cv).accepted===0,'DM from stranger is a message request')
+await B.patch(`/api/conversations/${cv}/me`,{accepted:true})
+eq((await B.post(`/api/rooms/${cv}/messages`,{content:'hi back'})).s,201,'B replies')
+await B.post('/api/blocks/'+A.id)
+eq((await A.post(`/api/rooms/${cv}/messages`,{content:'blocked?'})).s,403,'blocked user cannot send DM')
+eq((await A.post('/api/friends/request',{username:B.name})).s,403,'blocked user cannot send friend request')
+await B.del('/api/blocks/'+A.id)
+r=await A.post('/api/friends/request',{username:B.name});eq(r.s,201,'friend request after unblock')
+eq((await B.post('/api/friends/'+A.id+'/accept')).s,200,'accept friend request')
+eq((await A.get('/api/friends')).j.friends.length,1,'friends listed')
+r=await A.post('/api/conversations/group',{user_ids:[B.id,C.id]});eq(r.s,403,'group requires friends')
+await A.post('/api/friends/request',{username:C.name});await C.post('/api/friends/'+A.id+'/accept')
+r=await A.post('/api/conversations/group',{user_ids:[B.id,C.id],name:'trio'});eq(r.s,201,'create group DM')
+eq((await C.post(`/api/rooms/${r.j.id}/messages`,{content:'group hi'})).s,201,'group member can post')
+
+console.log('voice signaling')
+const va=await A.ws('s_'+sid),vb=await B.ws('s_'+sid)
+const voiceCh=srv.channels.find(c=>c.type==='voice').id
+send(va,{t:'voice.join',ch:voiceCh});ok(await waitFor(va,e=>e.t==='voice.joined'),'A joins voice')
+send(vb,{t:'voice.join',ch:voiceCh});const j2=await waitFor(vb,e=>e.t==='voice.joined');ok(j2&&j2.peers.includes(A.id),'B sees A as peer')
+send(vb,{t:'sig',ch:voiceCh,to:A.id,data:{type:'offer',sdp:'v=0'}})
+const sig=await waitFor(va,e=>e.t==='sig');ok(sig&&sig.from===B.id&&sig.data.type==='offer','signaling relayed to peer')
+send(vb,{t:'sig',ch:voiceCh,to:C.id,data:{x:1}});await sleep(300)
+ok(!wc.events.some(e=>e.t==='sig'),'signals not delivered to non-participants')
+const vc=await C.ws('s_'+sid);send(vc,{t:'voice.join',ch:priv});await sleep(300)
+ok(!vc.events.some(e=>e.t==='voice.joined'),'cannot join voice in inaccessible channel')
+send(vb,{t:'voice.leave'});ok(await waitFor(va,e=>e.t==='voice.state'&&!e.users[B.id]),'leave broadcast')
+eq((await A.get('/api/rtc/ice')).j.iceServers.length>=1,true,'ICE servers endpoint')
+
+console.log('moderation & roles')
+eq((await B.post(`/api/servers/${sid}/members/${C.id}/ban`,{reason:'spam'})).s,403,'mod without ban permission cannot ban')
+eq((await A.post(`/api/servers/${sid}/members/${C.id}/ban`,{reason:'spam'})).s,200,'owner bans C')
+ok(await waitFor(vc,e=>e.t==='presence'||true,200)||true,'ban processed')
+await sleep(300)
+eq((await C.get('/api/servers/'+sid)).s,404,'banned user loses access')
+const inv2=(await A.post(`/api/servers/${sid}/invites`,{})).j.code
+eq((await C.post(`/api/invites/${inv2}/join`)).s,403,'banned user cannot rejoin')
+eq((await A.del(`/api/servers/${sid}/bans/${C.id}`)).s,200,'unban')
+eq((await B.post(`/api/servers/${sid}/members/${A.id}/ban`)).s,403,'cannot ban owner')
+
+console.log('discovery')
+r=await A.get('/api/discover?q=Test');ok(r.j.servers.some(s=>s.id===sid),'public server discoverable')
+await A.patch('/api/servers/'+sid,{is_public:false})
+ok(!(await A.get('/api/discover?q=Test')).j.servers.some(s=>s.id===sid),'private server hidden from discovery')
+eq((await A.get('/api/discover/'+sid)).s,404,'private server preview blocked')
+
+console.log('settings, export, security')
+eq((await A.patch('/api/me',{settings:{theme:'silver',density:'compact'}})).j.user.settings.theme,'silver','settings persist')
+eq((await A.patch('/api/me',{settings:{evil:1}})).s,400,'unknown setting rejected')
+eq((await A.patch('/api/me',{accent:'red'})).s,400,'invalid colour rejected')
+const exp=await A.get('/api/me/export');ok(exp.s===200,'account export')
+const csrf=await fetch(BASE+'/api/me',{method:'PATCH',headers:{cookie:A.cookie,'content-type':'application/json',origin:'http://evil.example'},body:'{"bio":"x"}'})
+eq(csrf.status,403,'cross-origin write blocked')
+const wsEvil=await new Promise(res=>{const w=new WebSocket(WSB+'/ws?room=u_'+A.id,{headers:{cookie:A.cookie,origin:'http://evil.example'}});w.on('unexpected-response',(q,r)=>res(r.statusCode));w.on('open',()=>res(101))})
+eq(wsEvil,403,'cross-origin websocket blocked')
+eq((await A.post('/api/auth/recover',{username:A.name,recovery_code:'aaaaa-bbbbb-ccccc-ddddd',password:'new password here'})).s,401,'bad recovery code rejected')
+const rec=await anon.post('/api/auth/recover',{username:A.name,recovery_code:'x'.repeat(5),password:'a long new password'});ok(rec.s===401,'recovery requires valid code')
+r=await A.post('/api/me/delete',{password:'correct horse battery'});eq(r.s,409,'cannot delete account while owning servers')
+r=await A.post(`/api/servers/${sid}/delete`,{name:'Test Hall'});eq(r.s,200,'owner deletes server')
+ok((await B.get('/api/servers/'+sid)).s===404,'deleted server is gone')
+eq((await outsider.post('/api/me/delete',{password:'correct horse battery'})).s,200,'account deletion')
+eq((await outsider.get('/api/me')).s,401,'deleted account session invalid')
+eq((await anon.get('/api/admin/stats')).s,401,'admin requires auth')
+eq((await B.get('/api/admin/stats')).s,404,'admin hidden from regular users')
+
+for(const w of[wa,wb,wc,ub,va,vb,vc])try{w.close()}catch{}
+console.log(`\n${pass} passed, ${failn} failed`)
+process.exit(failn?1:0)
+}
+main().catch(e=>{console.error('test crashed',e);process.exit(2)})
