@@ -245,9 +245,9 @@ closeMenu()
 const el=h('div',{class:'menu '+(cls||''),role:'menu'},content)
 document.getElementById('layer').append(el)
 openMenu=el
-const r=el.getBoundingClientRect()
-el.style.left=Math.max(4,Math.min(x,innerWidth-r.width-4))+'px'
-el.style.top=Math.max(4,Math.min(y,innerHeight-r.height-4))+'px'
+const w=el.offsetWidth,hh=el.offsetHeight
+el.style.left=Math.max(4,Math.min(x,innerWidth-w-4))+'px'
+el.style.top=Math.max(4,Math.min(y,innerHeight-hh-4))+'px'
 setTimeout(()=>{document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',menuKey,true);el.querySelector('button,input')?.focus()},0)
 return el
 }
@@ -263,7 +263,9 @@ return popup(kids,x,y)
 }
 export function menuAt(el,items){
 const r=el.getBoundingClientRect()
-return menu(items,r.left,r.bottom+4)
+const m=menu(items,r.left,r.bottom+4)
+if(r.bottom+4+m.offsetHeight>innerHeight-4)m.style.top=Math.max(4,r.top-4-m.offsetHeight)+'px'
+return m
 }
 export function ctxMenu(e,items){
 e.preventDefault()

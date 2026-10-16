@@ -1,6 +1,6 @@
 import{h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce}from'./util.js'
 import{render}from'./md.js'
-import{S,on,emit,cacheUser,ensureThread,noteThread,applySettings,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
+import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
 import{setRooms,sendAll,stopAll}from'./net.js'
 import{go,parse,setRouteHandler,lastChan,setLastChan}from'./nav.js'
 import{renderAuth,renderAppeal}from'./auth.js'
@@ -11,7 +11,8 @@ import{friendsPage,discoverPage,welcomePage,forumPage}from'./pages.js'
 import{homePage}from'./home.js'
 import{botsPage}from'./botspage.js'
 import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,channelDialog,categoryDialog,groupSettingsDialog}from'./dialogs.js'
-import{openSettings}from'./settings.js'
+import{openSettings,settingsPage}from'./settings.js'
+import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
 import{startP2P}from'./p2p/index.js'
 
@@ -90,6 +91,14 @@ layoutMain(...p.nodes)
 document.title='Discover • Parley'
 return
 }
+if(r.name==='settings'){
+S.nav={kind:'settings'}
+syncChrome()
+const p=settingsPage(r,topBar,icon)
+layoutMain(...p.nodes)
+document.title=p.title
+return
+}
 if(r.name==='bots'){
 S.nav={kind:'bots'}
 syncChrome()
@@ -99,7 +108,7 @@ document.title=p.title
 await p.ready
 return
 }
-if(r.name==='server'){
+if(r.name==='server'||r.name==='ssettings'){
 const sid=r.sid
 if(!S.servers.some(s=>s.id===sid)){toast('You are not a member of that server','err');go('/',true);return}
 if(!S.sdata[sid]){
@@ -107,6 +116,15 @@ try{await loadServer(sid)}catch(e){fail(e);go('/',true);return}
 if(gen!==routeGen)return
 }
 const d=S.sdata[sid]
+if(r.name==='ssettings'){
+S.nav={kind:'server',sid,room:null}
+syncChrome()
+if(!(can(sid,P.MANAGE_SERVER|P.MANAGE_ROLES|P.MANAGE_CHANNELS|P.MODERATE|P.BAN|P.KICK|P.CREATE_INVITE)||d.me.owner)){go('/s/'+sid,true);return}
+const sp=serverSettingsPage(sid,r.page,topBar,icon)
+layoutMain(...sp.nodes)
+document.title=sp.title
+return
+}
 if(r.ch&&r.ch.startsWith('th_')){
 let th
 try{th=await ensureThread(r.ch,sid)}catch(e){toast('That thread is not available','err');go('/s/'+sid,true);return}

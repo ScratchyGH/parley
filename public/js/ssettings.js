@@ -70,9 +70,10 @@ items.push({icon:'flag',label:'Report user',fn:()=>emit('ui:report',{type:'user'
 return items
 }
 
-export function openServerSettings(sid,page){
+export function openServerSettings(sid,page){go('/s/'+sid+'/settings'+(page?'/'+page:''))}
+
+export function serverSettingsPage(sid,page,topBar,icon_){
 const d0=S.sdata[sid]
-if(!d0)return
 const pages=[]
 if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'])
 if(can(sid,P.MANAGE_CHANNELS))pages.push(['channels','Channels'])
@@ -85,17 +86,19 @@ if(can(sid,P.BAN))pages.push(['appeals','Ban appeals'])
 if(can(sid,P.MODERATE))pages.push(['reports','Reports'])
 if(can(sid,P.MODERATE|P.MANAGE_SERVER|P.BAN|P.KICK))pages.push(['log','Audit log'])
 if(d0.me.owner)pages.push(['danger','Ownership and deletion'])
-let cur=page||pages[0][0]
+let cur=pages.some(x=>x[0]===page)?page:pages[0][0]
 const nav=h('nav',{'aria-label':'Server settings sections'})
 const pg=h('div',{class:'pg'})
-const dlg=dialog(d0.server.name+' settings',h('div',{class:'split'},nav,pg),{cls:'wide',onclose:()=>applyServerTheme()})
+const dlg={close:()=>go('/s/'+sid)}
 function draw(){
-mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)))
+mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/s/'+sid+'/settings/'+k)}},l)),
+h('button',{on:{click:()=>go('/s/'+sid)}},'Back to server'))
 mount(pg)
 const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
+return{nodes:[topBar({lead:icon_('sliders'),title:d0.server.name,topic:'Server settings'}),h('div',{class:'split sp-page'},nav,pg)],title:d0.server.name+' settings • Parley'}
 }
 
 function overview(pg,sid){

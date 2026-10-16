@@ -172,7 +172,7 @@ u&&!active?(u.mentions?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},
 function homeBody(){
 const inc=S.fr.incoming.length
 const kids=[
-h('button',{class:'btn',style:{width:'100%',justifyContent:'flex-start',color:'var(--muted)',marginBottom:'8px'},on:{click:()=>quickSwitcher()}},icon('search','s'),'Find a conversation',h('span',{class:'kbd',style:{marginLeft:'auto'}},'Ctrl K')),
+h('button',{class:'qs',on:{click:()=>quickSwitcher()}},icon('search','s'),h('span',{class:'qt'},'Find a conversation'),h('span',{class:'kbd'},'Ctrl K')),
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page==='overview'?' on':''),on:{click:()=>{go('/');closeDrawers()}}},icon('chat'),h('span',{class:'nm'},'Home')),
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page!=='overview'?' on':''),on:{click:()=>{go('/friends');closeDrawers()}}},icon('users'),h('span',{class:'nm'},'Friends'),inc?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},inc):null),
 h('button',{class:'ci',on:{click:()=>emit('ui:panel',{kind:'saved'})}},icon('bookmark'),h('span',{class:'nm'},'Saved messages')),
@@ -231,7 +231,7 @@ if(bid){sbtn.classList.add('hasb');coverBg(sbtn,bid,'linear-gradient(180deg,tran
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{
-head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':'Home'))
+head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='settings'?'Settings':'Home'))
 body=homeBody()
 }
 mount(el.ctx,head,body,userPanel())

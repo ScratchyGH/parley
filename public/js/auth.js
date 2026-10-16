@@ -75,7 +75,7 @@ err,submit)
 const tabs=h('div',{class:'tabs',role:'tablist'},
 ...[['login','Sign in'],['register','Register']].map(([k,l])=>h('button',{role:'tab','aria-selected':String(tab===k),class:tab===k?'on':'',on:{click:()=>{tab=k;draw()}}},l)))
 mount(card,
-h('div',{class:'logo'},h('img',{class:'au-m',src:'/mascot.webp',width:56,height:56,alt:''}),h('div',null,h('h1',null,'Parley'),h('div',{class:'hint',style:{margin:'0'}},'Chat, voice and communities'))),
+h('div',{class:'logo'},h('img',{class:'au-m',src:'/mascot.svg',width:56,height:56,alt:''}),h('div',null,h('h1',null,'Parley'),h('div',{class:'hint',style:{margin:'0'}},'Chat, voice and communities'))),
 note?h('div',{class:'ban',style:{margin:'0 0 12px',borderRadius:'6px',border:'1px solid var(--warn)'}},note):null,
 tab==='login'?saved:null,
 tab==='recover'?null:tabs,

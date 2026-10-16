@@ -90,11 +90,17 @@ count.remove()
 return h('div',{class:'bh-wrap'},side,mainCol)
 }
 
+function botTabs(p,active){
+return h('div',{class:'bh-tabs bh-etabs',role:'tablist'},
+h('button',{type:'button',role:'tab','aria-selected':String(active==='d'),class:active==='d'?'on':'',on:{click:()=>go(p?'/bots/'+p.slug+'/edit':'/bots/new')}},'Details'),
+h('button',{type:'button',role:'tab','aria-selected':String(active==='c'),class:active==='c'?'on':'',disabled:!p,title:p?'':'Create the bot first',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Code blocks'),
+p?null:h('span',{class:'hint',style:{alignSelf:'center'}},'Create the bot to unlock the code blocks'))
+}
 async function blocksPage(slug){
 let p
 try{p=(await GET('/api/bothub/'+encodeURIComponent(slug))).project}catch(e){return h('div',{class:'empty'},e.message)}
 if(!p.mine)return h('div',{class:'empty'},'Only the author can edit this bot.')
-return blocksEditor(p)
+return h('div',null,botTabs(p,'c'),blocksEditor(p))
 }
 async function mineView(){
 const box=h('div',{class:'bh-wrap one'})
@@ -237,7 +243,7 @@ go('/bots/'+r.slug+'/edit',true)
 drawAv();drawTags();drawRd();drawLic();drawVis();drawPrev()
 const toc=h('nav',{class:'bh-toc','aria-label':'Sections'},secs.map(([id,t])=>h('a',{href:'#sec-'+id,on:{click:e=>{e.preventDefault();inPage(document.getElementById('sec-'+id))}}},t)))
 const bar=h('div',{class:'bh-savebar'},err,h('div',{class:'grow'}),p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Block builder'):null,p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug)}},'View page'):null,save)
-return h('div',{class:'bh-edit'},h('div',{class:'bh-ecol'},toc),h('div',{class:'bh-emain'},body,bar),h('div',{class:'bh-ecol r'},preview))
+return h('div',null,botTabs(p,'d'),h('div',{class:'bh-edit'},h('div',{class:'bh-ecol'},toc),h('div',{class:'bh-emain'},body,bar),h('div',{class:'bh-ecol r'},preview)))
 }
 
 function inPage(el){

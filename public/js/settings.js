@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,PATCH,DEL,avatar,heroBox,toast,fail,dialog,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,DEL,avatar,heroBox,toast,fail,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel}from'./util.js'
 import{gifPicker,importGif}from'./gifs.js'
 import{historyBox}from'./imghist.js'
 import{accountsList,addAccountDialog}from'./accounts.js'
@@ -36,24 +36,26 @@ return d.user
 const row=(label,sub,control)=>h('div',{class:'row sp',style:{padding:'8px 0',borderBottom:'1px solid var(--border)'}},h('div',null,h('div',{style:{color:'var(--strong)'}},label),sub?h('div',{class:'hint',style:{margin:0}},sub):null),control)
 const sw=(key,def,label,sub,after)=>row(label,sub,toggle(setting(key,def),async v=>{try{await saveSettings({[key]:v});after?.(v)}catch(e){fail(e)}},label))
 
-export function openSettings(page='account'){
-let cur=page,labs=false
+export function openSettings(page='account'){go('/settings/'+page)}
+
+export function settingsPage(r,topBar,icon_){
+const cur=PAGES.some(x=>x[0]===r.page)||r.page==='labs'||r.page==='admin'?r.page:'account'
+let labs=false
 const nav=h('nav',{'aria-label':'Settings sections'})
 const pg=h('div',{class:'pg'})
-const d=dialog('Settings',h('div',{class:'split'},nav,pg),{cls:'wide'})
-function draw(){
-mount(nav,[...PAGES,...(labs?[['labs','Experimental']]:[]),...(S.me.admin?[['admin','Admin']]:[])].map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)),
+const drawNav=()=>mount(nav,[...PAGES,...(labs?[['labs','Experimental']]:[]),...(S.me.admin?[['admin','Admin']]:[])].map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/settings/'+k)}},l)),
 h('h4',null,'Session'),
 h('button',{on:{click:async()=>{
 try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
-mount(pg)
+drawNav()
 const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
-fn(pg,d)
-}
-GET('/api/lab/status').then(r=>{if(r.labs){labs=true;draw()}}).catch(()=>{})
-draw()
+mount(pg)
+fn(pg,{close:()=>go('/')})
+GET('/api/lab/status').then(x=>{if(x.labs){labs=true;drawNav()}}).catch(()=>{})
+const bar=topBar({lead:icon_('sliders'),title:'Settings',topic:'Your account and app'})
+return{nodes:[bar,h('div',{class:'split sp-page'},nav,pg)],title:'Settings • Parley',ready:Promise.resolve()}
 }
 
 function pushRow(){
