@@ -100,6 +100,7 @@ Only the provider's user id and display label are stored. These flows are tested
 | `PBKDF2_ITERS` | 100000 | Password hashing cost. 100,000 is the maximum Workers' WebCrypto accepts. Stored per hash. |
 | `REGISTRATION_OPEN` | true | Set `"false"` to close signups. |
 | `ADMIN_USERNAMES` | empty | Comma separated usernames that get the admin panel. |
+| `EXPERIMENTAL_USERNAMES` | empty | Comma separated usernames that see the Experimental settings tab, in addition to the first account and anyone an admin enables. Set it as a plain variable in the Cloudflare dashboard. |
 
 Secrets, all optional:
 
@@ -127,3 +128,7 @@ Add a route or custom domain to the worker in the dashboard. Cookies are `Secure
 - **Registration or login is slow or fails with a CPU error**: PBKDF2 at 100,000 iterations may exceed the free plan's 10 ms CPU budget on some requests. This is untested on production. Options: lower `PBKDF2_ITERS` (weaker hashes, existing hashes keep their own count), or use the Workers Paid plan.
 - **`npm test` fails with 429s**: you are hitting rate limits from repeated runs; wait a few minutes.
 - **Uploads fail with 411**: a proxy removed the `Content-Length` header; uploads require it.
+
+## Workers AI binding
+
+`wrangler.toml` declares `[ai] binding = "AI"` for the image part of the explicit content scanner. Workers AI has a free daily allowance on the free plan. `wrangler dev` cannot start with that binding when you are not logged in to Cloudflare, so `npm run dev` writes a copy of the config without it (`wrangler.local.toml`, ignored by git) and the image check is simply off locally. To run the integration tests start the server with `npx wrangler dev -c wrangler.local.toml --port 8787 --test-scheduled`.

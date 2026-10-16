@@ -136,6 +136,13 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Vanity invite links (free) | API tested, UI written |
 | Moderation notices to the affected user | Delivered live only if online; not stored |
 
+## Safety and Experimental
+
+- Explicit term filter for server, channel and category text, nightly purge of matching servers, admin sweep. Tested.
+- 18+ Only servers with a self-declared Adult content switch. Tested.
+- Explicit content scanner (links, redirects, page metadata, image classification), only enabled on 18+ servers. Link host matching and message removal are tested; page fetching and the Workers AI image model are not tested against real sites.
+- Experimental settings tab (first user, `EXPERIMENTAL_USERNAMES`, admin toggle): AI Server Maker (Pollinations draft plus optional Puter refine, validated preview, add to a server), channel summariser, server health report, transcript export. Validation, apply, health and export are tested; Pollinations and Puter calls are not.
+
 ## Interface
 
 | Feature | Status |
@@ -147,6 +154,8 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Screen reader pass, full keyboard audit, localisation | Not done |
 
 ## Known limits
+
+- The redesigned interface (Home overview, server cards, floating composer, new fonts) is verified only by static tests until looked at in a browser.
 
 - Rate limiting is per isolate and best effort.
 - Free-tier quotas cap how many people one deployment can serve; see ARCHITECTURE.md.

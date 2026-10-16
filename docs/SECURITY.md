@@ -55,6 +55,13 @@ This is a description of what the code does, not a certification. It has not bee
 
 Reports (messages, users, servers), per server moderation (timeout, kick, ban, audit log, ban appeals), a global admin panel (suspend users, maintenance mode, global audit log), slow mode, a duplicate message check, message request limits for non friends, and per user storage quota.
 
+## Explicit content controls
+
+- **Text filter.** Server names, descriptions, welcome text, rules, vanity links, channel names, topics and category names are checked against a list of explicit terms after folding case, accents, look alike digits and symbols (`p0rn`, `Po-rn`, `h3ntai`) and single separators between letters. Matches are refused on create and edit. A nightly job (and the admin sweep, `POST /api/admin/sweep`) deletes existing servers that match. The list is finite and will miss spellings it does not contain, and it will occasionally match innocent text. It does not read member messages.
+- **18+ Only.** A server owner can mark a server 18+ Only. Joining, previewing and finding it in Discover then requires the member to have turned on Adult content in Privacy settings. That switch is a self statement; Parley does not verify age.
+- **Scanner.** The explicit content scanner can only be switched on while 18+ Only is on (turning 18+ off turns it off). When on, every new channel message is checked in the background: links are matched against a list of adult domains, redirects are followed up to 5 hops, and page titles, descriptions and adult rating labels are read; image attachments and direct image links are classified by Cloudflare Workers AI (`@cf/llava-hf/llava-1.5-7b-hf`) when the `AI` binding is present. A flagged message is deleted and the author is told. Checks run after the message is posted, so it can be visible for a few seconds. Accuracy of the image model has not been measured here; expect false positives and misses. Edits to a message are not rescanned, DMs are not scanned, and videos are not scanned. If the AI binding is missing or errors, image checks silently do nothing.
+- **Experimental tab.** Visible to the first account ever created, accounts listed in `EXPERIMENTAL_USERNAMES`, and accounts an admin enables (`POST /api/admin/users/:id/labs`). AI features send your prompt (or the last 120 channel messages for the summariser) to Pollinations through the Worker. Puter is loaded only inside a separate page (`/lab/puter.html`) with its own Content Security Policy, after you press Use Puter; the main app's policy names no outside origin. AI output is parsed, size limited and filtered server side before it can touch a server, and roles it creates have no permissions.
+
 ## Known weaknesses
 
 - Best effort rate limiting (above).
@@ -65,7 +72,8 @@ Reports (messages, users, servers), per server moderation (timeout, kick, ban, a
 - OAuth only accounts have no password until the owner sets one, so they have no recovery code until then. Losing the linked provider account loses the Parley account unless a passkey or password was added.
 - Webhook tokens are stored hashed but anyone holding the URL can post as that webhook.
 - Push, the service worker and all new client code have not been run in a browser or against a real push service.
-- No content scanning of uploads.
+- Uploads are only scanned in 18+ servers with the scanner on (see above), and only images.
+- The Puter bridge, Pollinations calls, Workers AI image check and link inspection of real sites have not been run against the live services in this build.
 - The client has not been browser tested; there may be UI bugs with security relevance that static checks cannot find.
 
 ## Reporting a vulnerability
