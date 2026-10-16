@@ -64,7 +64,7 @@ async function run(prompt){
 gen.disabled=redo.disabled=true
 status.textContent='Designing. This can take a minute.'
 try{
-const r=await POST('/api/admin/studio',{prompt})
+const r=await Promise.race([POST('/api/admin/studio',{prompt}),new Promise((_,no)=>setTimeout(()=>no(new Error('The AI took longer than 2 minutes. Try again')),120000))])
 raw=r.text;via=r.via
 result=parse(r.text)
 status.textContent='Designed with '+via
@@ -116,7 +116,7 @@ editBtn.disabled=true
 status.textContent='Reading the server structure. This can take a minute.'
 try{
 if(!S.sdata[sid])await loadServer(sid)
-const r=await POST('/api/admin/studio',{prompt:'Here is the current structure of a Discord-style server as JSON:\n'+structure(sid)+'\nRequest: '+req+'\n'+EDIT_SHAPE})
+const r=await Promise.race([POST('/api/admin/studio',{prompt:'Here is the current structure of a Discord-style server as JSON:\n'+structure(sid)+'\nRequest: '+req+'\n'+EDIT_SHAPE}),new Promise((_,no)=>setTimeout(()=>no(new Error('The AI took longer than 2 minutes. Try again')),120000))])
 const e=parseEdits(r.text,sid)
 status.textContent='Planned with '+r.via
 const total=e.rc.length+e.rh.length+e.dc.length+e.dh.length
