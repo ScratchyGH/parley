@@ -31,7 +31,10 @@ const d=await GET('/api/me')
 await start(d.user)
 }catch(e){
 if(e.status===401)showAuth()
-else mount(root,h('div',{class:'auth'},h('div',{class:'card'},h('h1',null,'Parley'),h('p',null,e.status===503?e.message:'Could not reach the server: '+e.message),h('button',{class:'btn pri',on:{click:()=>location.reload()}},'Retry'))))
+else{
+if(e.status===503)window.leaveMaintenance=async code=>{try{await POST('/api/maintenance/bypass',{code:String(code)});location.reload();return'Leaving maintenance mode'}catch(x){return x.message}}
+mount(root,h('div',{class:'auth'},h('div',{class:'card'},h('h1',null,'Parley'),h('p',null,e.status===503?e.message:'Could not reach the server: '+e.message),h('button',{class:'btn pri',on:{click:()=>location.reload()}},'Retry'))))
+}
 }
 }
 function showAuth(note){
