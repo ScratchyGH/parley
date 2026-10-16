@@ -441,6 +441,87 @@ const gr=await anon.req('GET','/api/files/'+up.j.id)
 eq(gr.s,200,'public banner readable')
 ok((gr.r.headers.get('cache-control')||'').includes('immutable'),'public images are cached immutably')
 
+const nU=new U('nm')
+const base='zed'+run
+r=await nU.post('/api/auth/register',{username:base,password:'correct horse battery'});eq(r.s,201,'register zed')
+const thief=new U('th')
+for(const v of[base.toUpperCase(),base.replace('e','3'),base.replace('z','z.'),base.replace('d','_d'),base.replace('a','4')]){
+const x=await thief.post('/api/auth/register',{username:v,password:'correct horse battery'})
+eq(x.s,v.length<3||v.length>24?400:409,'lookalike name blocked: '+v)
+}
+eq((await thief.post('/api/auth/register',{username:'support',password:'correct horse battery'})).s,400,'reserved name blocked')
+eq((await thief.post('/api/auth/register',{username:'bot_abcd',password:'correct horse battery'})).s,400,'bot_ prefix reserved')
+const newName='zed2'+run
+eq((await nU.patch('/api/me',{username:newName})).s,200,'rename works')
+const t2=new U('th2')
+eq((await t2.post('/api/auth/register',{username:base,password:'correct horse battery'})).s,409,'old name stays reserved after rename')
+eq((await nU.patch('/api/me',{username:base})).s,200,'owner can reclaim old name')
+eq((await t2.post('/api/auth/register',{username:newName,password:'correct horse battery'})).s,409,'name freed by reclaim is still reserved')
+eq((await A.patch('/api/me',{username:base})).s,409,'cannot rename onto someone elses name')
+eq((await A.patch('/api/me',{username:'zed.'+run})).s,409,'cannot rename onto a lookalike')
+const gone=new U('gn');await gone.register()
+eq((await gone.post('/api/me/delete',{password:'correct horse battery'})).s,200,'delete account')
+const t3=new U('th3');t3.name=gone.name
+eq((await t3.post('/api/auth/register',{username:gone.name,password:'correct horse battery'})).s,409,'deleted account name stays reserved')
+
+r=await A.post('/api/servers',{name:'Sticker Hall'});eq(r.s,201,'create second server')
+const sid2=r.j.id,gen2=r.j.default_channel
+eq((await A.put(`/api/servers/${sid2}/vanity`,{slug:'zed-hall-'+run})).s,200,'set vanity')
+eq((await B.post('/api/invites/zed-hall-'+run+'/join')).s,200,'member joins via vanity')
+const ST=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')
+up=await A.req('POST','/api/upload?kind=sticker',ST,{'x-filename':'s.png','content-type':'application/octet-stream'})
+eq(up.s,201,'personal sticker upload')
+eq((await A.post('/api/me/stickers',{name:'wave',file_id:up.j.id})).s,201,'create personal sticker')
+let sl=await A.get('/api/stickers')
+eq(sl.j.personal.length,1,'personal sticker listed')
+const stId=sl.j.personal[0].id
+r=await A.post(`/api/rooms/${gen2}/messages`,{sticker_id:stId,nonce:'stk1'+run})
+eq(r.s,201,'send sticker message')
+eq(r.j.message.sticker?.id,stId,'message hydrates sticker')
+eq((await B.post(`/api/rooms/${gen2}/messages`,{sticker_id:stId,nonce:'stk2'+run})).s,400,'cannot use someone elses personal sticker')
+up=await A.req('POST',`/api/upload?kind=sticker&server=${sid2}`,ST,{'x-filename':'s2.png','content-type':'application/octet-stream'})
+eq(up.s,201,'server sticker upload')
+eq((await A.post(`/api/servers/${sid2}/stickers`,{name:'hi there',file_id:up.j.id})).s,201,'create server sticker')
+sl=await B.get('/api/stickers')
+eq(sl.j.servers.some(x=>x.server_id===sid2&&x.stickers.length===1),true,'member sees server stickers')
+eq((await B.post(`/api/rooms/${gen2}/messages`,{sticker_id:sl.j.servers[0].stickers[0].id,nonce:'stk3'+run})).s,201,'member sends server sticker')
+eq((await outsider2.post(`/api/rooms/${gen2}/messages`,{sticker_id:sl.j.servers[0].stickers[0].id})).s,404,'non member cannot post in the room')
+eq((await A.del('/api/stickers/'+stId)).s,200,'delete personal sticker')
+
+eq((await anon.get('/api/invites/zed-hall-'+run)).s,200,'vanity resolves as invite')
+eq((await A.put(`/api/servers/${sid2}/vanity`,{slug:'ab'})).s,400,'short vanity rejected')
+eq((await B.put(`/api/servers/${sid2}/vanity`,{slug:'bob-'+run})).s,403,'non manager cannot set vanity')
+const joiner=new U('jn');await joiner.register()
+eq((await joiner.post('/api/invites/zed-hall-'+run+'/join')).s,200,'join via vanity')
+
+r=await A.put(`/api/servers/${sid2}/automod`,{words:[],raid_joins:1});eq(r.s,200,'set raid limit')
+const jr=new U('jr');await jr.register()
+eq((await jr.post('/api/invites/zed-hall-'+run+'/join')).s,403,'raid protection refuses burst joins')
+eq((await A.get(`/api/servers/${sid2}/lockdown`)).j.lockdown_until>0,true,'lockdown active')
+eq((await A.post(`/api/servers/${sid2}/lockdown`,{on:false})).s,200,'unlock')
+await A.put(`/api/servers/${sid2}/automod`,{words:[],raid_joins:0})
+eq((await jr.post('/api/invites/zed-hall-'+run+'/join')).s,200,'join works after unlock')
+
+r=await A.post('/api/bots',{name:'Helper'});eq(r.s,201,'create bot')
+const bot=new U('bt');bot.id=r.j.id
+const tok=r.j.token
+ok(/^pb_[a-f0-9]{64}$/.test(tok),'bot token format')
+eq((await A.post(`/api/servers/${sid2}/bots/${bot.id}`)).s,200,'add bot to server')
+const bh={authorization:'Bot '+tok}
+r=await fetch(BASE+`/api/rooms/${gen2}/messages`,{method:'POST',headers:{...bh,'content-type':'application/json'},body:JSON.stringify({content:'hello from bot'})})
+eq(r.status,201,'bot posts message')
+r=await fetch(BASE+'/api/bots',{method:'POST',headers:{...bh,'content-type':'application/json'},body:'{"name":"x"}'})
+eq(r.status,403,'bot cannot create bots')
+r=await fetch(BASE+'/api/me/delete',{method:'POST',headers:{...bh,'content-type':'application/json'},body:'{}'})
+eq(r.status,403,'bot cannot use account endpoints')
+r=await fetch(BASE+`/api/rooms/${gen2}/messages`,{headers:{authorization:'Bot pb_'+'0'.repeat(64)}})
+eq(r.status,401,'bad bot token rejected')
+const rot=await A.post(`/api/bots/${bot.id}/token`)
+eq(rot.s,200,'rotate token')
+r=await fetch(BASE+`/api/rooms/${gen2}/messages`,{method:'POST',headers:{...bh,'content-type':'application/json'},body:JSON.stringify({content:'old token'})})
+eq(r.status,401,'old bot token no longer works')
+eq((await B.post(`/api/servers/${sid2}/bots/${bot.id}`)).s,403,'non owner cannot add the bot')
+
 for(const w of[wa,wb,wc,ub,va,vb,vc])try{w.close()}catch{}
 console.log(`\n${pass} passed, ${failn} failed`)
 process.exit(failn?1:0)
