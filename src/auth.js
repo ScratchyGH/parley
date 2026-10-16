@@ -3,7 +3,8 @@ import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
 
 export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
-export const GTAG="(select s.tag from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_tag"
+const GT=c=>`(select s.${c} from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_${c}`
+export const GTAG=[GT('tag'),GT('tag_emoji'),GT('tag_icon_id')].join(',')
 export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,${GTAG},u.created_at`
 const SESSION_MS=30*86400000
 const NAME=/^[a-zA-Z0-9_.-]{3,24}$/
