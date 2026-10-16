@@ -2,9 +2,10 @@ import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
 import{PUBLIC}from'./auth.js'
+import{explicitText,serverText}from'./safety.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
-const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,welcome,rules,verification,vanity,created_at'
+const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,welcome,rules,verification,vanity,age_restricted,scan_explicit,created_at'
 const CATS=['gaming','tech','art','music','education','science','community','other']
 
 async function mem(c,sid){
@@ -20,8 +21,26 @@ if(t.owner)fail(403,'The server owner cannot be targeted')
 if(!m.owner&&t.top>=m.top&&!(m.admin&&t.top<1))fail(403,'That member has an equal or higher role than you')
 return t
 }
+export async function purgeServer(env,sid){
+const files=(await env.DB.prepare('select f.r2_key from files f where f.room in (select id from channels where server_id=?) or f.server_id=?').bind(sid,sid).all()).results
+for(const f of files)await env.FILES.delete(f.r2_key)
+await env.DB.batch([
+env.DB.prepare('delete from files where room in (select id from channels where server_id=?) or server_id=?').bind(sid,sid),
+env.DB.prepare('delete from messages where server_id=?').bind(sid),
+env.DB.prepare('delete from read_state where room in (select id from channels where server_id=?)').bind(sid),
+env.DB.prepare('delete from member_roles where server_id=?').bind(sid),
+env.DB.prepare('delete from servers where id=?').bind(sid)
+])
+}
+export async function sweepExplicitServers(env){
+const rows=(await env.DB.prepare("select s.id,s.name,s.description,s.welcome,s.rules,s.vanity,(select group_concat(name,' ') from channels where server_id=s.id) ch,(select group_concat(name,' ') from categories where server_id=s.id) ct from servers s").all()).results
+const hit=rows.filter(s=>explicitText(serverText(s)+' '+(s.ch||'')+' '+(s.ct||'')))
+for(const s of hit)await purgeServer(env,s.id)
+return hit.map(s=>s.id)
+}
 const resync=(c,sid)=>c.pubClose('s_'+sid,{closeAll:true})
-const channelName=v=>{const n=str(v,1,50,'Channel name');if(/[\u0000-\u001f]/.test(n))fail(400,'Invalid channel name');return n}
+const clean=v=>{if(explicitText(v))fail(400,'That text is not allowed on Parley');return v}
+const channelName=v=>{const n=clean(str(v,1,50,'Channel name'));if(/[\u0000-\u001f]/.test(n))fail(400,'Invalid channel name');return n}
 
 function limitPerms(m,perms,what='permissions'){
 const p=int(perms,0,ALL,what)
@@ -33,8 +52,8 @@ export default function(r){
 r.add('POST','/api/servers',async c=>{
 limit('mksrv:'+c.user.id,10,3600000)
 const b=await body(c.req)
-const name=str(b.name,2,60,'Server name')
-const desc=opt(b.description,500,'Description')
+const name=clean(str(b.name,2,60,'Server name'))
+const desc=clean(opt(b.description,500,'Description'))
 const pub=b.is_public?1:0
 const cat=b.category&&CATS.includes(b.category)?b.category:''
 const sid=newId('sv')
@@ -66,7 +85,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where server_
 const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
 const s=m.server
 return{
-server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,verification:s.verification,created_at:s.created_at},
+server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
 me:{perms:m.base,role_ids:m.roleIds,owner:m.owner,nickname:m.nickname,timeout_until:m.timeout_until,top:m.owner?9999:m.top},
 categories:cats,
 channels:vis.map(({ch,perms})=>({id:ch.id,category_id:ch.category_id,name:ch.name,type:ch.type,topic:ch.topic,position:ch.position,readonly:ch.readonly,locked:ch.locked,slowmode:ch.slowmode,last_msg:ch.last_msg,perms})),
@@ -82,14 +101,22 @@ must(m,P.MANAGE_SERVER)
 const b=await body(c.req)
 const sets=[],vals=[]
 const add=(k,v)=>{sets.push(k+'=?');vals.push(v)}
-if('name'in b)add('name',str(b.name,2,60,'Server name'))
-if('description'in b)add('description',opt(b.description,500,'Description'))
+if('name'in b)add('name',clean(str(b.name,2,60,'Server name')))
+if('description'in b)add('description',clean(opt(b.description,500,'Description')))
 if('is_public'in b)add('is_public',b.is_public?1:0)
 if('category'in b){if(b.category&&!CATS.includes(b.category))fail(400,'Invalid category');add('category',b.category||'')}
 if('accent'in b)add('accent',color(b.accent,'Accent'))
-if('welcome'in b)add('welcome',opt(b.welcome,1000,'Welcome message'))
-if('rules'in b)add('rules',opt(b.rules,3000,'Rules'))
+if('welcome'in b)add('welcome',clean(opt(b.welcome,1000,'Welcome message')))
+if('rules'in b)add('rules',clean(opt(b.rules,3000,'Rules')))
 if('verification'in b)add('verification',int(b.verification,0,2,'Verification level'))
+if('age_restricted'in b||'scan_explicit'in b){
+const age='age_restricted'in b?(b.age_restricted?1:0):m.server.age_restricted
+const scan=age?('scan_explicit'in b?(b.scan_explicit?1:0):m.server.scan_explicit):0
+if('scan_explicit'in b&&b.scan_explicit&&!age)fail(400,'Turn on 18+ Only before enabling the explicit content scanner')
+if(age&&!m.server.age_restricted&&!c.user.adult_ok)fail(403,'Confirm you are 18 or older in Settings first')
+if('age_restricted'in b)add('age_restricted',age)
+add('scan_explicit',scan)
+}
 for(const[k,kind]of[['icon_id','server_icon'],['banner_id','server_banner']]){
 if(k in b){
 if(b[k]===null)add(k,null)
@@ -111,15 +138,7 @@ const m=await mem(c,c.p.sid)
 if(!m.owner)fail(403,'Only the owner can delete a server')
 const b=await body(c.req)
 if(b.name!==m.server.name)fail(400,'Type the server name exactly to confirm')
-const files=(await c.env.DB.prepare('select f.r2_key from files f where f.room in (select id from channels where server_id=?) or f.server_id=?').bind(m.server.id,m.server.id).all()).results
-for(const f of files)await c.env.FILES.delete(f.r2_key)
-await c.env.DB.batch([
-c.env.DB.prepare('delete from files where room in (select id from channels where server_id=?) or server_id=?').bind(m.server.id,m.server.id),
-c.env.DB.prepare('delete from messages where server_id=?').bind(m.server.id),
-c.env.DB.prepare('delete from read_state where room in (select id from channels where server_id=?)').bind(m.server.id),
-c.env.DB.prepare('delete from member_roles where server_id=?').bind(m.server.id),
-c.env.DB.prepare('delete from servers where id=?').bind(m.server.id)
-])
+await purgeServer(c.env,m.server.id)
 c.pub('s_'+m.server.id,{t:'server.deleted',id:m.server.id})
 c.pubClose('s_'+m.server.id,{closeAll:true})
 return{ok:true}
@@ -171,7 +190,7 @@ must(m,P.MANAGE_CHANNELS)
 const b=await body(c.req)
 const id=newId('ct')
 const pos=await c.env.DB.prepare('select coalesce(max(position),-1)+1 p from categories where server_id=?').bind(m.server.id).first()
-await c.env.DB.prepare('insert into categories(id,server_id,name,position) values(?,?,?,?)').bind(id,m.server.id,str(b.name,1,40,'Category name'),pos.p).run()
+await c.env.DB.prepare('insert into categories(id,server_id,name,position) values(?,?,?,?)').bind(id,m.server.id,clean(str(b.name,1,40,'Category name')),pos.p).run()
 c.pub('s_'+m.server.id,{t:'server.update'})
 return json({id},201)
 })
@@ -179,7 +198,7 @@ r.add('PATCH','/api/servers/:sid/categories/:cid',async c=>{
 const m=await mem(c,c.p.sid)
 must(m,P.MANAGE_CHANNELS)
 const b=await body(c.req)
-const res=await c.env.DB.prepare('update categories set name=coalesce(?,name),position=coalesce(?,position) where id=? and server_id=?').bind('name'in b?str(b.name,1,40,'Category name'):null,'position'in b?int(b.position,0,999,'Position'):null,c.p.cid,m.server.id).run()
+const res=await c.env.DB.prepare('update categories set name=coalesce(?,name),position=coalesce(?,position) where id=? and server_id=?').bind('name'in b?clean(str(b.name,1,40,'Category name')):null,'position'in b?int(b.position,0,999,'Position'):null,c.p.cid,m.server.id).run()
 if(!res.meta.changes)fail(404,'Category not found')
 c.pub('s_'+m.server.id,{t:'server.update'})
 return{ok:true}
@@ -204,7 +223,7 @@ if(b.category_id){const ok=await c.env.DB.prepare('select 1 x from categories wh
 const pos=await c.env.DB.prepare('select coalesce(max(position),-1)+1 p from channels where server_id=?').bind(m.server.id).first()
 const id=newId('ch')
 await c.env.DB.batch([
-c.env.DB.prepare('insert into channels(id,server_id,category_id,name,type,topic,position,readonly,slowmode,created_at) values(?,?,?,?,?,?,?,?,?,?)').bind(id,m.server.id,b.category_id||null,channelName(b.name),type,opt(b.topic,300,'Topic'),pos.p,b.readonly?1:0,int(b.slowmode??0,0,21600,'Slow mode'),now()),
+c.env.DB.prepare('insert into channels(id,server_id,category_id,name,type,topic,position,readonly,slowmode,created_at) values(?,?,?,?,?,?,?,?,?,?)').bind(id,m.server.id,b.category_id||null,channelName(b.name),type,clean(opt(b.topic,300,'Topic')),pos.p,b.readonly?1:0,int(b.slowmode??0,0,21600,'Slow mode'),now()),
 c.logStmt(m.server.id,'channel.create',id,b.name)
 ])
 resync(c,m.server.id)
@@ -227,7 +246,7 @@ const b=await body(c.req)
 const sets=[],vals=[]
 const add=(k,v)=>{sets.push(k+'=?');vals.push(v)}
 if('name'in b)add('name',channelName(b.name))
-if('topic'in b)add('topic',opt(b.topic,300,'Topic'))
+if('topic'in b)add('topic',clean(opt(b.topic,300,'Topic')))
 if('readonly'in b)add('readonly',b.readonly?1:0)
 if('locked'in b)add('locked',b.locked?1:0)
 if('slowmode'in b)add('slowmode',int(b.slowmode,0,21600,'Slow mode'))
@@ -528,7 +547,8 @@ async function joinServer(c,sid){
 await raidCheck(c.env,sid,c.pub)
 const ban=await c.env.DB.prepare('select 1 x from bans where server_id=? and user_id=?').bind(sid,c.user.id).first()
 if(ban)fail(403,'You are banned from this server')
-const s=await c.env.DB.prepare('select verification,name from servers where id=?').bind(sid).first()
+const s=await c.env.DB.prepare('select verification,name,age_restricted from servers where id=?').bind(sid).first()
+if(s.age_restricted&&!c.user.adult_ok)fail(403,'This server is 18+ only. Confirm you are 18 or older in Settings to join')
 const age=now()-c.user.created_at
 if(s.verification===1&&age<300000)fail(403,'This server requires accounts to be at least 5 minutes old')
 if(s.verification===2&&age<600000)fail(403,'This server requires accounts to be at least 10 minutes old')
@@ -598,23 +618,23 @@ r.add('GET','/api/discover',async c=>{
 const q=(c.url.searchParams.get('q')||'').trim().slice(0,60)
 const cat=c.url.searchParams.get('category')||''
 const args=[]
-let where='s.is_public=1'
+let where=c.user.adult_ok?'s.is_public=1':'s.is_public=1 and s.age_restricted=0'
 if(q){where+=" and (s.name like ? escape '\\' or s.description like ? escape '\\')";args.push(like(q),like(q))}
 if(cat){if(!CATS.includes(cat))fail(400,'Invalid category');where+=' and s.category=?';args.push(cat)}
 args.push(clamp(c.url.searchParams.get('limit'),24,1,50),clamp(c.url.searchParams.get('offset'),0,0,5000))
-const rows=(await c.env.DB.prepare(`select s.id,s.name,s.description,s.icon_id,s.banner_id,s.category,(select count(*) from members m where m.server_id=s.id) members from servers s where ${where} order by members desc,s.created_at desc limit ? offset ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select s.id,s.name,s.description,s.icon_id,s.banner_id,s.category,s.age_restricted,(select count(*) from members m where m.server_id=s.id) members from servers s where ${where} order by members desc,s.created_at desc limit ? offset ?`).bind(...args).all()).results
 return{servers:rows,categories:CATS}
 })
 
 r.add('GET','/api/discover/:sid',async c=>{
 const s=await c.env.DB.prepare(`select ${SRV} from servers where id=? and is_public=1`).bind(c.p.sid).first()
-if(!s)fail(404,'Server not found')
+if(!s||(s.age_restricted&&!c.user.adult_ok))fail(404,'Server not found')
 const ev=await c.env.DB.prepare('select id,perms from roles where server_id=? and is_everyone=1').bind(s.id).first()
 const chs=(await c.env.DB.prepare("select * from channels where server_id=? and type!='voice' order by position").bind(s.id).all()).results
 const ovs=(await c.env.DB.prepare('select o.* from overrides o join channels c on c.id=o.channel_id where c.server_id=?').bind(s.id).all()).results
 const pseudo={admin:false,base:ev.perms,everyone:ev.id,roleIds:[],userId:'',timeout_until:0}
 const preview=chs.filter(ch=>chanPerms(pseudo,ch,ovs.filter(o=>o.channel_id===ch.id))&P.VIEW).map(ch=>({id:ch.id,name:ch.name,type:ch.type}))
 const n=await c.env.DB.prepare('select count(*) n from members where server_id=?').bind(s.id).first()
-return{server:{id:s.id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,category:s.category,rules:s.rules,welcome:s.welcome,members:n.n},channels:preview}
+return{server:{id:s.id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,category:s.category,rules:s.rules,welcome:s.welcome,members:n.n,age_restricted:s.age_restricted},channels:preview}
 })
 }

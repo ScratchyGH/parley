@@ -4,6 +4,7 @@ import{P,resolveRoom,loadMember,chanPerms,visibleChannels}from'./perms.js'
 import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
 import{pushTo}from'./push.js'
+import{urlsIn,inspectLink,imageExplicit}from'./safety.js'
 
 const MAX_LEN=10000
 const floorId=t=>t.toString(36).padStart(9,'0')
@@ -180,6 +181,7 @@ await c.env.DB.batch(stmts)
 const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
 const[message]=await hydrate(c.env,[row],c.user.id)
 await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEveryone,roles:roleIds}})
+if(rr.kind==='channel'&&rr.m.server.scan_explicit&&rr.m.server.age_restricted)c.ec.waitUntil(scanMsg(c,rr,id,content))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})
 if(c.env.VAPID_PRIVATE_JWK){
@@ -227,6 +229,31 @@ await c.env.DB.batch(stmts)
 await publishMsg(c,rr,{t:'msg.delete',room:rr.room,id:m.id})
 return{ok:true}
 })
+
+async function scanMsg(c,rr,id,content){
+let bad=false
+for(const u of urlsIn(content)){if(await inspectLink(c.env,u)){bad=true;break}}
+const files=(await c.env.DB.prepare("select id,r2_key,size,mime from files where message_id=? and mime like 'image/%'").bind(id).all()).results
+if(!bad)for(const f of files.slice(0,4)){
+try{
+const o=await c.env.FILES.get(f.r2_key,{size:f.size})
+if(o&&await imageExplicit(c.env,new Uint8Array(await o.arrayBuffer()))){bad=true;break}
+}catch{}
+}
+if(!bad)return
+const m=await c.env.DB.prepare('select author_id from messages where id=? and deleted_at is null').bind(id).first()
+if(!m)return
+const all=(await c.env.DB.prepare('select r2_key from files where message_id=?').bind(id).all()).results
+for(const f of all)await c.env.FILES.delete(f.r2_key)
+await c.env.DB.batch([
+c.env.DB.prepare("update messages set deleted_at=?,content='',pinned=0 where id=?").bind(now(),id),
+c.env.DB.prepare('delete from reactions where message_id=?').bind(id),
+c.env.DB.prepare('delete from files where message_id=?').bind(id),
+c.logStmt(rr.serverId,'message.explicit',m.author_id,'removed by the explicit content scanner')
+])
+await publishMsg(c,rr,{t:'msg.delete',room:rr.room,id})
+c.pub('u_'+m.author_id,{t:'safety.removed',room:rr.room})
+}
 
 async function pinGuard(rr){
 if(rr.kind==='channel'&&!(rr.perms&P.MANAGE_MESSAGES))fail(403,'You need the Manage Messages permission to pin')

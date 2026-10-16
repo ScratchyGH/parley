@@ -13,6 +13,8 @@ import pushRoutes from'./push.js'
 import perkRoutes from'./perks.js'
 import botlabRoutes from'./botlab.js'
 import signinRoutes from'./signin.js'
+import labRoutes from'./lab.js'
+import{sweepExplicitServers}from'./servers.js'
 import{d1Store}from'./store.js'
 import{tursoDb}from'./turso.js'
 import{ensureSchema}from'./migrate.js'
@@ -36,6 +38,7 @@ pushRoutes(router)
 perkRoutes(router)
 botlabRoutes(router)
 signinRoutes(router)
+labRoutes(router)
 
 router.add('GET','/api/health',async c=>{
 await c.env.DB.prepare('select 1').first()
@@ -178,6 +181,7 @@ env.DB.prepare('delete from login_attempts where reset_at<?').bind(t),
 env.DB.prepare('delete from invites where (expires_at is not null and expires_at<?) or revoked=1').bind(t-7*86400000),
 env.DB.prepare('delete from notifications where created_at<?').bind(t-60*86400000)
 ])
+try{await sweepExplicitServers(env)}catch(e){}
 try{await env.DB.exec('PRAGMA optimize')}catch(e){}
 }
 }

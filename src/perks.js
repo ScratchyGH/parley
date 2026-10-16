@@ -1,3 +1,4 @@
+import{explicitText}from'./safety.js'
 import{fail,now,newId,str,int,limit,body,json,randHex,sha,placeholders}from'./util.js'
 import{P,loadMember}from'./perms.js'
 import{skeleton}from'./names.js'
@@ -95,6 +96,7 @@ let slug=b.slug==null||b.slug===''?null:String(b.slug).toLowerCase()
 if(slug!==null){
 if(!/^[a-z0-9-]{3,32}$/.test(slug))fail(400,'Use 3 to 32 letters, numbers or dashes')
 if(/^[a-z0-9]{8,12}$/.test(slug)&&!slug.includes('-'))fail(400,'That looks like a random invite code. Add a dash or change the length.')
+if(explicitText(slug.replace(/-/g,'')))fail(400,'That name is not allowed')
 if(skeleton(slug)==='parley'||['admin','support','discover','invite','api'].includes(slug))fail(400,'That name is reserved')
 }
 try{await c.env.DB.prepare('update servers set vanity=? where id=?').bind(slug,m.server.id).run()}

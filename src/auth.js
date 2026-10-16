@@ -55,7 +55,7 @@ return out
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,totp_on:!!u.totp_on,created_at:u.created_at}
+return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,created_at:u.created_at}
 }
 
 export async function makeSession(c,uid){

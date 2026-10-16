@@ -6,7 +6,8 @@ import m5 from'../migrations/0005_indexes.sql'
 import m6 from'../migrations/0006_bot_projects.sql'
 import m7 from'../migrations/0007_signin.sql'
 import m8 from'../migrations/0008_cleanup_indexes.sql'
-const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8]]
+import m9 from'../migrations/0009_safety_labs.sql'
+const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9]]
 let ran=null
 export function ensureSchema(db){
 if(!ran)ran=run(db).catch(e=>{ran=null;throw e})
