@@ -7,7 +7,7 @@ let puterNote=()=>{}
 
 function bridge(host){
 if(!frame){
-frame=h('iframe',{src:'/lab/puter.html',title:'Puter connection',class:'puterframe'})
+frame=h('iframe',{src:'/lab/puter',title:'Puter connection',class:'puterframe'})
 loaded=new Promise(r=>frame.addEventListener('load',()=>r()))
 addEventListener('message',e=>{
 if(e.origin!==location.origin||e.source!==frame.contentWindow)return
