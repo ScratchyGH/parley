@@ -29,6 +29,11 @@ This is a description of what the code does, not a certification. It has not bee
 - TOTP secrets are stored in D1 in the clear (the server must read them to verify). Backup codes are stored as SHA-256 hashes and are single use.
 - Web Push payloads are encrypted to the subscribing browser (RFC 8291); the push service sees only ciphertext and metadata.
 
+## Usernames and bots
+
+- A username claim is the name with case, `.`, `-`, `_` removed and common lookalike characters folded. A new account or rename is refused if the claim belongs to another account, including a deleted one. The previous owner keeps their last 6 names reserved and can switch back. This does not stop visually similar display names or lookalikes outside the folding table (for example Cyrillic letters are already refused by the username character set).
+- Bot tokens are random 32 byte values shown once and stored hashed. A bot can only reach an allow list of message, channel, thread and file endpoints and cannot change accounts, servers or create bots.
+
 ## Privacy
 
 - **Messages are not end to end encrypted.** They are stored in plaintext in D1, and the person who operates the deployment can read them. Direct messages are visible to the operator too.
