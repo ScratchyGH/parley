@@ -622,9 +622,9 @@ r=await A.req('GET',`/api/lab/export/${sgen.id}`);ok(r.s===200&&r.r.headers.get(
 r=await A.post('/api/servers',{name:'Scan Test '+run});const scid=r.j.id
 await A.patch('/api/servers/'+scid,{age_restricted:true,scan_explicit:true})
 const scg=(await A.get('/api/servers/'+scid)).j.channels.find(x=>x.name==='general')
-r=await A.post(`/api/rooms/${scg.id}/messages`,{content:'look https://www.pornhub.com/view_video'});eq(r.s,201,'link message accepted first')
+r=await A.post(`/api/rooms/${scg.id}/messages`,{content:'look https://www.pornhub.com/view_video'});eq(r.s,422,'explicit link is rejected before it is posted')
 await sleep(900)
-r=await A.get(`/api/rooms/${scg.id}/messages`);ok(!r.j.messages.some(m=>m.id&&m.content.includes('pornhub')),'scanner removes a message linking to a porn site')
+r=await A.get(`/api/rooms/${scg.id}/messages`);ok(!r.j.messages.some(m=>m.id&&m.content.includes('pornhub')),'no message linking to a porn site is stored')
 r=await A.post(`/api/rooms/${scg.id}/messages`,{content:'see https://example.com'});await sleep(600)
 r=await A.get(`/api/rooms/${scg.id}/messages`);ok(r.j.messages.some(m=>m.content.includes('example.com')),'ordinary links are left alone')
 try{
@@ -640,6 +640,25 @@ await sleep(1500)
 eq((await A.get('/api/servers/'+ssid)).s,404,'nightly sweep deletes an existing explicit server')
 }catch(e){console.log('sweep test skipped',e.message)}
 
+console.log('anti-NSFW and AutoMod')
+{
+const S2=await A.post('/api/servers',{name:'Filter '+run});const fsid=S2.j.id
+const fch=(await A.get('/api/servers/'+fsid)).j.channels[0].id
+const fcode=(await A.post(`/api/servers/${fsid}/invites`,{max_uses:2})).j.code
+const J=await B.post(`/api/invites/${fcode}/join`)
+eq((await A.post(`/api/rooms/${fch}/messages`,{content:'check out pornhub'})).s,422,'explicit text blocked even for the owner in a non-18+ server')
+eq((await A.post(`/api/rooms/${fch}/messages`,{content:'p.0.r.n here'})).s,422,'spaced and leet explicit text blocked')
+eq((await A.post(`/api/rooms/${fch}/messages`,{content:'https://pornhub.com/x'})).s,422,'explicit host blocked')
+eq((await A.post(`/api/rooms/${fch}/messages`,{content:'sex education and Middlesex are fine'})).s,201,'ambiguous words are allowed')
+eq((await A.put(`/api/servers/${fsid}/automod`,{words:['Badword','ass'],block_links:false,max_mentions:0,raid_joins:0})).s,200,'save word filter')
+const t1=await A.post(`/api/servers/${fsid}/automod/test`,{text:'you B A D W O R D'});eq(t1.j.blocked,true,'filter test catches spaced word')
+eq((await A.post(`/api/servers/${fsid}/automod/test`,{text:'a class'})).j.blocked,false,'short word only matches whole words')
+eq((await A.post(`/api/servers/${fsid}/automod/test`,{text:'what an ass'})).j.blocked,true,'short word matches as a whole word')
+if(J&&J.s===200){
+eq((await B.post(`/api/rooms/${fch}/messages`,{content:'b4dw0rd lol'})).s,422,'member message with leet word blocked')
+eq((await B.post(`/api/rooms/${fch}/messages`,{content:'hello'})).s,201,'normal member message allowed')
+}
+}
 console.log('profile, accounts, gifs, admin database')
 const OWN='testowner'
 const O=new U('own');O.name=OWN
@@ -761,6 +780,14 @@ const bm2=await waitFor(bw,e=>e.t==='msg.new'&&e.m.author.id!==B.id&&/Hello coun
 ok(!!bm2,'persistent counter works')
 const brx=await waitFor(bw,e=>e.t==='reaction'&&e.emoji==='👋',6000)
 ok(!!brx,'bot reacts')
+const G2={nodes:[{id:'a',type:'cmd',p:{prefix:'!',name:'calc'}},{id:'m',type:'math',p:{name:'r',a:'{arg1}',op:'*',b:'3'}},{id:'t',type:'text',p:{name:'u',input:'hello {arg2}',fn:'upper',arg:''}},{id:'k',type:'map',p:{name:'f',input:'{arg2}',table:'a=Apple\nb=Banana',fallback:'None'}},{id:'s',type:'say',p:{text:'{r} {u} {f}',reply:'0'}}],edges:[{f:'a',o:'next',t:'m'},{f:'m',o:'next',t:'t'},{f:'t',o:'next',t:'k'},{f:'k',o:'next',t:'s'}]}
+r=await A.post('/api/bothub/'+pj.id+'/blocks/test',{blocks:G2,text:'!calc 7 b'});eq(r.s,200,'new blocks dry run');eq(r.j.sent[0]&&r.j.sent[0].say,'21 HELLO B Banana','math, text and lookup blocks')
+const G3={nodes:[{id:'j',type:'join',p:{}},{id:'s',type:'sayto',p:{channel:'general',text:'Welcome {mention}'}}],edges:[{f:'j',o:'next',t:'s'}]}
+r=await A.post('/api/bothub/'+pj.id+'/blocks/test',{blocks:G3,text:'',event:'join'});eq(r.j.sent[0]&&r.j.sent[0].to,'general','join block runs on a join test')
+r=await A.post('/api/bothub/'+pj.id+'/blocks/test',{blocks:G3,text:'!x'});eq(r.j.sent.length,0,'join block ignores messages')
+const G4={nodes:[{id:'l',type:'link',p:{}},{id:'d',type:'delete',p:{}},{id:'c',type:'cooldown',p:{seconds:'10',scope:'user'}},{id:'s',type:'say',p:{text:'no links',reply:'0'}}],edges:[{f:'l',o:'next',t:'d'},{f:'d',o:'next',t:'c'},{f:'c',o:'yes',t:'s'}]}
+r=await A.post('/api/bothub/'+pj.id+'/blocks/test',{blocks:G4,text:'see https://example.com'});eq(r.j.sent.some(x=>x.note==='Deletes the message')&&r.j.sent.some(x=>x.say==='no links'),true,'link, delete and cooldown blocks')
+eq((await A.put('/api/bothub/'+pj.id+'/blocks',{blocks:{nodes:Array.from({length:101},(_,i)=>({id:'n'+i,type:'stop',p:{}})),edges:[]}})).s,400,'block limit enforced')
 eq((await A.get('/api/gifs/status')).j.enabled,true,'GIF search works without a key')
 const gs=await A.get('/api/gifs/search?q=cat')
 eq(gs.s,200,'keyless search answers')
