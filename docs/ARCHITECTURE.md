@@ -47,11 +47,11 @@ Ids are time sortable strings. A unique `(author, nonce)` makes sends idempotent
 - `swarm` downloads files in 1 MiB segments from peers and server range requests in parallel, hedges the slowest segments, verifies the whole-file SHA-256 (the server records it at upload time) and falls back to the server on mismatch, striking the peer.
 - Storage is IndexedDB with LRU eviction, or memory.
 
-D1 and R2 stay authoritative, so a deployment with no peers behaves exactly as before.
+D1 (and R2 if bound) stay authoritative, so a deployment with no peers behaves exactly as before.
 
 ## Media pipeline
 
-Uploads under 100 MB are one request with an `x-sha256` header that R2 verifies. Larger files use `init`, parallel `part` PUTs and `complete`. JPEG XL and AVIF encode and decode run in a module Web Worker with vendored single-threaded WebAssembly codecs (`public/vendor/codecs`, Apache-2.0, from jSquash). Native decoders are used when the browser has them.
+Uploads up to the single-request limit are one request with an `x-sha256` header that the store verifies. Larger files use `init`, parallel `part` PUTs and `complete`. JPEG XL and AVIF encode and decode run in a module Web Worker with vendored single-threaded WebAssembly codecs (`public/vendor/codecs`, Apache-2.0, from jSquash). Native decoders are used when the browser has them.
 
 ## Client
 
@@ -72,7 +72,7 @@ Limits taken from Cloudflare's documentation in October 2026. Verify before rely
 | D1 bound parameters per query | 100 |
 | Durable Object requests | 100,000 per day (incoming WebSocket messages count 1 per 20) |
 | Durable Object duration | 13,000 GB-s per day |
-| R2 | 10 GB-month, 1M Class A and 10M Class B operations per month, free egress; billed above this |
+| R2 (optional, needs a payment method) | 10 GB-month, 1M Class A and 10M Class B operations per month; billed above this |
 | Realtime TURN | first 1,000 GB then $0.05 per GB; STUN is free |
 
 Daily limits reset at 00:00 UTC. When D1 or the Workers request allowance is exhausted, calls fail until the reset.

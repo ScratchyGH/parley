@@ -11,7 +11,8 @@ Nothing here has been run against a real Cloudflare account yet. Each step is wh
 ## Cost warnings before you start
 
 - Workers, D1 and Durable Objects stop working (they return errors) when their daily free allowance is used up. They reset at 00:00 UTC.
-- **R2 and Realtime TURN do not stop at their free allowance; usage above it is billed.** R2 free: 10 GB-month storage, 1M Class A and 10M Class B operations per month. TURN free: the first 1,000 GB, then $0.05 per GB. R2 may require a payment method on file to enable; I could not confirm this from Cloudflare's current documentation. Parley's per-user upload quota (`USER_QUOTA_MB`, default 500) and per-file limit (`MAX_UPLOAD_MB`, default 25) are guards, not a billing cap.
+- Files are stored in D1 by default, so R2 and a payment method are not needed. D1's free 5 GB is shared by messages and files, so keep `USER_QUOTA_MB` small. To use R2 instead, create a bucket and add `[[r2_buckets]] binding = "FILES" bucket_name = "..."` to `wrangler.toml`, then raise `MAX_UPLOAD_MB` and `MAX_FILE_MB`.
+- **R2 (only if you add it) and Realtime TURN do not stop at their free allowance; usage above it is billed.** R2 free: 10 GB-month storage, 1M Class A and 10M Class B operations per month. TURN free: the first 1,000 GB, then $0.05 per GB. R2 may require a payment method on file to enable; I could not confirm this from Cloudflare's current documentation. Parley's per-user upload quota (`USER_QUOTA_MB`, default 500) and per-file limit (`MAX_UPLOAD_MB`, default 25) are guards, not a billing cap.
 - Without TURN the app falls back to STUN only. Calls between some networks (symmetric NAT, strict corporate firewalls) will fail to connect.
 
 ## Steps
@@ -30,11 +31,7 @@ Nothing here has been run against a real Cloudflare account yet. Each step is wh
 
    Add the printed `database_id = "..."` line under `[[d1_databases]]`. Recent Wrangler versions can also create bindings automatically on first deploy; that path has not been tried here.
 
-3. Create the bucket.
-
-   ```
-   npx wrangler r2 bucket create parley-files
-   ```
+3. Nothing to create for files: they use D1.
 
 4. Apply the schema.
 
@@ -71,9 +68,9 @@ Nothing here has been run against a real Cloudflare account yet. Each step is wh
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `MAX_UPLOAD_MB` | 100 | Largest file sent in a single request (the free plan request body limit is 100 MB). |
-| `MAX_FILE_MB` | 1024 | Largest file via multipart upload (16 MiB parts straight to R2). |
-| `USER_QUOTA_MB` | 1024 | Total attachment storage per user, including unfinished uploads. R2 free storage is 10 GB in total, so size this to your member count. |
+| `MAX_UPLOAD_MB` | 25 | Largest file sent in a single request (the free plan request body limit is 100 MB). |
+| `MAX_FILE_MB` | 25 | Largest file via multipart upload (16 MiB parts). |
+| `USER_QUOTA_MB` | 100 | Total attachment storage per user, including unfinished uploads. D1 free storage is 5 GB in total, shared with messages, so size this to your member count. |
 | `PBKDF2_ITERS` | 100000 | Password hashing cost. 100,000 is the maximum Workers' WebCrypto accepts. Stored per hash. |
 | `REGISTRATION_OPEN` | true | Set `"false"` to close signups. |
 | `ADMIN_USERNAMES` | empty | Comma separated usernames that get the admin panel. |
