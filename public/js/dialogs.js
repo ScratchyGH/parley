@@ -269,7 +269,7 @@ u.bio?h('div',{class:'mb',style:{margin:'8px 0',maxHeight:'120px',overflow:'auto
 h('div',{class:'hint'},`${data.mutual_servers} mutual server${data.mutual_servers===1?'':'s'} · Joined ${new Date(u.created_at).toLocaleDateString()}`),
 note,act,
 !own?h('div',{class:'row',style:{marginTop:'8px'}},btn('Copy ID',()=>copyText(u.id)),btn('Report user',()=>{closeMenu();emit('ui:report',{type:'user',id:u.id})}),sid&&mem?btn('Moderation',()=>{closeMenu();const items=memberMenu(sid,mem);menu(items,x,y)}):null):null))
-popup(el,Math.min(x,innerWidth-310),Math.min(y,innerHeight-380),'')
+popup(el,Math.min(x,innerWidth-400),Math.min(y,innerHeight-460),'')
 }
 
 export function reportDialog({type,id}){
