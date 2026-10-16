@@ -344,3 +344,8 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.15)}
 .scrow{margin-top:10px;align-items:flex-start}
 .scrow .av{margin-top:-34px;border:3px solid var(--panel);box-sizing:content-box;flex:none}
 .scrow h4{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.scrow .grow{text-align:left;min-width:0;padding-top:4px}
+.scrow h4{justify-content:flex-start;flex-wrap:wrap;text-align:left;font-size:16px;gap:6px}
+.scrow h4 .gtag{margin-left:0}
+.scrow small{display:block;text-align:left}
+.sc>p{text-align:left}
