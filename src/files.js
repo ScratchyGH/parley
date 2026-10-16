@@ -6,8 +6,8 @@ const IMG={png:'image/png',apng:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',g
 const INLINE_MEDIA={mp3:'audio/mpeg',weba:'audio/webm',mid:'audio/midi',midi:'audio/midi',aif:'audio/aiff',aiff:'audio/aiff',m4b:'audio/mp4',ogg:'audio/ogg',oga:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',flac:'audio/flac',mp4:'video/mp4',m4v:'video/mp4',ogv:'video/ogg','3gp':'video/3gpp',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',opus:'audio/ogg',aac:'audio/aac',pdf:'application/pdf'}
 const DOWNLOAD={doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odt:'application/vnd.oasis.opendocument.text',ods:'application/vnd.oasis.opendocument.spreadsheet',odp:'application/vnd.oasis.opendocument.presentation',rtf:'application/rtf',epub:'application/epub+zip',zip:'application/zip',rar:'application/vnd.rar','7z':'application/x-7z-compressed',tar:'application/x-tar',gz:'application/gzip',tgz:'application/gzip',bz2:'application/x-bzip2',xz:'application/x-xz',zst:'application/zstd',ttf:'font/ttf',otf:'font/otf',woff:'font/woff',woff2:'font/woff2',stl:'model/stl',glb:'model/gltf-binary',gltf:'model/gltf+json',obj:'model/obj','3mf':'model/3mf',wma:'audio/x-ms-wma',avi:'video/x-msvideo',wmv:'video/x-ms-wmv',psd:'image/vnd.adobe.photoshop',sqlite:'application/vnd.sqlite3',db:'application/octet-stream',iso:'application/x-iso9660-image',dmg:'application/x-apple-diskimage',torrent:'application/x-bittorrent',mcpack:'application/zip',mcworld:'application/zip',mrpack:'application/zip'}
 const BLOCKED=new Set(['exe','msi','bat','cmd','com','scr','dll','ps1','vbs','jar','apk','svg','html','htm','xhtml','xml','hta','lnk','reg','sh'])
-const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','conv_icon','emoji','sticker'])
-const KINDS=['attachment','avatar','banner','server_icon','server_banner','conv_icon','emoji','sticker']
+const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','server_bg','conv_icon','emoji','sticker'])
+const KINDS=['attachment','avatar','banner','server_icon','server_banner','server_bg','conv_icon','emoji','sticker']
 const PART=16*1048576
 
 function sniff(b,type){
@@ -53,7 +53,7 @@ if(kind==='attachment'){
 const rr=await resolveRoom(c.env,roomQ,c.user.id)
 need(rr.perms,P.ATTACH,'You cannot attach files here')
 room=rr.room
-}else if(kind==='server_icon'||kind==='server_banner'||kind==='emoji'||(kind==='sticker'&&serverQ)){
+}else if(kind==='server_icon'||kind==='server_banner'||kind==='server_bg'||kind==='emoji'||(kind==='sticker'&&serverQ)){
 serverId=serverQ
 const m=await loadMember(c.env,serverId||'',c.user.id)
 if(!m)fail(404,'Server not found')

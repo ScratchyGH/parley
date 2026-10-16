@@ -104,6 +104,8 @@ if(viewerId&&p.owner_id===viewerId)out.mine=true
 return out
 }
 
+import{cleanGraph}from'./blockrun.js'
+import{dryRun}from'./blocks.js'
 export default function botlabRoutes(r){
 r.add('GET','/api/bothub/meta',async c=>({licenses:LICENSES,tags:TAGS,max:MAXP}))
 r.add('GET','/api/bothub/mine',async c=>{
@@ -186,6 +188,29 @@ st.push(c.env.DB.prepare('delete from bot_project_tags where project_id=?').bind
 }
 try{await c.env.DB.batch(st)}catch(e){if(String(e.message).includes('UNIQUE'))fail(409,'That link name is taken');throw e}
 return{ok:true}
+})
+r.add('GET','/api/bothub/:id/blocks',async c=>{
+const p=await mine(c,c.p.id)
+let g=null
+try{g=p.blocks?JSON.parse(p.blocks):null}catch{}
+return{blocks:g}
+})
+r.add('PUT','/api/bothub/:id/blocks',async c=>{
+const p=await mine(c,c.p.id)
+limit('bothubb:'+c.user.id,120,3600000)
+const b=await body(c.req,60000)
+const g=cleanGraph(b.blocks)
+await c.env.DB.prepare('update bot_projects set blocks=?,updated_at=? where id=?').bind(g?JSON.stringify(g):null,now(),p.id).run()
+return{ok:true,blocks:g}
+})
+r.add('POST','/api/bothub/:id/blocks/test',async c=>{
+const p=await mine(c,c.p.id)
+limit('bothubt2:'+c.user.id,120,600000)
+const b=await body(c.req,60000)
+const g=cleanGraph(b.blocks)
+if(!g)fail(400,'Add some blocks first')
+const text=typeof b.text==='string'?b.text.slice(0,500):''
+return dryRun(g,text,{id:c.user.id,username:c.user.username,display_name:c.user.display_name})
 })
 r.add('POST','/api/bothub/:id/token',async c=>{
 const p=await mine(c,c.p.id)

@@ -5,7 +5,8 @@ import{PUBLIC,STATUS}from'./auth.js'
 import{explicitText,serverText}from'./safety.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
-const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,welcome,rules,verification,vanity,age_restricted,scan_explicit,created_at'
+const themeOf=v=>{try{return v?JSON.parse(v):null}catch{return null}}
+const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,theme,welcome,rules,verification,vanity,age_restricted,scan_explicit,created_at'
 const CATS=['gaming','tech','art','music','education','science','community','other']
 
 async function mem(c,sid){
@@ -85,7 +86,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where server_
 const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
 const s=m.server
 return{
-server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
+server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,theme:themeOf(s.theme),vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
 me:{perms:m.base,role_ids:m.roleIds,owner:m.owner,nickname:m.nickname,timeout_until:m.timeout_until,top:m.owner?9999:m.top},
 categories:cats,
 channels:vis.map(({ch,perms})=>({id:ch.id,category_id:ch.category_id,name:ch.name,type:ch.type,topic:ch.topic,position:ch.position,readonly:ch.readonly,locked:ch.locked,slowmode:ch.slowmode,last_msg:ch.last_msg,perms})),
@@ -106,6 +107,22 @@ if('description'in b)add('description',clean(opt(b.description,500,'Description'
 if('is_public'in b)add('is_public',b.is_public?1:0)
 if('category'in b){if(b.category&&!CATS.includes(b.category))fail(400,'Invalid category');add('category',b.category||'')}
 if('accent'in b)add('accent',color(b.accent,'Accent'))
+if('theme'in b){
+if(b.theme===null)add('theme',null)
+else{
+const t=b.theme
+if(typeof t!=='object'||Array.isArray(t))fail(400,'Invalid theme')
+const o={}
+for(const k of['bg','side','panel','text','accent']){const v=color(t[k],'Theme '+k);if(v)o[k]=v}
+o.dim=int(t.dim??55,0,90,'Background dim')
+if(t.image){
+const f=await c.env.DB.prepare('select id from files where id=? and kind=? and server_id=?').bind(String(t.image),'server_bg',m.server.id).first()
+if(!f)fail(400,'Upload the background image first')
+o.image=f.id
+}
+add('theme',JSON.stringify(o))
+}
+}
 if('welcome'in b)add('welcome',clean(opt(b.welcome,1000,'Welcome message')))
 if('rules'in b)add('rules',clean(opt(b.rules,3000,'Rules')))
 if('verification'in b)add('verification',int(b.verification,0,2,'Verification level'))
