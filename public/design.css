@@ -291,3 +291,6 @@ body.sthemed .ctx{background:color-mix(in srgb,var(--side) 92%,transparent)}
 
 .wbtn,.wbtn.on,.wbtn:focus,.wbtn:focus-visible,.wbtn:active{border:0;outline:0;box-shadow:none}
 .wbtn.on{background:var(--sel)}
+
+.gtag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:5px;background:var(--surf2);color:var(--muted);font-size:11px;font-weight:600;line-height:16px;letter-spacing:.3px;vertical-align:middle}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;background:var(--surf2);font-size:12px}
