@@ -650,6 +650,20 @@ eq(r.j.user.owner,true,'owner flag follows OWNER_USERNAME')
 eq(r.j.user.admin,true,'owner is an admin')
 eq((await A.get('/api/me')).j.user.owner,false,'ordinary user is not owner')
 eq((await O.get('/api/users/'+O.id)).j.user.badges.includes('owner'),true,'owner badge on profile')
+try{
+eq((await O.post('/api/admin/maintenance',{on:true})).s,200,'owner turns maintenance on')
+eq((await A.get('/api/me')).s,503,'maintenance blocks ordinary users')
+eq((await O.get('/api/me')).s,200,'admins pass maintenance')
+const wb=await A.post('/api/maintenance/bypass',{code:'wrong'})
+ok(wb.s===403||wb.s===400,'wrong bypass code rejected')
+if(process.env.TEST_BYPASS_CODE){
+eq(wb.s,403,'bypass is configured')
+eq((await A.post('/api/maintenance/bypass',{code:process.env.TEST_BYPASS_CODE})).s,200,'right bypass code accepted')
+eq((await A.get('/api/me')).s,200,'bypassed session gets through maintenance')
+eq((await B.get('/api/me')).s,503,'bypass is per session')
+}
+}finally{await O.post('/api/admin/maintenance',{on:false})}
+eq((await A.get('/api/me')).s,200,'maintenance off again')
 eq((await A.patch('/api/me',{links:[{label:'Site',url:'https://example.com/a'}]})).s,200,'save a profile link')
 eq((await B.get('/api/users/'+A.id)).j.user.links[0].url,'https://example.com/a','links visible to others')
 eq((await A.patch('/api/me',{links:[{label:'x',url:'http://example.com'}]})).s,400,'http links rejected')
