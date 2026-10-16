@@ -8,7 +8,7 @@
     "migrate:local": "wrangler d1 migrations apply DB --local",
     "migrate:remote": "wrangler d1 migrations apply DB --remote",
     "test": "node test/run.mjs",
-    "test:static": "node test/safety.mjs && node test/static.mjs && node test/md.mjs && node test/push.mjs && node test/codec.mjs && node test/p2p.mjs",
+    "test:static": "node test/safety.mjs && node test/static.mjs && node test/md.mjs && node test/slash.mjs && node test/push.mjs && node test/codec.mjs && node test/p2p.mjs",
     "deploy": "wrangler deploy",
     "test:store": "node test/store.mjs",
     "test:signin": "node test/signin.mjs"
