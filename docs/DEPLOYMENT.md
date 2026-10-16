@@ -1,0 +1,106 @@
+# Deployment
+
+Nothing here has been run against a real Cloudflare account yet. Each step is what the tooling documents; treat the first deploy as the verification and report anything that differs.
+
+## Requirements
+
+- A Cloudflare account on the free plan
+- Node.js 20 or newer
+- This repository, with `npm install` done
+
+## Cost warnings before you start
+
+- Workers, D1 and Durable Objects stop working (they return errors) when their daily free allowance is used up. They reset at 00:00 UTC.
+- **R2 and Realtime TURN do not stop at their free allowance; usage above it is billed.** R2 free: 10 GB-month storage, 1M Class A and 10M Class B operations per month. TURN free: the first 1,000 GB, then $0.05 per GB. R2 may require a payment method on file to enable; I could not confirm this from Cloudflare's current documentation. Parley's per-user upload quota (`USER_QUOTA_MB`, default 500) and per-file limit (`MAX_UPLOAD_MB`, default 25) are guards, not a billing cap.
+- Without TURN the app falls back to STUN only. Calls between some networks (symmetric NAT, strict corporate firewalls) will fail to connect.
+
+## Steps
+
+1. Sign in the CLI. This opens a browser for you to approve; do it yourself.
+
+   ```
+   npx wrangler login
+   ```
+
+2. Create the database and put its id in `wrangler.toml`.
+
+   ```
+   npx wrangler d1 create parley
+   ```
+
+   Add the printed `database_id = "..."` line under `[[d1_databases]]`. Recent Wrangler versions can also create bindings automatically on first deploy; that path has not been tried here.
+
+3. Create the bucket.
+
+   ```
+   npx wrangler r2 bucket create parley-files
+   ```
+
+4. Apply the schema.
+
+   ```
+   npm run migrate:remote
+   ```
+
+5. Optional: voice relay. In the Cloudflare dashboard open Realtime, TURN, and create a key. Then:
+
+   ```
+   npx wrangler secret put TURN_KEY_ID
+   npx wrangler secret put TURN_API_TOKEN
+   ```
+
+   Never commit these. `.dev.vars` is git-ignored for local use; `.dev.vars.example` lists the names.
+
+6. Deploy.
+
+   ```
+   npm run deploy
+   ```
+
+7. Check it.
+
+   ```
+   curl https://<your-worker>.workers.dev/api/health
+   ```
+
+   Then open the URL, register, and keep the recovery code.
+
+8. Make yourself an admin. Add your username to `ADMIN_USERNAMES` in `wrangler.toml` (comma separated), then `npm run deploy` again. The admin panel is in the status menu under your name.
+
+## Configuration
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `MAX_UPLOAD_MB` | 100 | Largest file sent in a single request (the free plan request body limit is 100 MB). |
+| `MAX_FILE_MB` | 1024 | Largest file via multipart upload (16 MiB parts straight to R2). |
+| `USER_QUOTA_MB` | 1024 | Total attachment storage per user, including unfinished uploads. R2 free storage is 10 GB in total, so size this to your member count. |
+| `PBKDF2_ITERS` | 100000 | Password hashing cost. 100,000 is the maximum Workers' WebCrypto accepts. Stored per hash. |
+| `REGISTRATION_OPEN` | true | Set `"false"` to close signups. |
+| `ADMIN_USERNAMES` | empty | Comma separated usernames that get the admin panel. |
+
+Secrets, all optional:
+
+- `TURN_KEY_ID`, `TURN_API_TOKEN`: Cloudflare Realtime TURN.
+- `SIGNING_JWK`: Ed25519 message signing key from `node scripts/gen-signing.mjs`. Without it a key is generated and kept in D1.
+- `VAPID_PRIVATE_JWK`: from `node scripts/gen-vapid.mjs`; turns on Web Push. Optional variable `VAPID_SUBJECT` (a `mailto:` or https URL).
+
+Set secrets with `wrangler secret put NAME`. Never commit them. Run `npm run migrate:remote` to apply both migrations. A cron trigger aborts multipart uploads left open for 24 hours.
+
+## Deploying from GitHub
+
+Two options:
+
+- Cloudflare Workers Builds: connect the repository in the dashboard (Workers, your worker, Settings, Builds). Build command: none. Deploy command: `npx wrangler deploy`. Run `npm run migrate:remote` yourself when a release adds a migration.
+- The included workflow `.github/workflows/deploy.yml` is manual (`workflow_dispatch`) and applies migrations and deploys. It needs repository secrets `CLOUDFLARE_API_TOKEN` (a token with Workers, D1 and R2 edit permission) and `CLOUDFLARE_ACCOUNT_ID`. It does nothing until you add them and run it.
+
+## Custom domain
+
+Add a route or custom domain to the worker in the dashboard. Cookies are `Secure` automatically on https, and WebSocket and API origin checks compare against the request's own origin, so no extra setting is needed.
+
+## Troubleshooting
+
+- **Voice connects but there is no audio between some people**: no TURN configured, or the secrets are wrong. `/api/rtc/ice` returns `turn: false` when it fell back to STUN.
+- **Everyone gets errors late in the day**: a daily free quota was used up. The API reports database exhaustion as a 503 with a message. Check the dashboard for which one.
+- **Registration or login is slow or fails with a CPU error**: PBKDF2 at 100,000 iterations may exceed the free plan's 10 ms CPU budget on some requests. This is untested on production. Options: lower `PBKDF2_ITERS` (weaker hashes, existing hashes keep their own count), or use the Workers Paid plan.
+- **`npm test` fails with 429s**: you are hitting rate limits from repeated runs; wait a few minutes.
+- **Uploads fail with 411**: a proxy removed the `Content-Length` header; uploads require it.
