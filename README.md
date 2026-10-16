@@ -11,7 +11,7 @@ Status: **pre-release (0.1.0)**. The backend has an automated integration test (
 | API and static client | Cloudflare Workers with static assets |
 | Data | D1 (SQLite) |
 | Realtime (messages, typing, presence, voice signaling) | One Durable Object class using the WebSocket Hibernation API |
-| Attachments | R2 |
+| Attachments | D1 chunk store (R2 optional) |
 | Voice, video, screen share | Browser WebRTC, peer to peer mesh (max 12 per channel), optional Cloudflare Realtime TURN |
 | Optional P2P acceleration | WebRTC data channels (history and file segments), verified by server signatures and SHA-256 |
 | Images | Vendored WebAssembly JPEG XL and AVIF codecs in a Web Worker |
