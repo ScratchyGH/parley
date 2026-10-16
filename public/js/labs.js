@@ -4,6 +4,13 @@ import{S,loadServer}from'./state.js'
 let frame=null,loaded=null,puterOn=false,seq=0
 const waiting=new Map()
 let puterNote=()=>{}
+const KEYN='parley:pollkey'
+const getKey=()=>{try{return localStorage.getItem(KEYN)||''}catch{return ''}}
+const setKey=v=>{try{v?localStorage.setItem(KEYN,v):localStorage.removeItem(KEYN)}catch{}}
+function keyBox(){
+const inp=h('input',{class:'inp',type:'password',autocomplete:'off',placeholder:'Optional Pollinations API key',value:getKey(),on:{change:()=>setKey(inp.value.trim())}})
+return h('div',null,field('Pollinations API key',inp,'Pollinations now asks for a key on most requests. Get one at enter.pollinations.ai. It is kept only in this browser and sent with each request, never saved by the server.'))
+}
 
 function bridge(host){
 if(!frame){
@@ -55,7 +62,7 @@ function modelPick(){
 const sel=h('select',{class:'sel'},h('option',{value:''},'Loading models'))
 const ready=GET('/api/lab/models').then(d=>{
 mount(sel,d.models.map(m=>h('option',{value:m.name,title:m.description},m.name)))
-const pref=d.models.find(m=>m.name==='openai')||d.models[0]
+const pref=d.models.find(m=>m.name==='openai/gpt-5.4-nano')||d.models[0]
 if(pref)sel.value=pref.name
 }).catch(e=>{mount(sel,h('option',{value:''},'Models unavailable'));return e})
 return{sel,ready}
@@ -114,7 +121,7 @@ if(prompt.value.trim().length<8){toast('Describe the server in a sentence or two
 gen.disabled=true
 note.textContent='Asking '+model.sel.value+'. This can take up to 40 seconds.'
 try{
-const r=await POST('/api/lab/ai/layout',{prompt:prompt.value.trim(),model:model.sel.value})
+const r=await POST('/api/lab/ai/layout',{prompt:prompt.value.trim(),model:model.sel.value,key:getKey()})
 layout=r.layout
 note.textContent=''
 show()
@@ -130,7 +137,7 @@ puterCall('models').then(d=>{if(d.models.length){pmodel.setAttribute('list','put
 })
 mount(wrap,field('Model (Pollinations)',model.sel),field('Add the layout to',target),field('What should the server be about?',prompt),
 h('div',{class:'row',style:{gap:'8px',marginTop:'8px',flexWrap:'wrap'}},gen,connect),note,pbox,out)
-return block('AI Server Maker','Pollinations drafts the layout from your prompt. Puter can optionally refine it with a second model you choose. Nothing changes in your server until you press Add to server.',wrap,h('p',{class:'hint'},'Your prompt is sent to Pollinations by this Parley server. Anonymous use is rate limited, so wait a few seconds between tries.'))
+return block('AI Server Maker','Pollinations drafts the layout from your prompt. Puter can optionally refine it with a second model you choose. Nothing changes in your server until you press Add to server.',wrap,h('p',{class:'hint'},'Your prompt is sent to Pollinations by this Parley server.'))
 }
 
 function summariser(){
@@ -145,7 +152,7 @@ if(!ch.sel.value){toast('Pick a channel','err');return}
 go.disabled=true
 res.textContent='Working'
 try{
-const r=await POST('/api/lab/ai/summary',{room:ch.sel.value,model:model.sel.value})
+const r=await POST('/api/lab/ai/summary',{room:ch.sel.value,model:model.sel.value,key:getKey()})
 res.textContent=r.summary
 }catch(e){res.textContent='';fail(e)}finally{go.disabled=false}
 })
@@ -187,5 +194,5 @@ return block('Transcript export','Saves up to the last 2000 messages of a channe
 export function labsPage(pg){
 mount(pg,h('h3',null,'Experimental'),
 h('p',{class:'hint'},'Early features that only a few accounts can see. They may change or disappear.'),
-maker(),summariser(),health(),exporter())
+keyBox(),maker(),summariser(),health(),exporter())
 }

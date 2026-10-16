@@ -413,7 +413,7 @@ grid.append(mkTile(uid,{stream,label:(u?.display_name||'Member')+(kind==='screen
 }
 }
 }
-if(!ids.length)grid.append(h('div',{class:'empty',style:{gridColumn:'1/-1'}},'Nobody is in this voice channel yet.'))
+if(!ids.length)grid.append(h('div',{class:'empty',style:{gridColumn:'1/-1'}},h('div',{class:'vempty'},h('b',null,'Nobody is here yet'),h('p',null,'Join to talk, turn on your camera or share your screen.'),joined?null:h('button',{class:'btn pri',on:{click:()=>joinVoice({ch:chId,hub,label,path})}},icon('volume','s'),'Join voice'))))
 const btn=(ic,t,fn,cls)=>h('button',{class:'ib '+(cls||''),title:t,'aria-label':t,'aria-pressed':cls?.includes('on')?'true':'false',on:{click:fn}},icon(ic))
 const bar=h('div',{class:'vbar',role:'toolbar','aria-label':'Voice controls'})
 if(joined){

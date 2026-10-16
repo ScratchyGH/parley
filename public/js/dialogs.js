@@ -56,7 +56,7 @@ d.close()
 go(`/s/${r.id}/${r.default_channel}`)
 })}},field('Server name',name),field('Description (optional)',desc),field('Category',cat),
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(false,v=>{pub=v},'List in Discover'),h('span',null,'List in Discover (anyone can join)')),
-err,h('div',{class:'row',style:{justifyContent:'flex-end'}},btn)))
+err,h('div',{class:'row',style:{justifyContent:'flex-end'}},h('button',{class:'btn',type:'button',on:{click:()=>d.close()}},'Cancel'),btn)))
 }else{
 const err=errBox()
 const code=h('input',{class:'inp',placeholder:'Invite link or code',autofocus:true})
