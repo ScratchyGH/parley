@@ -140,3 +140,24 @@ body.bridge{overflow:hidden;display:flex;align-items:center;gap:10px;padding:10p
 .swel h1{margin:6px 0 0;font-size:clamp(28px,4vw,44px);font-weight:800;color:var(--strong)}
 .swel p{margin:0;color:var(--muted);font-size:16px}
 .swel-w{color:var(--text)!important;white-space:pre-wrap}
+:root{--muted:#9db1b4}
+:root[data-theme=light]{--muted:#57606a}
+::placeholder{color:color-mix(in srgb,var(--muted) 75%,transparent);opacity:1}
+.scrim{background:rgba(6,9,10,.78)}
+.tabs{gap:6px;padding:4px;border-radius:12px;background:color-mix(in srgb,var(--side) 70%,var(--bg))}
+.tabs button{border-radius:9px;font-weight:600;padding:7px}
+.tabs button:not(.on):hover{background:var(--hover);color:var(--strong)}
+.tabs button.on{background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 1px var(--hi) inset}
+.perm{padding:8px 0;gap:12px}
+.tg{width:44px;height:26px;border-radius:13px}
+.tg:before{content:"";position:absolute;inset:-8px -6px}
+.tg:after{width:20px;height:20px;left:2px;top:2px}
+.tg[aria-checked=true]:after{transform:translateX(18px)}
+.wbtn{color:var(--text)}
+.wbtn:hover,.wbtn.on{color:var(--strong)}
+.sbanner{background:linear-gradient(135deg,var(--c,color-mix(in srgb,var(--hi) 60%,var(--accent))),color-mix(in srgb,var(--c,var(--hi)) 25%,var(--bg)))}
+.vempty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:48px 16px;margin:auto}
+.vempty b{font-family:var(--disp);font-size:20px;color:var(--strong)}
+.vempty p{margin:0 0 10px;color:var(--muted)}
+.ci .hint,.hint{font-size:13px}
+.hempty p,.hint{color:var(--muted)}
