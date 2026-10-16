@@ -77,15 +77,15 @@ svg.i{stroke-width:1.9}
 .split nav button.on{background:linear-gradient(90deg,color-mix(in srgb,var(--hi) 22%,var(--sel)),var(--sel));box-shadow:inset 3px 0 0 var(--hi)}
 
 .home{flex:1;overflow-y:auto;padding:0 0 40px}
-.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center;padding:44px clamp(20px,5vw,56px) 36px;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent);background:radial-gradient(900px 260px at 12% 0,var(--glow),transparent 70%)}
-.hero h1{font-size:clamp(30px,4.6vw,52px);line-height:1.04;margin:0;font-weight:800;color:var(--strong)}
-.hero h1 span{color:var(--hi)}
-.hero-t p{font-size:17px;margin:14px 0 0;color:var(--muted)}
-.hero-a{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px;border-radius:16px;background:color-mix(in srgb,var(--panel) 80%,var(--bg));border:1px solid color-mix(in srgb,var(--border) 70%,transparent);transition:transform .15s,border-color .15s,box-shadow .2s}
-.tile:hover{transform:translateY(-3px);border-color:var(--hi);box-shadow:var(--lift)}
-.tile b{font-family:var(--disp);color:var(--strong);font-size:15px}
-.tile small{color:var(--muted);font-size:12.5px;line-height:1.3}
+.hh{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center;padding:44px clamp(20px,5vw,56px) 36px;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent);background:radial-gradient(900px 260px at 12% 0,var(--glow),transparent 70%)}
+.hh h1{font-size:clamp(30px,4.6vw,52px);line-height:1.04;margin:0;font-weight:800;color:var(--strong)}
+.hh h1 span{color:var(--hi)}
+.hh-t p{font-size:17px;margin:14px 0 0;color:var(--muted)}
+.hh-a{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.htile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px;border-radius:16px;background:color-mix(in srgb,var(--panel) 80%,var(--bg));border:1px solid color-mix(in srgb,var(--border) 70%,transparent);transition:transform .15s,border-color .15s,box-shadow .2s}
+.htile:hover{transform:translateY(-3px);border-color:var(--hi);box-shadow:var(--lift)}
+.htile b{font-family:var(--disp);color:var(--strong);font-size:15px}
+.htile small{color:var(--muted);font-size:12.5px;line-height:1.3}
 .tico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);margin-bottom:8px}
 .hsec{padding:28px clamp(20px,5vw,56px) 0}
 .hsec h2{margin:0 0 14px;font-size:20px;color:var(--strong)}
@@ -102,12 +102,11 @@ svg.i{stroke-width:1.9}
 .scard .bdg{position:absolute;top:10px;right:10px}
 .hcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 24px}
 .clist,.dgrid{display:flex;flex-direction:column;gap:8px}
-.crow{display:flex;align-items:center;gap:12px}
-.home .crow{padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--panel) 70%,var(--bg));text-align:left;width:100%;transition:background .12s,transform .12s}
-.home .crow:hover{background:var(--panel);transform:translateX(3px)}
-.home .crow b,.dcard b{display:block;color:var(--strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.home .crow small,.dcard small{color:var(--muted)}
-.home .crow.un b{color:var(--strong)}
+.hrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--panel) 70%,var(--bg));text-align:left;width:100%;transition:background .12s,transform .12s}
+.hrow:hover{background:var(--panel);transform:translateX(3px)}
+.hrow b,.dcard b{display:block;color:var(--strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow small,.dcard small{color:var(--muted)}
+.hrow.un b{color:var(--strong)}
 .gico{width:32px;height:32px;border-radius:12px;display:grid;place-items:center;background:var(--surf2);flex:none}
 .dcard{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--panel) 70%,var(--bg))}
 .dcard .av{border-radius:14px}
@@ -132,7 +131,7 @@ svg.i{stroke-width:1.9}
 .puterframe{width:100%;max-width:480px;height:54px;border:1px solid var(--border);border-radius:12px;background:var(--panel);margin-top:8px}
 body.bridge{overflow:hidden;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent}
 
-@media (max-width:860px){.hero,.hcols{grid-template-columns:1fr}.hero{padding-top:28px}}
+@media (max-width:860px){.hh,.hcols{grid-template-columns:1fr}.hh{padding-top:28px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .swel{flex:1;display:grid;place-items:center;padding:24px;overflow:auto;background:radial-gradient(700px 300px at 50% 0,color-mix(in srgb,var(--c,var(--hi)) 24%,transparent),transparent 70%)}
 .swel-b{max-width:560px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
