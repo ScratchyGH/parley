@@ -38,7 +38,18 @@ Nothing has been deployed to Cloudflare.
 | Threads from a message, forum channels with posts, polls (single/multi, timed, close), scheduled events with RSVP | API tested, UI written |
 | Incoming webhooks (token shown once, posts as a bot user) | API tested, UI written |
 | Bot accounts with tokens (REST only, no real-time gateway, limited endpoint allow list) | API tested, UI written |
+| Bot projects: page with Markdown description, icon, up to 5 tags, SPDX license (or custom link), links, release notes, private / link-only / listed, add to server, install count | API tested, UI written, not seen in a browser |
+| Bots hub: search, tag and license filters, sorting, creator editor with live listing preview | UI written, not seen in a browser |
 | Outgoing webhooks and slash commands | Missing |
+
+## Sign-in
+
+| Feature | Status |
+| --- | --- |
+| Username and password, recovery code, TOTP | API tested |
+| Sign in or link GitHub, Google or Discord (only offered when the matching `OAUTH_*` secrets are set) | API tested against a local fake provider only. Never run against the real services |
+| Passkeys (WebAuthn, ES256, discoverable credentials, no attestation) | API tested with a software authenticator in Node. Never tried with a real browser or security key |
+| Passwordless accounts can set a password later; the last sign-in method cannot be removed | API tested |
 
 ## Messaging
 
@@ -49,6 +60,7 @@ Nothing has been deployed to Cloudflare.
 | Markdown, spoilers, code blocks with highlighting for common languages | Parser has 22 unit assertions (`test/md.mjs`, DOM stub); rendering in a browser untested |
 | Attachments with progress and cancel, paste and drag and drop | API tested, UI written |
 | Image, video, audio inline; other files as downloads | UI written |
+| More file types: Office and OpenDocument files, archives, fonts, 3D models, MIDI, subtitles and many source formats (served as downloads or plain text with a Preview button up to 256 KB). Executables, HTML, SVG and XML stay blocked | API tested (mime, sniffing, download disposition), preview UI written |
 | Link previews | API written, UI written; the fetch path is not covered by the test |
 | Unread counts, mention badges, new messages divider, mark read | API tested, UI written |
 | Typing indicators, presence | API tested, UI written |
@@ -140,7 +152,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 - Free-tier quotas cap how many people one deployment can serve; see ARCHITECTURE.md.
 - Online presence is only known for people in the server or conversation you currently have open.
 - Unread counts for servers you are not viewing refresh when you focus the tab and every three minutes, not instantly.
-- Migrations are `0001_init.sql` to `0005_indexes.sql` (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks; 0005: partial indexes for message lists, pins and spam checks). Apply with `npm run migrate:remote` before deploying.
+- Migrations are `0001_init.sql` to `0008_cleanup_indexes.sql` (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks; 0005: partial indexes for message lists, pins and spam checks; 0006: bot projects, tags, releases, installs; 0007: OAuth identities, passkeys, WebAuthn challenges; 0008: indexes for the nightly cleanup). Apply with `npm run migrate:remote` before deploying.
 - Display names are not unique and are not protected, so someone can still copy another person's display name. Usernames (which are the unique handle) are protected.
 - Full text search is still a LIKE scan: D1 FTS5 would roughly triple message write cost on the free plan.
 - Not buildable on the free tier without a third party: email verification and recovery, end to end encryption, full text search, an SFU for large calls.

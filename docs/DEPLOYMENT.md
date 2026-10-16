@@ -78,6 +78,18 @@ None of these three adapters has ever run against the real services. They are te
 
 8. Make yourself an admin. Add your username to `ADMIN_USERNAMES` in `wrangler.toml` (comma separated), then `npm run deploy` again. The admin panel is in the status menu under your name.
 
+## Optional sign-in providers
+
+Each provider is offered on the sign-in screen only when both of its secrets exist. Register an OAuth app with the provider, set its callback (redirect) URL to `https://YOUR-HOST/api/auth/oauth/PROVIDER/callback`, then add the secrets on the Worker.
+
+| Provider | Secrets | Scope requested | Callback path |
+| --- | --- | --- | --- |
+| GitHub | `OAUTH_GITHUB_ID`, `OAUTH_GITHUB_SECRET` | `read:user` | `/api/auth/oauth/github/callback` |
+| Google | `OAUTH_GOOGLE_ID`, `OAUTH_GOOGLE_SECRET` | `openid profile` | `/api/auth/oauth/google/callback` |
+| Discord | `OAUTH_DISCORD_ID`, `OAUTH_DISCORD_SECRET` | `identify` | `/api/auth/oauth/discord/callback` |
+
+Only the provider's user id and display label are stored. These flows are tested against a local fake provider (`npm run test:signin` with the `.dev.vars.example` values pointed at it), not against GitHub, Google or Discord themselves, so expect to debug the first real run. Passkeys need no setup but only work on the exact host they were registered on.
+
 ## Configuration
 
 | Variable | Default | Meaning |
@@ -95,7 +107,7 @@ Secrets, all optional:
 - `SIGNING_JWK`: Ed25519 message signing key from `node scripts/gen-signing.mjs`. Without it a key is generated and kept in D1.
 - `VAPID_PRIVATE_JWK`: from `node scripts/gen-vapid.mjs`; turns on Web Push. Optional variable `VAPID_SUBJECT` (a `mailto:` or https URL).
 
-Set secrets with `wrangler secret put NAME`. Never commit them. Run `npm run migrate:remote` to apply both migrations. A cron trigger aborts multipart uploads left open for 24 hours.
+Set secrets with `wrangler secret put NAME`. Never commit them. Run `npm run migrate:remote` to apply the migrations (the Workers Builds deploy command does this for you). A cron trigger aborts multipart uploads left open for 24 hours.
 
 ## Deploying from GitHub
 

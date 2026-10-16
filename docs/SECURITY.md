@@ -34,6 +34,15 @@ This is a description of what the code does, not a certification. It has not bee
 - A username claim is the name with case, `.`, `-`, `_` removed and common lookalike characters folded. A new account or rename is refused if the claim belongs to another account, including a deleted one. The previous owner keeps their last 6 names reserved and can switch back. This does not stop visually similar display names or lookalikes outside the folding table (for example Cyrillic letters are already refused by the username character set).
 - Bot tokens are random 32 byte values shown once and stored hashed. A bot can only reach an allow list of message, channel, thread and file endpoints and cannot change accounts, servers or create bots.
 
+## OAuth and passkeys
+
+- OAuth uses the authorization code flow. The `state` value lives in a short lived HttpOnly, SameSite=Lax cookie scoped to `/api/auth/oauth` and is compared in constant time. Only the provider's stable user id and display label are stored; no email address and no access token is kept.
+- An account is matched by provider and provider user id only, never by name. Linking another account requires an existing session and refuses an identity already linked elsewhere.
+- Passkey challenges are 32 random bytes, single use, valid for 5 minutes and bound to the user for registration. The server checks the type, challenge, exact origin, the RP ID hash, the user-present flag and an ECDSA P-256 signature, and rejects a non-increasing signature counter when the authenticator reports one.
+- Passkeys do not ask for TOTP; the passkey is the second factor on its own. Attestation is not requested or verified, so the server cannot tell which authenticator model was used.
+- Neither flow has been run against real providers or authenticators; tests use a fake OAuth server and a software authenticator.
+- Bot project pages are user content. Descriptions go through the same Markdown renderer as chat (no raw HTML), links must be https, and the license field is a fixed list or a link, not free text.
+
 ## Privacy
 
 - **Messages are not end to end encrypted.** They are stored in plaintext in D1, and the person who operates the deployment can read them. Direct messages are visible to the operator too.
@@ -53,6 +62,7 @@ Reports (messages, users, servers), per server moderation (timeout, kick, ban, a
 - No email verification, so nothing stops one person from making many accounts except per address registration limits.
 - Two factor authentication is TOTP only. A lost authenticator plus lost backup codes means the account cannot be recovered by the recovery code.
 - Peer-to-peer mode (off by default) reveals your IP address to peers over WebRTC. Peers can withhold messages from history pages, and a page may contain messages that were deleted while that peer was offline, until you refresh from the server. Files fetched from peers are verified by SHA-256 and messages by the server signature, so peers cannot forge content, only omit it.
+- OAuth only accounts have no password until the owner sets one, so they have no recovery code until then. Losing the linked provider account loses the Parley account unless a passkey or password was added.
 - Webhook tokens are stored hashed but anyone holding the URL can post as that webhook.
 - Push, the service worker and all new client code have not been run in a browser or against a real push service.
 - No content scanning of uploads.
