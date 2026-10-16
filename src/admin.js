@@ -49,18 +49,17 @@ const prompt=str(b.prompt,10,12000,'Brief')
 const msgs=[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]
 const key=c.env.OPENROUTER_API_KEY
 if(!key)fail(400,'OPENROUTER_API_KEY is not set on this Worker. Add it as a Secret on the parley Worker (Settings, Variables and Secrets), then try again')
-const models=c.env.OPENROUTER_MODEL?[c.env.OPENROUTER_MODEL]:await freeModels()
-let lastErr='OpenRouter did not answer. Try again'
-for(const model of models){
+const models=(c.env.OPENROUTER_MODEL?[c.env.OPENROUTER_MODEL]:await freeModels()).slice(0,3)
+const attempt=async model=>{
 let res
-try{res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model,messages:msgs,max_tokens:6000,temperature:0.7}),signal:AbortSignal.timeout(55000)})}catch{lastErr='OpenRouter did not answer in time ('+model+')';continue}
-if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,200);lastErr='OpenRouter '+res.status+' on '+model+': '+t;if(res.status===401||res.status===403)break;continue}
+try{res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model,messages:msgs,max_tokens:4500,temperature:0.7}),signal:AbortSignal.timeout(45000)})}catch{throw new Error(model+' did not answer in 45 seconds')}
+if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,160);throw new Error('OpenRouter '+res.status+' on '+model+': '+t)}
 const j=await res.json().catch(()=>null)
 const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
-if(typeof text==='string'&&text.trim().length>1)return{text,via:'OpenRouter ('+model+')'}
-lastErr=model+' returned nothing'
+if(typeof text!=='string'||text.trim().length<2)throw new Error(model+' returned nothing')
+return{text,via:'OpenRouter ('+model+')'}
 }
-fail(502,lastErr)
+try{return await Promise.any(models.map(attempt))}catch(e){fail(502,(e.errors&&e.errors[0]&&e.errors[0].message)||'OpenRouter did not answer. Try again')}
 })
 
 r.add('POST','/api/admin/maintenance',async c=>{
