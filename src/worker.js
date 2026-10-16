@@ -11,6 +11,8 @@ import extraRoutes from'./extras.js'
 import totpRoutes from'./totp.js'
 import pushRoutes from'./push.js'
 import perkRoutes from'./perks.js'
+import botlabRoutes from'./botlab.js'
+import signinRoutes from'./signin.js'
 import{d1Store}from'./store.js'
 import{tursoDb}from'./turso.js'
 import{ensureSchema}from'./migrate.js'
@@ -32,6 +34,8 @@ extraRoutes(router)
 totpRoutes(router)
 pushRoutes(router)
 perkRoutes(router)
+botlabRoutes(router)
+signinRoutes(router)
 
 router.add('GET','/api/health',async c=>{
 await c.env.DB.prepare('select 1').first()

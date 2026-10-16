@@ -121,7 +121,7 @@ if(content.length>5&&last.content===content&&now()-last.created_at<30000)fail(42
 if(rr.kind==='dm'&&rr.conv.type==='dm'){
 const o=await c.env.DB.prepare('select accepted from conv_members where conv_id=? and user_id!=?').bind(rr.room,c.user.id).first()
 if(o&&!o.accepted){
-const n=await c.env.DB.prepare('select count(*) n from messages where room=? and author_id=?').bind(rr.room,c.user.id).first()
+const n=await c.env.DB.prepare('select count(*) n from (select 1 from messages where room=? and author_id=? limit 5)').bind(rr.room,c.user.id).first()
 if(n.n>=5)fail(403,'Wait for them to accept your message request before sending more')
 }
 }

@@ -119,7 +119,7 @@ limit('bot:'+c.user.id,10,3600000)
 const b=await body(c.req)
 const name=nm(b.name,'Name',2,32)
 const n=await c.env.DB.prepare('select count(*) n from users where bot_owner=? and deleted_at is null').bind(c.user.id).first()
-if(n.n>=5)fail(409,'You can have up to 5 bots')
+if(n.n>=10)fail(409,'You can have up to 10 bots')
 const id=newId('u')
 await c.env.DB.prepare('insert into users(id,username,display_name,pass_hash,pass_salt,pass_iters,is_bot,bot_owner,created_at) values(?,?,?,?,?,?,1,?,?)').bind(id,'bot_'+randHex(8),name,'!','!',1,c.user.id,now()).run()
 return json({id,name,token:await mint(c,id)},201)
@@ -130,7 +130,7 @@ return{token:await mint(c,b.id)}
 })
 r.add('DELETE','/api/bots/:bid',async c=>{
 const b=await owns(c,c.p.bid)
-await c.env.DB.batch([c.env.DB.prepare('delete from bot_tokens where bot_id=?').bind(b.id),c.env.DB.prepare('delete from members where user_id=?').bind(b.id),c.env.DB.prepare('update users set deleted_at=?,suspended=1 where id=?').bind(now(),b.id)])
+await c.env.DB.batch([c.env.DB.prepare('delete from bot_tokens where bot_id=?').bind(b.id),c.env.DB.prepare('delete from members where user_id=?').bind(b.id),c.env.DB.prepare('update users set deleted_at=?,suspended=1 where id=?').bind(now(),b.id),c.env.DB.prepare('delete from bot_project_tags where project_id in (select id from bot_projects where bot_id=?)').bind(b.id),c.env.DB.prepare('delete from bot_releases where project_id in (select id from bot_projects where bot_id=?)').bind(b.id),c.env.DB.prepare('delete from bot_installs where project_id in (select id from bot_projects where bot_id=?)').bind(b.id),c.env.DB.prepare('delete from bot_projects where bot_id=?').bind(b.id)])
 return{ok:true}
 })
 r.add('POST','/api/servers/:sid/bots/:bid',async c=>{

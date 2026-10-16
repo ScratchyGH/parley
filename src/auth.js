@@ -58,15 +58,15 @@ try{settings=JSON.parse(u.settings)}catch{}
 return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,totp_on:!!u.totp_on,created_at:u.created_at}
 }
 
-async function makeSession(c,uid){
+export async function makeSession(c,uid){
 const token=randHex(32)
 await c.env.DB.prepare('insert into sessions(id,user_id,created_at,expires_at,last_seen,ua,ip) values(?,?,?,?,?,?,?)').bind(await sha(token),uid,now(),now()+SESSION_MS,now(),(c.req.headers.get('user-agent')||'').slice(0,200),(c.req.headers.get('cf-connecting-ip')||'').split(':').slice(0,4).join(':').slice(0,45)).run()
 return cookie(c.url,token,SESSION_MS/1000)
 }
 
-const ip=c=>c.req.headers.get('cf-connecting-ip')||'local'
-const iters=env=>Math.min(100000,Math.max(1000,parseInt(env.PBKDF2_ITERS)||100000))
-const recoveryCode=()=>{const h=randHex(10);return h.match(/.{5}/g).join('-')}
+export const ip=c=>c.req.headers.get('cf-connecting-ip')||'local'
+export const iters=env=>Math.min(100000,Math.max(1000,parseInt(env.PBKDF2_ITERS)||100000))
+export const recoveryCode=()=>{const h=randHex(10);return h.match(/.{5}/g).join('-')}
 
 async function attempts(env,key){
 const r=await env.DB.prepare('select n,reset_at from login_attempts where k=?').bind(key).first()
@@ -228,7 +228,8 @@ return{ok:true}
 r.add('POST','/api/me/recovery',async c=>{
 limit('rcv:'+c.user.id,5,3600000)
 const b=await body(c.req)
-if(!safeEq(await pbkdf2(str(b.password,1,200,'Password'),c.user.pass_salt,c.user.pass_iters),c.user.pass_hash))fail(403,'Password is incorrect')
+if(c.user.pass_hash==='!'){if(b.confirm!==c.user.username)fail(403,'Type your username to confirm')}
+else if(!safeEq(await pbkdf2(str(b.password,1,200,'Password'),c.user.pass_salt,c.user.pass_iters),c.user.pass_hash))fail(403,'Password is incorrect')
 const code=recoveryCode()
 await c.env.DB.prepare('update users set recovery_hash=? where id=?').bind(await sha(code),c.user.id).run()
 return{recovery_code:code}
@@ -252,7 +253,8 @@ return{ok:true}
 r.add('POST','/api/me/delete',async c=>{
 limit('del:'+c.user.id,5,3600000)
 const b=await body(c.req)
-if(!safeEq(await pbkdf2(str(b.password,1,200,'Password'),c.user.pass_salt,c.user.pass_iters),c.user.pass_hash))fail(403,'Password is incorrect')
+if(c.user.pass_hash==='!'){if(b.confirm!==c.user.username)fail(403,'Type your username to confirm')}
+else if(!safeEq(await pbkdf2(str(b.password,1,200,'Password'),c.user.pass_salt,c.user.pass_iters),c.user.pass_hash))fail(403,'Password is incorrect')
 const owned=(await c.env.DB.prepare('select id,name from servers where owner_id=?').bind(c.user.id).all()).results
 if(owned.length)return json({error:'Transfer or delete your servers first',servers:owned},409)
 const files=(await c.env.DB.prepare('select r2_key from files where owner_id=? and kind!=?').bind(c.user.id,'attachment').all()).results
@@ -267,6 +269,8 @@ c.env.DB.prepare('delete from notifications where user_id=?').bind(c.user.id),
 c.env.DB.prepare('delete from saved where user_id=?').bind(c.user.id),
 c.env.DB.prepare('delete from read_state where user_id=?').bind(c.user.id),
 c.env.DB.prepare('delete from sessions where user_id=?').bind(c.user.id),
+c.env.DB.prepare('delete from oauth_identities where user_id=?').bind(c.user.id),
+c.env.DB.prepare('delete from passkeys where user_id=?').bind(c.user.id),
 c.env.DB.prepare('delete from files where owner_id=? and kind!=?').bind(c.user.id,'attachment'),
 c.env.DB.prepare("update users set username=?,display_name='Deleted user',pass_hash='',pass_salt='00',recovery_hash=null,avatar_id=null,banner_id=null,bio='',pronouns='',status_text='',settings='{}',deleted_at=? where id=?").bind('deleted_'+c.user.id.slice(2,12),now(),c.user.id)
 ])

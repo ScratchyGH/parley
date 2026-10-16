@@ -3,7 +3,8 @@ import{resolveRoom,loadMember,P,need}from'./perms.js'
 import{place}from'./store.js'
 
 const IMG={png:'image/png',apng:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',jxl:'image/jxl',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',tif:'image/tiff',tiff:'image/tiff',ico:'image/x-icon'}
-const INLINE_MEDIA={mp3:'audio/mpeg',ogg:'audio/ogg',oga:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',flac:'audio/flac',mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',opus:'audio/ogg',aac:'audio/aac',pdf:'application/pdf'}
+const INLINE_MEDIA={mp3:'audio/mpeg',weba:'audio/webm',mid:'audio/midi',midi:'audio/midi',aif:'audio/aiff',aiff:'audio/aiff',m4b:'audio/mp4',ogg:'audio/ogg',oga:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',flac:'audio/flac',mp4:'video/mp4',m4v:'video/mp4',ogv:'video/ogg','3gp':'video/3gpp',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',opus:'audio/ogg',aac:'audio/aac',pdf:'application/pdf'}
+const DOWNLOAD={doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odt:'application/vnd.oasis.opendocument.text',ods:'application/vnd.oasis.opendocument.spreadsheet',odp:'application/vnd.oasis.opendocument.presentation',rtf:'application/rtf',epub:'application/epub+zip',zip:'application/zip',rar:'application/vnd.rar','7z':'application/x-7z-compressed',tar:'application/x-tar',gz:'application/gzip',tgz:'application/gzip',bz2:'application/x-bzip2',xz:'application/x-xz',zst:'application/zstd',ttf:'font/ttf',otf:'font/otf',woff:'font/woff',woff2:'font/woff2',stl:'model/stl',glb:'model/gltf-binary',gltf:'model/gltf+json',obj:'model/obj','3mf':'model/3mf',wma:'audio/x-ms-wma',avi:'video/x-msvideo',wmv:'video/x-ms-wmv',psd:'image/vnd.adobe.photoshop',sqlite:'application/vnd.sqlite3',db:'application/octet-stream',iso:'application/x-iso9660-image',dmg:'application/x-apple-diskimage',torrent:'application/x-bittorrent',mcpack:'application/zip',mcworld:'application/zip',mrpack:'application/zip'}
 const BLOCKED=new Set(['exe','msi','bat','cmd','com','scr','dll','ps1','vbs','jar','apk','svg','html','htm','xhtml','xml','hta','lnk','reg','sh'])
 const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','conv_icon','emoji','sticker'])
 const KINDS=['attachment','avatar','banner','server_icon','server_banner','conv_icon','emoji','sticker']
@@ -25,6 +26,12 @@ if(type==='image/x-icon')return u[0]===0&&u[1]===0&&u[2]===1&&u[3]===0
 if(type==='video/x-matroska'||type==='video/webm')return u[0]===0x1a&&u[1]===0x45&&u[2]===0xdf&&u[3]===0xa3
 if(type==='video/mp4'||type==='video/quicktime')return at(4,'ftyp')||at(4,'moov')||at(4,'mdat')||at(4,'free')||at(4,'wide')
 if(type==='application/pdf')return at(0,'%PDF')
+if(type==='audio/mpeg')return at(0,'ID3')||(u[0]===0xff&&(u[1]&0xe0)===0xe0)
+if(type==='audio/ogg'||type==='video/ogg')return at(0,'OggS')
+if(type==='audio/wav')return at(0,'RIFF')&&at(8,'WAVE')
+if(type==='audio/flac')return at(0,'fLaC')
+if(type==='audio/midi')return at(0,'MThd')
+if(type==='application/zip')return at(0,'PK')
 return true
 }
 
@@ -64,9 +71,10 @@ if(IMG[e])mime=IMG[e]
 else if(kind!=='attachment')fail(415,'Only images are allowed here')
 else if(INLINE_MEDIA[e])mime=INLINE_MEDIA[e]
 else if(TEXT.includes(e))mime='text/plain; charset=utf-8'
+else if(DOWNLOAD[e])mime=DOWNLOAD[e]
 return{name,mime,room,serverId,typed:!!(IMG[e]||INLINE_MEDIA[e])}
 }
-const TEXT=['txt','md','json','csv','log','js','ts','py','java','c','cpp','h','rs','go','css','yml','yaml','toml','sql','kt','lua','rb','php','cs','swift']
+const TEXT=['txt','md','json','csv','tsv','log','js','mjs','cjs','ts','jsx','tsx','vue','svelte','py','java','c','cpp','h','hpp','rs','go','css','scss','yml','yaml','toml','ini','cfg','conf','sql','kt','lua','rb','php','cs','swift','dart','scala','hs','ex','exs','clj','r','jl','nix','tex','bib','diff','patch','srt','vtt','ass','lrc','ipynb','graphql','proto','gradle','dockerfile','properties','mcfunction']
 const okSha=v=>typeof v==='string'&&/^[0-9a-f]{64}$/.test(v)
 
 export default function(r){
