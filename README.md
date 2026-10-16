@@ -2,7 +2,7 @@
 
 A chat platform for communities: servers with channels and roles, direct messages and group chats, and WebRTC voice, video and screen sharing. It is built to run on Cloudflare's free plan with no paid dependencies.
 
-Status: **pre-release (0.1.0)**. The backend has an automated integration test (261 assertions, run against a local `wrangler dev`), plus Node tests for the markdown parser, push encryption, image codecs and the peer-to-peer engine. The browser client is written but has **not been exercised in a real browser**, and **nothing has been deployed**. See [docs/FEATURES.md](docs/FEATURES.md) for an item-by-item account of what exists, what was verified and what is missing.
+Status: **pre-release (0.1.0)**. The backend has an automated integration test (311 assertions, run against a local `wrangler dev`), plus Node tests for the markdown parser, push encryption, image codecs and the peer-to-peer engine. The browser client is written but has **not been exercised in a real browser**, and **nothing has been deployed**. See [docs/FEATURES.md](docs/FEATURES.md) for an item-by-item account of what exists, what was verified and what is missing.
 
 ## What it runs on
 
