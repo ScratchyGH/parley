@@ -1,5 +1,5 @@
 import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
-import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,noteThread}from'./state.js'
+import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{sendAll}from'./net.js'
 import{V,leaveVoice}from'./voice.js'
@@ -130,6 +130,64 @@ return h('div',{class:'vp'+(users[id].sp?' sp':'')},avatar(uu,'sm'),h('span',{cl
 }))
 }
 
+let DR=null
+const posSort=(a,b)=>a.position-b.position
+function dg(el,sid,kind,id){
+if(!can(sid,P.MANAGE_CHANNELS))return el
+el.draggable=true
+const mark=(c)=>{el.classList.remove('dropb','dropa');if(c)el.classList.add(c)}
+el.addEventListener('dragstart',e=>{e.stopPropagation();DR={kind,id};e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',id)}catch{}el.classList.add('dragging')})
+el.addEventListener('dragend',()=>{DR=null;el.classList.remove('dragging','dropb','dropa')})
+el.addEventListener('dragleave',e=>{if(!el.contains(e.relatedTarget))mark(null)})
+el.addEventListener('dragover',e=>{
+if(!DR||DR.id===id||(DR.kind==='cat'&&kind!=='cat'))return
+e.preventDefault()
+e.dataTransfer.dropEffect='move'
+const r=el.getBoundingClientRect()
+mark(e.clientY-r.top>r.height/2?'dropa':'dropb')
+})
+el.addEventListener('drop',async e=>{
+if(!DR||DR.id===id)return
+e.preventDefault();e.stopPropagation()
+const after=el.classList.contains('dropa')
+mark(null)
+const dr=DR;DR=null
+await moveItem(sid,dr,kind,id,after)
+})
+return el
+}
+async function moveItem(sid,dr,tkind,tid,after){
+const d=S.sdata[sid]
+if(!d)return
+if(dr.kind==='cat'){
+if(tkind!=='cat')return
+const list=[...d.categories].sort(posSort)
+const me=list.find(x=>x.id===dr.id)
+if(!me)return
+list.splice(list.indexOf(me),1)
+const t=list.findIndex(x=>x.id===tid)
+if(t<0)return
+list.splice(t+(after?1:0),0,me)
+list.forEach((x,i)=>{x.position=i})
+}else{
+const ch=d.channels.find(x=>x.id===dr.id)
+if(!ch)return
+let cat
+if(tkind==='ch'){const t=d.channels.find(x=>x.id===tid);if(!t)return;cat=t.category_id||null}
+else cat=tid
+const list=d.channels.filter(x=>(x.category_id||null)===cat&&x.id!==ch.id).sort(posSort)
+let at=0
+if(tkind==='ch'){at=list.findIndex(x=>x.id===tid)+(after?1:0)}
+list.splice(at,0,ch)
+ch.category_id=cat
+list.forEach((x,i)=>{x.position=i})
+}
+renderCtx()
+try{
+await POST(`/api/servers/${sid}/reorder`,{channels:d.channels.map(x=>({id:x.id,position:x.position,category_id:x.category_id||null})),categories:d.categories.map(x=>({id:x.id,position:x.position}))})
+}catch(x){fail(x);await loadServer(sid);renderCtx()}
+}
+
 function serverBody(sid){
 const d=S.sdata[sid]
 if(!d)return h('div',{class:'hint',style:{padding:'12px'}},'Loading…')
@@ -137,16 +195,16 @@ const kids=[]
 const byCat={}
 for(const c of d.channels)(byCat[c.category_id||'_']||=[]).push(c)
 for(const k of Object.keys(byCat))byCat[k].sort((a,b)=>a.position-b.position)
-for(const c of byCat._||[])kids.push(chanItem(sid,c))
+for(const c of byCat._||[])kids.push(dg(chanItem(sid,c),sid,'ch',c.id))
 for(const cat of [...d.categories].sort((a,b)=>a.position-b.position)){
 const list=byCat[cat.id]||[]
 if(!list.length&&!can(sid,P.MANAGE_CHANNELS))continue
 const key=sid+':'+cat.id
 const open=!collapsed.has(key)
-kids.push(h('div',{class:'cat',style:{padding:0}},h('button',{class:'catbtn','aria-expanded':String(open),on:{click:()=>{if(open)collapsed.add(key);else collapsed.delete(key);renderCtx()}}},icon(open?'down':'right','s'),h('span',null,cat.name)),
-can(sid,P.MANAGE_CHANNELS)?h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'Create channel in '+cat.name,'aria-label':'Create channel in '+cat.name,on:{click:()=>channelDialog(sid,cat.id)}},icon('plus','s')):null))
-if(open)for(const c of list)kids.push(chanItem(sid,c))
-else for(const c of list)if(unreadOf(c.id)||V.ch===c.id||S.nav.room===c.id)kids.push(chanItem(sid,c))
+kids.push(dg(h('div',{class:'cat',style:{padding:0}},h('button',{class:'catbtn','aria-expanded':String(open),on:{click:()=>{if(open)collapsed.add(key);else collapsed.delete(key);renderCtx()}}},icon(open?'down':'right','s'),h('span',null,cat.name)),
+can(sid,P.MANAGE_CHANNELS)?h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'Create channel in '+cat.name,'aria-label':'Create channel in '+cat.name,on:{click:()=>channelDialog(sid,cat.id)}},icon('plus','s')):null),sid,'cat',cat.id))
+if(open)for(const c of list)kids.push(dg(chanItem(sid,c),sid,'ch',c.id))
+else for(const c of list)if(unreadOf(c.id)||V.ch===c.id||S.nav.room===c.id)kids.push(dg(chanItem(sid,c),sid,'ch',c.id))
 }
 if(!d.channels.length)kids.push(h('div',{class:'hint',style:{padding:'12px'}},'No channels you can see yet.'))
 const sv=d.server
