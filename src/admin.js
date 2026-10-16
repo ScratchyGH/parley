@@ -28,6 +28,20 @@ return{users:u.n,servers:s.n,messages:m.n,storage_bytes:f.n,files:f.c,open_repor
 note:'Provider quota usage (D1 rows, requests, R2 operations) is shown in the Cloudflare dashboard; Workers do not expose it to the application.'}
 })
 
+r.add('POST','/api/admin/studio',async c=>{
+guard(c)
+limit('studio:'+c.user.id,6,60000)
+const b=await body(c.req)
+const prompt=str(b.prompt,10,12000,'Brief')
+let res
+try{res=await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)})}catch{fail(502,'The AI service did not answer. Try again')}
+if(!res.ok)fail(502,'The AI service returned an error. Try again')
+const j=await res.json().catch(()=>null)
+const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
+if(typeof text!=='string'||!text)fail(502,'The AI service returned nothing. Try again')
+return{text}
+})
+
 r.add('POST','/api/admin/maintenance',async c=>{
 guard(c)
 const b=await body(c.req)
