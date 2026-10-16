@@ -9,7 +9,7 @@ import{openChat,closeChat,chatEvent,currentRoom,resyncChat,refreshComposer,chatA
 import{V,voiceEvent,joinVoice,toggleMute,toggleDeaf,mountVoiceRoom,ringToast,stopRing,voiceSettingsView}from'./voice.js'
 import{friendsPage,discoverPage,welcomePage,forumPage}from'./pages.js'
 import{homePage}from'./home.js'
-import{botsPage}from'./botspage.js'
+import{botsPage,labPage}from'./botspage.js'
 import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,channelDialog,categoryDialog,groupSettingsDialog}from'./dialogs.js'
 import{openSettings,settingsPage}from'./settings.js'
 import{serverSettingsPage}from'./ssettings.js'
@@ -102,10 +102,10 @@ layoutMain(...p.nodes)
 document.title=p.title
 return
 }
-if(r.name==='bots'){
-S.nav={kind:'bots'}
+if(r.name==='bots'||r.name==='lab'){
+S.nav={kind:r.name}
 syncChrome()
-const p=botsPage(r)
+const p=r.name==='lab'?labPage(r):botsPage(r)
 layoutMain(...p.nodes)
 document.title=p.title
 await p.ready

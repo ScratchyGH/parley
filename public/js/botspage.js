@@ -92,8 +92,8 @@ return h('div',{class:'bh-wrap'},side,mainCol)
 
 function botTabs(p,active){
 return h('div',{class:'bh-tabs bh-etabs',role:'tablist'},
-h('button',{type:'button',role:'tab','aria-selected':String(active==='d'),class:active==='d'?'on':'',on:{click:()=>go(p?'/bots/'+p.slug+'/edit':'/bots/new')}},'Details'),
-h('button',{type:'button',role:'tab','aria-selected':String(active==='c'),class:active==='c'?'on':'',disabled:!p,title:p?'':'Create the bot first',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Code blocks'),
+h('button',{type:'button',role:'tab','aria-selected':String(active==='d'),class:active==='d'?'on':'',on:{click:()=>go(p?'/lab/'+p.slug+'/edit':'/lab/new')}},'Details'),
+h('button',{type:'button',role:'tab','aria-selected':String(active==='c'),class:active==='c'?'on':'',disabled:!p,title:p?'':'Create the bot first',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},'Code blocks'),
 p?null:h('span',{class:'hint',style:{alignSelf:'center'}},'Create the bot to unlock the code blocks'))
 }
 async function blocksPage(slug){
@@ -106,11 +106,11 @@ async function mineView(){
 const box=h('div',{class:'bh-wrap one'})
 try{
 const d=await GET('/api/bothub/mine')
-if(!d.projects.length){mount(box,h('div',{class:'empty'},h('div',null,h('h2',{style:{color:'var(--strong)'}},'Build your first bot'),h('p',null,'Create a bot account, write its page, pick a license, then keep it private or list it for everyone.'),h('button',{class:'btn pri',on:{click:()=>go('/bots/new')}},icon('plus','s'),'New bot'))));return box}
+if(!d.projects.length){mount(box,h('div',{class:'empty'},h('div',null,h('h2',{style:{color:'var(--strong)'}},'Build your first bot'),h('p',null,'Create a bot account, write its page, pick a license, then keep it private or list it for everyone.'),h('button',{class:'btn pri',on:{click:()=>go('/lab/new')}},icon('plus','s'),'New bot'))));return box}
 mount(box,h('div',{class:'bh-col'},d.projects.map(p=>h('div',{class:'bh-row mine',style:{'--tone':tone(p.id)}},botIcon(p),
 h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,p.name),pill(p.visibility)),h('p',null,p.summary||'No summary yet.'),chips(p.tags)),
 h('div',{class:'bh-side'},h('div',{class:'bh-stat'},h('b',null,String(p.installs)),h('span',null,p.installs===1?'server':'servers')),
-h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Blocks'),h('button',{class:'btn sm pri',on:{click:()=>go('/bots/'+p.slug+'/edit')}},'Edit')))))))
+h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},'Blocks'),h('button',{class:'btn sm pri',on:{click:()=>go('/lab/'+p.slug+'/edit')}},'Edit')))))))
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
 return box
 }
@@ -139,7 +139,7 @@ botIcon(p,'xl'),
 h('div',{class:'bh-hm'},h('h1',null,p.name),h('p',null,p.summary),h('div',{class:'row',style:{flexWrap:'wrap',gap:'12px'}},h('span',{class:'bh-chip'},icon('plus','s'),plural(p.installs,'server')),h('span',{class:'bh-chip'},icon('clock','s'),'Updated '+fmtRel(p.updated_at)),p.mine?pill(p.visibility):null)),
 h('div',{class:'bh-act'},
 p.visibility!=='private'||p.mine?h('button',{class:'btn pri',on:{click:()=>installDialog(p)}},icon('plus','s'),'Add to server'):null,
-p.mine?h('button',{class:'btn',on:{click:()=>go('/bots/'+p.slug+'/edit')}},icon('edit','s'),'Edit'):null,
+p.mine?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/edit')}},icon('edit','s'),'Edit'):null,
 h('button',{class:'btn',title:'Copy link','aria-label':'Copy link',on:{click:()=>copyText(location.origin+'/bots/'+p.slug)}},icon('link','s'))))
 const nav=h('div',{class:'bh-tabs',role:'tablist'},tabs.map(([k,l])=>h('button',{role:'tab','aria-selected':String((tab||'')===k),class:(tab||'')===k?'on':'',on:{click:()=>go('/bots/'+p.slug+(k?'/'+k:''))}},l)))
 const side=h('aside',{class:'bh-spec'},h('h4',null,'Details'),
@@ -220,7 +220,7 @@ try{const t=await POST(`/api/bothub/${p.id}/token`,{});mount(tokOut,tokenBox(t.t
 }}},icon('refresh','s'),'Generate new token'),tokOut))
 body.push(sec('danger','Delete',h('p',{class:'hint',style:{marginTop:0}},'Removes the page, the bot account and its token, and takes the bot out of every server.'),h('button',{class:'btn dng',type:'button',on:{click:async()=>{
 if(!await confirmBox('Delete '+p.name+'?','This cannot be undone.','Delete bot',true))return
-try{await DEL('/api/bothub/'+p.id);toast('Bot deleted','ok');go('/bots/mine')}catch(e){fail(e)}
+try{await DEL('/api/bothub/'+p.id);toast('Bot deleted','ok');go('/lab')}catch(e){fail(e)}
 }}},'Delete bot')))
 }
 save.addEventListener('click',async()=>{
@@ -232,17 +232,17 @@ if(p){
 if(d.slug!==p.slug)payload.slug=d.slug
 await PATCH('/api/bothub/'+p.id,payload)
 toast('Saved','ok')
-go('/bots/'+(payload.slug||p.slug)+'/edit',true)
+go('/lab/'+(payload.slug||p.slug)+'/edit',true)
 }else{
 const r=await POST('/api/bothub',payload)
 tokenDialog(payload.name,r.token)
-go('/bots/'+r.slug+'/edit',true)
+go('/lab/'+r.slug+'/edit',true)
 }
 }catch(e){err.textContent=e.message;save.disabled=false;inPage(err)}
 })
 drawAv();drawTags();drawRd();drawLic();drawVis();drawPrev()
 const toc=h('nav',{class:'bh-toc','aria-label':'Sections'},secs.map(([id,t])=>h('a',{href:'#sec-'+id,on:{click:e=>{e.preventDefault();inPage(document.getElementById('sec-'+id))}}},t)))
-const bar=h('div',{class:'bh-savebar'},err,h('div',{class:'grow'}),p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Block builder'):null,p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug)}},'View page'):null,save)
+const bar=h('div',{class:'bh-savebar'},err,h('div',{class:'grow'}),p?h('button',{class:'btn',type:'button',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},'Block builder'):null,p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug)}},'View page'):null,save)
 return h('div',null,botTabs(p,'d'),h('div',{class:'bh-edit'},h('div',{class:'bh-ecol'},toc),h('div',{class:'bh-emain'},body,bar),h('div',{class:'bh-ecol r'},preview)))
 }
 
@@ -263,22 +263,33 @@ dialog(name+' is ready',h('div',{class:'bd'},tokenBox(token),h('p',{class:'hint'
 }
 
 export function botsPage(r){
-const title=r.view==='new'?'New bot':r.view==='edit'?'Edit bot':r.view==='blocks'?'Bot blocks':r.view==='mine'?'My bots':r.view==='project'?'Bot':'Bots'
-const tp=r.view==='browse'?'Add bots to your servers, or build your own':''
-const nav=h('div',{class:'row',style:{gap:'4px'}},
-h('button',{class:'btn sm'+(r.view==='browse'?' pri':''),on:{click:()=>go('/bots')}},'Browse'),
-h('button',{class:'btn sm'+(r.view==='mine'?' pri':''),on:{click:()=>go('/bots/mine')}},'My bots'),
-h('button',{class:'btn sm'+(r.view==='new'?' pri':''),on:{click:()=>go('/bots/new')}},icon('plus','s'),'New bot'))
-const bar=topBar({lead:icon('bot'),title:'Bots',topic:tp,actions:nav})
+const title=r.view==='project'?'Bot':'Bots'
+const nav=h('button',{class:'btn sm pri',on:{click:()=>go('/lab')}},icon('flask','s'),'Open Bot Lab')
+const bar=topBar({lead:icon('bot'),title:'Bots',topic:r.view==='browse'?'Add bots to your servers':'',actions:nav})
 const scroller=h('div',{class:'pgh bh-page'})
 const res={nodes:[bar,scroller],title:title+' • Parley',cleanup:null}
 const fill=async()=>{
 if(r.view==='browse')mount(scroller,browse())
-else if(r.view==='mine')mount(scroller,await mineView())
+else{const v=await projectView(r.slug,r.tab);mount(scroller,v.node);if(v.title)document.title=v.title+' • Parley'}
+}
+res.ready=fill().catch(e=>mount(scroller,h('div',{class:'err',style:{padding:'24px'}},e.message)))
+return res
+}
+
+export function labPage(r){
+const title=r.view==='new'?'New bot':r.view==='edit'?'Edit bot':r.view==='blocks'?'Block builder':'Bot Lab'
+const nav=h('div',{class:'row',style:{gap:'4px'}},
+h('button',{class:'btn sm'+(r.view==='mine'?' pri':''),on:{click:()=>go('/lab')}},'My bots'),
+h('button',{class:'btn sm'+(r.view==='new'?' pri':''),on:{click:()=>go('/lab/new')}},icon('plus','s'),'New bot'),
+h('button',{class:'btn sm',on:{click:()=>go('/bots')}},'Bot hub'))
+const bar=topBar({lead:icon('flask'),title:'Bot Lab',topic:r.view==='mine'?'Build, test and publish your bots':'',actions:nav})
+const scroller=h('div',{class:'pgh bh-page'})
+const res={nodes:[bar,scroller],title:title+' • Parley',cleanup:null}
+const fill=async()=>{
+if(r.view==='mine')mount(scroller,await mineView())
 else if(r.view==='new')mount(scroller,await editor(null))
 else if(r.view==='edit')mount(scroller,await editor(r.slug))
-else if(r.view==='blocks')mount(scroller,await blocksPage(r.slug))
-else{const v=await projectView(r.slug,r.tab);mount(scroller,v.node);if(v.title)document.title=v.title+' • Parley'}
+else mount(scroller,await blocksPage(r.slug))
 }
 res.ready=fill().catch(e=>mount(scroller,h('div',{class:'err',style:{padding:'24px'}},e.message)))
 return res

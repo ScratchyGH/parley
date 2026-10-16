@@ -29,7 +29,7 @@ h('div',{class:'hh-a'},
 tile('plus','Start a server','Make a space for your people',()=>createServerDialog()),
 tile('compass','Find a community','Browse public servers',()=>go('/discover')),
 tile('useradd','Add a friend','Send a request by username',()=>go('/friends/add')),
-tile('bot','Bot hub','Share and install bots',()=>go('/bots'))))
+tile('bot','Bot hub','Share and install bots',()=>go('/bots')),tile('flask','Bot Lab','Build bots with blocks',()=>go('/lab'))))
 const servers=S.servers.length?h('section',{class:'hsec'},h('h2',null,'Your servers'),h('div',{class:'sgrid'},S.servers.map(s=>{
 const u=serverUnread(s.id)
 return h('button',{class:'scard'+(u?' un':''),style:s.accent?{'--c':s.accent}:{},on:{click:()=>go('/s/'+s.id)}},

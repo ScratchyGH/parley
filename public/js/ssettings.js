@@ -112,7 +112,7 @@ const ver=h('select',{class:'sel'},[['0','None'],['1','Account must be older tha
 let pub=!!s.is_public
 let age=!!s.age_restricted,scan=!!s.scan_explicit
 const scanBox=h('div')
-const drawScan=()=>mount(scanBox,age?h('div',{class:'perm'},toggle(scan,v=>{scan=v},'Scan for explicit content'),h('span',null,'Scan links and images and remove explicit ones')):h('div',{class:'hint'},'Turn on 18+ Only to unlock the explicit content scanner.'))
+const drawScan=()=>mount(scanBox,age?h('div',{class:'perm'},toggle(scan,v=>{scan=v},'Scan for explicit content'),h('span',null,'Remove explicit links and images, and block explicit text')):h('div',{class:'hint'},'Explicit text, links and images are always blocked in this server because it is not 18+ Only.'))
 drawScan()
 const ageRow=h('div',{class:'perm',style:{marginTop:'12px'}},toggle(age,async v=>{
 if(v&&!S.me.adult_ok){
@@ -491,6 +491,15 @@ const err=errBox()
 const words=h('textarea',{class:'inp',rows:5,placeholder:'One blocked word or phrase per line'})
 const mm=h('input',{class:'inp',type:'number',min:0,max:50,style:{width:'100px'}})
 const rj=h('input',{class:'inp',type:'number',min:0,max:200,style:{width:'100px'}})
+const tin=h('input',{class:'inp',maxLength:200,placeholder:'Type a message to check against these rules','aria-label':'Test message'})
+const tout=h('div',{class:'hint'})
+const testBox=h('div',{style:{margin:'8px 0 12px'}},h('div',{class:'row'},tin,h('button',{class:'btn',type:'button',on:{click:async()=>{
+try{
+await PUT(`/api/servers/${sid}/automod`,{words:words.value.split('\n'),block_links:links,max_mentions:parseInt(mm.value)||0,raid_joins:parseInt(rj.value)||0})
+const r=await POST(`/api/servers/${sid}/automod/test`,{text:tin.value})
+tout.textContent=r.blocked?'Blocked: '+r.reason:'Allowed. Nothing in the saved rules matches this message.'
+}catch(x){tout.textContent=x.message}
+}}},'Save and test')),tout)
 const van=h('input',{class:'inp',maxLength:32,placeholder:'my-server',value:S.sdata[sid].server.vanity||''})
 const lk=h('div')
 const drawLock=async()=>{try{const l=await GET(`/api/servers/${sid}/lockdown`);mount(lk,l.lockdown_until?h('div',{class:'row'},h('span',null,'Joins are locked until '+fmtStamp(l.lockdown_until)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/lockdown`,{on:false});drawLock()}catch(e){fail(e)}}}},'Unlock')):h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/lockdown`,{on:true,minutes:60});drawLock()}catch(e){fail(e)}}}},'Lock new joins for 1 hour'))}catch(e){mount(lk,h('div',{class:'err'},e.message))}}
@@ -504,8 +513,8 @@ rj.value=d.automod.raid_joins
 links=d.automod.block_links
 mount(holder,row('Block links','Messages containing http(s) links are rejected.',toggle(links,v=>{links=v},'Block links')))
 },e=>mount(holder,h('div',{class:'err'},e.message)))
-mount(pg,h('h3',null,'AutoMod'),h('p',{class:'hint'},'Rules run on the server when a message is sent or edited. Members with Manage Messages are exempt. Matching is case-insensitive substring matching, so short words can catch unrelated text.'),
-field('Blocked words and phrases',words,'Up to 100 entries, 2 to 40 characters each.'),
+mount(pg,h('h3',null,'AutoMod'),h('p',{class:'hint'},'Word, link and mention rules run when a message is sent, edited or posted in a poll. Owners, admins and members with Manage Messages or Moderate are exempt from those rules, so test with the box below instead of your own account. Words of 4 or more letters also match with spaces, dots, dashes and look-alike characters (b4d w0rd), and shorter words only match as whole words. Servers that are not 18+ Only always block explicit content for everyone, including moderators.'),
+field('Blocked words and phrases',words,'Up to 100 entries, 2 to 40 characters each.'),testBox,
 field('Maximum mentions per message (0 = no limit)',mm),holder,
 h('h4',{style:{marginTop:'16px'}},'Raid protection'),field('Lock joins when this many people join within a minute (0 = off)',rj,'The lock lasts 10 minutes. You can unlock earlier.'),lk,
 h('h4',{style:{marginTop:'16px'}},'Vanity invite link'),field('Custom link',h('div',{class:'row'},h('span',{class:'hint',style:{margin:0}},location.host+'/invite/'),van,h('button',{class:'btn sm',on:{click:async()=>{try{const r=await PUT(`/api/servers/${sid}/vanity`,{slug:van.value.trim()||null});S.sdata[sid].server.vanity=r.vanity;toast('Vanity link saved','ok')}catch(e){fail(e)}}}},'Save')),'3 to 32 letters, numbers or dashes. Free for everyone.'),err,

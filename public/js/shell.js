@@ -77,6 +77,7 @@ kids.push(h('div',{class:'wwrap'},on_?h('span',{class:'pip',style:{height:'20px'
 }
 kids.push(h('button',{class:'wbtn',title:'Create or join a server','aria-label':'Create or join a server',on:{click:()=>createServerDialog()}},icon('plus')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='discover'?' on':''),title:'Discover servers','aria-label':'Discover servers',on:{click:()=>go('/discover')}},icon('compass')))
+kids.push(h('button',{class:'wbtn'+(S.nav.kind==='lab'?' on':''),title:'Bot Lab','aria-label':'Bot Lab','aria-current':S.nav.kind==='lab'?'page':null,on:{click:()=>go('/lab')}},icon('flask')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='bots'?' on':''),title:'Bots','aria-label':'Bots','aria-current':S.nav.kind==='bots'?'page':null,on:{click:()=>go('/bots')}},icon('bot')))
 mount(el.rail,kids)
 }
@@ -231,7 +232,7 @@ if(bid){sbtn.classList.add('hasb');coverBg(sbtn,bid,'linear-gradient(180deg,tran
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{
-head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='settings'?'Settings':'Home'))
+head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='settings'?'Settings':'Home'))
 body=homeBody()
 }
 mount(el.ctx,head,body,userPanel())

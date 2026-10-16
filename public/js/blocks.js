@@ -3,7 +3,7 @@ import{h,mount,icon,GET,PUT,POST,fail,confirmBox}from'./util.js'
 const SVG='http://www.w3.org/2000/svg'
 const sv=(tag,a)=>{const e=document.createElementNS(SVG,tag);for(const[k,v]of Object.entries(a||{}))e.setAttribute(k,v);return e}
 const MODES=[['any','any message'],['contains','contains'],['equals','is exactly'],['starts','starts with']]
-const OPS=[['contains','contains'],['equals','is'],['starts','starts with'],['ends','ends with'],['gt','is more than'],['lt','is less than'],['empty','is empty'],['notempty','is not empty']]
+const OPS=[['contains','contains'],['notcontains','does not contain'],['equals','is'],['neq','is not'],['starts','starts with'],['ends','ends with'],['oneof','is one of (comma list)'],['gt','is more than'],['lt','is less than'],['empty','is empty'],['notempty','is not empty']]
 export const DEFS={
 msg:{title:'When a message is sent',tone:'trig',out:['next'],fields:[['mode','Message','select',MODES],['text','Text','text'],['ci','Ignore capital letters','check']],init:{mode:'contains',text:'hello',ci:'1'}},
 cmd:{title:'When a command is typed',tone:'trig',out:['next'],fields:[['prefix','Starts with','text'],['name','Command','text']],init:{prefix:'!',name:'ping'}},
@@ -13,9 +13,30 @@ say:{title:'Send a message',tone:'act',out:['next'],fields:[['text','Message','a
 react:{title:'Add a reaction',tone:'act',out:['next'],fields:[['emoji','Emoji','text']],init:{emoji:'👍'}},
 pick:{title:'Pick random text',tone:'data',out:['next'],fields:[['name','Save as','text'],['options','One option per line','area']],init:{name:'choice',options:'Yes\nNo\nMaybe'}},
 set:{title:'Set a variable',tone:'data',out:['next'],fields:[['name','Name','text'],['value','Value','text']],init:{name:'greeting',value:'Hi'}},
-count:{title:'Add to a saved counter',tone:'data',out:['next'],fields:[['name','Counter','text'],['by','Add','text']],init:{name:'count',by:'1'}}
+count:{title:'Add to a saved counter',tone:'data',out:['next'],fields:[['name','Counter','text'],['by','Add','text'],['scope','For','select',[['server','whole server'],['user','each member']]]],init:{name:'count',by:'1',scope:'server'}},
+mention:{title:'When the bot is mentioned',tone:'trig',out:['next'],fields:[],init:{}},
+join:{title:'When someone joins',tone:'trig',out:['next'],fields:[],init:{}},
+link:{title:'When a message has a link',tone:'trig',out:['next'],fields:[],init:{}},
+image:{title:'When a message has an attachment',tone:'trig',out:['next'],fields:[],init:{}},
+ismod:{title:'Is a moderator?',tone:'logic',out:['yes','no'],fields:[],init:{}},
+hasrole:{title:'Has a role?',tone:'logic',out:['yes','no'],fields:[['role','Role name','text']],init:{role:''}},
+time:{title:'Time of day (UTC hours)',tone:'logic',out:['yes','no'],fields:[['from','From hour','text'],['to','To hour','text']],init:{from:'0',to:'23'}},
+cooldown:{title:'Cooldown',tone:'logic',out:['yes','no'],fields:[['seconds','Seconds','text'],['scope','For','select',[['server','whole server'],['user','each member']]]],init:{seconds:'30',scope:'user'}},
+once:{title:'First time only',tone:'logic',out:['yes','no'],fields:[],init:{}},
+sayto:{title:'Send to a channel',tone:'act',out:['next'],fields:[['channel','Channel name','text'],['text','Message','area']],init:{channel:'general',text:'Hello!'}},
+delete:{title:'Delete the message',tone:'mod',out:['next'],fields:[],init:{}},
+pin:{title:'Pin the message',tone:'mod',out:['next'],fields:[],init:{}},
+timeout:{title:'Time out the member',tone:'mod',out:['next'],fields:[['minutes','Minutes','text']],init:{minutes:'5'}},
+addrole:{title:'Give a role',tone:'mod',out:['next'],fields:[['role','Role name','text']],init:{role:''}},
+removerole:{title:'Take a role',tone:'mod',out:['next'],fields:[['role','Role name','text']],init:{role:''}},
+stop:{title:'Stop here',tone:'logic',out:[],fields:[],init:{}},
+setcount:{title:'Set a saved counter',tone:'data',out:['next'],fields:[['name','Counter','text'],['value','Value','text'],['scope','For','select',[['server','whole server'],['user','each member']]]],init:{name:'count',value:'0',scope:'server'}},
+math:{title:'Do maths',tone:'data',out:['next'],fields:[['name','Save as','text'],['a','First number','text'],['op','Operation','select',[['+','add'],['-','subtract'],['*','multiply'],['/','divide'],['%','remainder'],['max','larger of'],['min','smaller of']]],['b','Second number','text']],init:{name:'result',a:'1',op:'+',b:'1'}},
+text:{title:'Change text',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['fn','Do','select',[['upper','UPPERCASE'],['lower','lowercase'],['title','Title Case'],['trim','Trim spaces'],['length','Count characters'],['reverse','Reverse'],['first','First word'],['last','Last word'],['replace','Remove text']]],['arg','Text to remove','text']],init:{name:'result',input:'{text}',fn:'upper',arg:''}},
+randnum:{title:'Random number',tone:'data',out:['next'],fields:[['name','Save as','text'],['min','Lowest','text'],['max','Highest','text']],init:{name:'roll',min:'1',max:'6'}},
+map:{title:'Look up a value',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Look up','text'],['table','One key=value per line','area'],['fallback','If not found','text']],init:{name:'result',input:'{arg1}',table:'a=Apple\nb=Banana',fallback:'Unknown'}}
 }
-const GROUPS=[['Triggers',['msg','cmd']],['Logic',['if','chance']],['Actions',['say','react']],['Data',['pick','set','count']]]
+const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image']],['Logic',['if','chance','ismod','hasrole','time','cooldown','once','stop']],['Actions',['say','sayto','react']],['Moderation',['delete','pin','timeout','addrole','removerole']],['Data',['pick','set','count','setcount','math','text','randnum','map']]]
 const T=(nodes,edges)=>({nodes,edges})
 const N=(id,type,x,y,p)=>({id,type,x,y,p:{...DEFS[type].init,...p}})
 const E=(f,o,t)=>({f,o,t})
@@ -25,6 +46,10 @@ const STARTERS=[
 ['Coin flip',T([N('a','cmd',40,40,{name:'flip'}),N('b','chance',340,40,{percent:'50'}),N('c','say',640,0,{text:'Heads!',reply:'1'}),N('d','say',640,170,{text:'Tails!',reply:'1'})],[E('a','next','b'),E('b','yes','c'),E('b','no','d')])],
 ['Greeter',T([N('a','msg',40,40,{mode:'contains',text:'hello',ci:'1'}),N('b','react',340,40,{emoji:'👋'}),N('c','say',640,40,{text:'Hey {user}, welcome!',reply:'1'})],[E('a','next','b'),E('b','next','c')])],
 ['Counter',T([N('a','cmd',40,40,{name:'count'}),N('b','count',340,40,{name:'uses',by:'1'}),N('c','say',640,40,{text:'This command has been used {uses} times.',reply:'0'})],[E('a','next','b'),E('b','next','c')])]
+['Welcome new members',T([N('a','join',40,40,{}),N('b','sayto',340,40,{channel:'general',text:'Welcome to {server}, {mention}!'})],[E('a','next','b')])],
+['Link filter',T([N('a','link',40,40,{}),N('b','hasrole',340,40,{role:'Trusted'}),N('c','delete',640,170,{}),N('d','say',940,170,{text:'{mention} links are not allowed here.',reply:'0'})],[E('a','next','b'),E('b','no','c'),E('c','next','d')])],
+['Dice roller',T([N('a','cmd',40,40,{name:'roll'}),N('b','randnum',340,40,{name:'dice',min:'1',max:'6'}),N('c','say',640,40,{text:'{mention} rolled a {dice}.',reply:'0'})],[E('a','next','b'),E('b','next','c')])],
+['Cooldown command',T([N('a','cmd',40,40,{name:'daily'}),N('b','cooldown',340,40,{seconds:'86400',scope:'user'}),N('c','count',640,0,{name:'streak',by:'1',scope:'user'}),N('d','say',940,0,{text:'Daily claimed! Total: {streak}',reply:'1'}),N('e','say',640,200,{text:'Come back later.',reply:'1'})],[E('a','next','b'),E('b','yes','c'),E('c','next','d'),E('b','no','e')])],
 ]
 const uid=()=>'n'+Math.random().toString(36).slice(2,8)
 
@@ -126,10 +151,10 @@ g=JSON.parse(JSON.stringify(gr));pending=null;ran=new Set();mark();draw()
 h('p',{class:'hint'},'Text fields accept {user}, {username}, {mention}, {args}, {arg1}, {text}, {channel}, {server} and any variable you set.'))
 const out=h('div',{class:'bk-out-log'})
 const probe=h('input',{class:'inp',placeholder:'Type a test message, for example !ping',maxLength:200,'aria-label':'Test message'})
-async function test(){
+async function test(event){
 out.textContent=''
 try{
-const r=await POST(`/api/bothub/${p.id}/blocks/test`,{blocks:g,text:probe.value})
+const r=await POST(`/api/bothub/${p.id}/blocks/test`,{blocks:g,text:probe.value,event})
 ran=new Set(r.log.map(x=>x.id))
 draw()
 mount(out,r.sent.length?r.sent.map(s=>h('div',{class:'bk-line'},s.say!==undefined?(s.reply?'Replies: ':'Says: ')+s.say:'Reacts: '+s.react)):h('div',{class:'hint'},r.log.length?'Ran with nothing to send.':'No trigger matched that message.'))
@@ -143,7 +168,7 @@ dirty=false;status.textContent='Saved. Your bot runs this in every server where 
 draw()
 }catch(e){fail(e)}
 }
-const bar=h('div',{class:'bk-bar'},h('button',{class:'btn pri',on:{click:save}},'Save blocks'),probe,h('button',{class:'btn',on:{click:test}},'Test'),h('div',{class:'grow'}),status)
+const bar=h('div',{class:'bk-bar'},h('button',{class:'btn pri',on:{click:save}},'Save blocks'),probe,h('button',{class:'btn',on:{click:()=>test()}},'Test'),h('button',{class:'btn',on:{click:()=>test('join')}},'Test a join'),h('div',{class:'grow'}),status)
 draw()
 const guard=e=>{if(!document.body.contains(stage)){removeEventListener('beforeunload',guard);return}if(dirty)e.preventDefault()}
 addEventListener('beforeunload',guard)
