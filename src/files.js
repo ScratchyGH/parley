@@ -37,7 +37,7 @@ const e=ext(name)
 if(BLOCKED.has(e))fail(415,'This file type is not allowed')
 const maxMb=parseInt(c.env.MAX_UPLOAD_MB)||100
 const bigMb=parseInt(c.env.MAX_FILE_MB)||1024
-const lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:8)
+const lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:10)
 if(!len||len<1)fail(411,'File size required')
 if(len>lim*1048576)fail(413,`File is larger than the ${lim} MB limit`)
 let room=null,serverId=null
@@ -169,7 +169,7 @@ return json({ok:true})
 r.add('GET','/api/files/:id',async c=>{
 const f=await c.env.DB.prepare('select * from files where id=?').bind(c.p.id).first()
 if(!f)fail(404,'File not found')
-let cache='public, max-age=86400'
+let cache='public, max-age=604800, immutable'
 if(!PUBLIC_KINDS.has(f.kind)){
 const{sessionUser}=await import('./auth.js')
 const u=c.user||await sessionUser(c.env,c.req)

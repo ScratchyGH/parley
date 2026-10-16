@@ -42,6 +42,11 @@ if(v==null||v==='')return null
 if(typeof v!=='string'||!/^#[0-9a-fA-F]{6}$/.test(v))fail(400,n+' must be a hex color')
 return v.toLowerCase()
 }
+export const gradient=(v,n)=>{
+if(v==null||v==='')return null
+if(typeof v!=='string'||!/^#[0-9a-fA-F]{6}(,#[0-9a-fA-F]{6})?$/.test(v))fail(400,n+' must be one or two hex colors')
+return v.toLowerCase()
+}
 const buckets=new Map()
 export function limit(key,max,ms){
 const t=now()

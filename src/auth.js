@@ -1,5 +1,5 @@
 import{checkSecondFactor}from'./totp.js'
-import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,limit,body,json}from'./util.js'
+import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
 
 export const PUBLIC='u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,u.status_text,u.accent,u.created_at'
 const SESSION_MS=30*86400000
@@ -30,6 +30,7 @@ for(const[k,v]of Object.entries(o)){
 if(k in SETTINGS_KEYS){if(!SETTINGS_KEYS[k].includes(v))fail(400,k+' is invalid');out[k]=v}
 else if(['reduced_motion','show_presence','sound','desktop','dnd','quiet_on','send_ctrl_enter','link_previews'].includes(k)){if(typeof v!=='boolean')fail(400,k+' is invalid');out[k]=v}
 else if(k==='font_size'){if(!Number.isInteger(v)||v<12||v>22)fail(400,'font_size is invalid');out.font_size=v}
+else if(k==='ui_color'||k==='ui_bg'){if(typeof v!=='string'||(v!==''&&!/^#[0-9a-fA-F]{6}$/.test(v)))fail(400,k+' is invalid');out[k]=v.toLowerCase()}
 else if(k==='quiet_start'||k==='quiet_end'){if(typeof v!=='string'||!/^\d\d:\d\d$/.test(v))fail(400,k+' is invalid');out[k]=v}
 else if(k==='mute'){
 if(!v||typeof v!=='object'||Object.keys(v).length>500)fail(400,'mute is invalid')
@@ -153,7 +154,7 @@ if('display_name'in b)add('display_name',str(b.display_name,1,32,'Display name')
 if('bio'in b)add('bio',opt(b.bio,500,'Bio'))
 if('pronouns'in b)add('pronouns',opt(b.pronouns,32,'Pronouns'))
 if('status_text'in b)add('status_text',opt(b.status_text,100,'Status'))
-if('accent'in b)add('accent',color(b.accent,'Accent'))
+if('accent'in b)add('accent',gradient(b.accent,'Accent'))
 if('presence'in b){if(!['online','idle','busy','invisible'].includes(b.presence))fail(400,'Invalid presence');add('presence',b.presence)}
 if('settings'in b){
 const cur=JSON.parse(c.user.settings||'{}')
