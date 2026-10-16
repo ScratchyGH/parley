@@ -327,3 +327,12 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.15)}
 .ctx-h.hasb{height:128px;align-items:flex-end;padding-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .bh-radio{position:relative}
 .bh-radio input{top:0;left:0;width:100%;height:100%;margin:0}
+.gtag img{width:14px;height:14px;border-radius:3px;object-fit:cover;vertical-align:-3px;margin-right:4px}
+.gtag .gte{margin-right:3px}
+.invc{margin:-14px -16px 0;overflow:hidden;border-radius:var(--r)}
+.ihero{height:120px;background-color:var(--surf2)}
+.ibody{padding:0 20px 8px;position:relative}
+.iico{margin-top:-34px;margin-bottom:8px;width:max-content;border-radius:50%;border:4px solid var(--panel);background:var(--panel)}
+.sabout{margin:14px 4px 4px;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+.sabout b{color:var(--strong);font-size:13px}
+.sabout p{margin:6px 0 10px;color:var(--muted);font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
