@@ -243,3 +243,16 @@ body.sthemed .ctx{background:color-mix(in srgb,var(--side) 92%,transparent)}
 .hh-m{display:block;width:96px;height:96px;border-radius:24px;margin:0 0 14px;object-fit:cover;box-shadow:0 8px 28px rgba(0,0,0,.4)}
 .au-m{width:56px;height:56px;border-radius:16px;object-fit:cover}
 @media(max-width:820px){.hh{grid-template-columns:minmax(0,1fr)}}
+
+.qs{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:6px 8px 6px 10px;margin-bottom:8px;border-radius:10px;font-size:13px;font-weight:500;color:var(--muted);background:var(--surf2);border:1px solid var(--border);text-align:left}
+.qs:hover{background:var(--sel);color:var(--strong)}
+.qs .qt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qs .kbd{flex:none;font-size:11px}
+.bh-etabs{display:flex;gap:6px;padding:10px 16px 0;position:sticky;top:0;z-index:5;background:var(--bg)}
+.bh-etabs button{padding:8px 14px;border-radius:10px 10px 0 0;font-weight:600;color:var(--muted)}
+.bh-etabs button.on{color:var(--strong);box-shadow:0 -2px 0 var(--accent) inset}
+.bh-etabs button:disabled{opacity:.5;cursor:not-allowed}
+.sp-page{flex:1;min-height:0}
+.sp-page nav{width:220px}
+.sp-page .pg{padding:20px 28px;max-width:860px}
+@media(max-width:820px){.sp-page{flex-direction:column}.sp-page nav{width:auto}.sp-page .pg{padding:14px 16px}}
