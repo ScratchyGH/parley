@@ -317,7 +317,7 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.15)}
 .menu:has(.pcard){max-width:none;padding:0;overflow-x:hidden;overflow-y:auto}
 .pcard{width:380px;max-width:calc(100vw - 16px);overflow:hidden}
 .pcard .hero{height:120px}
-.pcard .bd{padding:0 20px 20px;overflow-x:hidden}
+.pcard .bd{padding:0 20px 20px;overflow:visible}
 .pcard .bd>h3{margin-top:12px!important;font-size:20px}
 .pcard .badges,.pcard .plinks{gap:8px;margin:10px 0}
 .pcard .hint{margin:8px 0}
