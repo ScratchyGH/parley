@@ -172,6 +172,13 @@ eq((await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,Buffer.alloc(10
 eq((await C.req('POST',`/api/upload?kind=attachment&room=${priv}`,PNG,{'x-filename':'p.png','content-type':'application/octet-stream'})).s,404,'cannot upload into inaccessible room')
 
 const J=(n,b)=>A.req('POST',`/api/upload?kind=attachment&room=${gen}`,b,{'x-filename':n,'content-type':'application/octet-stream'})
+
+for(const[n,mime,b]of[['report.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document',Buffer.from('PK\x03\x04')],['pack.zip','application/zip',Buffer.from('PK\x03\x04')],['song.mid','audio/midi',Buffer.from('MThd0000')],['font.woff2','font/woff2',Buffer.from('wOF2')],['notes.vtt','text/plain; charset=utf-8',Buffer.from('WEBVTT')],['model.glb','model/gltf-binary',Buffer.from('glTF')]]){
+const x=await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,b,{'x-filename':n,'content-type':'application/octet-stream'})
+eq([x.s,x.j?.mime],[201,mime],'upload '+n)
+if(x.s===201){const g=await fetch(BASE+'/api/files/'+x.j.id,{headers:{cookie:A.cookie}});ok((g.headers.get('content-disposition')||'').startsWith(mime.startsWith('audio/')?'inline':n.endsWith('.vtt')?'attachment':'attachment'),'served safely '+n)}
+}
+eq((await A.req('POST',`/api/upload?kind=attachment&room=${gen}`,Buffer.from('not midi'),{'x-filename':'bad.mid','content-type':'application/octet-stream'})).s,415,'fake midi rejected by sniffing')
 eq((await J('a.jxl',Buffer.concat([Buffer.from([0xff,0x0a]),Buffer.alloc(30)]))).j?.mime,'image/jxl','jxl codestream accepted')
 eq((await J('b.jxl',Buffer.concat([Buffer.from([0,0,0,0x0c]),Buffer.from('JXL '),Buffer.alloc(20)]))).s,201,'jxl container accepted')
 eq((await J('c.jxl',Buffer.from('definitely not jxl data'))).s,415,'fake jxl rejected')
@@ -521,6 +528,43 @@ eq(rot.s,200,'rotate token')
 r=await fetch(BASE+`/api/rooms/${gen2}/messages`,{method:'POST',headers:{...bh,'content-type':'application/json'},body:JSON.stringify({content:'old token'})})
 eq(r.status,401,'old bot token no longer works')
 eq((await B.post(`/api/servers/${sid2}/bots/${bot.id}`)).s,403,'non owner cannot add the bot')
+
+r=await A.get('/api/bothub/meta');eq(r.s,200,'bothub meta');ok(r.j.licenses.length>10&&r.j.tags.includes('music'),'meta lists licenses and tags')
+r=await A.post('/api/bothub',{name:'Tunebox'+run,summary:'x',license:'WTFPL'});eq(r.s,400,'unknown license rejected')
+r=await A.post('/api/bothub',{name:'Parley'});eq(r.s,400,'reserved bot name rejected')
+r=await A.post('/api/bothub',{name:'Tunebox '+run,summary:'Plays music in voice channels',readme:'# Tunebox\n\nHello',license:'MIT',tags:['music','fun'],source_url:'https://example.com/tunebox',visibility:'public'});eq(r.s,201,'create public bot project')
+const pj=r.j
+ok(/^pb_/.test(pj.token)&&pj.slug.startsWith('tunebox'),'project returns token and slug')
+eq((await A.post('/api/bothub',{name:'Bad Link',source_url:'http://x.test'})).s,400,'http links rejected')
+eq((await A.post('/api/bothub',{name:'Nope Tags',tags:['zzz']})).s,400,'unknown tag rejected')
+eq((await A.post('/api/bothub',{name:'Custom Lic',license:'Custom'})).s,400,'custom license needs a link')
+r=await A.post('/api/bothub',{name:'Hidden '+run,summary:'Only for me, not shared',visibility:'private'});eq(r.s,201,'create private project')
+const hid=r.j
+r=await B.get('/api/bothub?q=tunebox');eq(r.s,200,'browse');ok(r.j.projects.some(x=>x.id===pj.id&&x.tags.length===2),'public project is listed with tags')
+ok(!r.j.projects.some(x=>x.id===hid.id),'private project is not listed')
+r=await B.get('/api/bothub?tag=music&license=MIT&sort=new');ok(r.j.projects.some(x=>x.id===pj.id),'tag and license filter')
+r=await B.get('/api/bothub?tag=games&q=tunebox');ok(!r.j.projects.some(x=>x.id===pj.id),'tag filter excludes')
+eq((await B.get('/api/bothub/'+pj.slug)).j.project.readme.startsWith('# Tunebox'),true,'project page readable')
+eq((await B.get('/api/bothub/'+hid.slug)).s,404,'private project hidden from others')
+eq((await A.get('/api/bothub/'+hid.slug)).s,200,'owner can read private project')
+eq((await B.patch('/api/bothub/'+pj.id,{name:'Hax'})).s,404,'only owner edits')
+eq((await A.patch('/api/bothub/'+pj.id,{summary:'Plays music in your voice channels',visibility:'unlisted'})).s,200,'edit project')
+r=await B.get('/api/bothub?q=tunebox');ok(!r.j.projects.some(x=>x.id===pj.id),'unlisted project leaves the listing')
+eq((await B.get('/api/bothub/'+pj.slug)).s,200,'unlisted project reachable by link')
+eq((await A.patch('/api/bothub/'+pj.id,{visibility:'public',tags:['music']})).s,200,'publish again')
+r=await A.post(`/api/bothub/${pj.id}/releases`,{version:'1.0.0',changelog:'First release'});eq(r.s,201,'add release')
+eq((await A.post(`/api/bothub/${pj.id}/releases`,{version:'bad version!'})).s,400,'bad version rejected')
+eq((await B.get('/api/bothub/'+pj.slug)).j.project.releases.length,1,'release listed')
+r=await B.post('/api/servers',{name:'Bot Home '+run});const bsid=r.j.id
+eq((await B.post(`/api/bothub/${pj.id}/install`,{server_id:bsid})).s,200,'install into own server')
+eq((await B.post(`/api/bothub/${pj.id}/install`,{server_id:bsid})).s,409,'second install blocked')
+eq((await B.get('/api/bothub/'+pj.slug)).j.project.installs,1,'install counted once')
+eq((await B.post(`/api/bothub/${hid.id}/install`,{server_id:bsid})).s,404,'private bot cannot be installed by others')
+eq((await B.post(`/api/bothub/${pj.id}/install`,{server_id:sid2})).s,403,'cannot install without Manage server')
+r=await A.get('/api/bothub/mine');ok(r.j.projects.length>=2,'my bots lists projects')
+eq((await B.del(`/api/bothub/${pj.id}`)).s,404,'only owner deletes')
+eq((await A.del(`/api/bothub/${hid.id}`)).s,200,'delete project')
+eq((await A.get('/api/bothub/'+hid.slug)).s,404,'deleted project gone')
 
 for(const w of[wa,wb,wc,ub,va,vb,vc])try{w.close()}catch{}
 console.log(`\n${pass} passed, ${failn} failed`)
