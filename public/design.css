@@ -194,3 +194,10 @@ body.bridge{overflow:hidden;display:flex;align-items:center;gap:10px;padding:10p
 .bh-page{overscroll-behavior:contain}
 .vtime{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);padding:0 10px;align-self:center}
 .tile .hand{display:inline-flex;color:#ffd24a}
+.scrim{grid-template-columns:minmax(0,1fr);overflow:hidden}
+.dlg{min-width:0;max-width:100%}
+.dbgrid{max-width:100%}
+.shell{grid-template-rows:minmax(0,1fr);overflow:hidden}
+.ctx,.ws{min-height:0}
+.tabs button{white-space:nowrap}
+.top .tabs{flex:none}
