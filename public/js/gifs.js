@@ -52,7 +52,7 @@ pos=d.next||''
 }
 if(my!==gen)return
 for(const g of items)grid.append(cell(g))
-note.textContent=grid.children.length?'':(tab==='saved'?'No saved GIFs yet. Press the star on any GIF to keep it here.':'No GIFs found.')
+note.textContent=grid.children.length?'':(tab==='saved'?'No saved GIFs yet. Press the star on any GIF to keep it here.':'No GIFs found. Try a reaction such as hug, laugh, dance or clap.')
 more.hidden=!pos
 }catch(e){if(my===gen)note.textContent=e.message}
 busy=false
