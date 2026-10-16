@@ -149,7 +149,6 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Search box and pop-up menus no longer clip at the screen edge; menus flip above their button when there is no room below | Not run in a browser |
 | Migration 0013 adds indexes for queries that scanned whole tables (read state, saved messages, categories, blocks, member roles, bot owner, files by server, overrides) and server deletion no longer scans the messages table | Query plans checked in SQLite; tests pass |
 
-| Maintenance bypass: a secret code typed into the browser console (`leaveMaintenance('...')`) lets one signed-in session through maintenance mode | API tested with a test code (wrong code, right code, per session); the console function is not tested in a browser |
 
 ## Moderation and admin
 
@@ -159,7 +158,10 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Reports (message, user, server) and per server triage | API tested, UI written |
 | Ban appeals | API tested, UI written |
 | Global admin panel: stats, user search and suspension, reports, appeals, maintenance mode, audit log | API tested, UI written |
-| Maintenance bypass: a secret code typed into the browser console (`leaveMaintenance('...')`) lets one signed-in session through maintenance mode | API tested with a test code (wrong code, right code, per session); the console function is not tested in a browser |
+| Mod cases: warnings (from a member's menu or a message's menu, with the message text kept as evidence), timeouts, kicks, bans and unbans each get a numbered case with reason, evidence and status (open, appealed, resolved, overturned). A ban appeal moves its case to Appealed, then Resolved or Overturned. Filter by action, status or member, edit, delete (owner and administrators) | API tested (create, list, filter, edit, delete, permissions); the Mod cases page is written but never run in a browser |
+| Server templates: publish a snapshot of channels, categories and role names (no role permissions, members or messages) under a short code, up to 5 per server; anyone with the code can preview it and create a new server from it in the Add a server dialog | API tested; dialogs written but never run in a browser |
+| Server tags: owners set a 2 to 4 character tag, members choose one server's tag to show next to their name in messages and the member list | API tested; display written but never run in a browser |
+| Server themes: light and dark backgrounds now derive matching hover, border and text colours, and accent buttons pick readable text | Written, not run in a browser; the earlier version looked wrong for light backgrounds such as the Paper preset |
 | AutoMod: blocked words (whole word, folded for case, accents and look alike symbols), link blocking, mention limit; applied on send, edit, polls and webhooks, with a Save and test box in the AutoMod page | API tested, UI written |
 | Raid protection: automatic 10 minute join lockdown above a joins-per-minute limit, manual lockdown | API tested, UI written |
 | Vanity invite links (free) | API tested, UI written |
@@ -190,7 +192,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 - Free-tier quotas cap how many people one deployment can serve; see ARCHITECTURE.md.
 - Online presence is only known for people in the server or conversation you currently have open.
 - Unread counts for servers you are not viewing refresh when you focus the tab and every three minutes, not instantly.
-- Migrations are `0001_init.sql` to `0008_cleanup_indexes.sql` (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks; 0005: partial indexes for message lists, pins and spam checks; 0006: bot projects, tags, releases, installs; 0007: OAuth identities, passkeys, WebAuthn challenges; 0008: indexes for the nightly cleanup). Apply with `npm run migrate:remote` before deploying.
+- Migrations are `0001_init.sql` to `0015_cases_templates_tags.sql` (0015 adds mod cases, templates, server tags and drops the removed maintenance bypass table; earlier ones are described next, from the first eight) (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks; 0005: partial indexes for message lists, pins and spam checks; 0006: bot projects, tags, releases, installs; 0007: OAuth identities, passkeys, WebAuthn challenges; 0008: indexes for the nightly cleanup). Apply with `npm run migrate:remote` before deploying.
 - Display names are not unique and are not protected, so someone can still copy another person's display name. Usernames (which are the unique handle) are protected.
 - Full text search is still a LIKE scan: D1 FTS5 would roughly triple message write cost on the free plan.
 - Not buildable on the free tier without a third party: email verification and recovery, end to end encryption, full text search, an SFU for large calls.
