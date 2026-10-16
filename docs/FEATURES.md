@@ -66,6 +66,7 @@ Nothing has been deployed to Cloudflare.
 | Animated GIF, animated WebP and APNG avatars and banners (uploaded unmodified, up to 10 MB, never cropped or re-encoded) | Upload API tested with a GIF; animation display relies on the browser |
 | Free "Nitro style" extras: custom emoji from any server you are in, animated emoji, 10,000 character messages, gradient profile colours, custom UI accent and background colours | API tested where it has an API; UI written |
 | Message history is windowed (about 350 messages in the DOM), not a true virtual list | Design note |
+| Optional external stores: Turso as the main database (auto schema), Supabase Storage and Firebase Firestore for files up to 16 MiB | Tested only against local stand-ins (API suite 311 checks through a Turso stand-in, `test/store.mjs` 17 checks). **Never run against the real services** |
 
 ## Direct messages and social
 

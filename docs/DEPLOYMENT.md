@@ -15,6 +15,20 @@ Nothing here has been run against a real Cloudflare account yet. Each step is wh
 - **R2 (only if you add it) and Realtime TURN do not stop at their free allowance; usage above it is billed.** R2 free: 10 GB-month storage, 1M Class A and 10M Class B operations per month. TURN free: the first 1,000 GB, then $0.05 per GB. R2 may require a payment method on file to enable; I could not confirm this from Cloudflare's current documentation. Parley's per-user upload quota (`USER_QUOTA_MB`, default 500) and per-file limit (`MAX_UPLOAD_MB`, default 25) are guards, not a billing cap.
 - Without TURN the app falls back to STUN only. Calls between some networks (symmetric NAT, strict corporate firewalls) will fail to connect.
 
+## Optional external databases (all free, no card)
+
+Cloudflare D1 is the default database and file store. Each of these is switched on by setting its secrets on the Worker (dashboard: Workers, parley, Settings, Variables and Secrets). Unset means unused. Add secrets yourself; never commit them.
+
+| Service | Secrets | What it does | Free limits (check current terms) |
+| --- | --- | --- | --- |
+| Turso | `TURSO_URL` (`libsql://...`), `TURSO_TOKEN` | Replaces D1 as the main database. The schema is created automatically on first request. Also stores files. | about 5 GB. Every query becomes an internet round trip, so expect it to be slower than D1 |
+| Supabase Storage | `SUPABASE_URL`, `SUPABASE_KEY` (service role key), optional `SUPABASE_BUCKET` (default `parley`, create it as a private bucket) | Stores files up to 16 MiB | about 1 GB, 50 MB per object |
+| Firebase Firestore | `FIREBASE_SA` (the whole service account JSON, Firestore in Native mode on the free Spark plan) | Stores files up to 16 MiB in 512 KiB documents | about 1 GiB, 20k writes per day |
+
+Files are placed on one of the configured stores by a hash of the file key, not by free space, and the store is recorded in the file's key. Switching Turso on does not move existing data from D1.
+
+None of these three adapters has ever run against the real services. They are tested only against local stand-ins that follow each service's documented protocol (`npm run test:store`, and the API suite with `test/fakes.mjs`). Expect to debug the first real run.
+
 ## Steps
 
 1. Sign in the CLI. This opens a browser for you to approve; do it yourself.
