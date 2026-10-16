@@ -102,9 +102,10 @@ Only the provider's user id and display label are stored. These flows are tested
 | `ADMIN_USERNAMES` | empty | Comma separated usernames that get the admin panel. |
 | `POLLINATIONS_KEY` | unset | Optional Pollinations API key (a Worker secret) used by the Experimental AI features when a user has not pasted their own. Pollinations rejects most anonymous requests. |
 | `OWNER_USERNAME` | `ParleyOfficial` | The one account that gets the owner Admin page in settings, including the database editor. Owner implies admin. |
-| `GIF_API_BASE` | unset | Optional. Base URL of a Tenor v2 compatible GIF API. Without it, GIF search needs no key: it uses reaction GIFs from otakugifs.xyz plus Wikimedia Commons search. That is a much smaller library than Tenor. Google shut the Tenor API down on 30 June 2026. |
+| `KLIPY_API_KEY` | unset | Optional Worker secret. A free key from the KLIPY partner dashboard turns on KLIPY search and trending in the GIF picker (`npx wrangler secret put KLIPY_API_KEY`). Written from KLIPY's published response format and **not tested against the live service**, because that needs a key. Takes priority over `GIF_API_BASE`. Without any key, GIF search uses the built-in keyless sources. |
+| `GIF_API_BASE` | unset | Optional. Base URL of a Tenor v2 compatible GIF API. Without it, GIF search needs no key: it uses reaction GIFs from otakugifs.xyz, purrbot.site and nekos.best reaction GIFs plus Wikimedia Commons search. That is a much smaller library than Tenor. Google shut the Tenor API down on 30 June 2026. |
 | `GIF_API_KEY` | unset | Optional API key (a Worker secret) for a provider set in `GIF_API_BASE`. `TENOR_API_KEY` is accepted as an alias. |
-| `GIF_MEDIA_HOSTS` | `tenor.com,klipy.com,giphy.com,cdn.otakugifs.xyz,upload.wikimedia.org` | Comma separated host suffixes the server will download GIFs from. Add your provider's media host here. |
+| `GIF_MEDIA_HOSTS` | `tenor.com,klipy.com,giphy.com,cdn.otakugifs.xyz,cdn.purrbot.site,nekos.best,upload.wikimedia.org` | Comma separated host suffixes the server will download GIFs from. Add your provider's media host here. |
 | `EXPERIMENTAL_USERNAMES` | empty | Comma separated usernames that see the Experimental settings tab, in addition to the first account and anyone an admin enables. Set it as a plain variable in the Cloudflare dashboard. |
 
 Secrets, all optional:
