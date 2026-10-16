@@ -3,7 +3,7 @@ import{P,resolveRoom,loadMember}from'./perms.js'
 import{explicitText}from'./safety.js'
 import{sweepExplicitServers}from'./servers.js'
 
-const POLL='https://text.pollinations.ai'
+const POLL='https://gen.pollinations.ai'
 const TYPES=['text','announce','voice','forum']
 const listed=(env,u)=>(env.EXPERIMENTAL_USERNAMES||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean).includes(u.username)
 const labsOn=(c)=>!!c.user.labs||listed(c.env,c.user)
@@ -14,23 +14,27 @@ async function models(c){
 const key=new Request('https://lab.cache/models')
 const hit=await caches.default.match(key)
 if(hit)return hit.json()
-const res=await fetch(POLL+'/models',{headers:{accept:'application/json'}})
+const res=await fetch(POLL+'/v1/models',{headers:{accept:'application/json'}})
 if(!res.ok)fail(502,'Pollinations could not list models right now')
 const raw=await res.json()
-const out=(Array.isArray(raw)?raw:[]).map(m=>typeof m==='string'?{name:m,description:''}:{name:m.name,description:String(m.description||'').slice(0,120),text:!m.output_modalities||m.output_modalities.includes('text')}).filter(m=>modelOk(m.name)&&m.text!==false).map(m=>({name:m.name,description:m.description})).slice(0,60)
+const out=(Array.isArray(raw&&raw.data)?raw.data:[]).filter(m=>m&&modelOk(m.id)&&m.category==='text'&&!m.paid_only&&(!m.output_modalities||m.output_modalities.includes('text'))&&(!m.supported_endpoints||m.supported_endpoints.includes('/v1/chat/completions'))).map(m=>({name:m.id,description:String(m.title||m.description||'').slice(0,120)})).slice(0,60)
 c.ec.waitUntil(caches.default.put(key,new Response(JSON.stringify(out),{headers:{'cache-control':'public, max-age=3600'}})))
 return out
 }
 
-async function ask(c,model,system,user,wantJson){
+async function ask(c,model,system,user,key){
 if(!modelOk(model))fail(400,'Pick a model')
 const list=await models(c)
 if(!list.some(m=>m.name===model))fail(400,'That model is not available')
 const ctl=new AbortController()
 const timer=setTimeout(()=>ctl.abort(),40000)
 try{
-const res=await fetch(POLL+'/openai',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json'},body:JSON.stringify({model,private:true,referrer:'parley',...(wantJson?{response_format:{type:'json_object'}}:{}),messages:[{role:'system',content:system},{role:'user',content:user}]})})
+const hd={'content-type':'application/json'}
+const tok=typeof key==='string'&&/^[A-Za-z0-9_.-]{8,200}$/.test(key)?key:c.env.POLLINATIONS_KEY
+if(tok)hd.authorization='Bearer '+tok
+const res=await fetch(POLL+'/v1/chat/completions',{method:'POST',signal:ctl.signal,headers:hd,body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:user}]})})
 if(res.status===429)fail(429,'Pollinations is busy. Wait about 15 seconds and try again')
+if(res.status===401||res.status===402)fail(502,'Pollinations needs an API key for this request. Paste yours in the Pollinations key box (or ask the server operator to set POLLINATIONS_KEY)')
 if(!res.ok)fail(502,'Pollinations returned an error ('+res.status+')')
 const j=await res.json()
 const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
@@ -114,7 +118,7 @@ limit('lab-ai:'+c.user.id,6,60000)
 const b=await body(c.req)
 const prompt=str(b.prompt,8,600,'Prompt')
 if(explicitText(prompt))fail(400,'That prompt is not allowed')
-const text=await ask(c,b.model,SYSTEM,prompt,true)
+const text=await ask(c,b.model,SYSTEM,prompt,b.key)
 return{layout:cleanLayout(text)}
 })
 
@@ -170,7 +174,7 @@ const rows=(await c.env.DB.prepare("select u.display_name n,m.content from messa
 if(rows.length<5)fail(400,'There are not enough messages to summarise yet')
 let t=rows.map(x=>x.n+': '+x.content.replace(/<@&?[a-z0-9_]+>/g,'@someone')).join('\n')
 t=t.slice(-12000)
-const text=await ask(c,b.model,'Summarise this chat log in under 150 words. Start with the main topic, then list decisions and open questions as short bullet lines starting with "- ". Plain text only.',t,false)
+const text=await ask(c,b.model,'Summarise this chat log in under 150 words. Start with the main topic, then list decisions and open questions as short bullet lines starting with "- ". Plain text only.',t,b.key)
 return{summary:text.slice(0,2000),count:rows.length}
 })
 
