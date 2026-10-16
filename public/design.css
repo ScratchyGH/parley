@@ -294,3 +294,22 @@ body.sthemed .ctx{background:color-mix(in srgb,var(--side) 92%,transparent)}
 
 .gtag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:5px;background:var(--surf2);color:var(--muted);font-size:11px;font-weight:600;line-height:16px;letter-spacing:.3px;vertical-align:middle}
 .pill{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;background:var(--surf2);font-size:12px}
+
+.wwrap .pip{background:var(--strong)}
+.ci.on,.split nav button.on,.bh-filter button.on{background:var(--sel);color:var(--strong);box-shadow:none}
+.tabs button.on{background:var(--sel);color:var(--strong);box-shadow:none}
+.btn.pri,.btn.pri:hover{border-color:transparent}
+:focus-visible{outline:2px solid var(--neutral);outline-offset:2px}
+.btn:focus-visible,.ib:focus-visible,.wbtn:focus-visible,.ci:focus-visible,.cib:focus-visible{outline:2px solid var(--neutral);outline-offset:2px}
+.empty,.hempty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:32px 20px;margin-inline:auto;max-width:440px;color:var(--muted)}
+.empty h2,.hempty b{text-align:center}
+input[type=color]{-webkit-appearance:none;appearance:none;width:46px;height:46px;padding:4px;border:2px solid var(--border);border-radius:14px;background:var(--side);cursor:pointer;transition:border-color .12s,transform .12s}
+input[type=color]:hover{border-color:var(--neutral)}
+input[type=color]:active{transform:scale(.96)}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:0;border-radius:9px}
+input[type=color]::-moz-color-swatch{border:0;border-radius:9px}
+input[type=file]{box-sizing:border-box;width:100%;padding:12px;border:2px dashed var(--border);border-radius:14px;background:var(--side);color:var(--muted);cursor:pointer;transition:border-color .12s,background .12s}
+input[type=file]:hover{border-color:var(--neutral);background:var(--panel)}
+input[type=file]::file-selector-button{margin-right:14px;padding:8px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer;transition:filter .12s}
+input[type=file]::file-selector-button:hover{filter:brightness(1.15)}
