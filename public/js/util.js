@@ -174,8 +174,13 @@ let x=0
 for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))>>>0
 return `hsl(${x%360} 14% 34%)`
 }
+export const accentBg=a=>{
+if(!a)return null
+const p=a.split(',')
+return p.length>1?`linear-gradient(135deg,${p[0]},${p[1]})`:p[0]
+}
 export function avatar(u,size,status){
-const el=h('div',{class:'av '+(size||''),style:{background:u?.accent||hashColor(u?.id||u?.name||'?')}})
+const el=h('div',{class:'av '+(size||''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
 if(u?.avatar_id||u?.icon_id){
 const img=h('img',{src:fileUrl(u.avatar_id||u.icon_id),alt:'',loading:'lazy',decoding:'async'})
 img.onerror=()=>{img.remove();el.prepend(initials(u.display_name||u.name))}

@@ -1,8 +1,9 @@
-import{h,mount,icon,GET,POST,PATCH,DEL,upload,avatar,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,DEL,upload,avatar,accentBg,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
 import{render}from'./md.js'
 import{S,emit,cacheUser,user,conv,convTitle,convOther,can,loadServers,loadServer,loadConvs,loadFriends}from'./state.js'
 import{go}from'./nav.js'
 import{memberMenu}from'./ssettings.js'
+import{pickCropped}from'./cropper.js'
 
 export const CATEGORIES=['gaming','tech','art','music','education','science','community','other']
 
@@ -242,7 +243,7 @@ else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await
 else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()}))
 act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()}))
 }
-const hero=h('div',{class:'hero',style:{background:u.accent||'var(--surf2)'}})
+const hero=h('div',{class:'hero',style:{background:accentBg(u.accent)||'var(--surf2)'}})
 if(u.banner_id)hero.style.backgroundImage=`url(/api/files/${u.banner_id})`
 const mem=sid?S.sdata[sid]?.memberList?.find(m=>m.id===u.id):null
 el.append(hero,h('div',{class:'bd'},avatar(u,'lg',S.pres[u.id]||(own?S.me.presence:null)),
@@ -303,7 +304,7 @@ const memberIds=new Set(cur.members.map(m=>m.id))
 mount(body,
 field('Group name',h('div',{class:'row'},name,owner?h('button',{class:'btn',on:{click:async()=>{try{await PATCH('/api/conversations/'+room,{name:name.value.trim()});await loadConvs();toast('Saved','ok')}catch(e){fail(e)}}}},'Save'):null)),
 owner?field('Group icon',h('div',{class:'row'},avatar({id:room,name:convTitle(cur),icon_id:cur.icon_id},'sm'),h('button',{class:'btn sm',on:{click:async()=>{
-const f=await pickImage();if(!f)return
+const f=await pickCropped({aspect:1,round:true,width:512,title:'Crop group icon'});if(!f)return
 try{const up=await uploadImage('conv_icon',{room},f);await PATCH('/api/conversations/'+room,{icon_id:up.id});await loadConvs();draw()}catch(e){fail(e)}
 }}},'Upload'),cur.icon_id?h('button',{class:'btn sm',on:{click:async()=>{try{await PATCH('/api/conversations/'+room,{icon_id:null});await loadConvs();draw()}catch(e){fail(e)}}}},'Remove'):null)):null,
 h('label',{class:'f'},`Members (${cur.members.length}/10)`),

@@ -1,6 +1,7 @@
-import{h,mount,icon,GET,POST,PATCH,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,DEL,avatar,accentBg,toast,fail,dialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
 import{S,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
-import{pickImage,uploadImage}from'./dialogs.js'
+import{uploadImage}from'./dialogs.js'
+import{pickCropped}from'./cropper.js'
 import{voiceSettingsView}from'./voice.js'
 import{requestDesktop}from'./notify.js'
 import{pref,setPref}from'./prefs.js'
@@ -131,29 +132,34 @@ const dn=h('input',{class:'inp',value:S.me.display_name,maxLength:32})
 const pr=h('input',{class:'inp',value:S.me.pronouns||'',maxLength:32})
 const st=h('input',{class:'inp',value:S.me.status_text||'',maxLength:100})
 const bio=h('textarea',{class:'inp',rows:4,maxLength:500},S.me.bio||'')
-const SW=['#8b949e','#539bf5','#57ab5a','#c69026','#e5534b','#986ee2','#c96198','#6cb6ff','#4a5463']
+const SW=['#8b949e','#521525','#57ab5a','#c69026','#e5534b','#986ee2','#c96198','#6cb6ff','#4a5463']
 let accent=S.me.accent||''
+const c1=h('input',{type:'color','aria-label':'Profile colour 1',value:(accent.split(',')[0])||'#521525',on:{input:()=>setCustom()}})
+const c2=h('input',{type:'color','aria-label':'Profile colour 2',value:(accent.split(',')[1])||'#212829',on:{input:()=>setCustom()}})
+let grad=accent.includes(',')
+const gt=toggle(grad,v=>{grad=v;setCustom()},'Gradient')
+const setCustom=()=>{accent=grad?c1.value+','+c2.value:c1.value;drawSw();drawPrev()}
 const sw_=h('div',{class:'swatches',role:'group','aria-label':'Profile colour'})
 const prev=h('div')
 function drawSw(){
-mount(sw_,SW.map(c=>h('button',{type:'button',style:{background:c},'aria-pressed':String(accent===c),'aria-label':c,on:{click:()=>{accent=c;drawSw();drawPrev()}}})),h('button',{type:'button',class:'btn sm',on:{click:()=>{accent='';drawSw();drawPrev()}}},'Auto'))
+mount(sw_,SW.map(c=>h('button',{type:'button',style:{background:c},'aria-pressed':String(accent===c),'aria-label':c,on:{click:()=>{accent=c;c1.value=c;grad=false;drawSw();drawPrev()}}})),h('button',{type:'button',class:'btn sm',on:{click:()=>{accent='';drawSw();drawPrev()}}},'Auto'))
 }
 function drawPrev(){
 const u={...S.me,display_name:dn.value,pronouns:pr.value,status_text:st.value,bio:bio.value,accent:accent||null}
-const hero=h('div',{class:'hero',style:{background:accent||'var(--surf2)'}})
+const hero=h('div',{class:'hero',style:{background:accentBg(accent)||'var(--surf2)'}})
 if(S.me.banner_id)hero.style.backgroundImage=`url(${fileUrl(S.me.banner_id)})`
 mount(prev,h('div',{class:'pcard card',style:{padding:0}},hero,h('div',{class:'bd'},avatar(u,'lg'),h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},u.display_name),h('div',{class:'hint',style:{margin:0}},'@'+u.username+(u.pronouns?' · '+u.pronouns:'')),u.status_text?h('div',null,u.status_text):null,u.bio?h('div',{class:'hint'},u.bio):null)))
 }
 for(const i of[dn,pr,st,bio])i.addEventListener('input',drawPrev)
 const img=(kind,key,label)=>h('div',{class:'row'},h('button',{class:'btn',on:{click:async()=>{
-const f=await pickImage();if(!f)return
+const f=await pickCropped(kind==='avatar'?{aspect:1,round:true,width:512,title:'Crop avatar'}:{aspect:3,width:1500,title:'Crop banner'});if(!f)return
 try{const up=await uploadImage(kind,{},f);await saveProfile({[key]:up.id});drawPrev();toast(label+' updated','ok')}catch(e){fail(e)}
 }}},'Upload '+label.toLowerCase()),S.me[key]?h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({[key]:null});drawPrev()}catch(e){fail(e)}}}},'Remove'):null)
 mount(pg,h('h3',null,'Profile'),
 h('div',{class:'row',style:{alignItems:'flex-start',flexWrap:'wrap'}},
 h('div',{class:'grow',style:{minWidth:'240px'}},
 field('Display name',dn),field('Pronouns',pr),field('Status',st),field('About me',bio,'Markdown is supported.'),
-field('Profile colour',sw_),field('Avatar (max 8 MB)',img('avatar','avatar_id','Avatar')),field('Banner (max 8 MB)',img('banner','banner_id','Banner')),
+field('Profile colour',sw_),h('div',{class:'row'},c1,h('span',{class:'hint',style:{margin:0}},'Custom'),gt,h('span',{class:'hint',style:{margin:0}},'Gradient'),c2),field('Avatar (GIF supported, max 10 MB)',img('avatar','avatar_id','Avatar')),field('Banner (GIF supported, max 10 MB)',img('banner','banner_id','Banner')),
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 try{await saveProfile({display_name:dn.value.trim(),pronouns:pr.value.trim(),status_text:st.value.trim(),bio:bio.value.trim(),accent:accent||null});toast('Profile saved','ok')}catch(e){fail(e)}
 }}},'Save profile'))),
@@ -162,13 +168,17 @@ drawSw();drawPrev()
 }
 
 function appearance(pg){
-const themes=[['dimmed','Dimmed (default)'],['silver','Silver'],['light','Light'],['contrast','High contrast']]
+const themes=[['dimmed','Deep Fjord (default)'],['silver','Silver'],['light','Light'],['contrast','High contrast']]
 const dens=[['compact','Compact'],['comfortable','Comfortable'],['spacious','Spacious']]
 const fs=h('input',{type:'range',min:12,max:22,step:1,value:setting('font_size',15),'aria-label':'Message font size',on:{change:async e=>{try{await saveSettings({font_size:+e.target.value})}catch(x){fail(x)}}}})
 mount(pg,h('h3',null,'Appearance and accessibility'),
 field('Theme',h('div',{class:'tabs',style:{flexWrap:'wrap'}},themes.map(([k,l])=>h('button',{class:setting('theme','dimmed')===k?'on':'','aria-pressed':String(setting('theme','dimmed')===k),on:{click:async e=>{try{await saveSettings({theme:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
 field('Message spacing',h('div',{class:'tabs'},dens.map(([k,l])=>h('button',{class:setting('density','comfortable')===k?'on':'','aria-pressed':String(setting('density','comfortable')===k),on:{click:async()=>{try{await saveSettings({density:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
 field('Font size',h('div',{class:'row'},fs,h('span',{class:'hint',style:{margin:0}},'12 to 22 px'))),
+field('Custom colours',h('div',{class:'row'},
+h('input',{type:'color','aria-label':'Accent colour',value:setting('ui_color','')||'#521525',on:{change:async e=>{try{await saveSettings({ui_color:e.target.value})}catch(x){fail(x)}}}}),h('span',{class:'hint',style:{margin:0}},'Accent'),
+h('input',{type:'color','aria-label':'Background colour',value:setting('ui_bg','')||'#212829',on:{change:async e=>{try{await saveSettings({ui_bg:e.target.value})}catch(x){fail(x)}}}}),h('span',{class:'hint',style:{margin:0}},'Background'),
+h('button',{class:'btn sm',on:{click:async()=>{try{await saveSettings({ui_color:'',ui_bg:''});appearance(pg)}catch(x){fail(x)}}}},'Reset')),'Applies to the dark themes only. Stored with your account.'),
 sw('reduced_motion',matchMedia('(prefers-reduced-motion: reduce)').matches,'Reduce motion','Turns off transitions and animations. Follows your system setting until you change it.'),
 sw('link_previews',true,'Link previews','Fetch a title and description for the first link in a message. Requests go through Parley, not directly from your browser.'),
 sw('send_ctrl_enter',false,'Send with Ctrl+Enter','Enter inserts a new line instead of sending.'))

@@ -56,10 +56,18 @@ cache.set(url,p)
 p.catch(()=>cache.delete(url))
 return p
 }
+export async function isAnimated(file){
+if(file.type==='image/gif')return true
+if(file.type!=='image/webp'&&file.type!=='image/png')return false
+const b=new Uint8Array(await file.slice(0,65536).arrayBuffer())
+let s=''
+for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i])
+return file.type==='image/webp'?s.includes('ANIM'):s.includes('acTL')
+}
 const SRC_OK=/^image\/(png|jpeg|webp|bmp|avif|jxl|x-icon)$/
 export async function optimize(file){
 const to=pref('optimize')
-if(to==='off'||!SRC_OK.test(file.type)||file.type==='image/gif')return file
+if(to==='off'||!SRC_OK.test(file.type)||await isAnimated(file))return file
 if(file.type==='image/'+to)return file
 if(to==='jxl'||to==='avif'||to==='webp'){
 try{

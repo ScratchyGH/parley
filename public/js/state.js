@@ -178,9 +178,23 @@ const root=document.documentElement
 root.dataset.theme=s.theme||'dimmed'
 root.dataset.density=s.density||'comfortable'
 root.style.setProperty('--fs',(s.font_size||15)+'px')
+const dark=(s.theme||'dimmed')!=='light'
+if(s.ui_color&&dark){
+root.style.setProperty('--accent',s.ui_color)
+root.style.setProperty('--hi','color-mix(in srgb,'+s.ui_color+' 55%,#fff)')
+root.style.setProperty('--blue','color-mix(in srgb,'+s.ui_color+' 45%,#fff)')
+}else for(const k of['--accent','--hi','--blue'])root.style.removeProperty(k)
+if(s.ui_bg&&dark){
+root.style.setProperty('--bg',s.ui_bg)
+root.style.setProperty('--side','color-mix(in srgb,'+s.ui_bg+' 80%,#000)')
+root.style.setProperty('--panel','color-mix(in srgb,'+s.ui_bg+' 88%,#fff)')
+root.style.setProperty('--surf2','color-mix(in srgb,'+s.ui_bg+' 78%,#fff)')
+root.style.setProperty('--sel','color-mix(in srgb,'+s.ui_bg+' 82%,#fff)')
+root.style.setProperty('--border','color-mix(in srgb,'+s.ui_bg+' 70%,#fff)')
+}else for(const k of['--bg','--side','--panel','--surf2','--sel','--border'])root.style.removeProperty(k)
 const rm=s.reduced_motion===undefined?matchMedia('(prefers-reduced-motion: reduce)').matches:s.reduced_motion
 root.classList.toggle('rm',!!rm)
-const col={dimmed:'#1c2128',silver:'#242a30',light:'#f6f8fa',contrast:'#010409'}
+const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
 }
 

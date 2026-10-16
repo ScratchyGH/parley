@@ -2,6 +2,7 @@ import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confi
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers}from'./state.js'
 import{go}from'./nav.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
+import{pickCropped}from'./cropper.js'
 import{fileUrl}from'./util.js'
 
 
@@ -106,13 +107,13 @@ const rules=h('textarea',{class:'inp',rows:4,maxLength:3000},s.rules||'')
 const cat=h('select',{class:'sel'},h('option',{value:''},'None'),CATEGORIES.map(c=>h('option',{value:c,selected:s.category===c},c[0].toUpperCase()+c.slice(1))))
 const ver=h('select',{class:'sel'},[['0','None'],['1','Account must be older than 5 minutes'],['2','Account must be older than 10 minutes']].map(([v,l])=>h('option',{value:v,selected:String(s.verification)===v},l)))
 let pub=!!s.is_public
-const SW=['#8b949e','#539bf5','#57ab5a','#c69026','#e5534b','#986ee2','#c96198']
+const SW=['#8b949e','#521525','#57ab5a','#c69026','#e5534b','#986ee2','#c96198']
 let accent=s.accent||''
 const sws=h('div',{class:'swatches'})
 const drawSw=()=>mount(sws,SW.map(c=>h('button',{type:'button',style:{background:c},'aria-pressed':String(accent===c),'aria-label':c,on:{click:()=>{accent=c;drawSw()}}})),h('button',{type:'button',class:'btn sm',on:{click:()=>{accent='';drawSw()}}},'None'))
 drawSw()
 const img=(kind,key,label)=>h('div',{class:'row'},s[key]?avatar({id:sid,icon_id:s[key],display_name:s.name},'sm'):null,h('button',{class:'btn sm',on:{click:async()=>{
-const f=await pickImage();if(!f)return
+const f=await pickCropped(kind==='server_icon'?{aspect:1,round:true,width:512,title:'Crop server icon'}:{aspect:16/9,width:1600,title:'Crop server banner'});if(!f)return
 try{const up=await uploadImage(kind,{server:sid},f);await PATCH('/api/servers/'+sid,{[key]:up.id});await loadServer(sid);await loadServers();overview(pg,sid)}catch(e){fail(e)}
 }}},'Upload '+label),s[key]?h('button',{class:'btn sm',on:{click:async()=>{try{await PATCH('/api/servers/'+sid,{[key]:null});await loadServer(sid);await loadServers();overview(pg,sid)}catch(e){fail(e)}}}},'Remove'):null)
 mount(pg,h('h3',null,'Overview'),
