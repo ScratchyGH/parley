@@ -129,7 +129,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | --- | --- |
 | Avatar and banner upload fixes (cropper returned nothing; banners were never drawn) | Cause found in code; the live API path was checked, the fixed UI has not been run in a browser |
 | Past avatars and banners with one click reuse and delete (24 each) | API tested, UI written |
-| GIF picker in the composer, GIF avatars and banners, saved GIFs, `/gif` | API tested for validation and storage; **needs a Tenor compatible provider configured**, never run against a live GIF service. UI written |
+| GIF picker in the composer, GIF avatars and banners, saved GIFs, `/gif` | API tested for validation and storage; works without a key through otakugifs.xyz reaction GIFs and Wikimedia Commons search (small library; those two services have not been checked from a Worker before deploy); a Tenor compatible provider can be set instead. UI written |
 | Multiple accounts on one device (up to 4), switcher, "Continue as" on the sign in page | API tested, UI written |
 | Owner Admin page with database editor (browse, edit, insert, delete, read-only SQL, secret columns masked, audit logged) | API tested, UI written. Owner only |
 | Timed status that clears itself, profile links, badges, private notes on users | API tested, UI written |
