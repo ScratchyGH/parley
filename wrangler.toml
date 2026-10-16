@@ -1,0 +1,37 @@
+name = "parley"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/ws"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "parley"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "parley-files"
+
+[[durable_objects.bindings]]
+name = "HUB"
+class_name = "Hub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Hub"]
+
+[triggers]
+crons = ["17 3 * * *"]
+
+[vars]
+MAX_UPLOAD_MB = "100"
+MAX_FILE_MB = "1024"
+USER_QUOTA_MB = "1024"
+PBKDF2_ITERS = "100000"
+REGISTRATION_OPEN = "true"
+ADMIN_USERNAMES = ""

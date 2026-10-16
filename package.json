@@ -1,0 +1,19 @@
+{
+ "name": "parley",
+ "version": "0.1.0",
+ "private": true,
+ "type": "module",
+ "scripts": {
+  "dev": "wrangler dev --port 8787",
+  "migrate:local": "wrangler d1 migrations apply DB --local",
+  "migrate:remote": "wrangler d1 migrations apply DB --remote",
+  "test": "node test/run.mjs",
+  "test:static": "node test/static.mjs && node test/md.mjs && node test/push.mjs && node test/codec.mjs && node test/p2p.mjs",
+  "deploy": "wrangler deploy"
+ },
+ "devDependencies": {
+  "fake-indexeddb": "^6.2.5",
+  "wrangler": "^4.0.0",
+  "ws": "^8.18.0"
+ }
+}
