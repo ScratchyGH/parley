@@ -6,7 +6,7 @@ async function draw(){
 let d
 try{d=await GET('/api/me/images?kind='+kind)}catch(e){mount(box,h('div',{class:'hint'},e.message));return}
 const cur=current()
-if(!d.images.length){mount(box,h('div',{class:'hint'},'Images you set from now on are kept here so you can switch back.'));return}
+if(!d.images.length){mount(box,h('div',{class:'hint'},'Nothing here yet. Each new '+(kind==='avatar'?'avatar':'banner')+' you set is kept here.'));return}
 mount(box,d.images.map(i=>{
 const on_=i.id===cur
 return h('div',{class:'ih'+(on_?' on':'')+' '+kind},
