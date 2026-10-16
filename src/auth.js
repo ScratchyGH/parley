@@ -1,4 +1,5 @@
 import{checkSecondFactor}from'./totp.js'
+import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
 
 export const PUBLIC='u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,u.status_text,u.accent,u.created_at'
@@ -11,6 +12,14 @@ return `sid=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}
 }
 
 export async function sessionUser(env,req){
+const ah=req.headers.get('authorization')||''
+const bm=ah.match(/^Bot (pb_[a-f0-9]{64})$/)
+if(bm){
+const row=await env.DB.prepare('select u.* from bot_tokens t join users u on u.id=t.bot_id where t.token_hash=? and u.is_bot=1 and u.deleted_at is null and u.suspended=0').bind(await sha(bm[1])).first()
+if(!row)return null
+row.admin=false
+return row
+}
 const c=req.headers.get('cookie')||''
 const m=c.match(/(?:^|;\s*)sid=([a-f0-9]{64})/)
 if(!m)return null
@@ -75,6 +84,9 @@ limit('reg:'+ip(c),10,3600000)
 const b=await body(c.req)
 const username=str(b.username,3,24,'Username')
 if(!NAME.test(username))fail(400,'Username may only contain letters, numbers, dots, dashes and underscores')
+const bad=nameProblem(c.env,username)
+if(bad)fail(400,bad)
+if(await claimOwner(c.env,username))fail(409,'That username is taken or too similar to an existing or previously used one')
 const pw=str(b.password,10,200,'Password')
 const dn=b.display_name?str(b.display_name,1,32,'Display name'):username
 const salt=randHex(16)
@@ -83,9 +95,10 @@ const hash=await pbkdf2(pw,salt,n)
 const code=recoveryCode()
 const id=newId('u')
 try{
-await c.env.DB.prepare('insert into users(id,username,display_name,pass_hash,pass_salt,pass_iters,recovery_hash,created_at) values(?,?,?,?,?,?,?,?)').bind(id,username,dn,hash,salt,n,await sha(code),now()).run()
+const t0=now()
+await c.env.DB.batch([c.env.DB.prepare('insert into users(id,username,display_name,pass_hash,pass_salt,pass_iters,recovery_hash,created_at) values(?,?,?,?,?,?,?,?)').bind(id,username,dn,hash,salt,n,await sha(code),t0),claimStmt(c.env,id,username,t0)])
 }catch(e){
-if(String(e.message).includes('UNIQUE'))fail(409,'That username is taken')
+if(String(e.message).includes('UNIQUE'))fail(409,'That username is taken or too similar to an existing or previously used one')
 throw e
 }
 const setCookie=await makeSession(c,id)
@@ -173,15 +186,24 @@ add(k,f.id)
 }
 }
 }
+let renamed=null
 if('username'in b){
 limit('un:'+c.user.id,3,86400000)
 const un=str(b.username,3,24,'Username')
 if(!NAME.test(un))fail(400,'Username may only contain letters, numbers, dots, dashes and underscores')
+const bad=nameProblem(c.env,un)
+if(bad)fail(400,bad)
+const own=await claimOwner(c.env,un)
+if(own&&own.user_id!==c.user.id)fail(409,'That username is taken or too similar to an existing or previously used one')
 add('username',un)
+renamed=un
 }
 if(!sets.length)return{user:me(c.user)}
-try{await c.env.DB.prepare(`update users set ${sets.join(',')} where id=?`).bind(...vals,c.user.id).run()}
-catch(e){if(String(e.message).includes('UNIQUE'))fail(409,'That username is taken');throw e}
+try{
+const st=[c.env.DB.prepare(`update users set ${sets.join(',')} where id=?`).bind(...vals,c.user.id)]
+if(renamed)st.push(claimStmt(c.env,c.user.id,renamed,now()),trimStmt(c.env,c.user.id))
+await c.env.DB.batch(st)
+}catch(e){if(String(e.message).includes('UNIQUE'))fail(409,'That username is taken or too similar to an existing or previously used one');throw e}
 const u=await c.env.DB.prepare('select * from users where id=?').bind(c.user.id).first()
 u.admin=c.user.admin
 c.pub('u_'+u.id,{t:'me.update'})

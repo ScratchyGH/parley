@@ -1,3 +1,4 @@
+import{stickerFor}from'./perks.js'
 import{fail,now,newId,msgId,str,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember,chanPerms,visibleChannels}from'./perms.js'
 import{automod,pollData}from'./extras.js'
@@ -23,6 +24,8 @@ replies.length?q(`select m.id,m.content,m.deleted_at,u.id uid,u.display_name fro
 pollIds.length?pollData(env,pollIds,meId):{},
 thIds.length?q(`select id,name,count from threads where id in (${placeholders(thIds)})`,...thIds):[]
 ])
+const stIds=[...new Set(rows.filter(m=>m.sticker_id).map(m=>m.sticker_id))]
+const STK=stIds.length?Object.fromEntries((await env.DB.prepare(`select id,name,file_id from stickers where id in (${placeholders(stIds)})`).bind(...stIds).all()).results.map(x=>[x.id,x])):{}
 const A=Object.fromEntries(au.map(x=>[x.id,x]))
 const R=Object.fromEntries(rp.map(x=>[x.id,x]))
 return rows.map(m=>{
@@ -34,6 +37,7 @@ reply:m.reply_to?(rep&&!rep.deleted_at?{id:rep.id,author:rep.display_name,conten
 attachments:at.filter(f=>f.message_id===m.id).map(f=>({id:f.id,name:f.name,mime:f.mime,size:f.size,sha256:f.sha256||null})),
 reactions:rx.filter(x=>x.message_id===m.id).map(x=>({emoji:x.emoji,count:x.n,me:!!x.me})),
 sig:m.sig||null,
+sticker:m.sticker_id?STK[m.sticker_id]||{id:m.sticker_id,name:'sticker',file_id:null}:null,
 poll:m.has_poll?pd[m.id]||null:null,
 thread:m.thread_id?th.find(x=>x.id===m.thread_id)||null:null
 }
@@ -99,7 +103,9 @@ content=src.content.split('\n').map(l=>'> '+l).join('\n')+`\n*Forwarded from ${s
 content=content.trim()
 if(content.length>MAX_LEN)fail(413,`Messages can be up to ${MAX_LEN} characters`)
 const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))].slice(0,10):[]
-if(!content&&!attIds.length)fail(400,'Message is empty')
+let stk=null
+if(b.sticker_id){stk=await stickerFor(c.env,String(b.sticker_id),c.user.id);if(!stk)fail(400,'Sticker not available')}
+if(!content&&!attIds.length&&!stk)fail(400,'Message is empty')
 const nonce=typeof b.nonce==='string'&&b.nonce.length<=40?b.nonce:null
 if(nonce){
 const ex=await c.env.DB.prepare('select * from messages where author_id=? and nonce=?').bind(c.user.id,nonce).first()
@@ -146,6 +152,7 @@ stmts.push(c.env.DB.prepare('update conv_members set hidden=0 where conv_id=? an
 stmts.push(c.env.DB.prepare('update conv_members set accepted=1 where conv_id=? and user_id=? and accepted=0').bind(rr.room,c.user.id))
 }
 for(const f of files)stmts.push(c.env.DB.prepare('update files set message_id=? where id=?').bind(id,f.id))
+if(stk)stmts.push(c.env.DB.prepare('update messages set sticker_id=? where id=?').bind(stk.id,id))
 const notify=[]
 if(rr.kind==='channel'){
 for(const uid of users){

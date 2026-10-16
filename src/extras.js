@@ -270,13 +270,13 @@ r.add('GET','/api/servers/:sid/automod',async c=>{
 const m=await srv(c,c.p.sid,P.MANAGE_SERVER)
 let a={}
 try{a=JSON.parse(m.server.automod||'{}')}catch{}
-return{automod:{words:a.words||[],block_links:!!a.block_links,max_mentions:a.max_mentions||0}}
+return{automod:{words:a.words||[],block_links:!!a.block_links,max_mentions:a.max_mentions||0,raid_joins:a.raid_joins||0}}
 })
 r.add('PUT','/api/servers/:sid/automod',async c=>{
 const m=await srv(c,c.p.sid,P.MANAGE_SERVER)
 const b=await body(c.req)
 const words=Array.isArray(b.words)?[...new Set(b.words.map(w=>String(w).trim().toLowerCase()).filter(w=>w.length>=2&&w.length<=40))].slice(0,100):[]
-const a={words,block_links:!!b.block_links,max_mentions:int(b.max_mentions??0,0,50,'Max mentions')}
+const a={words,block_links:!!b.block_links,max_mentions:int(b.max_mentions??0,0,50,'Max mentions'),raid_joins:int(b.raid_joins??0,0,200,'Raid joins')}
 await c.env.DB.batch([c.env.DB.prepare('update servers set automod=? where id=?').bind(JSON.stringify(a),m.server.id),c.logStmt(m.server.id,'automod.update',m.server.id,`${words.length} words`)])
 return{automod:a}
 })

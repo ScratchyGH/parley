@@ -1,9 +1,10 @@
+import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
 import{PUBLIC}from'./auth.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
-const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,welcome,rules,verification,created_at'
+const SRV='id,owner_id,name,description,icon_id,banner_id,is_public,category,accent,welcome,rules,verification,vanity,created_at'
 const CATS=['gaming','tech','art','music','education','science','community','other']
 
 async function mem(c,sid){
@@ -65,7 +66,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where server_
 const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
 const s=m.server
 return{
-server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,welcome:s.welcome,rules:s.rules,verification:s.verification,created_at:s.created_at},
+server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,verification:s.verification,created_at:s.created_at},
 me:{perms:m.base,role_ids:m.roleIds,owner:m.owner,nickname:m.nickname,timeout_until:m.timeout_until,top:m.owner?9999:m.top},
 categories:cats,
 channels:vis.map(({ch,perms})=>({id:ch.id,category_id:ch.category_id,name:ch.name,type:ch.type,topic:ch.topic,position:ch.position,readonly:ch.readonly,locked:ch.locked,slowmode:ch.slowmode,last_msg:ch.last_msg,perms})),
@@ -509,6 +510,8 @@ return{ok:true}
 })
 
 async function validInvite(c,code){
+const vs=await c.env.DB.prepare('select s.id server_id,s.name,s.description,s.icon_id,s.is_public,u.display_name inviter_name from servers s join users u on u.id=s.owner_id where s.vanity=?').bind(code).first()
+if(vs)return{...vs,code,vanity:true,revoked:0}
 const inv=await c.env.DB.prepare('select i.*,s.name,s.description,s.icon_id,s.is_public,u.display_name inviter_name from invites i join servers s on s.id=i.server_id join users u on u.id=i.inviter_id where i.code=?').bind(code).first()
 if(!inv||inv.revoked||(inv.expires_at&&inv.expires_at<now())||(inv.max_uses&&inv.uses>=inv.max_uses))fail(404,'This invite is invalid or has expired')
 return inv
@@ -522,6 +525,7 @@ return{code:inv.code,server:{id:inv.server_id,name:inv.name,description:inv.desc
 },{auth:false})
 
 async function joinServer(c,sid){
+await raidCheck(c.env,sid,c.pub)
 const ban=await c.env.DB.prepare('select 1 x from bans where server_id=? and user_id=?').bind(sid,c.user.id).first()
 if(ban)fail(403,'You are banned from this server')
 const s=await c.env.DB.prepare('select verification,name from servers where id=?').bind(sid).first()
@@ -541,8 +545,10 @@ const already=await c.env.DB.prepare('select 1 x from members where server_id=? 
 if(!already){
 const ban=await c.env.DB.prepare('select 1 x from bans where server_id=? and user_id=?').bind(inv.server_id,c.user.id).first()
 if(ban)fail(403,'You are banned from this server')
+if(!inv.vanity){
 const res=await c.env.DB.prepare('update invites set uses=uses+1 where code=? and revoked=0 and (max_uses is null or uses<max_uses) and (expires_at is null or expires_at>?)').bind(inv.code,now()).run()
 if(!res.meta.changes)fail(404,'This invite is invalid or has expired')
+}
 await joinServer(c,inv.server_id)
 }
 return{server_id:inv.server_id}

@@ -4,8 +4,8 @@ import{resolveRoom,loadMember,P,need}from'./perms.js'
 const IMG={png:'image/png',apng:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',jxl:'image/jxl',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',tif:'image/tiff',tiff:'image/tiff',ico:'image/x-icon'}
 const INLINE_MEDIA={mp3:'audio/mpeg',ogg:'audio/ogg',oga:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',flac:'audio/flac',mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',opus:'audio/ogg',aac:'audio/aac',pdf:'application/pdf'}
 const BLOCKED=new Set(['exe','msi','bat','cmd','com','scr','dll','ps1','vbs','jar','apk','svg','html','htm','xhtml','xml','hta','lnk','reg','sh'])
-const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','conv_icon','emoji'])
-const KINDS=['attachment','avatar','banner','server_icon','server_banner','conv_icon','emoji']
+const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','conv_icon','emoji','sticker'])
+const KINDS=['attachment','avatar','banner','server_icon','server_banner','conv_icon','emoji','sticker']
 const PART=16*1048576
 
 function sniff(b,type){
@@ -37,7 +37,7 @@ const e=ext(name)
 if(BLOCKED.has(e))fail(415,'This file type is not allowed')
 const maxMb=parseInt(c.env.MAX_UPLOAD_MB)||100
 const bigMb=parseInt(c.env.MAX_FILE_MB)||1024
-const lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:10)
+const lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:kind==='sticker'?2:10)
 if(!len||len<1)fail(411,'File size required')
 if(len>lim*1048576)fail(413,`File is larger than the ${lim} MB limit`)
 let room=null,serverId=null
@@ -45,7 +45,7 @@ if(kind==='attachment'){
 const rr=await resolveRoom(c.env,roomQ,c.user.id)
 need(rr.perms,P.ATTACH,'You cannot attach files here')
 room=rr.room
-}else if(kind==='server_icon'||kind==='server_banner'||kind==='emoji'){
+}else if(kind==='server_icon'||kind==='server_banner'||kind==='emoji'||(kind==='sticker'&&serverQ)){
 serverId=serverQ
 const m=await loadMember(c.env,serverId||'',c.user.id)
 if(!m)fail(404,'Server not found')

@@ -10,6 +10,7 @@ import adminRoutes from'./admin.js'
 import extraRoutes from'./extras.js'
 import totpRoutes from'./totp.js'
 import pushRoutes from'./push.js'
+import perkRoutes from'./perks.js'
 export{Hub}
 
 const routes=[]
@@ -27,6 +28,7 @@ adminRoutes(router)
 extraRoutes(router)
 totpRoutes(router)
 pushRoutes(router)
+perkRoutes(router)
 
 router.add('GET','/api/health',async c=>{
 await c.env.DB.prepare('select 1').first()
@@ -72,6 +74,8 @@ if(m){hit=r;r.keys.forEach((k,i)=>{try{params[k]=decodeURIComponent(m[i+1])}catc
 if(!hit)fail(404,'Not found')
 const user=await sessionUser(env,req)
 if(hit.auth&&!user)fail(401,'Not signed in')
+if(user&&user.is_bot&&!/^\/api\/(rooms|channels|threads|upload|files|stickers)\b|^\/api\/me$|^\/api\/servers\/[^/]+$/.test(url.pathname))fail(403,'Bots cannot use this endpoint')
+if(user&&user.is_bot&&/^\/api\/(me|servers\/[^/]+)$/.test(url.pathname)&&method!=='GET')fail(403,'Bots cannot use this endpoint')
 if(user)limit('api:'+user.id,600,60000)
 else limit('anon:'+(req.headers.get('cf-connecting-ip')||'local'),120,60000)
 if(user&&!user.admin&&await maintenance(env)&&!url.pathname.startsWith('/api/auth/logout'))fail(503,'Parley is in maintenance mode. Please try again shortly.')
