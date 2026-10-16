@@ -324,3 +324,4 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.15)}
 .pcard .pnote{margin:8px 0}
 .pcard .row{gap:8px;flex-wrap:wrap}
 .pcard .row .btn{flex:1 1 auto;justify-content:center}
+.ctx-h.hasb{height:128px;align-items:flex-end;padding-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.7)}
