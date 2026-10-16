@@ -719,8 +719,10 @@ eq((await B.get('/api/users/'+B.id+'/note')).j.note,'','notes are private to the
 await A.put('/api/users/'+B.id+'/note',{note:''})
 eq((await A.get('/api/users/'+B.id+'/note')).j.note,'','clearing a note removes it')
 
-eq((await A.get('/api/gifs/status')).j.enabled,false,'GIF search reports it is not configured')
-eq((await A.get('/api/gifs/search?q=cat')).s,503,'search without a provider fails clearly')
+eq((await A.get('/api/gifs/status')).j.enabled,true,'GIF search works without a key')
+const gs=await A.get('/api/gifs/search?q=cat')
+eq(gs.s,200,'keyless search answers')
+eq(Array.isArray(gs.j.results),true,'keyless search returns a list')
 eq((await A.post('/api/gifs/import',{url:'https://evil.example.com/a.gif',kind:'avatar'})).s,400,'import rejects unlisted hosts')
 eq((await A.post('/api/gifs/import',{url:'http://media.tenor.com/a.gif',kind:'avatar'})).s,400,'import rejects http')
 eq((await A.post('/api/gifs/import',{url:'https://user@media.tenor.com/a.gif',kind:'avatar'})).s,400,'import rejects credentials in the address')
