@@ -43,15 +43,15 @@ const status=h('span',{class:'hint'})
 const out=h('div')
 const gen=h('button',{class:'btn pri',type:'button'},'Generate')
 const redo=h('button',{class:'btn',type:'button',hidden:true},'Apply my change request')
-let result=null,raw=''
+let result=null,raw='',via=''
 async function run(prompt){
 gen.disabled=redo.disabled=true
 status.textContent='Designing. This can take a minute.'
 try{
 const r=await POST('/api/admin/studio',{prompt})
-raw=r.text
+raw=r.text;via=r.via
 result=parse(r.text)
-status.textContent=''
+status.textContent='Designed with '+via
 show()
 }catch(e){status.textContent='';fail(e)}finally{gen.disabled=redo.disabled=false}
 }
@@ -91,7 +91,7 @@ h('label',{class:'perm'},withText,h('span',null,'Set description, welcome messag
 h('div',{class:'row',style:{marginTop:'10px'}},apply))
 }
 mount(pg,h('h3',null,'Server studio'),
-h('p',{class:'hint'},'Uses a free AI service (Pollinations, no account needed) to design a styled server: colour theme, server tag, categories with decorated names, channels, roles, welcome text and rules. Nothing changes until you press Build this server. Building only adds channels and roles; it never deletes or overwrites existing ones, and the theme and tag replace the current ones.'),
+h('p',{class:'hint'},'Uses OpenRouter (the Worker secret OPENROUTER_API_KEY; without it, the keyless Pollinations service) to design a styled server: colour theme, server tag, categories with decorated names, channels, roles, welcome text and rules. Nothing changes until you press Build this server. Building only adds channels and roles; it never deletes or overwrites existing ones, and the theme and tag replace the current ones.'),
 field('Server to build',target),field('Brief',brief,'Pre-filled for Parley Community. Edit it to design a different server.'),
 h('div',{class:'row',style:{gap:'8px',margin:'8px 0'}},gen,status),
 field('Change request',note),redo,out)
