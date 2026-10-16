@@ -60,7 +60,7 @@ Nothing has been deployed to Cloudflare.
 | Server signed messages (Ed25519, verifiable by clients) | API tested, verifier tested in Node |
 | Image formats: JPEG, PNG, GIF, WebP, APNG, AVIF, JPEG XL, BMP, TIFF, ICO inline; HEIC stored as a download | Sniffing API tested; JXL and AVIF codecs round-trip tested in Node (`test/codec.mjs`). JXL lossless round trip is within plus or minus 1 per channel. Rendering in a browser untested |
 | Client side image optimisation to WebP, AVIF or JXL before upload (off by default) | Codecs tested in Node; worker and UI written, never run in a browser |
-| File storage: D1 chunk store by default (no R2, no card). 25 MB per file, 100 MB per user, 5 GB total for the whole deployment (D1 free limit). Multipart upload with parallel parts, SHA-256 checked on completion. Optional R2 binding raises limits | API tested (D1 store); R2 path no longer covered by the test; client uploader never run in a browser |
+| File storage: D1 chunk store by default (no R2, no card), spread across the main database and up to 8 extra D1 databases (`BLOB1` to `BLOB8`; 3 are configured). 25 MB per file, 100 MB per user. Cloudflare's free plan caps each D1 database at 500 MB and the whole account at 5 GB, so extra databases spread the load but do not raise the 5 GB total. Multipart upload with parallel parts, SHA-256 checked on completion. Optional R2 binding raises limits | API tested (D1 store); R2 path no longer covered by the test; client uploader never run in a browser |
 | Drafts | Kept in this browser's localStorage |
 | Avatar, banner, server icon and group icon crop dialog (drag and zoom, WebP output) | UI written, never run in a browser |
 | Animated GIF, animated WebP and APNG avatars and banners (uploaded unmodified, up to 10 MB, never cropped or re-encoded) | Upload API tested with a GIF; animation display relies on the browser |
@@ -139,7 +139,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 - Free-tier quotas cap how many people one deployment can serve; see ARCHITECTURE.md.
 - Online presence is only known for people in the server or conversation you currently have open.
 - Unread counts for servers you are not viewing refresh when you focus the tab and every three minutes, not instantly.
-- Migrations are `0001_init.sql` to `0004_d1_blobs.sql` (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks). Apply with `npm run migrate:remote` before deploying.
+- Migrations are `0001_init.sql` to `0005_indexes.sql` (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks; 0005: partial indexes for message lists, pins and spam checks). Apply with `npm run migrate:remote` before deploying.
 - Display names are not unique and are not protected, so someone can still copy another person's display name. Usernames (which are the unique handle) are protected.
 - Full text search is still a LIKE scan: D1 FTS5 would roughly triple message write cost on the free plan.
 - Not buildable on the free tier without a third party: email verification and recovery, end to end encryption, full text search, an SFU for large calls.
