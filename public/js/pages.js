@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,DEL,avatar,toast,fail,field,debounce,dialog,fmtRel,rid}from'./util.js'
+import{h,mount,icon,GET,POST,DEL,avatar,gtag,coverBg,toast,fail,field,debounce,dialog,fmtRel,rid}from'./util.js'
 import{S,on,emit,loadFriends,loadServers,noteThread,P,can}from'./state.js'
 import{go}from'./nav.js'
 import{openDm,CATEGORIES,inviteDialog}from'./dialogs.js'
@@ -56,7 +56,7 @@ try{
 const d=await GET(`/api/discover?limit=24&offset=${offset}&q=${encodeURIComponent(q.value.trim())}&category=${cat.value}`)
 const cards=d.servers.map(s=>{
 const joined=S.servers.some(x=>x.id===s.id)
-return h('div',{class:'sc'},h('div',{class:'row'},avatar({id:s.id,name:s.name,icon_id:s.icon_id,display_name:s.name}),h('div',{class:'grow'},h('h4',null,s.name,s.age_restricted?h('span',{class:'b18'},'18+'):null),h('small',{class:'hint',style:{margin:0}},s.members+' members'+(s.category?' · '+s.category:'')))),
+return h('div',{class:'sc',style:s.accent?{'--c':s.accent}:{}},s.banner_id?coverBg(h('div',{class:'scban'}),s.banner_id,''):h('div',{class:'scban'}),h('div',{class:'row scrow'},avatar({id:s.id,name:s.name,icon_id:s.icon_id,display_name:s.name}),h('div',{class:'grow'},h('h4',null,s.name,s.age_restricted?h('span',{class:'b18'},'18+'):null,gtag(s.tag,s.tag_emoji,s.tag_icon_id)),h('small',{class:'hint',style:{margin:0}},s.members+' members'+(s.category?' · '+s.category:'')))),
 h('p',null,s.description||'No description'),
 h('button',{class:'btn'+(joined?'':' pri'),on:{click:async e=>{
 if(joined){go('/s/'+s.id);return}
