@@ -11,6 +11,7 @@ import extraRoutes from'./extras.js'
 import totpRoutes from'./totp.js'
 import pushRoutes from'./push.js'
 import perkRoutes from'./perks.js'
+import{d1Store}from'./store.js'
 export{Hub}
 
 const routes=[]
@@ -121,7 +122,8 @@ return stub.fetch(r2)
 const SEC={'x-content-type-options':'nosniff','referrer-policy':'same-origin','x-frame-options':'DENY'}
 
 export default{
-async fetch(req,env,ec){
+async fetch(req,env0,ec){
+const env=env0.FILES?env0:{...env0,FILES:d1Store(env0)}
 const url=new URL(req.url)
 try{
 if(url.pathname==='/ws')return await ws(req,env,url)
@@ -143,7 +145,8 @@ if(/exceeded|quota|limit/i.test(msg)&&/D1|row|daily/i.test(msg))return json({err
 return json({error:'Something went wrong on the server'},500,SEC)
 }
 },
-async scheduled(ev,env){
+async scheduled(ev,env0){
+const env=env0.FILES?env0:{...env0,FILES:d1Store(env0)}
 const t=now()
 const orphans=(await env.DB.prepare('select id,r2_key from files where kind=? and message_id is null and created_at<?').bind('attachment',t-86400000).all()).results
 for(const f of orphans)await env.FILES.delete(f.r2_key)
