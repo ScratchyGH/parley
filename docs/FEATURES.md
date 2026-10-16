@@ -138,6 +138,11 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Calls: repeating ringtone, decline, busy, caller cancel, no answer after 45 seconds, call timer, join and leave tones, raise hand, muted-speaking reminder | Decline, cancel and hand state API tested; the call UI and tones are UI written and **no media or sound has been run in a browser** |
 | Bot Lab section links no longer scroll the whole page | UI written, not run in a browser |
 
+| More keyless GIF sources: otakugifs.xyz, purrbot.site and nekos.best reaction GIFs plus Wikimedia Commons text search | API tested for the otakugifs path; nekos.best and Wikimedia answered nothing from the test machine, so those two are **unconfirmed** |
+| Server themes: colours and a background image that apply only while a member is inside that server, with presets | API tested (validation, storage, reset); UI written, not run in a browser |
+| Bot Lab block builder: drag blocks, connect them, test with a sample message, saved per bot | Engine and routes API tested end to end (command, reply, reaction, saved counter in a real server); the canvas UI is written but has never been run in a browser |
+| Mascot art on the sign in card and Home | UI written; the wordmark in the supplied art is misspelled, so it was removed from the image |
+
 ## Moderation and admin
 
 | Feature | Status |

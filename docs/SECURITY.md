@@ -68,6 +68,12 @@ Reports (messages, users, servers), per server moderation (timeout, kick, ban, a
 - Switching accounts keeps other sessions in a second `HttpOnly` cookie (at most 4). Anyone with access to the browser profile can switch to them, so use Forget on shared computers. Signing out ends only the active session; the other saved accounts stay listed on the sign in page until they are forgotten.
 - GIFs are downloaded by the server only from hosts in `GIF_MEDIA_HOSTS` over https without redirects, size capped at 10 MB and type checked, so the GIF feature cannot be used to reach other addresses.
 
+## Block bots
+
+- Blocks are data, not code. They run in the Worker with fixed limits: 60 blocks per bot, 40 steps, 4 messages and 8 actions per message, 30 runs per minute per channel. They cannot make network requests. `@everyone` and role mentions are defused in their output, and bots never trigger other bots.
+- A block bot only acts in servers where its owner's project was added through the Bot hub, and only where the bot account has permission to read and post.
+- Server themes are limited to hex colours and one image uploaded to that server. Only members with Manage Server can set them.
+
 ## Known weaknesses
 
 - Best effort rate limiting (above).
