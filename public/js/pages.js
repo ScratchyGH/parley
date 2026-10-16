@@ -1,7 +1,7 @@
 import{h,mount,icon,GET,POST,DEL,avatar,toast,fail,field,debounce,dialog,fmtRel,rid}from'./util.js'
-import{S,on,emit,loadFriends,loadServers,noteThread,P}from'./state.js'
+import{S,on,emit,loadFriends,loadServers,noteThread,P,can}from'./state.js'
 import{go}from'./nav.js'
-import{openDm,CATEGORIES}from'./dialogs.js'
+import{openDm,CATEGORIES,inviteDialog}from'./dialogs.js'
 import{topBar}from'./shell.js'
 
 export function friendsPage(tab){
@@ -56,7 +56,7 @@ try{
 const d=await GET(`/api/discover?limit=24&offset=${offset}&q=${encodeURIComponent(q.value.trim())}&category=${cat.value}`)
 const cards=d.servers.map(s=>{
 const joined=S.servers.some(x=>x.id===s.id)
-return h('div',{class:'sc'},h('div',{class:'row'},avatar({id:s.id,name:s.name,icon_id:s.icon_id,display_name:s.name}),h('div',{class:'grow'},h('h4',null,s.name),h('small',{class:'hint',style:{margin:0}},s.members+' members'+(s.category?' · '+s.category:'')))),
+return h('div',{class:'sc'},h('div',{class:'row'},avatar({id:s.id,name:s.name,icon_id:s.icon_id,display_name:s.name}),h('div',{class:'grow'},h('h4',null,s.name,s.age_restricted?h('span',{class:'b18'},'18+'):null),h('small',{class:'hint',style:{margin:0}},s.members+' members'+(s.category?' · '+s.category:'')))),
 h('p',null,s.description||'No description'),
 h('button',{class:'btn'+(joined?'':' pri'),on:{click:async e=>{
 if(joined){go('/s/'+s.id);return}
@@ -79,7 +79,12 @@ return{nodes:[bar,body]}
 export function welcomePage(sid){
 const d=S.sdata[sid]
 const s=d.server
-return h('div',{class:'empty'},h('div',null,h('h2',{style:{color:'var(--strong)'}},s.name),s.description?h('p',null,s.description):null,h('p',{class:'hint'},'Pick a channel from the list to get started.')))
+const chans=[...d.channels].sort((a,b)=>a.position-b.position).slice(0,8)
+return h('div',{class:'swel',style:s.accent?{'--c':s.accent}:{}},
+h('div',{class:'swel-b'},avatar({id:sid,name:s.name,icon_id:s.icon_id,display_name:s.name},'lg'),h('h1',null,s.name,s.age_restricted?h('span',{class:'b18'},'18+'):null),s.description?h('p',null,s.description):null,
+s.welcome?h('p',{class:'swel-w'},s.welcome):null,
+h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap',justifyContent:'center'}},can(sid,P.CREATE_INVITE)?h('button',{class:'btn pri',on:{click:()=>inviteDialog(sid)}},'Invite people'):null,
+...chans.map(c=>h('button',{class:'btn',on:{click:()=>go(`/s/${sid}/${c.id}`)}},(c.type==='voice'?'Voice  ':'#')+c.name)))))
 }
 
 export function forumPage(ch,sid){

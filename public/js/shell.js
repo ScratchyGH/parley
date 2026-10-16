@@ -173,7 +173,8 @@ function homeBody(){
 const inc=S.fr.incoming.length
 const kids=[
 h('button',{class:'btn',style:{width:'100%',justifyContent:'flex-start',color:'var(--muted)',marginBottom:'8px'},on:{click:()=>quickSwitcher()}},icon('search','s'),'Find a conversation',h('span',{class:'kbd',style:{marginLeft:'auto'}},'Ctrl K')),
-h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page!=='saved'?' on':''),on:{click:()=>{go('/friends');closeDrawers()}}},icon('users'),h('span',{class:'nm'},'Friends'),inc?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},inc):null),
+h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page==='overview'?' on':''),on:{click:()=>{go('/');closeDrawers()}}},icon('chat'),h('span',{class:'nm'},'Home')),
+h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page!=='overview'?' on':''),on:{click:()=>{go('/friends');closeDrawers()}}},icon('users'),h('span',{class:'nm'},'Friends'),inc?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},inc):null),
 h('button',{class:'ci',on:{click:()=>emit('ui:panel',{kind:'saved'})}},icon('bookmark'),h('span',{class:'nm'},'Saved messages')),
 h('div',{class:'cat'},h('span',null,'Direct messages'),h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'New message','aria-label':'New message',on:{click:()=>newDmDialog()}},icon('plus','s')))
 ]
@@ -272,19 +273,20 @@ const c=isDm(room)?conv(room):null
 const actions=h('div',{class:'row',style:{gap:'2px'}})
 const pn=panel?.kind
 if(c&&c.accepted&&(c.perms===undefined||c.perms&P.CONNECT))actions.append(tbtn('phone','Start voice call',()=>emit('ui:call',room)))
-actions.append(tbtn('pin','Pinned messages',()=>emit('ui:panel',pn==='pins'?null:{kind:'pins',arg:room}),pn==='pins'))
-if(info&&!info.thread&&info.ch.type!=='forum')actions.append(tbtn('chat','Threads',()=>emit('ui:panel',pn==='threads'?null:{kind:'threads',arg:room}),pn==='threads'))
+const voice=!!info&&info.ch.type==='voice'
+if(!voice)actions.append(tbtn('pin','Pinned messages',()=>emit('ui:panel',pn==='pins'?null:{kind:'pins',arg:room}),pn==='pins'))
+if(info&&!info.thread&&info.ch.type!=='forum'&&!voice)actions.append(tbtn('chat','Threads',()=>emit('ui:panel',pn==='threads'?null:{kind:'threads',arg:room}),pn==='threads'))
 if(info&&info.thread){
 actions.append(tbtn('right','Back to #'+info.parent.name,()=>go(`/s/${info.sid}/${info.parent.id}`)))
 if(info.thread.owner_id===S.me.id||can(info.sid,P.MANAGE_MESSAGES))actions.append(tbtn('check',info.thread.archived?'Unarchive thread':'Archive thread',async()=>{try{const r=await PATCH('/api/threads/'+room,{archived:!info.thread.archived});noteThread(r.thread,info.sid);emit('ui:refreshtop')}catch(e){fail(e)}}))
 }
-if(info||c?.type==='group')actions.append(tbtn('users','Member list',()=>emit('ui:panel',pn==='members'?null:{kind:'members',arg:room}),pn==='members'))
-actions.append(tbtn('search','Search',()=>emit('ui:panel',pn==='search'?null:{kind:'search',arg:room}),pn==='search'))
+if((info&&!voice)||c?.type==='group')actions.append(tbtn('users','Member list',()=>emit('ui:panel',pn==='members'?null:{kind:'members',arg:room}),pn==='members'))
+if(!voice)actions.append(tbtn('search','Search',()=>emit('ui:panel',pn==='search'?null:{kind:'search',arg:room}),pn==='search'))
 if(c?.type==='group')actions.append(tbtn('sliders','Group settings',()=>emit('ui:groupsettings',room)))
 actions.append(tbtn('menu','Toggle side panel',()=>el.shell.classList.toggle('pan')))
 actions.lastChild.classList.add('mobile-only')
 const title=info?info.thread?`${info.parent.name} › ${info.ch.name}`:info.ch.name:convTitle(c)
-return topBar({lead:info?icon(info.thread||info.ch.type==='forum'?'chat':info.ch.type==='announce'?'mega':'hash'):c?(c.type==='group'?icon('users'):avatar(convOther(c)||{},'sm')):null,title,topic:info?.ch.topic||'',actions})
+return topBar({lead:info?icon(info.thread||info.ch.type==='forum'?'chat':info.ch.type==='announce'?'mega':voice?'volume':'hash'):c?(c.type==='group'?icon('users'):avatar(convOther(c)||{},'sm')):null,title,topic:info?.ch.topic||'',actions})
 }
 
 export function layoutMain(...kids){

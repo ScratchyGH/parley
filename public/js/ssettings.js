@@ -107,6 +107,20 @@ const rules=h('textarea',{class:'inp',rows:4,maxLength:3000},s.rules||'')
 const cat=h('select',{class:'sel'},h('option',{value:''},'None'),CATEGORIES.map(c=>h('option',{value:c,selected:s.category===c},c[0].toUpperCase()+c.slice(1))))
 const ver=h('select',{class:'sel'},[['0','None'],['1','Account must be older than 5 minutes'],['2','Account must be older than 10 minutes']].map(([v,l])=>h('option',{value:v,selected:String(s.verification)===v},l)))
 let pub=!!s.is_public
+let age=!!s.age_restricted,scan=!!s.scan_explicit
+const scanBox=h('div')
+const drawScan=()=>mount(scanBox,age?h('div',{class:'perm'},toggle(scan,v=>{scan=v},'Scan for explicit content'),h('span',null,'Scan links and images and remove explicit ones')):h('div',{class:'hint'},'Turn on 18+ Only to unlock the explicit content scanner.'))
+drawScan()
+const ageRow=h('div',{class:'perm',style:{marginTop:'12px'}},toggle(age,async v=>{
+if(v&&!S.me.adult_ok){
+const yes=await confirmBox('Confirm your age','Servers marked 18+ Only are limited to members who say they are 18 or older. Do you confirm that you are 18 or older?','I am 18 or older')
+if(!yes){age=false;overview(pg,sid);return}
+try{const r=await POST('/api/me/adult',{confirm:true});S.me.adult_ok=r.adult_ok}catch(e){fail(e);age=false;overview(pg,sid);return}
+}
+age=v
+if(!v)scan=false
+drawScan()
+},'18+ Only'),h('span',null,'18+ Only (members must confirm they are 18 or older to join)'))
 const SW=['#8b949e','#521525','#57ab5a','#c69026','#e5534b','#986ee2','#c96198']
 let accent=s.accent||''
 const sws=h('div',{class:'swatches'})
@@ -121,10 +135,10 @@ field('Server name',name),field('Description',desc),field('Icon',img('server_ico
 field('Welcome message',welcome,'Shown to new members. Markdown is supported.'),field('Rules',rules,'Markdown is supported.'),
 field('Discovery category',cat),
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(pub,v=>{pub=v},'Listed in Discover'),h('span',null,'Listed in Discover (anyone can join without an invite)')),
-field('Verification level',ver),
+field('Verification level',ver),ageRow,scanBox,
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 try{
-await PATCH('/api/servers/'+sid,{name:name.value.trim(),description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value})
+await PATCH('/api/servers/'+sid,{name:name.value.trim(),description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan})
 await loadServer(sid);await loadServers();toast('Saved','ok')
 }catch(e){fail(e)}
 }}},'Save changes')))

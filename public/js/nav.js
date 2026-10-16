@@ -19,7 +19,7 @@ export function parse(){
 const u=new URL(location.href)
 const p=u.pathname.split('/').filter(Boolean)
 const m=u.searchParams.get('m')
-if(!p.length||p[0]==='home'||p[0]==='friends')return{name:'home',page:p[1]||'friends'}
+if(!p.length||p[0]==='home'||p[0]==='friends')return{name:'home',page:p[0]==='friends'?(p[1]||'all'):'overview'}
 if(p[0]==='dm')return{name:'dm',room:p[1]||null,m}
 if(p[0]==='s')return{name:'server',sid:p[1],ch:p[2]||null,m}
 if(p[0]==='discover')return{name:'discover'}

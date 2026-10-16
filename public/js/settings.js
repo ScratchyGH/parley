@@ -9,6 +9,7 @@ import{requestDesktop}from'./notify.js'
 import{pref,setPref}from'./prefs.js'
 import{p2pStats,clearP2PCache,startP2P,stopP2P}from'./p2p/index.js'
 import{nativeSupport}from'./codec.js'
+import{labsPage}from'./labs.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
@@ -32,21 +33,22 @@ const row=(label,sub,control)=>h('div',{class:'row sp',style:{padding:'8px 0',bo
 const sw=(key,def,label,sub,after)=>row(label,sub,toggle(setting(key,def),async v=>{try{await saveSettings({[key]:v});after?.(v)}catch(e){fail(e)}},label))
 
 export function openSettings(page='account'){
-let cur=page
+let cur=page,labs=false
 const nav=h('nav',{'aria-label':'Settings sections'})
 const pg=h('div',{class:'pg'})
 const d=dialog('Settings',h('div',{class:'split'},nav,pg),{cls:'wide'})
 function draw(){
-mount(nav,PAGES.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)),
+mount(nav,[...PAGES,...(labs?[['labs','Experimental']]:[])].map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)),
 h('h4',null,'Session'),
 h('button',{on:{click:async()=>{
 try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 mount(pg)
-const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data}[cur]
+const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage}[cur]
 fn(pg,d)
 }
+GET('/api/lab/status').then(r=>{if(r.labs){labs=true;draw()}}).catch(()=>{})
 draw()
 }
 
@@ -229,6 +231,13 @@ if(!S.fr.blocked.length)await loadFriends().catch(()=>{})
 const sel=(key,opts,def)=>h('select',{class:'sel',style:{width:'auto'},on:{change:async e=>{try{await saveSettings({[key]:e.target.value})}catch(x){fail(x)}}}},opts.map(([v,l])=>h('option',{value:v,selected:setting(key,def)===v},l)))
 mount(pg,h('h3',null,'Privacy and safety'),
 row('Who can message you','Controls new direct messages from people who are not friends.',sel('dm_policy',[['everyone','Everyone (as a message request)'],['friends','Friends only'],['none','Nobody']],'everyone')),
+row('Adult content (18+)','Lets you join and see servers marked 18+ Only. This is a statement you make about yourself; Parley does not check ID.',toggle(!!S.me.adult_ok,async v=>{
+try{
+if(v&&!await confirmBox('Confirm your age','Do you confirm that you are 18 or older?','I am 18 or older')){privacy(pg);return}
+const r=await POST('/api/me/adult',{confirm:v});S.me.adult_ok=r.adult_ok
+}catch(e){fail(e)}
+privacy(pg)
+},'Adult content')),
 row('Who can send friend requests',null,sel('friend_policy',[['everyone','Everyone'],['none','Nobody']],'everyone')),
 sw('show_presence',true,'Show online status','When off, you appear offline to others.'),
 h('h3',{style:{marginTop:'24px'}},'Blocked users'),

@@ -8,6 +8,7 @@ import{buildShell,renderRail,renderCtx,setPanel,currentPanel,chatTop,topBar,layo
 import{openChat,closeChat,chatEvent,currentRoom,resyncChat,refreshComposer,chatAtBottom}from'./chat.js'
 import{V,voiceEvent,joinVoice,toggleMute,toggleDeaf,mountVoiceRoom,ringToast,voiceSettingsView}from'./voice.js'
 import{friendsPage,discoverPage,welcomePage,forumPage}from'./pages.js'
+import{homePage}from'./home.js'
 import{botsPage}from'./botspage.js'
 import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,channelDialog,categoryDialog,groupSettingsDialog}from'./dialogs.js'
 import{openSettings}from'./settings.js'
@@ -76,8 +77,8 @@ closeChat()
 closeDrawers()
 if(r.name==='invite'){
 history.replaceState(null,'','/')
-S.nav={kind:'home',page:'friends'}
-await renderHome('friends')
+S.nav={kind:'home',page:'overview'}
+await renderHome('overview')
 inviteJoinDialog(r.code)
 return
 }
@@ -187,10 +188,10 @@ await renderHome(r.page)
 async function renderHome(page){
 S.nav={kind:'home',page}
 syncChrome()
-const p=friendsPage(page)
+const p=page==='overview'?homePage():friendsPage(page)
 cleanup=p.cleanup
 layoutMain(...p.nodes)
-document.title='Friends • Parley'
+document.title=(page==='overview'?'Home':'Friends')+' • Parley'
 }
 
 function syncChrome(){
@@ -251,6 +252,7 @@ case'emoji.changed':if(room.startsWith('s_'))loadServer(room.slice(2)).then(()=>
 case'poll.update':case'msg.update':case'msg.delete':case'reaction':case'att.delete':case'typing':
 chatEvent(room,m)
 break
+case'safety.removed':toast('A message of yours was removed because this server scans for explicit content','err');break
 case'notif':
 S.notifN++
 emit('notifn')
