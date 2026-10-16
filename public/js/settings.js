@@ -1,0 +1,275 @@
+import{h,mount,icon,GET,POST,PATCH,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
+import{S,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
+import{pickImage,uploadImage}from'./dialogs.js'
+import{voiceSettingsView}from'./voice.js'
+import{requestDesktop}from'./notify.js'
+import{pref,setPref}from'./prefs.js'
+import{p2pStats,clearP2PCache,startP2P,stopP2P}from'./p2p/index.js'
+import{nativeSupport}from'./codec.js'
+import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
+
+const PAGES=[
+['account','My account'],['profile','Profile'],['appearance','Appearance'],['notifications','Notifications'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['sessions','Sessions'],['data','Data and deletion']
+]
+
+async function saveSettings(patch){
+const d=await PATCH('/api/me',{settings:patch})
+S.me=d.user
+applySettings()
+emit('settings')
+}
+async function saveProfile(patch){
+const d=await PATCH('/api/me',patch)
+S.me=d.user
+cacheUser(S.me)
+emit('settings')
+return d.user
+}
+const row=(label,sub,control)=>h('div',{class:'row sp',style:{padding:'8px 0',borderBottom:'1px solid var(--border)'}},h('div',null,h('div',{style:{color:'var(--strong)'}},label),sub?h('div',{class:'hint',style:{margin:0}},sub):null),control)
+const sw=(key,def,label,sub,after)=>row(label,sub,toggle(setting(key,def),async v=>{try{await saveSettings({[key]:v});after?.(v)}catch(e){fail(e)}},label))
+
+export function openSettings(page='account'){
+let cur=page
+const nav=h('nav',{'aria-label':'Settings sections'})
+const pg=h('div',{class:'pg'})
+const d=dialog('Settings',h('div',{class:'split'},nav,pg),{cls:'wide'})
+function draw(){
+mount(nav,PAGES.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)),
+h('h4',null,'Session'),
+h('button',{on:{click:async()=>{
+try{await POST('/api/auth/logout',{})}catch{}
+location.href='/'
+}}},'Log out'))
+mount(pg)
+const fn={account,profile,appearance,notifications,network,media,privacy,voice,sessions,data}[cur]
+fn(pg,d)
+}
+draw()
+}
+
+function pushRow(){
+const box=h('div')
+async function draw(){
+if(!pushSupported()){mount(box,row('Push notifications','This browser does not support Web Push.',h('span',{class:'hint'},'Unavailable')));return}
+const st=await pushEnabled().catch(()=>({configured:false,on:false}))
+if(!st.configured){mount(box,row('Push notifications','The server operator has not set VAPID keys, so push is off on this deployment.',h('span',{class:'hint'},'Not configured')));return}
+mount(box,row('Push notifications','Delivers mentions and direct messages while Parley is closed, through your browser vendor push service. Message text is encrypted end to end to your browser.',toggle(st.on,async v=>{try{if(v)await pushEnable();else await pushDisable()}catch(e){fail(e)}draw()},'Push notifications')))
+}
+draw()
+return box
+}
+
+function twofa(box){
+const me=S.me
+const out=h('div')
+const pw=h('input',{class:'inp',type:'password',autocomplete:'current-password','aria-label':'Password'})
+const code=h('input',{class:'inp',inputmode:'numeric',autocomplete:'one-time-code',maxLength:24,placeholder:'Code','aria-label':'Authenticator or backup code'})
+const err=h('div',{class:'err',role:'alert'})
+const refresh=async()=>{const d=await GET('/api/me');S.me=d.user;account(box.parentElement)}
+if(!me.totp_on){
+mount(box,h('h3',{style:{marginTop:'24px'}},'Two-factor authentication'),h('p',{class:'hint'},'Adds a 6-digit code from an authenticator app (Google Authenticator, Aegis, 1Password and similar) at sign-in. You get 8 single-use backup codes. If you lose both the app and the codes, a recovery code cannot bypass 2FA.'),
+h('div',{class:'row'},pw,h('button',{class:'btn',on:{click:async()=>{
+err.textContent=''
+try{
+const r=await POST('/api/me/2fa/setup',{password:pw.value})
+pw.value=''
+mount(out,h('p',null,'Add this secret to your authenticator app as a time-based (TOTP) account, or open the link on a device that has one:'),
+h('div',{class:'card',style:{fontFamily:'var(--mono)',userSelect:'all',wordBreak:'break-all'}},r.secret),
+h('a',{href:r.uri,class:'btn sm',style:{marginTop:'6px'}},'Open in authenticator app'),
+field('Enter the 6-digit code to confirm',code),
+h('button',{class:'btn pri',on:{click:async()=>{
+err.textContent=''
+try{
+const e=await POST('/api/me/2fa/enable',{code:code.value.trim()})
+mount(out,h('p',null,'Two-factor authentication is on. Save these backup codes now; each works once and they will not be shown again.'),h('div',{class:'card',style:{fontFamily:'var(--mono)',userSelect:'all',whiteSpace:'pre-line'}},e.backup_codes.join('\n')),h('button',{class:'btn sm',style:{marginTop:'6px'},on:{click:()=>copyText(e.backup_codes.join('\n'))}},'Copy codes'),h('button',{class:'btn sm',style:{marginTop:'6px',marginLeft:'6px'},on:{click:()=>refresh().catch(fail)}},'Done'))
+}catch(x){err.textContent=x.message}
+}}},'Turn on'))
+}catch(x){err.textContent=x.message}
+}}},'Start setup')),out,err)
+}else{
+mount(box,h('h3',{style:{marginTop:'24px'}},'Two-factor authentication'),h('p',{class:'hint'},'Two-factor authentication is on. To turn it off enter your password and a current code or a backup code.'),
+h('div',{class:'row'},pw,code,h('button',{class:'btn dng',on:{click:async()=>{
+err.textContent=''
+try{await POST('/api/me/2fa/disable',{password:pw.value,code:code.value.trim()});toast('Two-factor authentication turned off','ok');await refresh()}catch(x){err.textContent=x.message}
+}}},'Turn off')),err)
+}
+}
+
+function account(pg){
+const err=h('div',{class:'err'})
+const un=h('input',{class:'inp',value:S.me.username,maxLength:24})
+const cp=h('input',{class:'inp',type:'password',autocomplete:'current-password'})
+const np=h('input',{class:'inp',type:'password',autocomplete:'new-password'})
+const out=h('div')
+mount(pg,h('h3',null,'My account'),
+field('Username',h('div',{class:'row'},un,h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({username:un.value.trim()});toast('Username changed','ok')}catch(e){fail(e)}}}},'Change'))),
+h('div',{class:'hint'},'You can change your username 3 times per day.'),
+h('h3',{style:{marginTop:'24px'}},'Change password'),
+field('Current password',cp),field('New password',np,'At least 10 characters. Other devices will be signed out.'),
+h('div',{style:{marginTop:'8px'}},h('button',{class:'btn pri',on:{click:async()=>{
+try{await POST('/api/me/password',{current_password:cp.value,new_password:np.value});cp.value=np.value='';toast('Password changed','ok')}catch(e){fail(e)}
+}}},'Change password')),
+h('div',{id:'tfa'}),
+h('h3',{style:{marginTop:'24px'}},'Recovery code'),
+h('p',{class:'hint'},'Generating a new code invalidates the previous one. Store it somewhere safe; it is the only way to reset a forgotten password.'),
+h('div',{class:'row'},(()=>{
+const pw=h('input',{class:'inp',type:'password',placeholder:'Confirm password','aria-label':'Password to confirm'})
+const b=h('button',{class:'btn',on:{click:async()=>{
+try{
+const r=await POST('/api/me/recovery',{password:pw.value})
+pw.value=''
+mount(out,h('div',{class:'card',style:{fontFamily:'var(--mono)',fontSize:'16px',userSelect:'all',marginTop:'8px'}},r.recovery_code),h('button',{class:'btn sm',style:{marginTop:'8px'},on:{click:()=>copyText(r.recovery_code)}},'Copy'))
+}catch(e){fail(e)}
+}}},'Generate new code')
+return[pw,b]
+})()),out)
+twofa(pg.querySelector('#tfa'))
+}
+
+function profile(pg){
+const dn=h('input',{class:'inp',value:S.me.display_name,maxLength:32})
+const pr=h('input',{class:'inp',value:S.me.pronouns||'',maxLength:32})
+const st=h('input',{class:'inp',value:S.me.status_text||'',maxLength:100})
+const bio=h('textarea',{class:'inp',rows:4,maxLength:500},S.me.bio||'')
+const SW=['#8b949e','#539bf5','#57ab5a','#c69026','#e5534b','#986ee2','#c96198','#6cb6ff','#4a5463']
+let accent=S.me.accent||''
+const sw_=h('div',{class:'swatches',role:'group','aria-label':'Profile colour'})
+const prev=h('div')
+function drawSw(){
+mount(sw_,SW.map(c=>h('button',{type:'button',style:{background:c},'aria-pressed':String(accent===c),'aria-label':c,on:{click:()=>{accent=c;drawSw();drawPrev()}}})),h('button',{type:'button',class:'btn sm',on:{click:()=>{accent='';drawSw();drawPrev()}}},'Auto'))
+}
+function drawPrev(){
+const u={...S.me,display_name:dn.value,pronouns:pr.value,status_text:st.value,bio:bio.value,accent:accent||null}
+const hero=h('div',{class:'hero',style:{background:accent||'var(--surf2)'}})
+if(S.me.banner_id)hero.style.backgroundImage=`url(${fileUrl(S.me.banner_id)})`
+mount(prev,h('div',{class:'pcard card',style:{padding:0}},hero,h('div',{class:'bd'},avatar(u,'lg'),h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},u.display_name),h('div',{class:'hint',style:{margin:0}},'@'+u.username+(u.pronouns?' · '+u.pronouns:'')),u.status_text?h('div',null,u.status_text):null,u.bio?h('div',{class:'hint'},u.bio):null)))
+}
+for(const i of[dn,pr,st,bio])i.addEventListener('input',drawPrev)
+const img=(kind,key,label)=>h('div',{class:'row'},h('button',{class:'btn',on:{click:async()=>{
+const f=await pickImage();if(!f)return
+try{const up=await uploadImage(kind,{},f);await saveProfile({[key]:up.id});drawPrev();toast(label+' updated','ok')}catch(e){fail(e)}
+}}},'Upload '+label.toLowerCase()),S.me[key]?h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({[key]:null});drawPrev()}catch(e){fail(e)}}}},'Remove'):null)
+mount(pg,h('h3',null,'Profile'),
+h('div',{class:'row',style:{alignItems:'flex-start',flexWrap:'wrap'}},
+h('div',{class:'grow',style:{minWidth:'240px'}},
+field('Display name',dn),field('Pronouns',pr),field('Status',st),field('About me',bio,'Markdown is supported.'),
+field('Profile colour',sw_),field('Avatar (max 8 MB)',img('avatar','avatar_id','Avatar')),field('Banner (max 8 MB)',img('banner','banner_id','Banner')),
+h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
+try{await saveProfile({display_name:dn.value.trim(),pronouns:pr.value.trim(),status_text:st.value.trim(),bio:bio.value.trim(),accent:accent||null});toast('Profile saved','ok')}catch(e){fail(e)}
+}}},'Save profile'))),
+h('div',null,h('label',{class:'f'},'Preview'),prev)))
+drawSw();drawPrev()
+}
+
+function appearance(pg){
+const themes=[['dimmed','Dimmed (default)'],['silver','Silver'],['light','Light'],['contrast','High contrast']]
+const dens=[['compact','Compact'],['comfortable','Comfortable'],['spacious','Spacious']]
+const fs=h('input',{type:'range',min:12,max:22,step:1,value:setting('font_size',15),'aria-label':'Message font size',on:{change:async e=>{try{await saveSettings({font_size:+e.target.value})}catch(x){fail(x)}}}})
+mount(pg,h('h3',null,'Appearance and accessibility'),
+field('Theme',h('div',{class:'tabs',style:{flexWrap:'wrap'}},themes.map(([k,l])=>h('button',{class:setting('theme','dimmed')===k?'on':'','aria-pressed':String(setting('theme','dimmed')===k),on:{click:async e=>{try{await saveSettings({theme:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
+field('Message spacing',h('div',{class:'tabs'},dens.map(([k,l])=>h('button',{class:setting('density','comfortable')===k?'on':'','aria-pressed':String(setting('density','comfortable')===k),on:{click:async()=>{try{await saveSettings({density:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
+field('Font size',h('div',{class:'row'},fs,h('span',{class:'hint',style:{margin:0}},'12 to 22 px'))),
+sw('reduced_motion',matchMedia('(prefers-reduced-motion: reduce)').matches,'Reduce motion','Turns off transitions and animations. Follows your system setting until you change it.'),
+sw('link_previews',true,'Link previews','Fetch a title and description for the first link in a message. Requests go through Parley, not directly from your browser.'),
+sw('send_ctrl_enter',false,'Send with Ctrl+Enter','Enter inserts a new line instead of sending.'))
+}
+
+function notifications(pg){
+mount(pg,h('h3',null,'Notifications'),
+sw('sound',true,'Notification sounds','A short tone for new mentions and direct messages while this tab is open.'),
+sw('desktop',false,'Desktop notifications','Shown for mentions and direct messages when this tab is not focused. Works only while Parley is open in a browser tab.',async v=>{if(v){const ok=await requestDesktop();if(!ok){toast('Notifications are blocked in your browser settings','err');saveSettings({desktop:false}).then(()=>notifications(pg))}}}),
+sw('dnd',false,'Do not disturb','Silences sounds and desktop notifications. Unread badges still show.'),
+sw('quiet_on',false,'Quiet hours','Silence sounds and desktop notifications between the times below.'),
+h('div',{class:'row',style:{padding:'8px 0'}},
+field('From',h('input',{class:'inp',type:'time',value:setting('quiet_start','22:00'),on:{change:e=>saveSettings({quiet_start:e.target.value}).catch(fail)}})),
+field('To',h('input',{class:'inp',type:'time',value:setting('quiet_end','07:00'),on:{change:e=>saveSettings({quiet_end:e.target.value}).catch(fail)}}))),
+pushRow(),
+h('p',{class:'hint'},'Mute or limit a server, channel or conversation by right-clicking it in the sidebar.'))
+}
+
+async function privacy(pg){
+if(!S.fr.blocked.length)await loadFriends().catch(()=>{})
+const sel=(key,opts,def)=>h('select',{class:'sel',style:{width:'auto'},on:{change:async e=>{try{await saveSettings({[key]:e.target.value})}catch(x){fail(x)}}}},opts.map(([v,l])=>h('option',{value:v,selected:setting(key,def)===v},l)))
+mount(pg,h('h3',null,'Privacy and safety'),
+row('Who can message you','Controls new direct messages from people who are not friends.',sel('dm_policy',[['everyone','Everyone (as a message request)'],['friends','Friends only'],['none','Nobody']],'everyone')),
+row('Who can send friend requests',null,sel('friend_policy',[['everyone','Everyone'],['none','Nobody']],'everyone')),
+sw('show_presence',true,'Show online status','When off, you appear offline to others.'),
+h('h3',{style:{marginTop:'24px'}},'Blocked users'),
+h('div',{class:'list'},S.fr.blocked.length?S.fr.blocked.map(u=>h('div',{class:'li'},avatar(u,'sm'),h('div',{class:'grow'},u.display_name),h('button',{class:'btn sm',on:{click:async()=>{try{await DEL('/api/blocks/'+u.id);await loadFriends();privacy(pg)}catch(e){fail(e)}}}},'Unblock'))):h('div',{class:'hint'},'You have not blocked anyone.')))
+}
+
+function voice(pg){
+mount(pg,h('h3',null,'Voice and video'),voiceSettingsView(),h('p',{class:'hint'},'Calls are peer to peer using WebRTC. Your IP address is visible to other participants unless the connection is relayed through TURN.'))
+}
+
+async function sessions(pg){
+mount(pg,h('h3',null,'Sessions'),h('div',{class:'hint'},'Loading…'))
+try{
+const d=await GET('/api/sessions')
+mount(pg,h('h3',null,'Sessions'),h('div',{class:'list'},d.sessions.map(s=>h('div',{class:'li'},icon('screen'),h('div',{class:'grow'},h('b',null,(s.ua||'Unknown device').slice(0,80)+(s.current?' (this device)':'')),h('small',null,`${s.ip||'unknown IP'} · active ${fmtRel(s.last_seen)}`)),
+s.current?null:h('button',{class:'btn sm dng',on:{click:async()=>{try{await DEL('/api/sessions/'+s.id);sessions(pg)}catch(e){fail(e)}}}},'Sign out')))),
+d.sessions.length>1?h('div',{style:{marginTop:'12px'}},h('button',{class:'btn dng',on:{click:async()=>{try{await DEL('/api/sessions');sessions(pg)}catch(e){fail(e)}}}},'Sign out all other devices')):null)
+}catch(e){mount(pg,h('div',{class:'err'},e.message))}
+}
+
+function data(pg,dlg){
+const pw=h('input',{class:'inp',type:'password',placeholder:'Confirm your password','aria-label':'Password'})
+const err=h('div',{class:'err'})
+mount(pg,h('h3',null,'Data and deletion'),
+h('p',null,'Download a JSON file with your profile, memberships, friends and the messages you have written.'),
+h('button',{class:'btn',on:{click:async()=>{
+try{
+const r=await fetch('/api/me/export',{credentials:'same-origin'})
+if(!r.ok)throw new Error('Export failed')
+saveBlob(await r.blob(),'parley-export.json')
+}catch(e){fail(e)}
+}}},icon('download','s'),'Export my data'),
+h('h3',{style:{marginTop:'28px',color:'var(--err)'}},'Delete account'),
+h('p',null,'Your profile is removed and your messages are anonymised. You must transfer or delete servers you own first. This cannot be undone.'),
+field('Password',pw),err,
+h('div',{style:{marginTop:'8px'}},h('button',{class:'btn dng',on:{click:async()=>{
+err.textContent=''
+if(!await confirmBox('Delete account','This permanently deletes your account.','Delete account',true))return
+try{await POST('/api/me/delete',{password:pw.value});location.href='/'}
+catch(e){err.textContent=e.message+(e.data?.servers?': '+e.data.servers.map(s=>s.name).join(', '):'')}
+}}},'Delete my account')))
+}
+
+const fmtB=n=>n>=1073741824?(n/1073741824).toFixed(2)+' GB':n>=1048576?(n/1048576).toFixed(1)+' MB':n>=1024?(n/1024).toFixed(0)+' KB':n+' B'
+const ptog=(key,label,sub,after)=>row(label,sub,toggle(!!pref(key),v=>{setPref(key,v);after?.(v)},label))
+
+function network(pg){
+const stats=h('div',{class:'card'},'Loading…')
+const refresh=async()=>{
+try{
+const s=await p2pStats()
+mount(stats,h('div',null,`Connected peers: ${s.peers}`),h('div',null,`History pages from peers: ${s.pageCount} (${s.pageMsgs} messages, ${s.rejected} rejected)`),h('div',null,`Downloaded from peers: ${fmtB(s.peerBytes)} · from server: ${fmtB(s.serverBytes)}`),h('div',null,`Served to peers: ${fmtB(s.served)} · hash mismatches caught: ${s.mismatch}`),h('div',null,`Local cache: ${s.cached.messages} messages, ${s.cached.files} files, ${fmtB(s.cached.bytes)}`))
+}catch(e){mount(stats,h('div',{class:'err'},e.message))}
+}
+mount(pg,h('h3',null,'Network and P2P'),
+h('p',{class:'hint'},'Optional peer-to-peer acceleration over WebRTC. The server (D1 and R2) stays the source of truth and is always the fallback. Peers share cached message history and file segments only inside channels you both can view. Everything a peer gives you is verified: messages by the server signature, files by SHA-256. Off by default.'),
+ptog('p2p','Enable P2P','Opens WebRTC connections to other online members of channels you have open.',v=>{if(v)startP2P();else stopP2P();refresh()}),
+ptog('p2pHistory','Load history from peers','Try peers before the server when scrolling back. Peers can withhold messages, and a page may include messages deleted while that peer was offline until you refresh from the server.'),
+ptog('p2pFiles','Download files from peers','Fetch 1 MiB segments from peers and the server in parallel, then verify the whole file hash.'),
+ptog('p2pServe','Serve cached data to peers','Lets others fetch messages and files you have already cached. Uses your upload bandwidth.'),
+ptog('p2pRelay','Relay-only connections','Hides your IP address from peers by forcing traffic through a TURN relay. Needs a TURN server, which this project does not provide, so connections may fail while this is on.'),
+ptog('fastDl','Parallel downloads from the server','Use several range requests at once for large files.'),
+row('Cache size limit','Least recently used blobs are evicted above this size.',h('select',{class:'sel',style:{width:'auto'},on:{change:e=>setPref('cacheMb',parseInt(e.target.value))}},[64,128,256,512,1024].map(v=>h('option',{value:v,selected:pref('cacheMb')===v},v+' MB')))),
+h('h4',{style:{marginTop:'16px'}},'This session'),stats,
+h('div',{class:'row',style:{marginTop:'8px'}},h('button',{class:'btn sm',on:{click:refresh}},'Refresh'),h('button',{class:'btn sm dng',on:{click:async()=>{await clearP2PCache();toast('Local cache cleared','ok');refresh()}}},'Clear local cache')),
+h('p',{class:'hint'},'Privacy: WebRTC reveals your IP address to the peers you connect to. Nothing here has been tested across real networks yet.'))
+refresh()
+}
+
+function media(pg){
+const sel=(key,opts)=>h('select',{class:'sel',style:{width:'auto'},on:{change:e=>{setPref(key,typeof opts[0][0]==='number'?parseInt(e.target.value):e.target.value)}}},opts.map(([v,l])=>h('option',{value:v,selected:pref(key)===v},l)))
+const nat=m=>nativeSupport(m)
+mount(pg,h('h3',null,'Images and uploads'),
+h('p',{class:'hint'},'Optimization re-encodes images in your browser before upload to make them smaller and faster to send. Animated images (GIF, APNG, animated WebP) are never re-encoded.'),
+row('Re-encode images before upload','Off keeps your original file untouched.',sel('optimize',[['off','Off'],['webp','WebP'],['avif','AVIF (slower, smaller)'],['jxl','JPEG XL (slowest, smallest; viewers without native support decode it locally)']])),
+row('Quality','Higher is larger.',sel('optQuality',[[60,'60'],[70,'70'],[80,'80'],[90,'90'],[95,'95']])),
+row('Maximum dimension','Larger images are scaled down to fit.',sel('optMaxDim',[[1280,'1280 px'],[1920,'1920 px'],[2560,'2560 px'],[4096,'4096 px'],[16384,'No practical limit']])),
+h('h4',{style:{marginTop:'16px'}},'Format support in this browser'),
+h('div',{class:'card'},h('div',null,'JPEG XL: '+(nat('image/jxl')?'native':'decoded by a bundled WebAssembly decoder')),h('div',null,'AVIF: '+(nat('image/avif')?'native':'decoded by a bundled WebAssembly decoder')),h('div',null,'HEIC/HEIF: stored and downloadable, not displayed inline')),
+h('p',{class:'hint'},'Uploads over 100 MB use a multipart upload with parallel parts and automatic retries. The per-file limit is set by the server operator.'))
+}
