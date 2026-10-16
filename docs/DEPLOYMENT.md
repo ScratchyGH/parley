@@ -101,6 +101,10 @@ Only the provider's user id and display label are stored. These flows are tested
 | `REGISTRATION_OPEN` | true | Set `"false"` to close signups. |
 | `ADMIN_USERNAMES` | empty | Comma separated usernames that get the admin panel. |
 | `POLLINATIONS_KEY` | unset | Optional Pollinations API key (a Worker secret) used by the Experimental AI features when a user has not pasted their own. Pollinations rejects most anonymous requests. |
+| `OWNER_USERNAME` | `ParleyOfficial` | The one account that gets the owner Admin page in settings, including the database editor. Owner implies admin. |
+| `GIF_API_BASE` | unset | Base URL of a Tenor v2 compatible GIF API, for example `https://tenor.googleapis.com/v2`. Google shut the Tenor API down on 30 June 2026, so point this at a provider that still serves the same response format. Without it the GIF picker shows that GIF search is not set up. |
+| `GIF_API_KEY` | unset | API key for that provider (a Worker secret). `TENOR_API_KEY` is accepted as an alias; if only that is set and `GIF_API_BASE` is not, the Tenor URL above is used. |
+| `GIF_MEDIA_HOSTS` | `tenor.com,klipy.com,giphy.com` | Comma separated host suffixes the server will download GIFs from. Add your provider's media host here. |
 | `EXPERIMENTAL_USERNAMES` | empty | Comma separated usernames that see the Experimental settings tab, in addition to the first account and anyone an admin enables. Set it as a plain variable in the Cloudflare dashboard. |
 
 Secrets, all optional:

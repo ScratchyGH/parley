@@ -123,6 +123,21 @@ Nothing has been deployed to Cloudflare.
 
 D1 and R2 remain authoritative. P2P is an optional accelerator and is off by default.
 
+## Added in the profile, GIF and multi-account update
+
+| Feature | Status |
+| --- | --- |
+| Avatar and banner upload fixes (cropper returned nothing; banners were never drawn) | Cause found in code; the live API path was checked, the fixed UI has not been run in a browser |
+| Past avatars and banners with one click reuse and delete (24 each) | API tested, UI written |
+| GIF picker in the composer, GIF avatars and banners, saved GIFs, `/gif` | API tested for validation and storage; **needs a Tenor compatible provider configured**, never run against a live GIF service. UI written |
+| Multiple accounts on one device (up to 4), switcher, "Continue as" on the sign in page | API tested, UI written |
+| Owner Admin page with database editor (browse, edit, insert, delete, read-only SQL, secret columns masked, audit logged) | API tested, UI written. Owner only |
+| Timed status that clears itself, profile links, badges, private notes on users | API tested, UI written |
+| Slash commands (`/shrug`, `/tableflip`, `/me`, `/spoiler` and others), backslash escapes in markdown | Unit tested |
+| Server template export and import (adds only) | API tested, UI written |
+| Calls: repeating ringtone, decline, busy, caller cancel, no answer after 45 seconds, call timer, join and leave tones, raise hand, muted-speaking reminder | Decline, cancel and hand state API tested; the call UI and tones are UI written and **no media or sound has been run in a browser** |
+| Bot Lab section links no longer scroll the whole page | UI written, not run in a browser |
+
 ## Moderation and admin
 
 | Feature | Status |
