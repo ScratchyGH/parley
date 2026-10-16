@@ -1,5 +1,6 @@
 import{fail,now,newId,limit,str,clamp,body,hex,json}from'./util.js'
 import{resolveRoom,loadMember,P,need}from'./perms.js'
+import{place}from'./store.js'
 
 const IMG={png:'image/png',apng:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',jxl:'image/jxl',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',tif:'image/tiff',tiff:'image/tiff',ico:'image/x-icon'}
 const INLINE_MEDIA={mp3:'audio/mpeg',ogg:'audio/ogg',oga:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',flac:'audio/flac',mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',opus:'audio/ogg',aac:'audio/aac',pdf:'application/pdf'}
@@ -81,7 +82,7 @@ const buf=await c.req.arrayBuffer()
 if(buf.byteLength!==len)fail(400,'Body size does not match Content-Length')
 if(p.typed&&!sniff(buf,p.mime))fail(415,'File content does not match its type')
 const id=newId('f')
-const key=`u/${c.user.id}/${id}`
+const key=place(c.env,`u/${c.user.id}/${id}`,len)
 const opts={httpMetadata:{contentType:p.mime}}
 if(want)opts.sha256=want
 let obj
@@ -102,7 +103,7 @@ if(b.sha256&&!okSha(b.sha256))fail(400,'Invalid checksum')
 const open=await c.env.DB.prepare('select count(*) n from uploads where owner_id=?').bind(c.user.id).first()
 if(open.n>=8)fail(429,'Too many unfinished uploads. Finish or cancel some first.')
 const id=newId('up')
-const key=`u/${c.user.id}/${id}`
+const key=place(c.env,`u/${c.user.id}/${id}`,size)
 const mp=await c.env.FILES.createMultipartUpload(key,{httpMetadata:{contentType:p.mime}})
 const parts=Math.ceil(size/PART)
 if(parts>1000)fail(413,'Too many parts')
@@ -140,13 +141,13 @@ const list=b.parts.map(p=>({partNumber:parseInt(p.n),etag:String(p.etag)})).sort
 if(list.some((p,i)=>p.partNumber!==i+1))fail(400,'Part numbers must be contiguous')
 const mp=c.env.FILES.resumeMultipartUpload(u.r2_key,u.upload_id)
 let obj
-try{obj=await mp.complete(list)}catch(x){fail(400,'Could not assemble the upload. Retry the failed parts.')}
+try{obj=await mp.complete(list,u.size)}catch(x){fail(400,'Could not assemble the upload. Retry the failed parts.')}
 const bad=async m=>{await c.env.FILES.delete(u.r2_key);await c.env.DB.prepare('delete from uploads where id=?').bind(u.id).run();fail(415,m)}
 if(obj.size!==u.size)await bad('Uploaded size does not match')
 let sum=obj.checksums&&obj.checksums.sha256?hex(obj.checksums.sha256):null
 const typed=IMG[ext(u.name)]||INLINE_MEDIA[ext(u.name)]
 if(typed){
-const head=await c.env.FILES.get(u.r2_key,{range:{offset:0,length:16}})
+const head=await c.env.FILES.get(u.r2_key,{range:{offset:0,length:16},size:u.size})
 if(head&&!sniff(await head.arrayBuffer(),u.mime))await bad('File content does not match its type')
 }
 const id=newId('f')
@@ -184,7 +185,7 @@ if(!m||m.deleted_at)fail(404,'File not found')
 cache='private, max-age=3600'
 }
 const range=c.req.headers.get('range')
-const obj=await c.env.FILES.get(f.r2_key,range?{range:c.req.headers}:undefined)
+const obj=await c.env.FILES.get(f.r2_key,range?{range:c.req.headers,size:f.size}:{size:f.size})
 if(!obj)fail(404,'File not found')
 const inline=f.mime.startsWith('image/')||f.mime.startsWith('audio/')||f.mime.startsWith('video/')||f.mime==='application/pdf'
 const h={'content-type':f.mime,'cache-control':cache,'accept-ranges':'bytes','x-content-type-options':'nosniff','content-security-policy':"sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:",'content-disposition':`${inline?'inline':'attachment'}; filename*=UTF-8''${encodeURIComponent(f.name)}`,'cross-origin-resource-policy':'same-origin'}
