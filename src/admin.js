@@ -9,6 +9,19 @@ const q=n=>'"'+n.replace(/"/g,'""')+'"'
 const SKIP=/^(sqlite_|_cf_|_migrations$|d1_migrations$|blob_chunks$)/
 const alog=(c,action,target,detail='')=>c.env.DB.prepare('insert into mod_log(id,server_id,actor_id,action,target_id,detail,created_at) values(?,?,?,?,?,?,?)').bind(newId('ml'),null,c.user.id,action,target,String(detail).slice(0,500),now())
 
+let FREE={at:0,ids:[]}
+async function freeModels(){
+if(FREE.ids.length&&Date.now()-FREE.at<3600000)return FREE.ids
+try{
+const r=await fetch('https://openrouter.ai/api/v1/models',{signal:AbortSignal.timeout(10000)})
+const j=await r.json()
+const list=(j.data||[]).filter(m=>m&&typeof m.id==='string'&&m.pricing&&Number(m.pricing.prompt)===0&&Number(m.pricing.completion)===0&&!/embed|guard|vision|-vl|image|audio|moderation|lyria|router/i.test(m.id)&&(!m.architecture||!m.architecture.output_modalities||m.architecture.output_modalities.join().includes('text'))&&(m.context_length||0)>=16000)
+const score=m=>{const mm=m.id.match(/(\d+(?:\.\d+)?)b/i);const size=mm?Math.min(parseFloat(mm[1]),700):0;const sup=(m.supported_parameters||[]).includes('response_format')?60:0;return size*3+Math.log2(m.context_length||1)*8+sup+(/coder|instruct|chat|gpt-oss|deepseek|qwen|llama|glm|kimi|gemini|mistral/i.test(m.id)?20:0)}
+const ids=list.sort((a,b)=>score(b)-score(a)).slice(0,4).map(m=>m.id)
+if(ids.length){FREE={at:Date.now(),ids};return ids}
+}catch{}
+return FREE.ids.length?FREE.ids:['openrouter/free']
+}
 export default function(r){
 dbRoutes(r)
 r.add('GET','/api/admin/stats',async c=>{
@@ -36,13 +49,18 @@ const prompt=str(b.prompt,10,12000,'Brief')
 const msgs=[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]
 const key=c.env.OPENROUTER_API_KEY
 if(!key)fail(400,'OPENROUTER_API_KEY is not set on this Worker. Add it as a Secret on the parley Worker (Settings, Variables and Secrets), then try again')
+const models=c.env.OPENROUTER_MODEL?[c.env.OPENROUTER_MODEL]:await freeModels()
+let lastErr='OpenRouter did not answer. Try again'
+for(const model of models){
 let res
-try{res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model:c.env.OPENROUTER_MODEL||'openrouter/free',messages:msgs,max_tokens:6000,temperature:0.7}),signal:AbortSignal.timeout(100000)})}catch{fail(502,'OpenRouter did not answer. Try again')}
-if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,300);fail(502,'OpenRouter '+res.status+': '+t)}
+try{res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model,messages:msgs,max_tokens:6000,temperature:0.7}),signal:AbortSignal.timeout(55000)})}catch{lastErr='OpenRouter did not answer in time ('+model+')';continue}
+if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,200);lastErr='OpenRouter '+res.status+' on '+model+': '+t;if(res.status===401||res.status===403)break;continue}
 const j=await res.json().catch(()=>null)
 const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
-if(typeof text!=='string'||!text)fail(502,'The AI service returned nothing. Try again')
-return{text,via:'OpenRouter'}
+if(typeof text==='string'&&text.trim().length>1)return{text,via:'OpenRouter ('+model+')'}
+lastErr=model+' returned nothing'
+}
+fail(502,lastErr)
 })
 
 r.add('POST','/api/admin/maintenance',async c=>{
