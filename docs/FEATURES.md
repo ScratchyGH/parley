@@ -59,6 +59,9 @@ Nothing has been deployed to Cloudflare.
 | Client side image optimisation to WebP, AVIF or JXL before upload (off by default) | Codecs tested in Node; worker and UI written, never run in a browser |
 | Large uploads: multipart up to 1024 MB per file (configurable), parallel parts with retries, SHA-256 verified by R2 | API tested; client uploader written, never run in a browser |
 | Drafts | Kept in this browser's localStorage |
+| Avatar, banner, server icon and group icon crop dialog (drag and zoom, WebP output) | UI written, never run in a browser |
+| Animated GIF, animated WebP and APNG avatars and banners (uploaded unmodified, up to 10 MB, never cropped or re-encoded) | Upload API tested with a GIF; animation display relies on the browser |
+| Free "Nitro style" extras: custom emoji from any server you are in, animated emoji, 10,000 character messages, 1 GB uploads, gradient profile colours, custom UI accent and background colours | API tested where it has an API; UI written |
 | Message history is windowed (about 350 messages in the DOM), not a true virtual list | Design note |
 
 ## Direct messages and social
