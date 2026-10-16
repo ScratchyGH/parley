@@ -444,3 +444,4 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 @media(prefers-reduced-motion:reduce){
 *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+[hidden]{display:none!important}
