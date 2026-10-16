@@ -1,4 +1,5 @@
-import{h,mount,icon,GET,POST,field,copyText,saveBlob,toast}from'./util.js'
+import{h,mount,icon,GET,POST,field,copyText,saveBlob,toast,avatar}from'./util.js'
+import{switchTo}from'./accounts.js'
 import{passkeysSupported,signInWithPasskey}from'./webauthn.js'
 
 export function renderAuth(root,onDone,note){
@@ -14,7 +15,12 @@ try{onDone(await signInWithPasskey())}catch(x){if(!x.cancelled)toast(x.message,'
 if(kids.length)mount(social,h('div',{class:'or'},'or'),kids)
 }).catch(()=>{})
 const card=h('div',{class:'card'})
+const saved=h('div',{class:'list',style:{marginBottom:'12px'}})
 mount(root,h('div',{class:'auth'},card))
+GET('/api/accounts').then(d=>{
+if(!d.accounts.length)return
+mount(saved,h('div',{class:'hint'},'Continue as'),d.accounts.map(u=>h('button',{type:'button',class:'li',style:{width:'100%',textAlign:'left',cursor:'pointer'},on:{click:async()=>{try{await switchTo(u.id)}catch(x){toast(x.message,'err')}}}},avatar(u,'sm'),h('div',{class:'grow'},h('b',null,u.display_name),h('small',null,'@'+u.username)))))
+}).catch(()=>{})
 draw()
 function codeScreen(username,code,then){
 let ack=false
@@ -71,6 +77,7 @@ const tabs=h('div',{class:'tabs',role:'tablist'},
 mount(card,
 h('div',{class:'logo'},h('img',{src:'/favicon.svg',width:36,height:36,alt:''}),h('div',null,h('h1',null,'Parley'),h('div',{class:'hint',style:{margin:'0'}},'Chat, voice and communities'))),
 note?h('div',{class:'ban',style:{margin:'0 0 12px',borderRadius:'6px',border:'1px solid var(--warn)'}},note):null,
+tab==='login'?saved:null,
 tab==='recover'?null:tabs,
 tab==='recover'?h('h2',{style:{margin:'0 0 8px',fontSize:'16px',color:'var(--strong)'}},'Reset your password'):null,
 form,

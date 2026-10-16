@@ -1,4 +1,4 @@
-import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText}from'./util.js'
+import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers}from'./state.js'
 import{go}from'./nav.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
@@ -77,7 +77,7 @@ const pages=[]
 if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'])
 if(can(sid,P.MANAGE_CHANNELS))pages.push(['channels','Channels'])
 if(can(sid,P.MANAGE_ROLES))pages.push(['roles','Roles'])
-if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'])
+if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'],['template','Template'])
 pages.push(['members','Members'])
 if(can(sid,P.CREATE_INVITE))pages.push(['invites','Invites'])
 if(can(sid,P.BAN))pages.push(['bans','Bans'])
@@ -92,7 +92,7 @@ const dlg=dialog(d0.server.name+' settings',h('div',{class:'split'},nav,pg),{cls
 function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,members,invites,bans,appeals,reports,log,danger}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,members,invites,bans,appeals,reports,log,danger}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
@@ -394,6 +394,40 @@ await POST(`/api/servers/${sid}/delete`,{name:nm.value})
 await loadServers();delete S.sdata[sid];dlg.close();go('/')
 }catch(e){fail(e)}
 }}},'Delete server')))
+}
+
+function template(pg,sid){
+const err=errBox()
+const roles=h('input',{type:'checkbox',checked:true,id:'tpr'}),text=h('input',{type:'checkbox',id:'tpt'})
+const file=h('input',{type:'file',accept:'application/json,.json','aria-label':'Template file'})
+const out=h('div',{class:'hint'})
+mount(pg,h('h3',null,'Template'),h('p',{class:'hint'},'Export the channels, categories and roles of this server as a JSON file, or add a template to this server. Applying only adds. Nothing is deleted or overwritten. Role permissions are not included.'),
+h('div',{class:'row'},h('button',{class:'btn',on:{click:async()=>{
+try{
+const d=await GET(`/api/servers/${sid}/template`)
+saveBlob(new Blob([JSON.stringify(d.layout,null,2)],{type:'application/json'}),'parley-template.json')
+}catch(e){fail(e)}
+}}},'Export template')),
+h('h4',null,'Apply a template'),file,
+h('label',{class:'row',for:'tpr'},roles,'Add its roles too'),
+h('label',{class:'row',for:'tpt'},text,'Replace description, welcome and rules'),
+err,
+h('button',{class:'btn pri',on:{click:async e=>{
+err.textContent=''
+const f=file.files[0]
+if(!f){err.textContent='Choose a template file';return}
+if(f.size>200000){err.textContent='That file is too large';return}
+const b=e.currentTarget
+b.disabled=true
+try{
+let layout
+try{layout=JSON.parse(await f.text())}catch{throw new Error('That file is not valid JSON')}
+const r=await POST(`/api/servers/${sid}/template`,{layout,roles:roles.checked,text:text.checked})
+await loadServer(sid)
+out.textContent=`Added ${r.categories} categories, ${r.channels} channels and ${r.roles} roles`
+}catch(x){err.textContent=x.message}
+b.disabled=false
+}}},'Apply'),out)
 }
 
 function emoji(pg,sid){

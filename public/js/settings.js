@@ -1,4 +1,8 @@
-import{h,mount,icon,GET,POST,PATCH,DEL,avatar,accentBg,toast,fail,dialog,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,DEL,avatar,heroBox,toast,fail,dialog,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel}from'./util.js'
+import{gifPicker,importGif}from'./gifs.js'
+import{historyBox}from'./imghist.js'
+import{accountsList,addAccountDialog}from'./accounts.js'
+import{adminView}from'./admin.js'
 import{S,P,can,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
 import{uploadImage}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
@@ -38,14 +42,14 @@ const nav=h('nav',{'aria-label':'Settings sections'})
 const pg=h('div',{class:'pg'})
 const d=dialog('Settings',h('div',{class:'split'},nav,pg),{cls:'wide'})
 function draw(){
-mount(nav,[...PAGES,...(labs?[['labs','Experimental']]:[])].map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)),
+mount(nav,[...PAGES,...(labs?[['labs','Experimental']]:[]),...(S.me.admin?[['admin','Admin']]:[])].map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)),
 h('h4',null,'Session'),
 h('button',{on:{click:async()=>{
 try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 mount(pg)
-const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage}[cur]
+const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
 fn(pg,d)
 }
 GET('/api/lab/status').then(r=>{if(r.labs){labs=true;draw()}}).catch(()=>{})
@@ -132,6 +136,10 @@ const out=h('div')
 mount(pg,h('h3',null,'My account'),
 field('Username',h('div',{class:'row'},un,h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({username:un.value.trim()});toast('Username changed','ok')}catch(e){fail(e)}}}},'Change'))),
 h('div',{class:'hint'},'You can change your username 3 times per day.'),
+h('h3',{style:{marginTop:'24px'}},'Accounts on this device'),
+h('p',{class:'hint'},'Stay signed in to more than one account and switch between them without logging out.'),
+h('div',{id:'accs'}),
+h('div',{style:{marginTop:'8px'}},h('button',{class:'btn',on:{click:()=>addAccountDialog()}},icon('plus','s'),'Add an account')),
 h('h3',{style:{marginTop:'24px'}},'Change password'),
 field('Current password',cp),field('New password',np,'At least 10 characters. Other devices will be signed out.'),
 h('div',{style:{marginTop:'8px'}},h('button',{class:'btn pri',on:{click:async()=>{
@@ -152,6 +160,7 @@ mount(out,h('div',{class:'card',style:{fontFamily:'var(--mono)',fontSize:'16px',
 }}},'Generate new code')
 return[pw,b]
 })()),out)
+accountsList().then(l=>mount(pg.querySelector('#accs'),l))
 twofa(pg.querySelector('#tfa'))
 signin(pg.querySelector('#sgn'))
 }
@@ -175,22 +184,52 @@ mount(sw_,SW.map(c=>h('button',{type:'button',style:{background:c},'aria-pressed
 }
 function drawPrev(){
 const u={...S.me,display_name:dn.value,pronouns:pr.value,status_text:st.value,bio:bio.value,accent:accent||null}
-const hero=h('div',{class:'hero',style:{background:accentBg(accent)||'var(--surf2)'}})
-if(S.me.banner_id)hero.style.backgroundImage=`url(${fileUrl(S.me.banner_id)})`
+const hero=heroBox(accent,S.me.banner_id)
 mount(prev,h('div',{class:'pcard card',style:{padding:0}},hero,h('div',{class:'bd'},avatar(u,'lg'),h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},u.display_name),h('div',{class:'hint',style:{margin:0}},'@'+u.username+(u.pronouns?' · '+u.pronouns:'')),u.status_text?h('div',null,u.status_text):null,u.bio?h('div',{class:'hint'},u.bio):null)))
 }
 for(const i of[dn,pr,st,bio])i.addEventListener('input',drawPrev)
-const img=(kind,key,label)=>h('div',{class:'row'},h('button',{class:'btn',on:{click:async()=>{
-const f=await pickCropped(kind==='avatar'?{aspect:1,round:true,width:512,title:'Crop avatar'}:{aspect:3,width:1500,title:'Crop banner'});if(!f)return
-try{const up=await uploadImage(kind,{},f);await saveProfile({[key]:up.id});drawPrev();toast(label+' updated','ok')}catch(e){fail(e)}
-}}},'Upload '+label.toLowerCase()),S.me[key]?h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({[key]:null});drawPrev()}catch(e){fail(e)}}}},'Remove'):null)
+const hist={avatar:historyBox('avatar',()=>S.me.avatar_id,id=>saveProfile({avatar_id:id}).then(drawPrev)),banner:historyBox('banner',()=>S.me.banner_id,id=>saveProfile({banner_id:id}).then(drawPrev))}
+const setImage=async(kind,key,label,get)=>{
+try{const up=await get();if(!up)return;await saveProfile({[key]:up.id});drawPrev();hist[kind].reload();toast(label+' updated','ok')}catch(e){fail(e)}
+}
+const img=(kind,key,label)=>h('div',null,h('div',{class:'row',style:{flexWrap:'wrap'}},
+h('button',{class:'btn',on:{click:()=>setImage(kind,key,label,async()=>{
+const f=await pickCropped(kind==='avatar'?{aspect:1,round:true,width:512,title:'Crop avatar'}:{aspect:3,width:1500,title:'Crop banner'})
+return f?uploadImage(kind,{},f):null
+})}},'Upload '+label.toLowerCase()),
+h('button',{class:'btn',on:{click:()=>gifPicker({title:'Choose a GIF for your '+label.toLowerCase(),onPick:g=>setImage(kind,key,label,()=>importGif(g,kind))})}},icon('gif','s'),'Pick a GIF'),
+S.me[key]?h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({[key]:null});drawPrev();hist[kind].reload()}catch(e){fail(e)}}}},'Remove'):null),
+h('div',{class:'hint',style:{margin:'10px 0 6px'}},'Past '+label.toLowerCase()+'s. Select one to use it again.'),hist[kind].el)
+const DAY=86400000
+const sel=h('select',{class:'sel','aria-label':'Clear status after'},
+(S.me.status_until?[h('option',{value:'keep'},'Clears '+new Date(S.me.status_until).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}))]:[]),
+[['','Never'],['1800000','In 30 minutes'],['3600000','In 1 hour'],['14400000','In 4 hours'],['today','Today'],['604800000','In 7 days']].map(([v,l])=>h('option',{value:v},l)))
+if(S.me.status_until)sel.value='keep'
+const untilOf=()=>{
+if(sel.value==='keep')return S.me.status_until
+if(sel.value==='')return null
+if(sel.value==='today'){const d=new Date();d.setHours(23,59,59,0);return d.getTime()}
+return Date.now()+Number(sel.value)
+}
+let links=(S.me.links||[]).map(x=>({...x}))
+const linkBox=h('div')
+const drawLinks=()=>mount(linkBox,links.map((l,i)=>h('div',{class:'row',style:{marginBottom:'6px'}},
+h('input',{class:'inp',value:l.label,maxLength:24,placeholder:'Label','aria-label':'Link label',style:{width:'34%'},on:{input:e=>{l.label=e.target.value}}}),
+h('input',{class:'inp',value:l.url,maxLength:200,placeholder:'https://','aria-label':'Link address',on:{input:e=>{l.url=e.target.value}}}),
+h('button',{class:'btn sm dng',type:'button','aria-label':'Remove link',on:{click:()=>{links.splice(i,1);drawLinks()}}},'×'))),
+links.length<5?h('button',{class:'btn sm',type:'button',on:{click:()=>{links.push({label:'',url:'https://'});drawLinks()}}},icon('plus','s'),'Add a link'):null)
+drawLinks()
 mount(pg,h('h3',null,'Profile'),
 h('div',{class:'row',style:{alignItems:'flex-start',flexWrap:'wrap'}},
 h('div',{class:'grow',style:{minWidth:'240px'}},
-field('Display name',dn),field('Pronouns',pr),field('Status',st),field('About me',bio,'Markdown is supported.'),
-field('Profile colour',sw_),h('div',{class:'row'},c1,h('span',{class:'hint',style:{margin:0}},'Custom'),gt,h('span',{class:'hint',style:{margin:0}},'Gradient'),c2),field('Avatar (GIF supported, max 10 MB)',img('avatar','avatar_id','Avatar')),field('Banner (GIF supported, max 10 MB)',img('banner','banner_id','Banner')),
+field('Display name',dn),field('Pronouns',pr),field('Status',st),field('Clear status',sel),field('About me',bio,'Markdown is supported.'),
+field('Profile colour',sw_),h('div',{class:'row'},c1,h('span',{class:'hint',style:{margin:0}},'Custom'),gt,h('span',{class:'hint',style:{margin:0}},'Gradient'),c2),field('Links on your profile (https only, up to 5)',linkBox),field('Avatar (GIF supported, max 10 MB)',img('avatar','avatar_id','Avatar')),field('Banner (GIF supported, max 10 MB)',img('banner','banner_id','Banner')),
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
-try{await saveProfile({display_name:dn.value.trim(),pronouns:pr.value.trim(),status_text:st.value.trim(),bio:bio.value.trim(),accent:accent||null});toast('Profile saved','ok')}catch(e){fail(e)}
+try{
+const until=st.value.trim()?untilOf():null
+const body={display_name:dn.value.trim(),pronouns:pr.value.trim(),status_text:st.value.trim(),status_until:until&&until>Date.now()?until:null,links:links.filter(l=>l.label.trim()&&l.url.trim()&&l.url.trim()!=='https://').map(l=>({label:l.label.trim(),url:l.url.trim()})),bio:bio.value.trim(),accent:accent||null}
+await saveProfile(body);toast('Profile saved','ok')
+}catch(e){fail(e)}
 }}},'Save profile'))),
 h('div',null,h('label',{class:'f'},'Preview'),prev)))
 drawSw();drawPrev()

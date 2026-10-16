@@ -6,7 +6,7 @@ import{go,parse,setRouteHandler,lastChan,setLastChan}from'./nav.js'
 import{renderAuth,renderAppeal}from'./auth.js'
 import{buildShell,renderRail,renderCtx,setPanel,currentPanel,chatTop,topBar,layoutMain,closeDrawers,el}from'./shell.js'
 import{openChat,closeChat,chatEvent,currentRoom,resyncChat,refreshComposer,chatAtBottom}from'./chat.js'
-import{V,voiceEvent,joinVoice,toggleMute,toggleDeaf,mountVoiceRoom,ringToast,voiceSettingsView}from'./voice.js'
+import{V,voiceEvent,joinVoice,toggleMute,toggleDeaf,mountVoiceRoom,ringToast,stopRing,voiceSettingsView}from'./voice.js'
 import{friendsPage,discoverPage,welcomePage,forumPage}from'./pages.js'
 import{homePage}from'./home.js'
 import{botsPage}from'./botspage.js'
@@ -284,9 +284,16 @@ break
 }
 case'notice':toast(m.text);break
 case'call.ring':
-if(V.ch)break
+if(V.ch){POST(`/api/conversations/${m.room}/ring/decline`,{busy:true}).catch(()=>{});break}
 ringToast(m.from,m.room,()=>startCall(m.room))
-ping()
+break
+case'call.cancel':
+stopRing(m.room)
+break
+case'call.declined':
+clearTimeout(calling.get(m.room))
+calling.delete(m.room)
+toast(m.busy?`${m.by.display_name} is on another call`:`${m.by.display_name} declined the call`)
 break
 }
 })
@@ -329,9 +336,20 @@ if(!c)return
 if(S.nav.room!==room)go('/dm/'+room)
 await joinVoice({ch:room,hub:room,label:convTitle(c),path:'/dm/'+room})
 }
+const calling=new Map()
+on('voice:update',()=>{
+for(const[room,t]of calling)if(V.ch!==room){clearTimeout(t);calling.delete(room);POST(`/api/conversations/${room}/ring/cancel`,{}).catch(()=>{})}
+})
 on('ui:call',async room=>{
 await startCall(room)
-if(V.ch===room)POST(`/api/conversations/${room}/ring`,{}).catch(()=>{})
+if(V.ch!==room)return
+POST(`/api/conversations/${room}/ring`,{}).catch(()=>{})
+clearTimeout(calling.get(room))
+calling.set(room,setTimeout(()=>{
+calling.delete(room)
+const others=Object.keys(S.voice[room]||{}).filter(u=>u!==S.me.id)
+if(V.ch===room&&!others.length){POST(`/api/conversations/${room}/ring/cancel`,{}).catch(()=>{});toast('No answer')}
+},45000))
 })
 
 function refreshTop(){

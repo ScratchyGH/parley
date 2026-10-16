@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,avatar,fail,fmtRel}from'./util.js'
+import{h,mount,icon,GET,POST,avatar,fail,fmtRel,coverBg}from'./util.js'
 import{S,on,loadServers,serverUnread,dmUnread,unreadOf,convTitle,convOther}from'./state.js'
 import{go}from'./nav.js'
 import{createServerDialog,newDmDialog}from'./dialogs.js'
@@ -33,7 +33,7 @@ tile('bot','Bot hub','Share and install bots',()=>go('/bots'))))
 const servers=S.servers.length?h('section',{class:'hsec'},h('h2',null,'Your servers'),h('div',{class:'sgrid'},S.servers.map(s=>{
 const u=serverUnread(s.id)
 return h('button',{class:'scard'+(u?' un':''),style:s.accent?{'--c':s.accent}:{},on:{click:()=>go('/s/'+s.id)}},
-h('span',{class:'sbanner'}),
+s.banner_id?coverBg(h('span',{class:'sbanner'}),s.banner_id,''):h('span',{class:'sbanner'}),
 h('span',{class:'sico'},avatar({id:s.id,name:s.name,icon_id:s.icon_id,display_name:s.name},'lg')),
 h('b',null,s.name),
 h('small',null,u?(u.mentions?plural(u.mentions,'mention'):'New messages'):'Up to date'),

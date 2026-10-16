@@ -1,4 +1,5 @@
-import{h,mount,icon,GET,avatar,toast,fail,popup,field,toggle}from'./util.js'
+import{h,mount,icon,GET,POST,avatar,toast,fail,popup,field,toggle}from'./util.js'
+import{tone}from'./notify.js'
 import{S,on,emit}from'./state.js'
 import{send as wsSend,isOpen}from'./net.js'
 
@@ -21,7 +22,7 @@ document.body.append(sink)
 let timers=[]
 
 const sig=(to,data)=>wsSend(V.hub,{t:'sig',to,ch:V.ch,data})
-const setState=()=>wsSend(V.hub,{t:'voice.state',m:V.muted||V.deaf,d:V.deaf,vid:!!V.cam,scr:!!V.scr})
+const setState=()=>wsSend(V.hub,{t:'voice.state',m:V.muted||V.deaf,d:V.deaf,vid:!!V.cam,scr:!!V.scr,h:!!V.hand})
 
 export async function joinVoice({ch,hub,label,path}){
 if(V.joining)return
@@ -68,6 +69,9 @@ for(const s of[V.mic,V.cam,V.scr])s?.getTracks().forEach(t=>t.stop())
 V.mic=V.cam=V.scr=null
 V.ch=V.hub=null
 V.joined=false
+if(V.since)tone([[620,.08],[400,.14]])
+V.since=0
+V.hand=false
 V.label=V.path=''
 V.speaking.clear()
 V.watch.clear()
@@ -162,8 +166,14 @@ emit('voice:update')
 return true
 }
 if(m.t==='voice.state'){
+const before=S.voice[m.ch]||{}
 if(Object.keys(m.users).length)S.voice[m.ch]=m.users;else delete S.voice[m.ch]
 if(V.ch===m.ch){
+if(V.joined){
+const nj=Object.keys(m.users).filter(u=>!before[u]&&u!==S.me.id).length,nl=Object.keys(before).filter(u=>!m.users[u]&&u!==S.me.id).length
+if(nj)tone([[660,.08],[880,.1]])
+else if(nl)tone([[880,.08],[560,.12]])
+}
 for(const uid of [...V.peers.keys()])if(!m.users[uid])dropPeer(uid)
 if(V.joined&&!m.users[S.me.id]){teardown()}
 }
@@ -173,6 +183,8 @@ return true
 if(m.t==='voice.joined'){
 if(V.ch!==m.ch)return true
 V.joined=true
+V.since||=Date.now()
+tone([[523,.08],[784,.12]])
 for(const uid of m.peers)if(!V.peers.has(uid))mkPeer(uid)
 emit('voice:update')
 return true
@@ -213,6 +225,11 @@ setState()
 emit('voice:update')
 }
 export const toggleDeaf=()=>setDeaf(!V.deaf)
+export function toggleHand(){
+V.hand=!V.hand
+setState()
+emit('voice:update')
+}
 
 export async function toggleCam(){
 if(!V.ch)return
@@ -297,7 +314,10 @@ for(const v of w.buf){const x=(v-128)/128;sum+=x*x}
 const rms=Math.sqrt(sum/w.buf.length)
 const uid=id==='me'?S.me.id:id
 let speaking=rms>0.035
-if(id==='me'&&(V.muted||V.deaf))speaking=false
+if(id==='me'&&(V.muted||V.deaf)){
+if(rms>0.08&&!V.deaf&&V.mic&&Date.now()-(V.nudge||0)>30000&&(V.loud=(V.loud||0)+1)>12){V.nudge=Date.now();V.loud=0;toast('You are muted. Others cannot hear you.')}
+speaking=false
+}else V.loud=0
 if(speaking)w.on=Date.now()
 const act=speaking||Date.now()-w.on<350
 if(act!==V.speaking.has(uid)){act?V.speaking.add(uid):V.speaking.delete(uid);changed=true}
@@ -386,7 +406,7 @@ tile.append(v)
 tile.addEventListener('dblclick',()=>v.requestFullscreen?.())
 }else tile.append(avatar(u,'lg'))
 const q=uid!==S.me.id?V.quality[uid]:null
-tile.append(h('div',{class:'nm'},opts.label||u.display_name,st.m&&!opts.stream?icon('micoff','s'):null,st.d&&!opts.stream?icon('deaf','s'):null,q&&!opts.stream?h('span',{class:'q '+(q==='fair'?'fair':q==='poor'?'poor':''),title:'Connection: '+q},icon('refresh','s')):null))
+tile.append(h('div',{class:'nm'},opts.label||u.display_name,st.h&&!opts.stream?h('span',{class:'hand',title:'Hand raised'},icon('hand','s')):null,st.m&&!opts.stream?icon('micoff','s'):null,st.d&&!opts.stream?icon('deaf','s'):null,q&&!opts.stream?h('span',{class:'q '+(q==='fair'?'fair':q==='poor'?'poor':''),title:'Connection: '+q},icon('refresh','s')):null))
 if(uid!==S.me.id&&!opts.stream)tile.addEventListener('contextmenu',e=>{
 e.preventDefault()
 const p=V.peers.get(uid)
@@ -421,20 +441,39 @@ bar.append(
 btn(V.muted||V.deaf?'micoff':'mic',V.muted?'Unmute':'Mute',toggleMute,V.muted||V.deaf?'on':''),
 btn(V.deaf?'deaf':'headphones',V.deaf?'Undeafen':'Deafen',toggleDeaf,V.deaf?'on':''),
 btn(V.cam?'video':'videooff',V.cam?'Turn camera off':'Turn camera on',toggleCam,V.cam?'on':''),
+btn('hand',V.hand?'Lower hand':'Raise hand',toggleHand,V.hand?'on':''),
 btn('screen',V.scr?'Stop sharing screen':'Share screen',toggleScreen,V.scr?'on':''),
 btn('sliders','Voice settings',()=>emit('ui:voicesettings')),
 btn('leave','Disconnect',leaveVoice,'dng'))
 }else bar.append(h('button',{class:'btn pri',on:{click:()=>joinVoice({ch:chId,hub,label,path})}},icon('volume','s'),'Join voice'),h('button',{class:'btn',on:{click:()=>emit('ui:voicesettings')}},icon('sliders','s'),'Settings'))
+const clock=h('span',{class:'vtime'})
+const tick=()=>{if(V.ch===chId&&V.since){const s=Math.floor((Date.now()-V.since)/1000);clock.textContent=(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s%3600/60)).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')}else clock.textContent=''}
+tick()
+if(joined)bar.prepend(clock)
 mount(container,h('div',{class:'vroom'},grid,bar))
 }
 draw()
+const iv=setInterval(()=>{const c=container.querySelector('.vtime');if(c&&V.since&&V.ch===chId){const s=Math.floor((Date.now()-V.since)/1000);c.textContent=(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s%3600/60)).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')}},1000)
 const offs=[on('voice:update',draw),on('voice:streams',draw),on('voice:speaking',draw)]
-return()=>offs.forEach(f=>f())
+return()=>{clearInterval(iv);offs.forEach(f=>f())}
 }
 
+const rings=new Map()
+export function stopRing(room){
+const r=rings.get(room)
+if(!r)return
+clearInterval(r.iv)
+clearTimeout(r.to)
+r.t.remove()
+rings.delete(room)
+}
 export function ringToast(from,room,accept){
+stopRing(room)
 const t=toast(`${from.display_name} is calling you`,'ok')
-const row=h('div',{class:'row'},h('button',{class:'btn sm pri',on:{click:()=>{t.remove();accept()}}},'Answer'),h('button',{class:'btn sm',on:{click:()=>t.remove()}},'Decline'))
-t.append(row)
-setTimeout(()=>t.remove(),25000)
+const ring=()=>tone([[740,.12],[587,.12],[740,.12],[587,.12]],.13)
+ring()
+const iv=setInterval(ring,2400)
+const to=setTimeout(()=>stopRing(room),30000)
+rings.set(room,{t,iv,to})
+t.append(h('div',{class:'row'},h('button',{class:'btn sm pri',on:{click:()=>{stopRing(room);accept()}}},'Answer'),h('button',{class:'btn sm',on:{click:()=>{stopRing(room);POST(`/api/conversations/${room}/ring/decline`,{}).catch(()=>{})}}},'Decline')))
 }

@@ -1,4 +1,4 @@
-import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText}from'./util.js'
+import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
 import{S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{sendAll}from'./net.js'
@@ -7,7 +7,7 @@ import{membersPanel,pinsPanel,searchPanel,savedPanel,inboxPanel,threadsPanel}fro
 import{createServerDialog,inviteDialog,channelDialog,categoryDialog,newDmDialog,quickSwitcher}from'./dialogs.js'
 import{openSettings}from'./settings.js'
 import{openServerSettings,channelSettings,leaveServer}from'./ssettings.js'
-import{openAdmin}from'./admin.js'
+import{accountsDialog}from'./accounts.js'
 import{eventsDialog}from'./dialogs2.js'
 
 export const el={}
@@ -201,7 +201,8 @@ menuAt(anchor,[
 {label:(cur==='busy'?'✓ ':'')+'Do not disturb',fn:()=>set('busy')},
 {label:(cur==='invisible'?'✓ ':'')+'Invisible',fn:()=>set('invisible')},
 '-',{icon:'user',label:'Edit profile',fn:()=>openSettings('profile')},
-S.me.admin?{icon:'shield',label:'Admin panel',fn:()=>openAdmin()}:null
+S.me.admin?{icon:'shield',label:'Admin panel',fn:()=>openSettings('admin')}:null,
+{icon:'swap',label:'Switch account',fn:()=>accountsDialog()}
 ])
 }
 
@@ -224,6 +225,8 @@ let head,body
 if(k==='server'){
 const s=S.servers.find(x=>x.id===S.nav.sid)
 const sbtn=h('button',{class:'ctx-h',style:{width:'100%',textAlign:'left',border:0},'aria-haspopup':'menu',on:{click:e=>menuAt(e.currentTarget,serverMenu(S.nav.sid))}},h('span',null,s?.name||'Server'),icon('down','s'))
+const bid=S.sdata[S.nav.sid]?.server?.banner_id||s?.banner_id
+if(bid){sbtn.classList.add('hasb');coverBg(sbtn,bid,'linear-gradient(180deg,transparent 30%,var(--side))')}
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{

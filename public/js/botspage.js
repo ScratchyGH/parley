@@ -225,12 +225,21 @@ const r=await POST('/api/bothub',payload)
 tokenDialog(payload.name,r.token)
 go('/bots/'+r.slug+'/edit',true)
 }
-}catch(e){err.textContent=e.message;save.disabled=false;err.scrollIntoView({block:'nearest'})}
+}catch(e){err.textContent=e.message;save.disabled=false;inPage(err)}
 })
 drawAv();drawTags();drawRd();drawLic();drawVis();drawPrev()
-const toc=h('nav',{class:'bh-toc','aria-label':'Sections'},secs.map(([id,t])=>h('a',{href:'#sec-'+id,on:{click:e=>{e.preventDefault();document.getElementById('sec-'+id)?.scrollIntoView({behavior:'smooth',block:'start'})}}},t)))
+const toc=h('nav',{class:'bh-toc','aria-label':'Sections'},secs.map(([id,t])=>h('a',{href:'#sec-'+id,on:{click:e=>{e.preventDefault();inPage(document.getElementById('sec-'+id))}}},t)))
 const bar=h('div',{class:'bh-savebar'},err,h('div',{class:'grow'}),p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug)}},'View page'):null,save)
 return h('div',{class:'bh-edit'},h('div',{class:'bh-ecol'},toc),h('div',{class:'bh-emain'},body,bar),h('div',{class:'bh-ecol r'},preview))
+}
+
+function inPage(el){
+if(!el)return
+let p=el.parentElement
+while(p&&p.scrollHeight<=p.clientHeight+1)p=p.parentElement
+if(!p||p===document.body||p===document.documentElement)return
+const top=el.getBoundingClientRect().top-p.getBoundingClientRect().top+p.scrollTop-12
+p.scrollTo({top,behavior:'smooth'})
 }
 
 function tokenBox(token){

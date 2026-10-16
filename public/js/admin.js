@@ -1,18 +1,18 @@
-import{h,mount,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce}from'./util.js'
+import{h,mount,icon,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast}from'./util.js'
 import{S}from'./state.js'
 
-export function openAdmin(){
-const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Account appeals'],['log','Audit log']]
+export function adminView(pg){
 let cur='stats'
-const nav=h('nav',{'aria-label':'Admin sections'})
-const pg=h('div',{class:'pg'})
-dialog('Admin panel',h('div',{class:'split'},nav,pg),{cls:'wide'})
+const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],...(S.me.owner?[['db','Database']]:[])]
+const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
+const body=h('div')
 function draw(){
-mount(nav,tabs.map(([k,l])=>h('button',{class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
-mount(pg)
-const fn={stats,users,reports,appeals,log}[cur]
-fn(pg)
+mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
+mount(body)
+const fn={stats,users,reports,appeals,log,db}[cur]
+fn(body)
 }
+mount(pg,h('h3',null,'Admin'),nav,body)
 draw()
 }
 
@@ -36,6 +36,7 @@ if(q.value.trim().length<2){mount(list);return}
 try{
 const d=await GET('/api/admin/users?q='+encodeURIComponent(q.value.trim()))
 mount(list,d.users.map(u=>h('div',{class:'li'},h('div',{class:'grow'},h('b',null,u.display_name+' (@'+u.username+')'),h('small',null,'Joined '+fmtStamp(u.created_at)+(u.suspended?' · suspended':'')+(u.deleted_at?' · deleted':''))),
+u.deleted_at?null:h('button',{class:'btn sm'+(u.labs?' pri':''),title:'Give or take away the Experimental tab',on:{click:async()=>{try{await POST(`/api/admin/users/${u.id}/labs`,{on:!u.labs});u.labs=u.labs?0:1;run()}catch(e){fail(e)}}}},u.labs?'Experimental on':'Experimental off'),
 u.deleted_at||u.id===S.me.id?null:h('button',{class:'btn sm'+(u.suspended?'':' dng'),on:{click:async()=>{
 if(!u.suspended&&!await confirmBox('Suspend @'+u.username,'They will be signed out and unable to log in.','Suspend',true))return
 try{await POST(`/api/admin/users/${u.id}/suspend`,{suspended:!u.suspended,reason:'admin action'});run()}catch(e){fail(e)}
@@ -68,4 +69,92 @@ try{
 const d=await GET('/api/admin/log')
 mount(pg,h('h3',null,'Admin audit log'),h('table',{class:'t'},h('thead',null,h('tr',null,h('th',null,'When'),h('th',null,'Actor'),h('th',null,'Action'),h('th',null,'Detail'))),h('tbody',null,d.entries.map(e=>h('tr',null,h('td',null,fmtStamp(e.created_at)),h('td',null,'@'+e.actor),h('td',null,e.action),h('td',null,(e.detail||e.target_id||'').slice(0,80)))))))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
+}
+
+const clip=v=>v===null?'NULL':String(v).length>70?String(v).slice(0,70)+'…':String(v)
+
+function db(pg){
+const st={table:'',offset:0,q:'',cols:[],rows:[],more:false}
+const list=h('div',{class:'dbtabs'})
+const grid=h('div',{class:'dbgrid'})
+const bar=h('div',{class:'row',style:{marginBottom:'8px',flexWrap:'wrap'}})
+const q=h('input',{class:'inp',type:'search',placeholder:'Search this table',maxLength:80,'aria-label':'Search this table',style:{maxWidth:'260px'}})
+const sqlBox=h('div',{hidden:true})
+const pager=h('div',{class:'row',style:{justifyContent:'space-between',marginTop:'8px'}})
+let gen=0
+async function tables(){
+try{
+const d=await GET('/api/admin/db/tables')
+mount(list,d.tables.map(t=>h('button',{type:'button',class:'btn sm'+(st.table===t.name?' pri':''),on:{click:()=>{st.table=t.name;st.offset=0;st.q='';q.value='';tables();load()}}},t.name+' ',h('small',null,String(t.rows)))))
+}catch(e){mount(list,h('div',{class:'err'},e.message))}
+}
+async function load(){
+if(!st.table){mount(grid,h('div',{class:'hint'},'Pick a table.'));return}
+const my=++gen
+try{
+const d=await GET(`/api/admin/db/rows?table=${encodeURIComponent(st.table)}&offset=${st.offset}&limit=50&q=${encodeURIComponent(st.q)}`)
+if(my!==gen)return
+st.cols=d.columns;st.rows=d.rows;st.more=d.more
+draw()
+}catch(e){mount(grid,h('div',{class:'err'},e.message))}
+}
+function cell(r,c){
+const v=r.values[c.name]
+const td=h('td',{class:c.secret?'sec':'',title:c.secret?'Secret columns are hidden and cannot be edited':'Select to edit'},clip(v))
+if(c.secret)return td
+td.addEventListener('click',()=>{
+if(td.querySelector('input'))return
+const inp=h('input',{class:'inp',value:v===null?'':String(v),'aria-label':'Edit '+c.name})
+const nul=h('button',{class:'btn sm',type:'button',on:{click:()=>save(null)}},'NULL')
+const save=async nv=>{
+let out=nv
+if(out!==null&&typeof v==='number'&&out.trim()!==''&&!Number.isNaN(Number(out)))out=Number(out)
+try{await POST('/api/admin/db/update',{table:st.table,key:r.key,set:{[c.name]:out}});toast('Saved','ok');load()}catch(e){fail(e);load()}
+}
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')save(inp.value);if(e.key==='Escape')draw()})
+mount(td,inp,nul)
+inp.focus()
+})
+return td
+}
+function draw(){
+if(!st.cols.length){mount(grid);return}
+mount(grid,h('table',{class:'t dbt'},h('thead',null,h('tr',null,st.cols.map(c=>h('th',null,c.name+(c.pk?' •':''))),h('th',null))),
+h('tbody',null,st.rows.map(r=>h('tr',null,st.cols.map(c=>cell(r,c)),h('td',null,h('button',{class:'btn sm dng',type:'button','aria-label':'Delete row',on:{click:async()=>{
+if(!await confirmBox('Delete this row?',st.table+' '+JSON.stringify(r.key),'Delete',true))return
+try{await POST('/api/admin/db/delete',{table:st.table,key:r.key,confirm:true});toast('Row deleted','ok');tables();load()}catch(e){fail(e)}
+}}},'×')))))))
+mount(pager,h('button',{class:'btn sm',disabled:st.offset===0,on:{click:()=>{st.offset=Math.max(0,st.offset-50);load()}}},'Previous'),h('small',{class:'hint',style:{margin:0}},st.rows.length?`Rows ${st.offset+1} to ${st.offset+st.rows.length}`:'No rows'),h('button',{class:'btn sm',disabled:!st.more,on:{click:()=>{st.offset+=50;load()}}},'Next'))
+}
+function addRow(){
+if(!st.table)return
+const ins=st.cols.filter(c=>!c.secret).map(c=>({c,i:h('input',{class:'inp','aria-label':c.name,placeholder:c.type||'value'})}))
+const d=dialog('Add a row to '+st.table,h('div',{class:'bd'},h('p',{class:'hint',style:{marginTop:0}},'Leave a box empty to use the column default.'),ins.map(x=>field(x.c.name,x.i))),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async()=>{
+const values={}
+for(const x of ins)if(x.i.value!=='')values[x.c.name]=/int|real|num/i.test(x.c.type)&&!Number.isNaN(Number(x.i.value))?Number(x.i.value):x.i.value
+try{await POST('/api/admin/db/insert',{table:st.table,values});close();toast('Row added','ok');tables();load()}catch(e){fail(e)}
+}}},'Add row')]})
+return d
+}
+function sql(){
+sqlBox.hidden=!sqlBox.hidden
+if(!sqlBox.hidden&&!sqlBox.firstChild){
+const ta=h('textarea',{class:'inp',rows:4,spellcheck:false,placeholder:'select * from users limit 10','aria-label':'SQL statement',style:{fontFamily:'var(--mono)'}})
+const chk=h('input',{type:'checkbox',id:'sqlok'})
+const out=h('div')
+const run=h('button',{class:'btn pri',type:'button',on:{click:async()=>{
+try{
+const d=await POST('/api/admin/db/sql',{sql:ta.value,confirm:chk.checked})
+if(d.columns)mount(out,h('div',{class:'dbgrid'},h('table',{class:'t dbt'},h('thead',null,h('tr',null,d.columns.map(c=>h('th',null,c)))),h('tbody',null,d.rows.map(r=>h('tr',null,d.columns.map(c=>h('td',null,clip(r[c])))))))),d.truncated?h('div',{class:'hint'},'Showing the first 200 rows.'):null)
+else{mount(out,h('div',{class:'hint'},d.changes+' row(s) changed'));tables();load()}
+}catch(e){mount(out,h('div',{class:'err'},e.message))}
+}}},icon('check','s'),'Run')
+mount(sqlBox,h('p',{class:'hint'},'One select, insert, update or delete at a time. Changes need the box ticked and are written to the audit log. Secret columns and schema changes are refused.'),ta,h('div',{class:'row',style:{margin:'8px 0'}},h('input',{type:'checkbox',id:'sqlok2',hidden:true}),h('label',{style:{display:'flex',gap:'6px',alignItems:'center'}},chk,'This statement changes data'),run),out)
+}
+}
+q.addEventListener('input',debounce(()=>{st.q=q.value.trim();st.offset=0;load()},300))
+mount(bar,q,h('button',{class:'btn sm',type:'button',on:{click:()=>{tables();load()}}},icon('refresh','s'),'Refresh'),h('button',{class:'btn sm',type:'button',on:{click:addRow}},icon('plus','s'),'Add row'),h('button',{class:'btn sm',type:'button',on:{click:sql}},icon('code','s'),'SQL'))
+mount(pg,h('h3',null,'Database'),h('p',{class:'hint'},'Direct access to the live database. Edits apply immediately and are written to the audit log. Select a cell to change it.'),list,bar,sqlBox,grid,pager)
+tables()
+load()
 }

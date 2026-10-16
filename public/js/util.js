@@ -80,7 +80,12 @@ clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2',
 refresh:'M23 4v6h-6 M1 20v-6h6 M3.5 9a9 9 0 0 1 14.9-3.4L23 10 M1 14l4.6 4.4A9 9 0 0 0 20.5 15',
 volx:'M11 5L6 9H2v6h4l5 4V5z M23 9l-6 6 M17 9l6 6',
 bot:'M12 8V4H8 M4 8h16v12H4z M2 14h2 M20 14h2 M9 13v2 M15 13v2',
-mega:'M3 11v2a1 1 0 0 0 1 1h3l8 5V5L7 10H4a1 1 0 0 0-1 1z M19 8a5 5 0 0 1 0 8'
+mega:'M3 11v2a1 1 0 0 0 1 1h3l8 5V5L7 10H4a1 1 0 0 0-1 1z M19 8a5 5 0 0 1 0 8',
+hand:'M18 11V6a2 2 0 0 0-4 0 M14 10V4a2 2 0 0 0-4 0v6 M10 10.5V6a2 2 0 0 0-4 0v8 M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-5.9-2.4L3.4 16a2 2 0 0 1 3-2.8L8 15',
+star:'M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3-6.2 3.3L7 14.2 2 9.3l6.9-1z',
+database:'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z M4 5.5v13C4 19.9 7.6 21 12 21s8-1.1 8-2.5v-13 M4 12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5',
+gif:'M3 6h18v12H3z M10 10H8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2v-2H9 M13 10v4 M16 14v-4h3 M16 12h2',
+swap:'M17 1l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 23l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3'
 }
 export function icon(name,cls=''){
 const s=document.createElementNS('http://www.w3.org/2000/svg','svg')
@@ -180,6 +185,21 @@ export const accentBg=a=>{
 if(!a)return null
 const p=a.split(',')
 return p.length>1?`linear-gradient(135deg,${p[0]},${p[1]})`:p[0]
+}
+export function coverBg(el,fileId,over){
+el.style.backgroundImage=(over?over+',':'')+`url(${fileUrl(fileId)})`
+el.style.backgroundSize='cover'
+el.style.backgroundPosition='center'
+return el
+}
+export function heroBox(accent,bannerId,cls){
+const el=h('div',{class:cls||'hero'})
+const bg=accentBg(accent)
+const grad=bg&&bg.startsWith('linear')
+if(bg&&!grad)el.style.backgroundColor=bg
+if(bannerId)coverBg(el,bannerId,'')
+else if(grad)el.style.backgroundImage=bg
+return el
 }
 export function avatar(u,size,status){
 const el=h('div',{class:'av '+(size||''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})

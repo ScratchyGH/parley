@@ -35,7 +35,7 @@ cv.addEventListener('pointermove',e=>{if(!drag)return;const k=vw/cv.getBoundingC
 cv.addEventListener('pointerup',()=>{drag=null;cv.style.cursor='grab'})
 cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(5,Math.max(1,zoom*(e.deltaY<0?1.08:1/1.08)));draw()},{passive:false})
 const zr=h('input',{type:'range',min:'1',max:'5',step:'0.01',value:'1','aria-label':'Zoom',style:{width:'100%'},on:{input:e=>{zoom=parseFloat(e.target.value);draw()}}})
-const done=v=>{d.close();res(v)}
+const done=v=>{res(v);d.close()}
 const ok=h('button',{class:'btn pri',on:{click:()=>{
 const ow=width,oh=Math.round(width/aspect)
 const out=document.createElement('canvas')

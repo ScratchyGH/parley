@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,PATCH,DEL,upload,avatar,accentBg,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,PUT,DEL,upload,avatar,heroBox,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
 import{render}from'./md.js'
 import{S,emit,cacheUser,user,conv,convTitle,convOther,can,loadServers,loadServer,loadConvs,loadFriends}from'./state.js'
 import{go}from'./nav.js'
@@ -243,17 +243,27 @@ else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await
 else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()}))
 act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()}))
 }
-const hero=h('div',{class:'hero',style:{background:accentBg(u.accent)||'var(--surf2)'}})
-if(u.banner_id)hero.style.backgroundImage=`url(/api/files/${u.banner_id})`
+const hero=heroBox(u.accent,u.banner_id)
+const BADGE={owner:'Owner',staff:'Staff',experimental:'Experimental',bot:'Bot'}
+const badges=(u.badges||[]).length?h('div',{class:'badges'},u.badges.map(b=>h('span',{class:'badge '+b},BADGE[b]||b))):null
+const links=(u.links||[]).length?h('div',{class:'plinks'},u.links.map(l=>h('a',{href:l.url,target:'_blank',rel:'noopener noreferrer nofollow',title:l.url},icon('link','s'),l.label))):null
+const note=own?null:h('textarea',{class:'inp pnote',rows:2,maxLength:500,placeholder:'Add a private note. Only you can see it.','aria-label':'Private note about '+u.display_name})
+if(note){
+GET('/api/users/'+u.id+'/note').then(d=>{note.value=d.note}).catch(()=>{})
+let last=null
+note.addEventListener('focus',()=>{last=note.value})
+note.addEventListener('blur',()=>{if(note.value!==last)PUT('/api/users/'+u.id+'/note',{note:note.value}).catch(e=>fail(e))})
+}
 const mem=sid?S.sdata[sid]?.memberList?.find(m=>m.id===u.id):null
 el.append(hero,h('div',{class:'bd'},avatar(u,'lg',S.pres[u.id]||(own?S.me.presence:null)),
 h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},mem?.nickname||u.display_name),
 h('div',{class:'hint',style:{margin:0}},'@'+u.username+(u.pronouns?' · '+u.pronouns:'')),
 u.status_text?h('div',{style:{margin:'6px 0'}},u.status_text):null,
+badges,links,
 u.bio?h('div',{class:'mb',style:{margin:'8px 0',maxHeight:'120px',overflow:'auto'}},render(u.bio,{})):null,
 h('div',{class:'hint'},`${data.mutual_servers} mutual server${data.mutual_servers===1?'':'s'} · Joined ${new Date(u.created_at).toLocaleDateString()}`),
-act,
-!own?h('div',{class:'row',style:{marginTop:'8px'}},btn('Report user',()=>{closeMenu();emit('ui:report',{type:'user',id:u.id})}),sid&&mem?btn('Moderation',()=>{closeMenu();const items=memberMenu(sid,mem);menu(items,x,y)}):null):null))
+note,act,
+!own?h('div',{class:'row',style:{marginTop:'8px'}},btn('Copy ID',()=>copyText(u.id)),btn('Report user',()=>{closeMenu();emit('ui:report',{type:'user',id:u.id})}),sid&&mem?btn('Moderation',()=>{closeMenu();const items=memberMenu(sid,mem);menu(items,x,y)}):null):null))
 popup(el,Math.min(x,innerWidth-310),Math.min(y,innerHeight-380),'')
 }
 

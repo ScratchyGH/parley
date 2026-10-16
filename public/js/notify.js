@@ -17,6 +17,26 @@ const n=d.getHours()*60+d.getMinutes()
 const a=sh*60+sm,b=eh*60+em
 return a<=b?n>=a&&n<b:n>=a||n<b
 }
+export function tone(notes,vol=.1){
+if(!setting('sound',true))return
+try{
+ctx||=new (window.AudioContext||window.webkitAudioContext)()
+if(ctx.state==='suspended')ctx.resume()
+let t=ctx.currentTime
+for(const[f,d]of notes){
+const o=ctx.createOscillator(),g=ctx.createGain()
+o.type='sine'
+o.frequency.setValueAtTime(f,t)
+g.gain.setValueAtTime(.0001,t)
+g.gain.exponentialRampToValueAtTime(vol,t+.02)
+g.gain.exponentialRampToValueAtTime(.0001,t+d)
+o.connect(g).connect(ctx.destination)
+o.start(t)
+o.stop(t+d+.02)
+t+=d
+}
+}catch{}
+}
 export function ping(){
 if(!setting('sound',true)||quiet())return
 try{

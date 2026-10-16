@@ -7,6 +7,8 @@ import{renderAttachments,renderPoll,threadChip,reactionFace,renderSticker}from'.
 import{uploadAttachment}from'./uploader.js'
 import{joinRoom,pageFromPeers,recordMessages,forgetMessage,seedFile}from'./p2p/index.js'
 import{pollDialog,threadDialog,forwardDialog,stickerDialog}from'./dialogs2.js'
+import{gifPicker,importGif}from'./gifs.js'
+import{slash}from'./slash.js'
 
 let C=null
 const drafts=new Map()
@@ -470,6 +472,7 @@ perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'Attach files','aria-l
 C.fileIn,C.ta,
 h('button',{type:'button',class:'ib',title:'Create poll','aria-label':'Create poll',on:{click:()=>pollDialog(C.room)}},icon('list')),
 h('button',{type:'button',class:'ib',title:'Stickers','aria-label':'Stickers',on:{click:()=>stickerDialog(C.room)}},icon('image')),
+perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'GIF','aria-label':'Send a GIF',on:{click:()=>openGif('')}},icon('gif')):null,
 h('button',{type:'button',class:'ib',title:'Emoji','aria-label':'Emoji',on:{click:e=>emojiPicker(e.currentTarget,em=>insert(em),info?.sid)}},icon('smile')),
 C.sendBtn)))
 let d=drafts.get(C.room)
@@ -629,9 +632,28 @@ C.slowTimer=setTimeout(tick,1000)
 tick()
 }
 
+function openGif(query){
+if(!C||!(roomPerms(C.room)&P.ATTACH)){toast('You cannot attach files here','err');return}
+const room=C.room
+gifPicker({query,onPick:async g=>{
+try{
+const f=await importGif(g,'attachment',room)
+const d=await POST(`/api/rooms/${room}/messages`,{content:'',nonce:rid(),attachments:[f.id]})
+if(C&&C.room===room)insertMsg(d.message)
+}catch(e){fail(e)}
+}})
+}
+
 async function submit(){
 if(!C||!C.ta||C.sendBtn?.disabled)return
-const text=encodeMentions(C.ta.value.replace(/\s+$/,''))
+let raw=C.ta.value.replace(/\s+$/,'')
+if(!C.editing){
+const sl=slash(raw)
+if(sl.error){toast(sl.error,'err');return}
+if(sl.gif!==undefined){C.ta.value='';autoGrow();openGif(sl.gif);return}
+raw=sl.text
+}
+const text=encodeMentions(raw)
 if(C.files.some(f=>!f.id&&!f.err)){toast('Wait for uploads to finish','err');return}
 const ready=C.files.filter(f=>f.id)
 if(C.editing){

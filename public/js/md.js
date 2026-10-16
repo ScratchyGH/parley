@@ -48,6 +48,7 @@ return frag
 }
 
 const INLINE=[
+['escape',/\\([\\`*_~|\[\]()>#+.!-])/],
 ['code',/`([^`\n]+)`/],
 ['link',/\[([^\]\n]{1,200})\]\((https?:\/\/[^\s)]{1,2000})\)/],
 ['bold',/\*\*([\s\S]+?)\*\*/],
@@ -81,7 +82,8 @@ if(m&&(!best||m.index<best.m.index))best={name,m}
 if(!best){out.push(rest);break}
 const{name,m}=best
 if(m.index>0)out.push(rest.slice(0,m.index))
-if(name==='code')out.push(h('code',null,m[1]))
+if(name==='escape')out.push(m[1])
+else if(name==='code')out.push(h('code',null,m[1]))
 else if(name==='link'){
 const href=safeHref(m[2])
 if(href)out.push(h('a',{href,target:'_blank',rel:'noopener noreferrer nofollow',title:href},inline(m[1],ctx,depth+1)))
