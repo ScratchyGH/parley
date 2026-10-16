@@ -95,3 +95,7 @@ if(m)return h('img',{class:'cemoji',src:'/api/files/'+m[1],alt:'custom emoji',lo
 return emoji
 }
 export const isCustomReaction=e=>CE.test(e)
+
+export function renderSticker(m){
+return h('img',{class:'sticker',src:fileUrl(m.sticker.file_id),alt:m.sticker.name,title:m.sticker.name,loading:'lazy',decoding:'async'})
+}

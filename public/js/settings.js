@@ -1,5 +1,5 @@
 import{h,mount,icon,GET,POST,PATCH,DEL,avatar,accentBg,toast,fail,dialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel,fileUrl}from'./util.js'
-import{S,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
+import{S,P,can,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
 import{uploadImage}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
 import{voiceSettingsView}from'./voice.js'
@@ -10,7 +10,7 @@ import{nativeSupport}from'./codec.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
-['account','My account'],['profile','Profile'],['appearance','Appearance'],['notifications','Notifications'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['sessions','Sessions'],['data','Data and deletion']
+['account','My account'],['profile','Profile'],['appearance','Appearance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['sessions','Sessions'],['data','Data and deletion']
 ]
 
 async function saveSettings(patch){
@@ -42,7 +42,7 @@ try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 mount(pg)
-const fn={account,profile,appearance,notifications,network,media,privacy,voice,sessions,data}[cur]
+const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data}[cur]
 fn(pg,d)
 }
 draw()
@@ -282,4 +282,28 @@ row('Maximum dimension','Larger images are scaled down to fit.',sel('optMaxDim',
 h('h4',{style:{marginTop:'16px'}},'Format support in this browser'),
 h('div',{class:'card'},h('div',null,'JPEG XL: '+(nat('image/jxl')?'native':'decoded by a bundled WebAssembly decoder')),h('div',null,'AVIF: '+(nat('image/avif')?'native':'decoded by a bundled WebAssembly decoder')),h('div',null,'HEIC/HEIF: stored and downloadable, not displayed inline')),
 h('p',{class:'hint'},'Uploads over 100 MB use a multipart upload with parallel parts and automatic retries. The per-file limit is set by the server operator.'))
+}
+
+async function bots(pg){
+const out=h('div')
+const list=h('div',{class:'list'})
+const name=h('input',{class:'inp',maxLength:32,placeholder:'Bot name','aria-label':'Bot name'})
+const manageable=()=>S.servers.filter(s=>S.sdata[s.id]&&can(s.id,P.MANAGE_SERVER))
+const showToken=(t,note)=>mount(out,h('div',{class:'card',style:{marginTop:'8px'}},h('p',{class:'hint',style:{margin:'0 0 6px'}},note),h('code',{style:{wordBreak:'break-all',userSelect:'all'}},t),h('div',{style:{marginTop:'6px'}},h('button',{class:'btn sm',on:{click:()=>copyText(t)}},'Copy'))))
+async function draw(){
+try{
+const r=await GET('/api/bots')
+mount(list,r.bots.length?r.bots.map(b=>{
+const sel=h('select',{class:'sel',style:{width:'auto'},'aria-label':'Server'},manageable().map(s=>h('option',{value:s.id},s.name)))
+return h('div',{class:'li',style:{flexWrap:'wrap'}},h('div',{class:'grow'},h('b',null,b.display_name)),
+sel,h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sel.value}/bots/${b.id}`,{});toast('Bot added','ok')}catch(e){fail(e)}}}},'Add to server'),
+h('button',{class:'btn sm',on:{click:async()=>{if(!await confirmBox('New token','The old token stops working immediately.','Regenerate',true))return;try{const t=await POST(`/api/bots/${b.id}/token`,{});showToken(t.token,'New token. It is shown once.')}catch(e){fail(e)}}}},'New token'),
+h('button',{class:'btn sm dng',on:{click:async()=>{if(!await confirmBox('Delete bot','It leaves every server and its token stops working.','Delete',true))return;try{await DEL('/api/bots/'+b.id);draw()}catch(e){fail(e)}}}},'Delete'))
+}):h('div',{class:'empty'},'No bots yet'))
+}catch(e){mount(list,h('div',{class:'err'},e.message))}
+}
+mount(pg,h('h3',null,'Bots'),
+h('p',{class:'hint'},'A bot is an account that posts through the HTTP API with an Authorization header: Bot <token>. Bots can read and send messages, react and upload files in servers they are added to, limited by their permissions. There is no gateway: bots poll the REST API or receive nothing in real time. Up to 5 bots.'),
+h('div',{class:'row'},name,h('button',{class:'btn pri',on:{click:async()=>{try{const r=await POST('/api/bots',{name:name.value.trim()});name.value='';showToken(r.token,'Bot created. Copy the token now; it is shown once.');draw()}catch(e){fail(e)}}}},'Create bot')),out,list)
+draw()
 }

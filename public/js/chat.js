@@ -3,10 +3,10 @@ import{render,plain}from'./md.js'
 import{emojiPicker}from'./emoji.js'
 import{S,P,on,emit,cacheUser,user,isDm,chanInfo,conv,convTitle,roomPerms,setting,hubOf,loadMembers,can}from'./state.js'
 import{send as wsSend}from'./net.js'
-import{renderAttachments,renderPoll,threadChip,reactionFace}from'./chatx.js'
+import{renderAttachments,renderPoll,threadChip,reactionFace,renderSticker}from'./chatx.js'
 import{uploadAttachment}from'./uploader.js'
 import{joinRoom,pageFromPeers,recordMessages,forgetMessage,seedFile}from'./p2p/index.js'
-import{pollDialog,threadDialog,forwardDialog}from'./dialogs2.js'
+import{pollDialog,threadDialog,forwardDialog,stickerDialog}from'./dialogs2.js'
 
 let C=null
 const drafts=new Map()
@@ -287,6 +287,7 @@ main.append(body)
 }
 if(m.poll)main.append(renderPoll(m,x=>rebuild(x.id)))
 if(m.attachments?.length)main.append(renderAttachments(m))
+if(m.sticker?.file_id)main.append(renderSticker(m))
 if(m.thread&&!m.room.startsWith('th_')){
 const tc=threadChip(m,chanInfo(m.room)?.sid)
 if(tc)main.append(tc)
@@ -468,6 +469,7 @@ h('div',{class:'crow'},
 perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'Attach files','aria-label':'Attach files',on:{click:()=>C.fileIn.click()}},icon('clip')):null,
 C.fileIn,C.ta,
 h('button',{type:'button',class:'ib',title:'Create poll','aria-label':'Create poll',on:{click:()=>pollDialog(C.room)}},icon('list')),
+h('button',{type:'button',class:'ib',title:'Stickers','aria-label':'Stickers',on:{click:()=>stickerDialog(C.room)}},icon('image')),
 h('button',{type:'button',class:'ib',title:'Emoji','aria-label':'Emoji',on:{click:e=>emojiPicker(e.currentTarget,em=>insert(em),info?.sid)}},icon('smile')),
 C.sendBtn)))
 let d=drafts.get(C.room)

@@ -1,4 +1,5 @@
-import{h,mount,icon,GET,POST,PUT,DEL,toast,fail,dialog,field,toggle,fmtStamp,rid,confirmBox}from'./util.js'
+import{h,mount,icon,GET,POST,PUT,DEL,toast,fail,dialog,field,toggle,fmtStamp,rid,confirmBox,fileUrl}from'./util.js'
+import{pickImage,uploadImage}from'./dialogs.js'
 import{S,P,can,noteThread,convTitle}from'./state.js'
 import{go}from'./nav.js'
 
@@ -101,6 +102,36 @@ draw(r.events)
 })}},field('Title',title),h('div',{class:'row'},field('Starts',when),field('Ends (optional)',until)),field('Location',where),field('Description',desc),err,h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'8px'}},btn)))
 }
 mount(body,kids)
+}
+draw()
+}
+
+export async function stickerDialog(room){
+const body=h('div',{class:'bd'},h('div',{class:'hint'},'Loading…'))
+const d=dialog('Stickers',body,{cls:'wide'})
+const send=async s=>{
+try{await POST(`/api/rooms/${room}/messages`,{sticker_id:s.id,nonce:rid()});d.close()}catch(e){fail(e)}
+}
+const tile=s=>h('button',{class:'stk',title:s.name,'aria-label':s.name,on:{click:()=>send(s)}},h('img',{src:fileUrl(s.file_id),alt:s.name,loading:'lazy'}))
+async function draw(){
+let r
+try{r=await GET('/api/stickers')}catch(e){mount(body,h('div',{class:'err'},e.message));return}
+const name=h('input',{class:'inp',maxLength:32,placeholder:'Sticker name','aria-label':'Sticker name'})
+const add=h('div',{class:'row'},name,h('button',{class:'btn sm',on:{click:async()=>{
+try{
+const n=name.value.trim()
+if(n.length<2)throw new Error('Enter a name first')
+const f=await pickImage()
+if(!f)return
+const up=await uploadImage('sticker',{},f)
+await POST('/api/me/stickers',{name:n,file_id:up.id})
+draw()
+}catch(e){fail(e)}
+}}},icon('plus','s'),'Add to my stickers'))
+const secs=[]
+secs.push(h('h5',{class:'sh'},'My stickers'),r.personal.length?h('div',{class:'stkgrid'},r.personal.map(tile)):h('div',{class:'hint'},'None yet. Anyone you send them to sees them, in any server or conversation.'),add)
+for(const s of r.servers)secs.push(h('h5',{class:'sh'},s.name),h('div',{class:'stkgrid'},s.stickers.map(tile)))
+mount(body,secs,h('p',{class:'hint'},'PNG, GIF or WebP up to 2 MB. Stickers from any server you are in work everywhere.'))
 }
 draw()
 }

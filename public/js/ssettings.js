@@ -77,7 +77,7 @@ const pages=[]
 if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'])
 if(can(sid,P.MANAGE_CHANNELS))pages.push(['channels','Channels'])
 if(can(sid,P.MANAGE_ROLES))pages.push(['roles','Roles'])
-if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['automod','AutoMod'],['hooks','Webhooks'])
+if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'])
 pages.push(['members','Members'])
 if(can(sid,P.CREATE_INVITE))pages.push(['invites','Invites'])
 if(can(sid,P.BAN))pages.push(['bans','Bans'])
@@ -92,7 +92,7 @@ const dlg=dialog(d0.server.name+' settings',h('div',{class:'split'},nav,pg),{cls
 function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)))
 mount(pg)
-const fn={overview,channels,roles,emoji,automod,hooks,members,invites,bans,appeals,reports,log,danger}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,members,invites,bans,appeals,reports,log,danger}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
@@ -413,21 +413,29 @@ function automod(pg,sid){
 const err=errBox()
 const words=h('textarea',{class:'inp',rows:5,placeholder:'One blocked word or phrase per line'})
 const mm=h('input',{class:'inp',type:'number',min:0,max:50,style:{width:'100px'}})
+const rj=h('input',{class:'inp',type:'number',min:0,max:200,style:{width:'100px'}})
+const van=h('input',{class:'inp',maxLength:32,placeholder:'my-server',value:S.sdata[sid].server.vanity||''})
+const lk=h('div')
+const drawLock=async()=>{try{const l=await GET(`/api/servers/${sid}/lockdown`);mount(lk,l.lockdown_until?h('div',{class:'row'},h('span',null,'Joins are locked until '+fmtStamp(l.lockdown_until)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/lockdown`,{on:false});drawLock()}catch(e){fail(e)}}}},'Unlock')):h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/lockdown`,{on:true,minutes:60});drawLock()}catch(e){fail(e)}}}},'Lock new joins for 1 hour'))}catch(e){mount(lk,h('div',{class:'err'},e.message))}}
+drawLock()
 let links=false
 const holder=h('div')
 GET(`/api/servers/${sid}/automod`).then(d=>{
 words.value=d.automod.words.join('\n')
 mm.value=d.automod.max_mentions
+rj.value=d.automod.raid_joins
 links=d.automod.block_links
 mount(holder,row('Block links','Messages containing http(s) links are rejected.',toggle(links,v=>{links=v},'Block links')))
 },e=>mount(holder,h('div',{class:'err'},e.message)))
 mount(pg,h('h3',null,'AutoMod'),h('p',{class:'hint'},'Rules run on the server when a message is sent or edited. Members with Manage Messages are exempt. Matching is case-insensitive substring matching, so short words can catch unrelated text.'),
 field('Blocked words and phrases',words,'Up to 100 entries, 2 to 40 characters each.'),
-field('Maximum mentions per message (0 = no limit)',mm),holder,err,
+field('Maximum mentions per message (0 = no limit)',mm),holder,
+h('h4',{style:{marginTop:'16px'}},'Raid protection'),field('Lock joins when this many people join within a minute (0 = off)',rj,'The lock lasts 10 minutes. You can unlock earlier.'),lk,
+h('h4',{style:{marginTop:'16px'}},'Vanity invite link'),field('Custom link',h('div',{class:'row'},h('span',{class:'hint',style:{margin:0}},location.host+'/invite/'),van,h('button',{class:'btn sm',on:{click:async()=>{try{const r=await PUT(`/api/servers/${sid}/vanity`,{slug:van.value.trim()||null});S.sdata[sid].server.vanity=r.vanity;toast('Vanity link saved','ok')}catch(e){fail(e)}}}},'Save')),'3 to 32 letters, numbers or dashes. Free for everyone.'),err,
 h('div',{style:{marginTop:'12px'}},h('button',{class:'btn pri',on:{click:async()=>{
 err.textContent=''
 try{
-await PUT(`/api/servers/${sid}/automod`,{words:words.value.split('\n'),block_links:links,max_mentions:parseInt(mm.value)||0})
+await PUT(`/api/servers/${sid}/automod`,{words:words.value.split('\n'),block_links:links,max_mentions:parseInt(mm.value)||0,raid_joins:parseInt(rj.value)||0})
 toast('AutoMod saved','ok')
 }catch(x){err.textContent=x.message}
 }}},'Save')))
@@ -456,5 +464,33 @@ mount(out,h('div',{class:'card',style:{marginTop:'8px'}},h('p',{class:'hint',sty
 draw()
 }catch(e){fail(e)}
 }}},'Create')),out,list)
+draw()
+}
+
+function stickers(pg,sid){
+const list=h('div',{class:'stkgrid'})
+const name=h('input',{class:'inp',maxLength:32,placeholder:'name','aria-label':'Sticker name'})
+const err=errBox()
+async function draw(){
+try{
+const r=await GET('/api/stickers')
+const mine=(r.servers.find(x=>x.server_id===sid)||{stickers:[]}).stickers
+mount(list,mine.length?mine.map(x=>h('div',{class:'stkc'},h('img',{src:fileUrl(x.file_id),alt:x.name}),h('div',null,x.name),h('button',{class:'btn sm dng',on:{click:async()=>{if(!await confirmBox('Delete sticker','It stops showing in past messages.','Delete',true))return;try{await DEL('/api/stickers/'+x.id);draw()}catch(e){fail(e)}}}},'Delete'))):h('div',{class:'empty'},'No server stickers yet'))
+}catch(e){mount(list,h('div',{class:'err'},e.message))}
+}
+mount(pg,h('h3',null,'Server stickers'),h('p',{class:'hint'},'Up to 60 per server, 2 MB each. PNG, GIF or WebP. Every member can send them, and members can use them in other servers too.'),
+h('div',{class:'row'},name,h('button',{class:'btn pri',on:{click:async()=>{
+err.textContent=''
+try{
+const n=name.value.trim()
+if(n.length<2)throw new Error('Enter a name first')
+const f=await pickImage()
+if(!f)return
+const up=await uploadImage('sticker',{server:sid},f)
+await POST(`/api/servers/${sid}/stickers`,{name:n,file_id:up.id})
+name.value=''
+draw()
+}catch(x){err.textContent=x.message}
+}}},icon('plus','s'),'Choose image and add')),err,list)
 draw()
 }
