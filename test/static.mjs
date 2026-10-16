@@ -53,5 +53,8 @@ const csp=hd.split('\n').filter(l=>l.includes('Content-Security-Policy'))[0]||''
 ok(/script-src 'self'/.test(csp)&&!/unsafe-inline/.test(csp),'CSP must forbid inline scripts and styles')
 ok(/worker-src 'self'/.test(csp)&&/wasm-unsafe-eval/.test(csp),'CSP allows same-origin workers and wasm only')
 ok(!/https?:\/\//.test(csp.replace(/Content-Security-Policy:/,'')),'CSP names no external origins')
+const labCsp=(hd.split('/lab/puter.html')[1]||'').split('\n').find(l=>l.includes('Content-Security-Policy:'))||''
+ok(/js\.puter\.com/.test(labCsp)&&/frame-ancestors 'self'/.test(labCsp),'only the isolated Puter bridge page may load Puter')
+ok(!/puter/.test(csp),'main app CSP does not mention Puter')
 console.log(`${pass} passed, ${fail} failed`)
 process.exit(fail?1:0)

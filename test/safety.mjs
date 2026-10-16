@@ -1,0 +1,35 @@
+import{explicitText,badHost,urlsIn,inspectLink,imageExplicit}from'../src/safety.js'
+import{cleanLayout}from'../src/lab.js'
+let pass=0,failn=0
+const ok=(c,n)=>{if(c){pass++;console.log('  ok  '+n)}else{failn++;console.log('FAIL  '+n)}}
+for(const t of['Porn','Po-rn','p0rn','P.O.R.N','h3ntai','HENTAI paradise','h e n t a i','free pornhub','Rule34 art','xxx videos','Sex talk','nudes only'])ok(explicitText(t),'flags '+t)
+for(const t of['Gaming Hub','Essex Club','Scunthorpe cooking','unicorn corner','Class of 2025','cumbria','grape farm','Compass','Anime Hangout','up or no','Assassins','Cooking','Dev chat'])ok(!explicitText(t),'allows '+t)
+ok(!explicitText(''),'empty ok')
+ok(!explicitText(null),'null ok')
+ok(badHost('www.pornhub.com'),'blocks www.pornhub.com')
+ok(badHost('cdn.xvideos.com'),'blocks subdomain')
+ok(badHost('site.xxx'),'blocks .xxx tld')
+ok(!badHost('example.com'),'allows example.com')
+ok(!badHost('notpornhub.org'),'does not block lookalike suffix by accident')
+ok(urlsIn('see https://a.com and https://b.com/x, http://c.com http://d.com').length===3,'urlsIn caps at 3')
+ok(await inspectLink({},'http://localhost/x')===false,'inspect refuses localhost')
+ok(await inspectLink({},'https://pornhub.com/view')===true,'inspect flags listed host without fetching')
+ok(await inspectLink({},'not a url')===false,'inspect ignores junk')
+ok(await imageExplicit({},new Uint8Array(10))===false,'image scan is off without an AI binding')
+ok(await imageExplicit({AI:{run:async()=>({description:'YES'})}},new Uint8Array(10))===true,'image scan flags a YES answer')
+ok(await imageExplicit({AI:{run:async()=>({description:'No.'})}},new Uint8Array(10))===false,'image scan passes a NO answer')
+ok(await imageExplicit({AI:{run:async()=>{throw new Error('x')}}},new Uint8Array(10))===false,'image scan fails open on errors')
+const good={description:'A study group',categories:[{name:'Study',channels:[{name:'Math Help',type:'text',topic:'Ask here'},{name:'Quiet Room',type:'voice'},{name:'x',type:'weird'}]}],roles:[{name:'Tutor',color:'#aabbcc'},{name:'@everyone'},{name:'Bad',color:'red'}]}
+const l=cleanLayout(JSON.stringify(good))
+ok(l.categories[0].channels[0].name==='math-help','text channel names are slugged')
+ok(l.categories[0].channels[1].name==='Quiet Room'&&l.categories[0].channels[1].type==='voice','voice names keep spacing')
+ok(l.categories[0].channels[2].type==='text','unknown channel type falls back to text')
+ok(l.roles.length===2&&l.roles[1].color===null,'roles drop @everyone and bad colours')
+ok(cleanLayout('```json\n'+JSON.stringify(good)+'\n```').categories.length===1,'code fences are stripped')
+const thrown=f=>{try{f();return false}catch{return true}}
+ok(thrown(()=>cleanLayout('no json here')),'rejects non-json')
+ok(thrown(()=>cleanLayout({categories:[]})),'rejects empty layout')
+ok(thrown(()=>cleanLayout({categories:[{name:'Porn',channels:[{name:'a'}]}]})),'rejects explicit layout text')
+ok(cleanLayout({categories:Array.from({length:20},(_,i)=>({name:'c'+i,channels:Array.from({length:30},(_,j)=>({name:'ch'+j}))}))}).categories.length===8,'caps categories at 8')
+console.log(`\n${pass} passed, ${failn} failed`)
+process.exit(failn?1:0)

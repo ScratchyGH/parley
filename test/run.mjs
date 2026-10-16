@@ -566,6 +566,77 @@ eq((await B.del(`/api/bothub/${pj.id}`)).s,404,'only owner deletes')
 eq((await A.del(`/api/bothub/${hid.id}`)).s,200,'delete project')
 eq((await A.get('/api/bothub/'+hid.slug)).s,404,'deleted project gone')
 
+
+console.log('safety and labs')
+eq((await A.post('/api/servers',{name:'Free P0rn Hub'})).s,400,'porn server name rejected on create')
+r=await A.post('/api/servers',{name:'Study Group '+run,description:'calm place'});const ssid=r.j.id
+eq((await A.patch('/api/servers/'+ssid,{description:'h e n t a i here'})).s,400,'explicit description rejected on edit')
+eq((await A.patch('/api/servers/'+ssid,{rules:'No Po-rn'})).s,400,'explicit rules rejected')
+eq((await A.post(`/api/servers/${ssid}/channels`,{name:'p0rn'})).s,400,'explicit channel name rejected')
+eq((await A.post(`/api/servers/${ssid}/channels`,{name:'chat',topic:'hentai'})).s,400,'explicit topic rejected')
+eq((await A.post(`/api/servers/${ssid}/categories`,{name:'Xxx'})).s,400,'explicit category rejected')
+eq((await A.patch('/api/servers/'+ssid,{scan_explicit:true})).s,400,'scanner needs 18+ Only first')
+eq((await A.patch('/api/servers/'+ssid,{age_restricted:true})).s,403,'18+ Only needs the age confirmation')
+eq((await A.post('/api/me/adult',{confirm:true})).j.adult_ok,true,'confirm 18+')
+eq((await A.patch('/api/servers/'+ssid,{age_restricted:true,scan_explicit:true})).s,200,'18+ Only and scanner enabled together')
+r=await A.get('/api/servers/'+ssid);eq([r.j.server.age_restricted,r.j.server.scan_explicit],[1,1],'flags stored')
+eq((await A.patch('/api/servers/'+ssid,{is_public:true})).s,200,'make 18+ server public')
+r=await B.get('/api/discover?q=Study Group '+run);ok(!r.j.servers.some(x=>x.id===ssid),'18+ server hidden from unconfirmed users')
+eq((await B.post(`/api/servers/${ssid}/join`)).s,403,'unconfirmed user cannot join 18+ server')
+eq((await B.get('/api/discover/'+ssid)).s,404,'unconfirmed user cannot preview 18+ server')
+await B.post('/api/me/adult',{confirm:true})
+r=await B.get('/api/discover?q=Study Group '+run);ok(r.j.servers.some(x=>x.id===ssid&&x.age_restricted===1),'confirmed users see it flagged')
+eq((await B.post(`/api/servers/${ssid}/join`)).s,200,'confirmed user joins')
+await B.post('/api/me/adult',{confirm:false})
+eq((await A.patch('/api/servers/'+ssid,{age_restricted:false})).s,200,'turn 18+ off')
+r=await A.get('/api/servers/'+ssid);eq([r.j.server.age_restricted,r.j.server.scan_explicit],[0,0],'turning 18+ off also turns the scanner off')
+eq((await C.get('/api/lab/status')).j.labs,false,'ordinary users are not in labs')
+eq((await C.get('/api/lab/models')).s,404,'lab endpoints hidden without labs')
+eq((await C.post('/api/lab/ai/validate',{layout:{}})).s,404,'validate hidden without labs')
+eq((await C.post('/api/admin/sweep')).s,404,'sweep is admin only')
+try{
+const{DatabaseSync}=await import('node:sqlite')
+const fs=await import('node:fs')
+const dir='.wrangler/state/v3/d1/miniflare-D1DatabaseObject/'
+const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).sort((a,b)=>fs.statSync(b).size-fs.statSync(a).size)[0]
+const db=new DatabaseSync(f)
+db.prepare('update users set labs=1 where id=?').run(A.id)
+db.close()
+}catch(e){console.log('could not enable labs for the test user',e.message)}
+eq((await A.get('/api/lab/status')).j.labs,true,'labs user sees the tab')
+const lay={description:'Study space',categories:[{name:'Study',channels:[{name:'Math Help',type:'text'},{name:'Quiet Room',type:'voice'}]}],roles:[{name:'Tutor',color:'#44aaff'}]}
+r=await A.post('/api/lab/ai/validate',{layout:lay});eq(r.j.layout.categories[0].channels[0].name,'math-help','validate cleans a layout')
+eq((await A.post('/api/lab/ai/validate',{layout:{categories:[{name:'Porn',channels:[{name:'a'}]}]}})).s,422,'validate rejects explicit text')
+eq((await A.post('/api/lab/ai/layout',{prompt:'make me a porn server',model:'openai'})).s,400,'explicit prompts rejected before any AI call')
+eq((await B.post(`/api/lab/servers/${ssid}/apply`,{layout:lay})).s,404,'apply needs labs')
+r=await A.post(`/api/lab/servers/${ssid}/apply`,{layout:lay,text:true});eq([r.s,r.j.channels,r.j.roles],[200,2,1],'apply adds categories, channels and roles')
+r=await A.get('/api/servers/'+ssid);ok(r.j.channels.some(x=>x.name==='math-help')&&r.j.roles.some(x=>x.name==='Tutor')&&r.j.server.description==='Study space','layout appears in the server')
+eq((await A.post(`/api/lab/servers/${ssid}/apply`,{layout:{categories:[{name:'Zzz',channels:[]}]}})).s,422,'apply rejects empty layouts')
+r=await A.get('/api/lab/health/'+ssid);ok(r.s===200&&r.j.totals.channels>=4,'health report works')
+const sgen=(await A.get('/api/servers/'+ssid)).j.channels.find(x=>x.name==='general')
+await A.post(`/api/rooms/${sgen.id}/messages`,{content:'hello export'})
+r=await A.req('GET',`/api/lab/export/${sgen.id}`);ok(r.s===200&&r.r.headers.get('content-disposition').includes('attachment'),'export downloads a file')
+
+r=await A.post('/api/servers',{name:'Scan Test '+run});const scid=r.j.id
+await A.patch('/api/servers/'+scid,{age_restricted:true,scan_explicit:true})
+const scg=(await A.get('/api/servers/'+scid)).j.channels.find(x=>x.name==='general')
+r=await A.post(`/api/rooms/${scg.id}/messages`,{content:'look https://www.pornhub.com/view_video'});eq(r.s,201,'link message accepted first')
+await sleep(900)
+r=await A.get(`/api/rooms/${scg.id}/messages`);ok(!r.j.messages.some(m=>m.id&&m.content.includes('pornhub')),'scanner removes a message linking to a porn site')
+r=await A.post(`/api/rooms/${scg.id}/messages`,{content:'see https://example.com'});await sleep(600)
+r=await A.get(`/api/rooms/${scg.id}/messages`);ok(r.j.messages.some(m=>m.content.includes('example.com')),'ordinary links are left alone')
+try{
+const{DatabaseSync}=await import('node:sqlite')
+const fs=await import('node:fs')
+const dir='.wrangler/state/v3/d1/miniflare-D1DatabaseObject/'
+const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).sort((a,b)=>fs.statSync(b).size-fs.statSync(a).size)[0]
+const db=new DatabaseSync(f)
+db.prepare('update servers set name=? where id=?').run('Hentai Zone',ssid)
+db.close()
+await fetch(BASE+'/cdn-cgi/handler/scheduled')
+await sleep(1500)
+eq((await A.get('/api/servers/'+ssid)).s,404,'nightly sweep deletes an existing explicit server')
+}catch(e){console.log('sweep test skipped',e.message)}
 for(const w of[wa,wb,wc,ub,va,vb,vc])try{w.close()}catch{}
 console.log(`\n${pass} passed, ${failn} failed`)
 process.exit(failn?1:0)
