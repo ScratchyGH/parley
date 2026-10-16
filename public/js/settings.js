@@ -203,6 +203,7 @@ h('button',{class:'btn',on:{click:()=>gifPicker({title:'Choose a GIF for your '+
 S.me[key]?h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({[key]:null});drawPrev();hist[kind].reload()}catch(e){fail(e)}}}},'Remove'):null),
 h('div',{class:'hint',style:{margin:'10px 0 6px'}},'Past '+label.toLowerCase()+'s. Select one to use it again.'),hist[kind].el)
 const DAY=86400000
+const tagSel=h('select',{class:'sel','aria-label':'Server tag',on:{change:async e=>{try{await saveProfile({tag_server:e.target.value||null});toast('Tag updated','ok')}catch(x){fail(x)}}}},h('option',{value:''},'None'),S.servers.filter(x=>x.tag).map(x=>h('option',{value:x.id,selected:S.me.tag_server===x.id},x.tag+' ('+x.name+')')))
 const sel=h('select',{class:'sel','aria-label':'Clear status after'},
 (S.me.status_until?[h('option',{value:'keep'},'Clears '+new Date(S.me.status_until).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}))]:[]),
 [['','Never'],['1800000','In 30 minutes'],['3600000','In 1 hour'],['14400000','In 4 hours'],['today','Today'],['604800000','In 7 days']].map(([v,l])=>h('option',{value:v},l)))
@@ -224,7 +225,7 @@ drawLinks()
 mount(pg,h('h3',null,'Profile'),
 h('div',{class:'row',style:{alignItems:'flex-start',flexWrap:'wrap'}},
 h('div',{class:'grow',style:{minWidth:'240px'}},
-field('Display name',dn),field('Pronouns',pr),field('Status',st),field('Clear status',sel),field('About me',bio,'Markdown is supported.'),
+field('Display name',dn),field('Pronouns',pr),field('Server tag',tagSel,'Show the short tag of a server you are in next to your name. Servers set their own tag.'),field('Status',st),field('Clear status',sel),field('About me',bio,'Markdown is supported.'),
 field('Profile colour',sw_),h('div',{class:'row'},c1,h('span',{class:'hint',style:{margin:0}},'Custom'),gt,h('span',{class:'hint',style:{margin:0}},'Gradient'),c2),field('Links on your profile (https only, up to 5)',linkBox),field('Avatar (GIF supported, max 10 MB)',img('avatar','avatar_id','Avatar')),field('Banner (GIF supported, max 10 MB)',img('banner','banner_id','Banner')),
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 try{

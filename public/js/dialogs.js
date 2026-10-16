@@ -3,6 +3,7 @@ import{render}from'./md.js'
 import{S,emit,cacheUser,user,conv,convTitle,convOther,can,loadServers,loadServer,loadConvs,loadFriends}from'./state.js'
 import{go}from'./nav.js'
 import{memberMenu}from'./ssettings.js'
+import{templateCreate}from'./modcases.js'
 import{pickCropped}from'./cropper.js'
 
 export const CATEGORIES=['gaming','tech','art','music','education','science','community','other']
@@ -41,7 +42,7 @@ const body=h('div',{class:'bd'})
 const d=dialog('Add a server',body,{})
 draw()
 function draw(){
-const tabs=h('div',{class:'tabs'},...[['create','Create'],['join','Join with invite']].map(([k,l])=>h('button',{class:tab===k?'on':'',on:{click:()=>{tab=k;draw()}}},l)))
+const tabs=h('div',{class:'tabs'},...[['create','Create'],['template','From a template'],['join','Join with invite']].map(([k,l])=>h('button',{class:tab===k?'on':'',on:{click:()=>{tab=k;draw()}}},l)))
 if(tab==='create'){
 const err=errBox()
 const name=h('input',{class:'inp',maxLength:60,required:true,autofocus:true,placeholder:`${S.me.display_name}'s server`})
@@ -57,6 +58,10 @@ go(`/s/${r.id}/${r.default_channel}`)
 })}},field('Server name',name),field('Description (optional)',desc),field('Category',cat),
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(false,v=>{pub=v},'List in Discover'),h('span',null,'List in Discover (anyone can join)')),
 err,h('div',{class:'row',style:{justifyContent:'flex-end'}},h('button',{class:'btn',type:'button',on:{click:()=>d.close()}},'Cancel'),btn)))
+}else if(tab==='template'){
+const tb=h('div')
+templateCreate(tb,async r=>{await loadServers();d.close();go(`/s/${r.id}/${r.default_channel}`)})
+mount(body,tabs,tb)
 }else{
 const err=errBox()
 const code=h('input',{class:'inp',placeholder:'Invite link or code',autofocus:true})

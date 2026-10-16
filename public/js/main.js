@@ -32,7 +32,6 @@ await start(d.user)
 }catch(e){
 if(e.status===401)showAuth()
 else{
-if(e.status===503)window.leaveMaintenance=async code=>{try{await POST('/api/maintenance/bypass',{code:String(code)});location.reload();return'Leaving maintenance mode'}catch(x){return x.message}}
 mount(root,e.status===503?h('div',{class:'auth'},h('div',{class:'card mt'},h('img',{class:'au-m',src:'/mascot.webp',alt:'',width:56,height:56}),h('h1',null,'Down for maintenance'),h('p',null,'Parley is being updated. This usually takes a few minutes.'),h('div',{class:'row',style:{justifyContent:'center'}},h('button',{class:'btn pri',on:{click:()=>location.reload()}},'Try again'),h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/auth/logout',{})}catch{}location.reload()}}},'Sign out')))):h('div',{class:'auth'},h('div',{class:'card'},h('h1',null,'Parley'),h('p',null,'Could not reach the server: '+e.message),h('button',{class:'btn pri',on:{click:()=>location.reload()}},'Retry'))))
 }
 }

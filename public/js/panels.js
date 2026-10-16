@@ -143,7 +143,7 @@ return row
 function memberRow(m,sid,color,off){
 const st=m.id===S.me.id?(S.me.presence==='invisible'?null:S.me.presence):S.pres[m.id]
 const name=m.nickname||m.display_name
-const b=h('button',{class:'mem'+(off?' off':''),on:{click:e=>emit('ui:profile',{id:m.id,x:e.clientX,y:e.clientY,el:b,sid}),contextmenu:e=>{if(sid)ctxMenu(e,memberMenu(sid,m))}}},avatar(m,'sm',off?null:st||'online'),h('span',{style:color?{color}:{}},name),m.timeout_until>Date.now()?icon('clock','s'):null)
+const b=h('button',{class:'mem'+(off?' off':''),on:{click:e=>emit('ui:profile',{id:m.id,x:e.clientX,y:e.clientY,el:b,sid}),contextmenu:e=>{if(sid)ctxMenu(e,memberMenu(sid,m))}}},avatar(m,'sm',off?null:st||'online'),h('span',{style:color?{color}:{}},name),m.guild_tag?h('span',{class:'gtag'},m.guild_tag):null,m.timeout_until>Date.now()?icon('clock','s'):null)
 return b
 }
 

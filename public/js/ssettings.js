@@ -1,6 +1,7 @@
 import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers,applyThemeObj,applyServerTheme}from'./state.js'
 import{go}from'./nav.js'
+import{casesPage,warnDialog,templateShare,caseFilter}from'./modcases.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
 import{fileUrl}from'./util.js'
@@ -60,7 +61,7 @@ items.push('-')
 if(can(sid,P.MANAGE_SERVER))items.push({icon:'edit',label:'Change nickname',fn:()=>textDialog('Change nickname','Nickname',m.nickname||'',async v=>{await PATCH(`/api/servers/${sid}/members/${m.id}`,{nickname:v||null});await loadMembers(sid,true)})})
 if(can(sid,P.MODERATE)){
 const t=async mins=>{try{await POST(`/api/servers/${sid}/members/${m.id}/timeout`,{minutes:mins});await loadMembers(sid,true);toast(mins?'Member timed out':'Timeout removed','ok')}catch(e){fail(e)}}
-items.push({head:'Timeout'},{label:'60 seconds',fn:()=>t(1)},{label:'10 minutes',fn:()=>t(10)},{label:'1 hour',fn:()=>t(60)},{label:'1 day',fn:()=>t(1440)},{label:'1 week',fn:()=>t(10080)})
+items.push({icon:'flag',label:'Warn',fn:()=>warnDialog(sid,m)},{icon:'list',label:'View cases',fn:()=>{caseFilter.user=m.id;caseFilter.name=m.display_name;go('/s/'+sid+'/settings/cases')}},'-',{head:'Timeout'},{label:'60 seconds',fn:()=>t(1)},{label:'10 minutes',fn:()=>t(10)},{label:'1 hour',fn:()=>t(60)},{label:'1 day',fn:()=>t(1440)},{label:'1 week',fn:()=>t(10080)})
 if(m.timeout_until>Date.now())items.push({label:'Remove timeout',fn:()=>t(0)})
 items.push('-')
 }
@@ -83,6 +84,7 @@ pages.push(['members','Members'])
 if(can(sid,P.CREATE_INVITE))pages.push(['invites','Invites'])
 if(can(sid,P.BAN))pages.push(['bans','Bans'])
 if(can(sid,P.BAN))pages.push(['appeals','Ban appeals'])
+if(can(sid,P.MODERATE))pages.push(['cases','Mod cases'])
 if(can(sid,P.MODERATE))pages.push(['reports','Reports'])
 if(can(sid,P.MODERATE|P.MANAGE_SERVER|P.BAN|P.KICK))pages.push(['log','Audit log'])
 if(d0.me.owner)pages.push(['danger','Ownership and deletion'])
@@ -94,7 +96,7 @@ function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/s/'+sid+'/settings/'+k)}},l)),
 h('button',{on:{click:()=>go('/s/'+sid)}},'Back to server'))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
@@ -107,6 +109,7 @@ const name=h('input',{class:'inp',value:s.name,maxLength:60})
 const desc=h('textarea',{class:'inp',rows:3,maxLength:500},s.description||'')
 const welcome=h('textarea',{class:'inp',rows:3,maxLength:1000},s.welcome||'')
 const rules=h('textarea',{class:'inp',rows:4,maxLength:3000},s.rules||'')
+const tag=h('input',{class:'inp',maxLength:4,value:s.tag||'',placeholder:'None','aria-label':'Server tag'})
 const cat=h('select',{class:'sel'},h('option',{value:''},'None'),CATEGORIES.map(c=>h('option',{value:c,selected:s.category===c},c[0].toUpperCase()+c.slice(1))))
 const ver=h('select',{class:'sel'},[['0','None'],['1','Account must be older than 5 minutes'],['2','Account must be older than 10 minutes']].map(([v,l])=>h('option',{value:v,selected:String(s.verification)===v},l)))
 let pub=!!s.is_public
@@ -134,14 +137,14 @@ const f=await pickCropped(kind==='server_icon'?{aspect:1,round:true,width:512,ti
 try{const up=await uploadImage(kind,{server:sid},f);await PATCH('/api/servers/'+sid,{[key]:up.id});await loadServer(sid);await loadServers();overview(pg,sid)}catch(e){fail(e)}
 }}},'Upload '+label),s[key]?h('button',{class:'btn sm',on:{click:async()=>{try{await PATCH('/api/servers/'+sid,{[key]:null});await loadServer(sid);await loadServers();overview(pg,sid)}catch(e){fail(e)}}}},'Remove'):null)
 mount(pg,h('h3',null,'Overview'),
-field('Server name',name),field('Description',desc),field('Icon',img('server_icon','icon_id','icon')),field('Banner',img('server_banner','banner_id','banner')),field('Accent colour',sws),
+field('Server name',name),field('Description',desc),field('Server tag',tag,'2 to 4 letters or numbers. Members can show it next to their name.'),field('Icon',img('server_icon','icon_id','icon')),field('Banner',img('server_banner','banner_id','banner')),field('Accent colour',sws),
 field('Welcome message',welcome,'Shown to new members. Markdown is supported.'),field('Rules',rules,'Markdown is supported.'),
 field('Discovery category',cat),
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(pub,v=>{pub=v},'Listed in Discover'),h('span',null,'Listed in Discover (anyone can join without an invite)')),
 field('Verification level',ver),ageRow,scanBox,
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 try{
-await PATCH('/api/servers/'+sid,{name:name.value.trim(),description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan})
+await PATCH('/api/servers/'+sid,{name:name.value.trim(),tag:tag.value.trim(),description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan})
 await loadServer(sid);await loadServers();toast('Saved','ok')
 }catch(e){fail(e)}
 }}},'Save changes')))
@@ -457,6 +460,9 @@ out.textContent=`Added ${r.categories} categories, ${r.channels} channels and ${
 }catch(x){err.textContent=x.message}
 b.disabled=false
 }}},'Apply'),out)
+const sh=h('div',{style:{marginTop:'24px'}})
+pg.append(sh)
+templateShare(sh,sid)
 }
 
 function emoji(pg,sid){

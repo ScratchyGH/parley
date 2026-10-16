@@ -198,19 +198,26 @@ const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
 }
 
-const THEME_VARS=['--bg','--side','--panel','--surf2','--sel','--border','--text','--strong','--muted','--accent','--hi','--blue','--sbg-img','--sdim']
+const THEME_VARS=['--bg','--side','--panel','--surf2','--sel','--border','--text','--strong','--muted','--accent','--hi','--blue','--on-accent','--hover','--neutral','--sbg-img','--sdim']
+const lum=c=>{const m=/^#([0-9a-f]{6})$/i.exec(c||'');if(!m)return null;const n=parseInt(m[1],16),f=v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4};return .2126*f(n>>16)+.7152*f((n>>8)&255)+.0722*f(n&255)}
 export function applyThemeObj(t){
 const b=document.body
 for(const k of THEME_VARS)b.style.removeProperty(k)
 b.classList.remove('sthemed')
+b.style.removeProperty('color-scheme')
 if(!t)return
 const set=(k,v)=>b.style.setProperty(k,v)
 const mix=(c,p,o)=>'color-mix(in srgb,'+c+' '+p+'%,'+o+')'
-if(t.bg){set('--bg',t.bg);set('--side',mix(t.bg,80,'#000'));set('--panel',mix(t.bg,88,'#fff'));set('--surf2',mix(t.bg,78,'#fff'));set('--sel',mix(t.bg,82,'#fff'));set('--border',mix(t.bg,70,'#fff'))}
+const bgL=lum(t.bg)
+const lightBg=bgL!==null&&bgL>.45
+const toward=lightBg?'#000':'#fff'
+if(t.bg){set('--bg',t.bg);set('--side',mix(t.bg,lightBg?94:80,lightBg?'#000':'#000'));set('--panel',mix(t.bg,90,toward));set('--surf2',mix(t.bg,82,toward));set('--sel',mix(t.bg,84,toward));set('--border',mix(t.bg,72,toward))}
+if(t.bg)set('--hover',lightBg?'rgba(0,0,0,.07)':'rgba(255,255,255,.08)')
 if(t.side)set('--side',t.side)
-if(t.panel){set('--panel',t.panel);set('--surf2',mix(t.panel,88,'#fff'))}
-if(t.text){set('--text',t.text);set('--strong',mix(t.text,80,'#fff'));set('--muted',mix(t.text,60,t.bg||'#000'))}
-if(t.accent){set('--accent',t.accent);set('--hi',mix(t.accent,55,'#fff'));set('--blue',mix(t.accent,45,'#fff'))}
+if(t.panel){set('--panel',t.panel);set('--surf2',mix(t.panel,88,toward))}
+if(t.text){set('--text',t.text);set('--strong',mix(t.text,80,toward==='#000'?'#000':'#fff'));set('--muted',mix(t.text,60,t.bg||'#000'));set('--neutral',mix(t.text,75,t.bg||'#000'))}
+if(t.accent){const al=lum(t.accent);set('--accent',t.accent);set('--hi',mix(t.accent,70,lightBg?'#000':'#fff'));set('--blue',mix(t.accent,70,lightBg?'#000':'#fff'));set('--on-accent',al!==null&&al>.4?'#111':'#fff')}
+if(bgL!==null)b.style.setProperty('color-scheme',lightBg?'light':'dark')
 if(t.image){set('--sbg-img','url("'+fileUrl(t.image)+'")');set('--sdim',(t.dim??55)+'%');b.classList.add('sthemed')}
 }
 export function applyServerTheme(){

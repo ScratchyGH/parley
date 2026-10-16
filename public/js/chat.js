@@ -9,6 +9,7 @@ import{joinRoom,pageFromPeers,recordMessages,forgetMessage,seedFile}from'./p2p/i
 import{pollDialog,threadDialog,forwardDialog,stickerDialog}from'./dialogs2.js'
 import{gifPicker,importGif}from'./gifs.js'
 import{slash}from'./slash.js'
+import{warnDialog}from'./modcases.js'
 
 let C=null
 const drafts=new Map()
@@ -280,7 +281,7 @@ main.append(r.deleted?h('div',{class:'rp'},icon('reply','s'),'Original message w
 }
 if(!cont){
 const nm=h('b',{on:{click:e=>openProfile(e,m.author)}},m.author.display_name)
-main.append(h('div',{class:'mh'},nm,h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
+main.append(h('div',{class:'mh'},nm,m.author.guild_tag?h('span',{class:'gtag',title:'Server tag'},m.author.guild_tag):null,h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
@@ -359,6 +360,7 @@ if(m.content)items.push({icon:'copy',label:'Copy text',fn:()=>copyText(m.content
 const path=isDm(C.room)?`/dm/${C.room}`:`/s/${info?.sid}/${C.room}`
 items.push({icon:'link',label:'Copy link',fn:()=>copyText(`${location.origin}${path}?m=${m.id}`)})
 items.push({icon:'bookmark',label:'Save message',fn:async()=>{try{await PUT('/api/saved/'+m.id);toast('Saved','ok')}catch(e){fail(e)}}})
+if(!own&&info&&can(info.sid,P.MODERATE)&&m.author.id!==S.me.id)items.push({icon:'flag',label:'Warn author',fn:()=>warnDialog(info.sid,m.author,m.id)})
 if(!own)items.push({icon:'flag',label:'Report message',fn:()=>emit('ui:report',{type:'message',id:m.id})})
 if(own||perms&P.MANAGE_MESSAGES)items.push('-',{icon:'trash',label:'Delete message',danger:true,fn:()=>delMsg(m)})
 if(anchor)menuAt(anchor,items)
@@ -670,7 +672,7 @@ const nonce=rid()
 const body={content:text,nonce}
 if(C.replyTo)body.reply_to=C.replyTo.id
 if(ready.length)body.attachments=ready.map(f=>f.id)
-const tmp={id:'~'+nonce,room:C.room,author:{id:S.me.id,username:S.me.username,display_name:S.me.display_name,avatar_id:S.me.avatar_id,accent:S.me.accent},content:text,created_at:Date.now(),edited_at:null,pinned:false,reply:C.replyTo?{id:C.replyTo.id,author:C.replyTo.author.display_name,content:C.replyTo.content.slice(0,140)}:null,attachments:ready.map(f=>({id:f.id,name:f.name,mime:f.mime,size:f.size})),reactions:[],pending:true,body}
+const tmp={id:'~'+nonce,room:C.room,author:{id:S.me.id,username:S.me.username,display_name:S.me.display_name,avatar_id:S.me.avatar_id,accent:S.me.accent,guild_tag:S.servers.find(x=>x.id===S.me.tag_server)?.tag||null},content:text,created_at:Date.now(),edited_at:null,pinned:false,reply:C.replyTo?{id:C.replyTo.id,author:C.replyTo.author.display_name,content:C.replyTo.content.slice(0,140)}:null,attachments:ready.map(f=>({id:f.id,name:f.name,mime:f.mime,size:f.size})),reactions:[],pending:true,body}
 C.ta.value=''
 try{localStorage.removeItem('parley:draft:'+tmp.room)}catch{}
 C.files=[]
