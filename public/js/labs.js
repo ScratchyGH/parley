@@ -12,7 +12,9 @@ const inp=h('input',{class:'inp',type:'password',autocomplete:'off',placeholder:
 return h('div',null,field('Pollinations API key',inp,'Pollinations now asks for a key on most requests. Get one at enter.pollinations.ai. It is kept only in this browser and sent with each request, never saved by the server.'))
 }
 
-function bridge(host){
+export const puterReady=()=>puterOn
+export const onPuterState=f=>{puterNote=f}
+export function bridge(host){
 if(!frame){
 frame=h('iframe',{src:'/lab/puter',title:'Puter connection',class:'puterframe'})
 loaded=new Promise(r=>frame.addEventListener('load',()=>r()))
@@ -25,7 +27,7 @@ else if(d.type==='reply'&&waiting.has(d.id)){waiting.get(d.id)(d);waiting.delete
 }
 host.append(frame)
 }
-async function puterCall(op,data){
+export async function puterCall(op,data){
 await loaded
 return new Promise((res,rej)=>{
 const id=++seq

@@ -1,15 +1,16 @@
 import{h,mount,icon,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast}from'./util.js'
 import{S}from'./state.js'
+import{studio}from'./studio.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],...(S.me.owner?[['db','Database']]:[])]
+const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],...(S.me.owner?[['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={stats,users,reports,appeals,log,db}[cur]
+const fn={stats,users,reports,appeals,log,db,studio}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),nav,body)
