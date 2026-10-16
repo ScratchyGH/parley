@@ -33,13 +33,15 @@ guard(c)
 limit('studio:'+c.user.id,6,60000)
 const b=await body(c.req)
 const prompt=str(b.prompt,10,12000,'Brief')
+const msgs=[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]
+const key=c.env.OPENROUTER_API_KEY
 let res
-try{res=await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)})}catch{fail(502,'The AI service did not answer. Try again')}
-if(!res.ok)fail(502,'The AI service returned an error. Try again')
+try{res=key?await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model:c.env.OPENROUTER_MODEL||'openrouter/free',messages:msgs}),signal:AbortSignal.timeout(90000)}):await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:msgs}),signal:AbortSignal.timeout(90000)})}catch{fail(502,'The AI service did not answer. Try again')}
+if(!res.ok)fail(502,key&&(res.status===401||res.status===402||res.status===403)?'OpenRouter rejected the key or the account has no credit':'The AI service returned an error. Try again')
 const j=await res.json().catch(()=>null)
 const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
 if(typeof text!=='string'||!text)fail(502,'The AI service returned nothing. Try again')
-return{text}
+return{text,via:key?'openrouter':'pollinations'}
 })
 
 r.add('POST','/api/admin/maintenance',async c=>{
