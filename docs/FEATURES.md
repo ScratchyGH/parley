@@ -148,6 +148,8 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Search box and pop-up menus no longer clip at the screen edge; menus flip above their button when there is no room below | Not run in a browser |
 | Migration 0013 adds indexes for queries that scanned whole tables (read state, saved messages, categories, blocks, member roles, bot owner, files by server, overrides) and server deletion no longer scans the messages table | Query plans checked in SQLite; tests pass |
 
+| Maintenance bypass: a secret code typed into the browser console (`leaveMaintenance('...')`) lets one signed-in session through maintenance mode | API tested with a test code (wrong code, right code, per session); the console function is not tested in a browser |
+
 ## Moderation and admin
 
 | Feature | Status |
@@ -156,6 +158,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | Reports (message, user, server) and per server triage | API tested, UI written |
 | Ban appeals | API tested, UI written |
 | Global admin panel: stats, user search and suspension, reports, appeals, maintenance mode, audit log | API tested, UI written |
+| Maintenance bypass: a secret code typed into the browser console (`leaveMaintenance('...')`) lets one signed-in session through maintenance mode | API tested with a test code (wrong code, right code, per session); the console function is not tested in a browser |
 | AutoMod: blocked words, link blocking, mention limit (server side, on send and edit) | API tested, UI written |
 | Raid protection: automatic 10 minute join lockdown above a joins-per-minute limit, manual lockdown | API tested, UI written |
 | Vanity invite links (free) | API tested, UI written |

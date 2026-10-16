@@ -74,6 +74,10 @@ Reports (messages, users, servers), per server moderation (timeout, kick, ban, a
 - A block bot only acts in servers where its owner's project was added through the Bot hub, and only where the bot account has permission to read and post.
 - Server themes are limited to hex colours and one image uploaded to that server. Only members with Manage Server can set them.
 
+## Maintenance bypass
+
+The bypass code lives only in the `MAINTENANCE_BYPASS_CODE` secret, is compared on the server by SHA-256 digest, and is rate limited per account and per address. It never ships to the browser. Anyone who learns the code can get through maintenance, so rotate the secret if it leaks. It does not bypass suspensions or permissions, only the maintenance block.
+
 ## Known weaknesses
 
 - Best effort rate limiting (above).
