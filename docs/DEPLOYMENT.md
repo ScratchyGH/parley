@@ -100,6 +100,7 @@ Only the provider's user id and display label are stored. These flows are tested
 | `PBKDF2_ITERS` | 100000 | Password hashing cost. 100,000 is the maximum Workers' WebCrypto accepts. Stored per hash. |
 | `REGISTRATION_OPEN` | true | Set `"false"` to close signups. |
 | `ADMIN_USERNAMES` | empty | Comma separated usernames that get the admin panel. |
+| `POLLINATIONS_KEY` | unset | Optional Pollinations API key (a Worker secret) used by the Experimental AI features when a user has not pasted their own. Pollinations rejects most anonymous requests. |
 | `EXPERIMENTAL_USERNAMES` | empty | Comma separated usernames that see the Experimental settings tab, in addition to the first account and anyone an admin enables. Set it as a plain variable in the Cloudflare dashboard. |
 
 Secrets, all optional:

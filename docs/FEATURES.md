@@ -141,7 +141,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 - Explicit term filter for server, channel and category text, nightly purge of matching servers, admin sweep. Tested.
 - 18+ Only servers with a self-declared Adult content switch. Tested.
 - Explicit content scanner (links, redirects, page metadata, image classification), only enabled on 18+ servers. Link host matching and message removal are tested; page fetching and the Workers AI image model are not tested against real sites.
-- Experimental settings tab (first user, `EXPERIMENTAL_USERNAMES`, admin toggle): AI Server Maker (Pollinations draft plus optional Puter refine, validated preview, add to a server), channel summariser, server health report, transcript export. Validation, apply, health and export are tested; Pollinations and Puter calls are not.
+- Experimental settings tab (first user, `EXPERIMENTAL_USERNAMES`, admin toggle): AI Server Maker (Pollinations draft plus optional Puter refine, validated preview, add to a server), channel summariser, server health report, transcript export. Validation, apply, health and export are tested. Listing Pollinations models was checked against the live service; generating text needs a Pollinations API key (anonymous requests were refused when tried), and no successful generation or any Puter call has been run in this build.
 
 ## Interface
 
