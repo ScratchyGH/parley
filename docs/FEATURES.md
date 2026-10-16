@@ -141,7 +141,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 | More keyless GIF sources: otakugifs.xyz, purrbot.site and nekos.best reaction GIFs plus Wikimedia Commons text search | API tested for the otakugifs path; nekos.best and Wikimedia answered nothing from the test machine, so those two are **unconfirmed** |
 | Server themes: colours and a background image that apply only while a member is inside that server, with presets | API tested (validation, storage, reset); UI written, not run in a browser |
 | Bot Lab block builder: drag blocks, connect them, test with a sample message, saved per bot | Engine and routes API tested end to end (command, reply, reaction, saved counter in a real server); the canvas UI is written but has never been run in a browser |
-| Flat 2D vector mascot (`public/mascot.svg`, transparent background) on the sign in card and Home | Drawn by hand from your concept art; looks checked in a rendered preview only, not in the app |
+| Your line-art mascot (`public/mascot.webp`) with a transparent background on the sign in card, Home and the maintenance screen | Cut out automatically from your image; a few dark gaps near the neck and ear were checked in a rendered preview only, not in the app |
 | User settings and server settings are pages (`/settings/...`, `/s/<id>/settings/...`) instead of pop-up dialogs, with their own addresses | Syntax and static checks only; not run in a browser |
 | Bot editor has Details and Code blocks tabs (Code blocks unlocks once the bot exists) | Not run in a browser |
 | KLIPY GIF search when `KLIPY_API_KEY` is set | Written from KLIPY's public response format; **not tested**, needs a key |
