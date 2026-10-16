@@ -1,7 +1,7 @@
 import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
-import{PUBLIC}from'./auth.js'
+import{PUBLIC,STATUS}from'./auth.js'
 import{explicitText,serverText}from'./safety.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
@@ -72,7 +72,7 @@ return json({id:sid,default_channel:gen},201)
 })
 
 r.add('GET','/api/servers',async c=>{
-const rows=(await c.env.DB.prepare('select s.id,s.name,s.icon_id,s.owner_id,s.is_public,s.accent,m.joined_at from members m join servers s on s.id=m.server_id where m.user_id=? order by m.joined_at').bind(c.user.id).all()).results
+const rows=(await c.env.DB.prepare('select s.id,s.name,s.icon_id,s.banner_id,s.owner_id,s.is_public,s.accent,m.joined_at from members m join servers s on s.id=m.server_id where m.user_id=? order by m.joined_at').bind(c.user.id).all()).results
 return{servers:rows}
 })
 
@@ -417,7 +417,7 @@ const args=[m.server.id]
 let where=''
 if(q){where=" and (u.username like ? escape '\\' or u.display_name like ? escape '\\' or m.nickname like ? escape '\\')";args.push(like(q),like(q),like(q))}
 args.push(after,lim)
-const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.status_text,m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
 return{members:rows.map(x=>({...x,roles:x.roles?x.roles.split(','):[]})),next:rows.length===lim?rows[rows.length-1].id:null}
 })
 

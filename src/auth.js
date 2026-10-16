@@ -2,7 +2,8 @@ import{checkSecondFactor}from'./totp.js'
 import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
 
-export const PUBLIC='u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,u.status_text,u.accent,u.created_at'
+export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
+export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.created_at`
 const SESSION_MS=30*86400000
 const NAME=/^[a-zA-Z0-9_.-]{3,24}$/
 
@@ -11,6 +12,15 @@ const secure=url.protocol==='https:'?'; Secure':''
 return `sid=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`
 }
 
+export const isOwner=(env,name)=>String(name||'').toLowerCase()===(env.OWNER_USERNAME||'ParleyOfficial').toLowerCase()
+export function badgesOf(env,u){
+const b=[]
+if(isOwner(env,u.username))b.push('owner')
+else if(u.is_admin)b.push('staff')
+if(u.labs)b.push('experimental')
+if(u.is_bot)b.push('bot')
+return b
+}
 export async function sessionUser(env,req){
 const ah=req.headers.get('authorization')||''
 const bm=ah.match(/^Bot (pb_[a-f0-9]{64})$/)
@@ -27,7 +37,8 @@ const id=await sha(m[1])
 const row=await env.DB.prepare('select u.*,s.id sid,s.last_seen from sessions s join users u on u.id=s.user_id where s.id=? and s.expires_at>? and u.deleted_at is null and u.suspended=0').bind(id,now()).first()
 if(!row)return null
 if(now()-row.last_seen>3600000)await env.DB.prepare('update sessions set last_seen=?,expires_at=? where id=?').bind(now(),now()+SESSION_MS,id).run()
-row.admin=!!row.is_admin||(env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean).includes(row.username.toLowerCase())
+row.owner=isOwner(env,row.username)
+row.admin=!!row.is_admin||row.owner||(env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean).includes(row.username.toLowerCase())
 return row
 }
 
@@ -52,16 +63,48 @@ else fail(400,'Unknown setting '+k)
 return out
 }
 
+export function linksOf(v){
+try{const a=JSON.parse(v||'[]');return Array.isArray(a)?a.filter(x=>x&&typeof x.url==='string').slice(0,5).map(x=>({label:String(x.label||'').slice(0,24),url:x.url})):[]}catch{return[]}
+}
+function cleanLinks(v){
+if(!Array.isArray(v)||v.length>5)fail(400,'Add up to 5 links')
+return v.map(x=>{
+const label=str(String(x&&x.label||''),1,24,'Link label')
+let u
+try{u=new URL(String(x&&x.url||''))}catch{fail(400,'Link addresses must be full https:// URLs')}
+if(u.protocol!=='https:'||u.href.length>200)fail(400,'Link addresses must be https:// URLs under 200 characters')
+return{label,url:u.href}
+})
+}
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,created_at:u.created_at}
+return{id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,created_at:u.created_at}
 }
 
+const tokenOf=(req,name)=>{
+const m=(req.headers.get('cookie')||'').match(new RegExp('(?:^|;\\s*)'+name+'=([^;]*)'))
+return m?m[1]:''
+}
+export function readStash(req){
+return tokenOf(req,'sx').split('~').map(x=>{const i=x.lastIndexOf('.');return{uid:x.slice(0,i),token:x.slice(i+1)}}).filter(x=>/^u_[a-z0-9]+$/.test(x.uid)&&/^[a-f0-9]{64}$/.test(x.token)).slice(0,4)
+}
+export function stashCookie(url,list){
+const secure=url.protocol==='https:'?'; Secure':''
+return `sx=${list.map(x=>x.uid+'.'+x.token).join('~')}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${list.length?SESSION_MS/1000:0}${secure}`
+}
+export async function liveSession(env,token){
+if(!/^[a-f0-9]{64}$/.test(token||''))return null
+return env.DB.prepare('select s.id sid,u.id,u.username,u.display_name,u.avatar_id,u.accent from sessions s join users u on u.id=s.user_id where s.id=? and s.expires_at>? and u.deleted_at is null and u.suspended=0').bind(await sha(token),now()).first()
+}
 export async function makeSession(c,uid){
 const token=randHex(32)
 await c.env.DB.prepare('insert into sessions(id,user_id,created_at,expires_at,last_seen,ua,ip) values(?,?,?,?,?,?,?)').bind(await sha(token),uid,now(),now()+SESSION_MS,now(),(c.req.headers.get('user-agent')||'').slice(0,200),(c.req.headers.get('cf-connecting-ip')||'').split(':').slice(0,4).join(':').slice(0,45)).run()
-return cookie(c.url,token,SESSION_MS/1000)
+const stash=readStash(c.req).filter(x=>x.uid!==uid)
+const old=tokenOf(c.req,'sid')
+const cur=old?await liveSession(c.env,old):null
+if(cur&&cur.id!==uid&&!stash.some(x=>x.uid===cur.id))stash.unshift({uid:cur.id,token:old})
+return[cookie(c.url,token,SESSION_MS/1000),stashCookie(c.url,stash.slice(0,4))]
 }
 
 export const ip=c=>c.req.headers.get('cf-connecting-ip')||'local'
@@ -103,7 +146,8 @@ throw e
 }
 const setCookie=await makeSession(c,id)
 const u=await c.env.DB.prepare('select * from users where id=?').bind(id).first()
-u.admin=(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(username.toLowerCase())
+u.owner=isOwner(c.env,username)
+u.admin=u.owner||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(username.toLowerCase())
 return json({user:me(u),recovery_code:code},201,{'set-cookie':setCookie})
 },{auth:false})
 
@@ -129,7 +173,8 @@ if(!await checkSecondFactor(c.env,u,String(b.totp))){await bump(c.env,key);await
 }
 await c.env.DB.prepare('delete from login_attempts where k=?').bind(key).run()
 const setCookie=await makeSession(c,u.id)
-u.admin=!!u.is_admin||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(u.username.toLowerCase())
+u.owner=isOwner(c.env,u.username)
+u.admin=!!u.is_admin||u.owner||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(u.username.toLowerCase())
 return json({user:me(u)},200,{'set-cookie':setCookie})
 },{auth:false})
 
@@ -137,6 +182,39 @@ r.add('POST','/api/auth/logout',async c=>{
 await c.env.DB.prepare('delete from sessions where id=?').bind(c.user.sid).run()
 return json({ok:true},200,{'set-cookie':cookie(c.url,'',0)})
 })
+
+r.add('GET','/api/accounts',async c=>{
+const out=[]
+if(c.user&&!c.user.is_bot)out.push({id:c.user.id,username:c.user.username,display_name:c.user.display_name,avatar_id:c.user.avatar_id,accent:c.user.accent,current:true})
+for(const x of readStash(c.req)){
+const s=await liveSession(c.env,x.token)
+if(s&&s.id===x.uid&&!out.some(o=>o.id===s.id))out.push({id:s.id,username:s.username,display_name:s.display_name,avatar_id:s.avatar_id,accent:s.accent,current:false})
+}
+return{accounts:out}
+},{auth:false})
+
+r.add('POST','/api/accounts/switch',async c=>{
+limit('swa:'+ip(c),60,600000)
+const b=await body(c.req)
+const stash=readStash(c.req)
+const t=stash.find(x=>x.uid===String(b.user_id))
+if(!t)fail(404,'That account is not saved on this device')
+const s=await liveSession(c.env,t.token)
+if(!s||s.id!==t.uid)fail(401,'That session expired. Sign in to the account again.')
+const rest=stash.filter(x=>x!==t)
+const old=tokenOf(c.req,'sid')
+if(c.user&&old)rest.unshift({uid:c.user.id,token:old})
+return json({ok:true},200,{'set-cookie':[cookie(c.url,t.token,SESSION_MS/1000),stashCookie(c.url,rest.slice(0,4))]})
+},{auth:false})
+
+r.add('POST','/api/accounts/remove',async c=>{
+const b=await body(c.req)
+const stash=readStash(c.req)
+const t=stash.find(x=>x.uid===String(b.user_id))
+if(!t)fail(404,'That account is not saved on this device')
+await c.env.DB.prepare('delete from sessions where id=?').bind(await sha(t.token)).run()
+return json({ok:true},200,{'set-cookie':stashCookie(c.url,stash.filter(x=>x!==t))})
+},{auth:false})
 
 r.add('POST','/api/auth/recover',async c=>{
 limit('rec:'+ip(c),8,3600000)
@@ -166,7 +244,19 @@ const add=(col,v)=>{sets.push(col+'=?');vals.push(v)}
 if('display_name'in b)add('display_name',str(b.display_name,1,32,'Display name'))
 if('bio'in b)add('bio',opt(b.bio,500,'Bio'))
 if('pronouns'in b)add('pronouns',opt(b.pronouns,32,'Pronouns'))
-if('status_text'in b)add('status_text',opt(b.status_text,100,'Status'))
+if('status_text'in b){
+add('status_text',opt(b.status_text,100,'Status'))
+if(!('status_until'in b))add('status_until',null)
+}
+if('status_until'in b){
+if(b.status_until===null)add('status_until',null)
+else{
+const t=Number(b.status_until)
+if(!Number.isFinite(t)||t<=now()||t>now()+30*86400000)fail(400,'Status expiry must be within the next 30 days')
+add('status_until',Math.floor(t))
+}
+}
+if('links'in b)add('links',JSON.stringify(cleanLinks(b.links)))
 if('accent'in b)add('accent',gradient(b.accent,'Accent'))
 if('presence'in b){if(!['online','idle','busy','invisible'].includes(b.presence))fail(400,'Invalid presence');add('presence',b.presence)}
 if('settings'in b){
@@ -186,6 +276,8 @@ add(k,f.id)
 }
 }
 }
+const imgs=[]
+for(const k of['avatar_id','banner_id'])if(b[k])imgs.push(k)
 let renamed=null
 if('username'in b){
 limit('un:'+c.user.id,3,86400000)
@@ -202,12 +294,45 @@ if(!sets.length)return{user:me(c.user)}
 try{
 const st=[c.env.DB.prepare(`update users set ${sets.join(',')} where id=?`).bind(...vals,c.user.id)]
 if(renamed)st.push(claimStmt(c.env,c.user.id,renamed,now()),trimStmt(c.env,c.user.id))
+for(const k of imgs){
+const kind=k==='avatar_id'?'avatar':'banner'
+st.push(c.env.DB.prepare('insert into profile_images(user_id,kind,file_id,created_at) values(?,?,?,?) on conflict(user_id,kind,file_id) do update set created_at=excluded.created_at').bind(c.user.id,kind,String(b[k]),now()))
+}
 await c.env.DB.batch(st)
 }catch(e){if(String(e.message).includes('UNIQUE'))fail(409,'That username is taken or too similar to an existing or previously used one');throw e}
+for(const k of imgs){
+const kind=k==='avatar_id'?'avatar':'banner'
+const old=(await c.env.DB.prepare('select p.file_id,f.r2_key from profile_images p left join files f on f.id=p.file_id where p.user_id=? and p.kind=? order by p.created_at desc limit -1 offset 24').bind(c.user.id,kind).all()).results
+for(const o of old){
+if(o.r2_key)await c.env.FILES.delete(o.r2_key)
+await c.env.DB.batch([c.env.DB.prepare('delete from profile_images where user_id=? and kind=? and file_id=?').bind(c.user.id,kind,o.file_id),c.env.DB.prepare('delete from files where id=?').bind(o.file_id)])
+}
+}
 const u=await c.env.DB.prepare('select * from users where id=?').bind(c.user.id).first()
 u.admin=c.user.admin
+u.owner=c.user.owner
 c.pub('u_'+u.id,{t:'me.update'})
 return{user:me(u)}
+})
+
+r.add('GET','/api/me/images',async c=>{
+const kind=c.url.searchParams.get('kind')
+if(kind!=='avatar'&&kind!=='banner')fail(400,'Choose avatar or banner')
+const rows=(await c.env.DB.prepare('select p.file_id id,p.created_at,f.mime,f.size from profile_images p join files f on f.id=p.file_id where p.user_id=? and p.kind=? order by p.created_at desc limit 24').bind(c.user.id,kind).all()).results
+const cur=kind==='avatar'?c.user.avatar_id:c.user.banner_id
+return{images:rows.map(r=>({...r,current:r.id===cur}))}
+})
+
+r.add('DELETE','/api/me/images/:id',async c=>{
+const kind=c.url.searchParams.get('kind')
+if(kind!=='avatar'&&kind!=='banner')fail(400,'Choose avatar or banner')
+const cur=kind==='avatar'?c.user.avatar_id:c.user.banner_id
+if(c.p.id===cur)fail(400,'Switch to another image or remove it first')
+const f=await c.env.DB.prepare('select r2_key from files where id=? and owner_id=? and kind=?').bind(c.p.id,c.user.id,kind).first()
+if(!f)fail(404,'Image not found')
+await c.env.FILES.delete(f.r2_key)
+await c.env.DB.batch([c.env.DB.prepare('delete from profile_images where user_id=? and kind=? and file_id=?').bind(c.user.id,kind,c.p.id),c.env.DB.prepare('delete from files where id=?').bind(c.p.id)])
+return{ok:true}
 })
 
 r.add('POST','/api/me/password',async c=>{

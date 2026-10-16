@@ -14,6 +14,7 @@ import perkRoutes from'./perks.js'
 import botlabRoutes from'./botlab.js'
 import signinRoutes from'./signin.js'
 import labRoutes from'./lab.js'
+import gifRoutes from'./gifs.js'
 import{sweepExplicitServers}from'./servers.js'
 import{d1Store}from'./store.js'
 import{tursoDb}from'./turso.js'
@@ -37,6 +38,7 @@ totpRoutes(router)
 pushRoutes(router)
 perkRoutes(router)
 botlabRoutes(router)
+gifRoutes(router)
 signinRoutes(router)
 labRoutes(router)
 

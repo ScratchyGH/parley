@@ -20,7 +20,14 @@ return r===0
 }
 export class HttpError extends Error{constructor(s,m){super(m);this.status=s}}
 export const fail=(s,m)=>{throw new HttpError(s,m)}
-export const json=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json','cache-control':'no-store',...h}})
+export const json=(d,s=200,h={})=>{
+const hd=new Headers({'content-type':'application/json','cache-control':'no-store'})
+for(const[k,v]of Object.entries(h)){
+if(Array.isArray(v)){hd.delete(k);for(const x of v)hd.append(k,x)}
+else hd.set(k,v)
+}
+return new Response(JSON.stringify(d),{status:s,headers:hd})
+}
 export const str=(v,min,max,n)=>{
 if(typeof v!=='string')fail(400,n+' must be text')
 const t=v.trim()

@@ -93,7 +93,7 @@ const v=await this.getVoice()
 for(const ch of Object.keys(v)){if(v[ch][a.uid]){delete v[ch][a.uid];if(!Object.keys(v[ch]).length)delete v[ch];await this.broadcast({t:'voice.state',ch,users:v[ch]||{}},ch)}}
 const room=v[m.ch]||(v[m.ch]={})
 if(Object.keys(room).length>=12&&!room[a.uid]){ws.send(JSON.stringify({t:'voice.error',ch:m.ch,error:'This voice channel is full (12 participants)'}));return}
-room[a.uid]={m:!!m.m,d:!!m.d,vid:false,scr:false}
+room[a.uid]={m:!!m.m,d:!!m.d,vid:false,scr:false,h:false}
 await this.setVoice(v)
 ws.send(JSON.stringify({t:'voice.joined',ch:m.ch,peers:Object.keys(room).filter(x=>x!==a.uid)}))
 await this.broadcast({t:'voice.state',ch:m.ch,users:room},m.ch)
@@ -123,7 +123,7 @@ if(m.t==='voice.state'){
 const v=await this.getVoice()
 for(const ch of Object.keys(v))if(v[ch][a.uid]){
 const s=v[ch][a.uid]
-for(const k of['m','d','vid','scr'])if(typeof m[k]==='boolean')s[k]=m[k]
+for(const k of['m','d','vid','scr','h'])if(typeof m[k]==='boolean')s[k]=m[k]
 await this.setVoice(v)
 await this.broadcast({t:'voice.state',ch,users:v[ch]},ch)
 }

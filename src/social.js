@@ -1,6 +1,6 @@
 import{fail,now,newId,str,opt,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember}from'./perms.js'
-import{PUBLIC}from'./auth.js'
+import{PUBLIC,badgesOf,linksOf}from'./auth.js'
 
 const pair=(x,y)=>x<y?[x,y]:[y,x]
 const settingsOf=u=>{try{return JSON.parse(u.settings||'{}')}catch{return{}}}
@@ -14,11 +14,11 @@ async function blockedEither(env,x,y){
 return!!await env.DB.prepare('select 1 x from blocks where (user_id=? and blocked_id=?) or (user_id=? and blocked_id=?)').bind(x,y,y,x).first()
 }
 async function userById(env,id){
-const u=await env.DB.prepare(`select ${PUBLIC},u.settings from users u where u.id=? and u.deleted_at is null`).bind(id).first()
+const u=await env.DB.prepare(`select ${PUBLIC},u.settings,u.is_admin,u.labs,u.is_bot from users u where u.id=? and u.deleted_at is null`).bind(id).first()
 if(!u)fail(404,'User not found')
 return u
 }
-const strip=u=>{const{settings,...rest}=u;return rest}
+const strip=u=>{const{settings,is_admin,labs,is_bot,...rest}=u;return rest}
 
 async function convMembers(env,ids){
 if(!ids.length)return{}
@@ -50,7 +50,10 @@ return{user:u}
 })
 
 r.add('GET','/api/users/:id',async c=>{
-const u=strip(await userById(c.env,c.p.id))
+const raw=await userById(c.env,c.p.id)
+const u=strip(raw)
+u.links=linksOf(u.links)
+u.badges=badgesOf(c.env,raw)
 const[a,b]=pair(c.user.id,u.id)
 const f=await c.env.DB.prepare('select status,requester from friends where a=? and b=?').bind(a,b).first()
 const blocked=await c.env.DB.prepare('select 1 x from blocks where user_id=? and blocked_id=?').bind(c.user.id,u.id).first()
@@ -266,6 +269,32 @@ if(rr.kind!=='dm'||!(rr.perms&P.CONNECT))fail(403,'You cannot call here')
 if(rr.perms===P.VIEW)fail(403,'You cannot call this user')
 const ms=(await c.env.DB.prepare('select user_id from conv_members where conv_id=? and user_id!=? and accepted=1').bind(rr.room,c.user.id).all()).results
 for(const m of ms)c.pub('u_'+m.user_id,{t:'call.ring',room:rr.room,from:{id:c.user.id,display_name:c.user.display_name,avatar_id:c.user.avatar_id}})
+return{ok:true}
+})
+
+r.add('POST','/api/conversations/:id/ring/:action',async c=>{
+limit('ringa:'+c.user.id,30,60000)
+if(!['decline','cancel'].includes(c.p.action))fail(404,'Not found')
+const rr=await resolveRoom(c.env,c.p.id,c.user.id)
+if(rr.kind!=='dm')fail(400,'Not a conversation')
+const b=await body(c.req).catch(()=>({}))
+const ms=(await c.env.DB.prepare('select user_id from conv_members where conv_id=? and user_id!=?').bind(rr.room,c.user.id).all()).results
+const ev=c.p.action==='cancel'?{t:'call.cancel',room:rr.room,by:c.user.id}:{t:'call.declined',room:rr.room,busy:!!b.busy,by:{id:c.user.id,display_name:c.user.display_name}}
+for(const m of ms)c.pub('u_'+m.user_id,ev)
+return{ok:true}
+})
+
+r.add('GET','/api/users/:id/note',async c=>{
+const n=await c.env.DB.prepare('select note from user_notes where user_id=? and target_id=?').bind(c.user.id,c.p.id).first()
+return{note:n?n.note:''}
+})
+r.add('PUT','/api/users/:id/note',async c=>{
+limit('note:'+c.user.id,60,60000)
+const b=await body(c.req,2000)
+const note=typeof b.note==='string'?b.note.trim().slice(0,500):''
+await userById(c.env,c.p.id)
+if(!note)await c.env.DB.prepare('delete from user_notes where user_id=? and target_id=?').bind(c.user.id,c.p.id).run()
+else await c.env.DB.prepare('insert into user_notes(user_id,target_id,note,updated_at) values(?,?,?,?) on conflict(user_id,target_id) do update set note=excluded.note,updated_at=excluded.updated_at').bind(c.user.id,c.p.id,note,now()).run()
 return{ok:true}
 })
 

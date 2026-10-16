@@ -1,6 +1,6 @@
 import{fail,now,newId,randHex,sha,pbkdf2,str,limit,body,json,safeEq}from'./util.js'
 import{nameProblem,claimOwner,claimStmt}from'./names.js'
-import{sessionUser,makeSession,ip,iters,recoveryCode,me}from'./auth.js'
+import{sessionUser,makeSession,ip,iters,recoveryCode,me,isOwner}from'./auth.js'
 
 const PROV={
 github:{name:'GitHub',auth:'https://github.com/login/oauth/authorize',token:'https://github.com/login/oauth/access_token',user:'https://api.github.com/user',scope:'read:user',pick:j=>({id:String(j.id),name:j.login,label:j.login})},
@@ -168,7 +168,7 @@ if(!u||u.deleted_at)return page(c,'That account no longer exists',clear)
 if(u.suspended)return page(c,'This account is suspended. You can submit an appeal at /appeal.',clear)
 const sc=await makeSession(c,uid)
 const h=new Headers({location:'/'})
-h.append('set-cookie',sc)
+for(const x of sc)h.append('set-cookie',x)
 h.append('set-cookie',clearState(c))
 return new Response(null,{status:302,headers:h})
 },{auth:false})
@@ -261,7 +261,8 @@ if(row.suspended)fail(403,'This account is suspended. You can submit an appeal a
 await c.env.DB.prepare('update passkeys set counter=?,last_used=? where id=?').bind(ctr,now(),row.id).run()
 const sc=await makeSession(c,row.user_id)
 const u=await c.env.DB.prepare('select * from users where id=?').bind(row.user_id).first()
-u.admin=!!u.is_admin||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(u.username.toLowerCase())
+u.owner=isOwner(c.env,u.username)
+u.admin=!!u.is_admin||u.owner||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(u.username.toLowerCase())
 return json({user:me(u)},200,{'set-cookie':sc})
 },{auth:false})
 }

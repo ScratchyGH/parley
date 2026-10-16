@@ -128,8 +128,7 @@ const b=await body(c.req)
 return{layout:cleanLayout(b.layout)}
 })
 
-r.add('POST','/api/lab/servers/:sid/apply',async c=>{
-gate(c)
+const applyLayout=async c=>{
 limit('lab-apply:'+c.user.id,10,3600000)
 const m=await loadMember(c.env,c.p.sid,c.user.id)
 if(!m)fail(404,'Server not found')
@@ -162,6 +161,20 @@ st.push(c.logStmt(m.server.id,'lab.layout',m.server.id,`${lay.categories.length}
 await c.env.DB.batch(st)
 c.pubClose('s_'+m.server.id,{closeAll:true})
 return{categories:lay.categories.length,channels:chCount,roles:withRoles?lay.roles.length:0}
+}
+r.add('POST','/api/lab/servers/:sid/apply',async c=>{
+gate(c)
+return applyLayout(c)
+})
+r.add('POST','/api/servers/:sid/template',applyLayout)
+r.add('GET','/api/servers/:sid/template',async c=>{
+const m=await loadMember(c.env,c.p.sid,c.user.id)
+if(!m)fail(404,'Server not found')
+if(!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission')
+const cats=(await c.env.DB.prepare('select id,name from categories where server_id=? order by position').bind(m.server.id).all()).results
+const chs=(await c.env.DB.prepare('select category_id,name,type,topic from channels where server_id=? order by position').bind(m.server.id).all()).results
+const roles=(await c.env.DB.prepare('select name,color from roles where server_id=? and is_everyone=0 order by position desc').bind(m.server.id).all()).results
+return{layout:{name:m.server.name,description:m.server.description||'',rules:m.server.rules||'',welcome:m.server.welcome||'',categories:cats.map(x=>({name:x.name,channels:chs.filter(y=>y.category_id===x.id).map(y=>({name:y.name,type:y.type,topic:y.topic||''}))})).filter(x=>x.channels.length),roles:roles.map(x=>({name:x.name,color:x.color||'#99aab5'}))}}
 })
 
 r.add('POST','/api/lab/ai/summary',async c=>{
