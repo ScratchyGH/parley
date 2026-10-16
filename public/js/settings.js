@@ -231,7 +231,7 @@ const body={display_name:dn.value.trim(),pronouns:pr.value.trim(),status_text:st
 await saveProfile(body);toast('Profile saved','ok')
 }catch(e){fail(e)}
 }}},'Save profile'))),
-h('div',null,h('label',{class:'f'},'Preview'),prev)))
+h('div',{style:{position:'sticky',top:'0',width:'260px',flex:'none'}},h('label',{class:'f'},'Preview'),prev)))
 drawSw();drawPrev()
 }
 
