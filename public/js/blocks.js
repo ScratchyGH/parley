@@ -145,7 +145,10 @@ draw()
 }
 const bar=h('div',{class:'bk-bar'},h('button',{class:'btn pri',on:{click:save}},'Save blocks'),probe,h('button',{class:'btn',on:{click:test}},'Test'),h('div',{class:'grow'}),status)
 draw()
-addEventListener('beforeunload',e=>{if(dirty)e.preventDefault()})
+const guard=e=>{if(!document.body.contains(stage)){removeEventListener('beforeunload',guard);return}if(dirty)e.preventDefault()}
+addEventListener('beforeunload',guard)
+addEventListener('resize',()=>requestAnimationFrame(wire))
+setTimeout(()=>requestAnimationFrame(wire),150)
 return h('div',{class:'bk-wrap'},h('div',{class:'bk-top'},h('h2',null,p.name+' blocks'),h('p',{class:'hint'},'Build how your bot reacts to messages. Connect blocks left to right. It runs inside servers where the bot is added from the Bot hub. It sees only messages sent in text channels where it can read and post.')),
 h('div',{class:'bk-main'},palette,h('div',{class:'bk-view'},stage)),bar,out)
 }

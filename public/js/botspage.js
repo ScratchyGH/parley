@@ -100,7 +100,7 @@ async function blocksPage(slug){
 let p
 try{p=(await GET('/api/bothub/'+encodeURIComponent(slug))).project}catch(e){return h('div',{class:'empty'},e.message)}
 if(!p.mine)return h('div',{class:'empty'},'Only the author can edit this bot.')
-return h('div',null,botTabs(p,'c'),blocksEditor(p))
+return h('div',null,botTabs(p,'c'),await blocksEditor(p))
 }
 async function mineView(){
 const box=h('div',{class:'bh-wrap one'})
