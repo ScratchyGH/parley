@@ -160,5 +160,6 @@ env.DB.prepare('delete from login_attempts where reset_at<?').bind(t),
 env.DB.prepare('delete from invites where (expires_at is not null and expires_at<?) or revoked=1').bind(t-7*86400000),
 env.DB.prepare('delete from notifications where created_at<?').bind(t-60*86400000)
 ])
+try{await env.DB.exec('PRAGMA optimize')}catch(e){}
 }
 }

@@ -29,10 +29,26 @@ async function sizeOf(db,key){
 const r=await db.prepare('select coalesce(sum(length(data)),0) s,count(*) n from blob_chunks where key=?').bind(key).first()
 return r&&r.n?r.s:null
 }
+const ready=new WeakSet()
+async function ensure(db){
+if(ready.has(db))return
+await db.exec('create table if not exists blob_chunks(key text not null,idx integer not null,data blob not null,primary key(key,idx)) without rowid')
+ready.add(db)
+}
+const hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
 export function d1Store(env){
-const db=env.DB
+const extra=[]
+for(let i=1;i<=8;i++)if(env['BLOB'+i])extra.push(env['BLOB'+i])
+const all=extra.length?[...extra,env.DB]:[env.DB]
+const homeOf=k=>{const d=extra.length?extra[hash(k)%extra.length]:env.DB;return[d,...all.filter(x=>x!==d)]}
+const find=async k=>{
+for(const d of homeOf(k)){await ensure(d);const n=await sizeOf(d,k);if(n!==null)return{db:d,size:n}}
+return null
+}
 const self={
 async put(key,buf,opts){
+const db=homeOf(key)[0]
+await ensure(db)
 const u8=toU8(buf)
 const sum=await crypto.subtle.digest('SHA-256',u8)
 if(opts&&opts.sha256){
@@ -44,8 +60,9 @@ await insertChunks(db,key,0,u8)
 return{size:u8.length,checksums:{sha256:sum}}
 },
 async get(key,o){
-const size=await sizeOf(db,key)
-if(size===null)return null
+const f=await find(key)
+if(!f)return null
+const{db,size}=f
 const r=o&&o.range?parseRange(o.range,size):null
 const off=r?r.offset:0
 const len=r?r.length:size
@@ -62,21 +79,25 @@ const res={body:out,size,arrayBuffer:async()=>out.buffer}
 if(r)res.range={offset:off,length:len}
 return res
 },
-async delete(key){await db.prepare('delete from blob_chunks where key=?').bind(key).run()},
+async delete(key){
+for(const d of all){await ensure(d);await d.prepare('delete from blob_chunks where key=?').bind(key).run()}
+},
 async createMultipartUpload(){return{uploadId:'d1'}},
 resumeMultipartUpload(key){
 return{
 async uploadPart(n,src){
 const u8=await readAll(src)
+const db=homeOf(key)[0]
+await ensure(db)
 await insertChunks(db,key,(n-1)*PART_CHUNKS,u8)
 return{etag:String(n)}
 },
-async complete(list){
-const size=await sizeOf(db,key)
+async complete(){
+const f=await find(key)
 const o=await self.get(key)
-return{size:size||0,checksums:{sha256:o?await crypto.subtle.digest('SHA-256',o.body):undefined}}
+return{size:f?f.size:0,checksums:{sha256:o?await crypto.subtle.digest('SHA-256',o.body):undefined}}
 },
-async abort(){await db.prepare('delete from blob_chunks where key=?').bind(key).run()}
+async abort(){await self.delete(key)}
 }
 }
 }
