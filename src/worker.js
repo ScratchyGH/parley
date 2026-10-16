@@ -90,7 +90,7 @@ if(user&&user.is_bot&&!/^\/api\/(rooms|channels|threads|upload|files|stickers)\b
 if(user&&user.is_bot&&/^\/api\/(me|servers\/[^/]+)$/.test(url.pathname)&&method!=='GET')fail(403,'Bots cannot use this endpoint')
 if(user)limit('api:'+user.id,600,60000)
 else limit('anon:'+(req.headers.get('cf-connecting-ip')||'local'),120,60000)
-if(user&&!user.admin&&await maintenance(env)&&!url.pathname.startsWith('/api/auth/logout'))fail(503,'Parley is in maintenance mode. Please try again shortly.')
+if(user&&!user.admin&&await maintenance(env)&&!/^\/api\/(auth\/logout|maintenance\/bypass)$/.test(url.pathname)&&!await env.DB.prepare('select 1 x from maint_bypass where session_id=?').bind(user.sid||'').first())fail(503,'Parley is in maintenance mode. Please try again shortly.')
 const c={req,env,ec,url,p:params,user}
 c.pub=(hub,e,opts={})=>{
 const stub=env.HUB.get(env.HUB.idFromName(hub))
