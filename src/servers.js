@@ -27,7 +27,8 @@ const files=(await env.DB.prepare('select f.r2_key from files f where f.room in 
 for(const f of files)await env.FILES.delete(f.r2_key)
 await env.DB.batch([
 env.DB.prepare('delete from files where room in (select id from channels where server_id=?) or server_id=?').bind(sid,sid),
-env.DB.prepare('delete from messages where server_id=?').bind(sid),
+env.DB.prepare('delete from messages where room in (select id from channels where server_id=?)').bind(sid),
+env.DB.prepare('delete from messages where room in (select id from threads where channel_id in (select id from channels where server_id=?))').bind(sid),
 env.DB.prepare('delete from read_state where room in (select id from channels where server_id=?)').bind(sid),
 env.DB.prepare('delete from member_roles where server_id=?').bind(sid),
 env.DB.prepare('delete from servers where id=?').bind(sid)

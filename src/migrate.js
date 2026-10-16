@@ -10,7 +10,8 @@ import m9 from'../migrations/0009_safety_labs.sql'
 import m10 from'../migrations/0010_profile_gifs_automod.sql'
 import m11 from'../migrations/0011_server_theme_blocks.sql'
 import m12 from'../migrations/0012_bot_vars.sql'
-const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9],['0010_profile_gifs_automod',m10],['0011_server_theme_blocks',m11],['0012_bot_vars',m12]]
+import m13 from'../migrations/0013_more_indexes.sql'
+const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9],['0010_profile_gifs_automod',m10],['0011_server_theme_blocks',m11],['0012_bot_vars',m12],['0013_more_indexes',m13]]
 let ran=null
 export function ensureSchema(db){
 if(!ran)ran=run(db).catch(e=>{ran=null;throw e})

@@ -71,7 +71,32 @@ const items=(await Promise.all(calls)).flat().filter(x=>!explicitText(x.title)&&
 return{results:items,next:''}
 }
 
+async function klipy(c,params){
+const k=encodeURIComponent(c.env.KLIPY_API_KEY)
+const u=new URL('https://api.klipy.com/api/v1/'+k+(params.q?'/gifs/search':'/gifs/trending'))
+u.searchParams.set('per_page','24')
+if(params.q)u.searchParams.set('q',params.q)
+const pg=parseInt(params.pos)||1
+if(pg>1)u.searchParams.set('page',String(pg))
+let res
+try{res=await fetch(u,{headers:UA})}catch{fail(502,'The GIF service could not be reached')}
+if(!res.ok)fail(502,res.status===401||res.status===403||res.status===404?'KLIPY rejected the API key':'KLIPY is not available right now ('+res.status+')')
+let d
+try{d=await res.json()}catch{fail(502,'KLIPY sent an unreadable answer')}
+const o=d.data||{}
+const list=Array.isArray(o)?o:o.data||[]
+const items=list.map(m=>{
+const f=m.file||{}
+const big=(f.md||f.hd||f.sm||{}).gif
+const sm=(f.sm||f.xs||f.md||{}).gif
+if(!big?.url||!sm?.url)return null
+return{id:'k:'+String(m.id).slice(0,70),title:String(m.title||'').slice(0,120),preview:sm.url,url:big.url,w:big.width||0,h:big.height||0}
+}).filter(x=>x&&!explicitText(x.title))
+return{results:items,next:o.has_next?String(pg+1):''}
+}
+
 async function upstream(c,path,params){
+if(c.env.KLIPY_API_KEY)return klipy(c,params)
 const b=base(c.env)
 if(!b)return keyless(params.q||'')
 const u=new URL(b+path)
@@ -105,7 +130,7 @@ return{buf,type}
 }
 
 export default function(r){
-r.add('GET','/api/gifs/status',async c=>({enabled:true,note:base(c.env)?'':'Built-in search: reaction GIFs from otakugifs.xyz, purrbot.site and nekos.best plus Wikimedia Commons. No API key needed.'}))
+r.add('GET','/api/gifs/status',async c=>({enabled:true,note:c.env.KLIPY_API_KEY||base(c.env)?'':'Built-in search: reaction GIFs from otakugifs.xyz, purrbot.site and nekos.best plus Wikimedia Commons. No API key needed.'}))
 
 r.add('GET','/api/gifs/search',async c=>{
 limit('gif:'+c.user.id,60,60000)
