@@ -27,6 +27,7 @@ if(p[0]==='bots'){
 if(!p[1])return{name:'bots',view:'browse'}
 if(p[1]==='mine'||p[1]==='new')return{name:'bots',view:p[1]}
 if(p[2]==='edit')return{name:'bots',view:'edit',slug:p[1]}
+if(p[2]==='blocks')return{name:'bots',view:'blocks',slug:p[1]}
 return{name:'bots',view:'project',slug:p[1],tab:p[2]||''}
 }
 if(p[0]==='invite')return{name:'invite',code:p[1]}

@@ -1,5 +1,5 @@
 import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
-import{S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,noteThread}from'./state.js'
+import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{sendAll}from'./net.js'
 import{V,leaveVoice}from'./voice.js'
@@ -219,6 +219,7 @@ h('button',{class:'ib',title:'User settings','aria-label':'User settings',on:{cl
 }
 
 export function renderCtx(){
+applyServerTheme()
 if(!el.ctx)return
 const k=S.nav.kind
 let head,body

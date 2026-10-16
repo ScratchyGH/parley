@@ -1,5 +1,5 @@
 import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
-import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers}from'./state.js'
+import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers,applyThemeObj,applyServerTheme}from'./state.js'
 import{go}from'./nav.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
@@ -77,7 +77,7 @@ const pages=[]
 if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'])
 if(can(sid,P.MANAGE_CHANNELS))pages.push(['channels','Channels'])
 if(can(sid,P.MANAGE_ROLES))pages.push(['roles','Roles'])
-if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'],['template','Template'])
+if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'],['template','Template'],['theme','Theme'])
 pages.push(['members','Members'])
 if(can(sid,P.CREATE_INVITE))pages.push(['invites','Invites'])
 if(can(sid,P.BAN))pages.push(['bans','Bans'])
@@ -88,11 +88,11 @@ if(d0.me.owner)pages.push(['danger','Ownership and deletion'])
 let cur=page||pages[0][0]
 const nav=h('nav',{'aria-label':'Server settings sections'})
 const pg=h('div',{class:'pg'})
-const dlg=dialog(d0.server.name+' settings',h('div',{class:'split'},nav,pg),{cls:'wide'})
+const dlg=dialog(d0.server.name+' settings',h('div',{class:'split'},nav,pg),{cls:'wide',onclose:()=>applyServerTheme()})
 function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>{cur=k;draw()}}},l)))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,members,invites,bans,appeals,reports,log,danger}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
@@ -394,6 +394,32 @@ await POST(`/api/servers/${sid}/delete`,{name:nm.value})
 await loadServers();delete S.sdata[sid];dlg.close();go('/')
 }catch(e){fail(e)}
 }}},'Delete server')))
+}
+
+const PRESETS=[['Midnight',{bg:'#0d1117',text:'#c9d1d9',accent:'#388bfd'}],['Forest',{bg:'#142018',text:'#cfe3d4',accent:'#3fa25a'}],['Sunset',{bg:'#2a1a1f',text:'#f0d9d2',accent:'#e0734a'}],['Grape',{bg:'#1d1630',text:'#ddd3f2',accent:'#9a6ee8'}],['Paper',{bg:'#f4f0e6',text:'#2b2a26',accent:'#a4472b'}]]
+function theme(pg,sid){
+const s=S.sdata[sid].server
+const t0=s.theme||{}
+let t={...t0}
+const err=errBox()
+const preview=()=>applyThemeObj(t)
+const col=(k,label,def)=>h('label',{class:'row',style:{gap:'8px'}},h('input',{type:'color','aria-label':label,value:t[k]||def,on:{input:e=>{t[k]=e.target.value;preview()}}}),h('span',null,label),t[k]?h('button',{type:'button',class:'btn sm',on:{click:e=>{e.preventDefault();delete t[k];preview();theme(pg,sid)}}},'Clear'):null)
+const dim=h('input',{type:'range',min:0,max:90,value:t.dim??55,'aria-label':'Background dim',on:{input:e=>{t.dim=+e.target.value;preview()}}})
+mount(pg,h('h3',null,'Theme'),h('p',{class:'hint'},'Colours and a background image that apply only inside this server. Members see them whenever they open it, and their own theme comes back when they leave.'),
+h('div',{class:'row',style:{flexWrap:'wrap'}},PRESETS.map(([n,v])=>h('button',{type:'button',class:'btn sm',on:{click:()=>{t={...t,...v};preview();theme(pg,sid)}}},n))),
+col('bg','Background','#212829'),col('side','Sidebar','#1a2021'),col('panel','Panels','#293133'),col('text','Text','#bccacc'),col('accent','Accent','#521525'),
+field('Background image',h('div',{class:'row'},h('button',{type:'button',class:'btn sm',on:{click:async()=>{
+const f=await pickCropped({aspect:16/9,width:1920,title:'Crop background image'});if(!f)return
+try{const up=await uploadImage('server_bg',{server:sid},f);t.image=up.id;preview();theme(pg,sid)}catch(e){fail(e)}
+}}},'Upload image'),t.image?h('button',{type:'button',class:'btn sm',on:{click:()=>{delete t.image;preview();theme(pg,sid)}}},'Remove image'):null),t.image?'Darkening over the image':'PNG, JPEG, WebP or GIF'),
+t.image?field('Image darkening',dim):null,
+err,
+h('div',{class:'row',style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
+err.textContent=''
+try{await PATCH('/api/servers/'+sid,{theme:t});await loadServer(sid);applyServerTheme();toast('Theme saved','ok')}catch(e){err.textContent=e.message}
+}}},'Save theme'),h('button',{class:'btn',on:{click:async()=>{
+try{await PATCH('/api/servers/'+sid,{theme:null});await loadServer(sid);t={};applyServerTheme();theme(pg,sid);toast('Theme reset','ok')}catch(e){fail(e)}
+}}},'Reset to default')))
 }
 
 function template(pg,sid){

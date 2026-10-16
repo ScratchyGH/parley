@@ -1,4 +1,4 @@
-import{GET}from'./util.js'
+import{GET,fileUrl}from'./util.js'
 
 export const P={VIEW:1,SEND:2,MANAGE_MESSAGES:4,MANAGE_CHANNELS:8,MANAGE_ROLES:16,CREATE_INVITE:32,KICK:64,BAN:128,MANAGE_SERVER:256,MODERATE:512,CONNECT:1024,MANAGE_VOICE:2048,ATTACH:4096,REACT:8192,MENTION_ALL:16384,ADMIN:32768}
 export const PERM_INFO=[
@@ -196,6 +196,25 @@ const rm=s.reduced_motion===undefined?matchMedia('(prefers-reduced-motion: reduc
 root.classList.toggle('rm',!!rm)
 const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
+}
+
+const THEME_VARS=['--bg','--side','--panel','--surf2','--sel','--border','--text','--strong','--muted','--accent','--hi','--blue','--sbg-img','--sdim']
+export function applyThemeObj(t){
+const b=document.body
+for(const k of THEME_VARS)b.style.removeProperty(k)
+b.classList.remove('sthemed')
+if(!t)return
+const set=(k,v)=>b.style.setProperty(k,v)
+const mix=(c,p,o)=>'color-mix(in srgb,'+c+' '+p+'%,'+o+')'
+if(t.bg){set('--bg',t.bg);set('--side',mix(t.bg,80,'#000'));set('--panel',mix(t.bg,88,'#fff'));set('--surf2',mix(t.bg,78,'#fff'));set('--sel',mix(t.bg,82,'#fff'));set('--border',mix(t.bg,70,'#fff'))}
+if(t.side)set('--side',t.side)
+if(t.panel){set('--panel',t.panel);set('--surf2',mix(t.panel,88,'#fff'))}
+if(t.text){set('--text',t.text);set('--strong',mix(t.text,80,'#fff'));set('--muted',mix(t.text,60,t.bg||'#000'))}
+if(t.accent){set('--accent',t.accent);set('--hi',mix(t.accent,55,'#fff'));set('--blue',mix(t.accent,45,'#fff'))}
+if(t.image){set('--sbg-img','url("'+fileUrl(t.image)+'")');set('--sdim',(t.dim??55)+'%');b.classList.add('sthemed')}
+}
+export function applyServerTheme(){
+applyThemeObj(S.nav?.kind==='server'?S.sdata[S.nav.sid]?.server?.theme:null)
 }
 
 export const hubOf=room=>{

@@ -24,7 +24,7 @@ if(reqs)bits.push(plural(reqs,'friend request'))
 const unread=S.servers.filter(s=>serverUnread(s.id))
 if(unread.length)bits.push(plural(unread.length,'server')+' with news')
 const hero=h('section',{class:'hh'},
-h('div',{class:'hh-t'},h('h1',null,hello()+', ',h('span',null,S.me.display_name)),h('p',null,bits.length?bits.join('. ')+'.':'You are all caught up.')),
+h('div',{class:'hh-t'},h('img',{class:'hh-m',src:'/mascot.webp',alt:'',width:96,height:96,decoding:'async'}),h('h1',null,hello()+', ',h('span',null,S.me.display_name)),h('p',null,bits.length?bits.join('. ')+'.':'You are all caught up.')),
 h('div',{class:'hh-a'},
 tile('plus','Start a server','Make a space for your people',()=>createServerDialog()),
 tile('compass','Find a community','Browse public servers',()=>go('/discover')),

@@ -6,6 +6,7 @@ import{render}from'./md.js'
 import{LICENSES,TAGS,licenseName,licenseUrl}from'./licenses.js'
 import{pickCropped}from'./cropper.js'
 import{uploadImage}from'./dialogs.js'
+import{blocksEditor}from'./blocks.js'
 
 const hue=s=>{let x=0;for(const c of String(s))x=(x*31+c.charCodeAt(0))%360;return x}
 const tone=s=>`hsl(${hue(s)} 40% 44%)`
@@ -89,6 +90,12 @@ count.remove()
 return h('div',{class:'bh-wrap'},side,mainCol)
 }
 
+async function blocksPage(slug){
+let p
+try{p=(await GET('/api/bothub/'+encodeURIComponent(slug))).project}catch(e){return h('div',{class:'empty'},e.message)}
+if(!p.mine)return h('div',{class:'empty'},'Only the author can edit this bot.')
+return blocksEditor(p)
+}
 async function mineView(){
 const box=h('div',{class:'bh-wrap one'})
 try{
@@ -97,7 +104,7 @@ if(!d.projects.length){mount(box,h('div',{class:'empty'},h('div',null,h('h2',{st
 mount(box,h('div',{class:'bh-col'},d.projects.map(p=>h('div',{class:'bh-row mine',style:{'--tone':tone(p.id)}},botIcon(p),
 h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,p.name),pill(p.visibility)),h('p',null,p.summary||'No summary yet.'),chips(p.tags)),
 h('div',{class:'bh-side'},h('div',{class:'bh-stat'},h('b',null,String(p.installs)),h('span',null,p.installs===1?'server':'servers')),
-h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm pri',on:{click:()=>go('/bots/'+p.slug+'/edit')}},'Edit')))))))
+h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Blocks'),h('button',{class:'btn sm pri',on:{click:()=>go('/bots/'+p.slug+'/edit')}},'Edit')))))))
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
 return box
 }
@@ -229,7 +236,7 @@ go('/bots/'+r.slug+'/edit',true)
 })
 drawAv();drawTags();drawRd();drawLic();drawVis();drawPrev()
 const toc=h('nav',{class:'bh-toc','aria-label':'Sections'},secs.map(([id,t])=>h('a',{href:'#sec-'+id,on:{click:e=>{e.preventDefault();inPage(document.getElementById('sec-'+id))}}},t)))
-const bar=h('div',{class:'bh-savebar'},err,h('div',{class:'grow'}),p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug)}},'View page'):null,save)
+const bar=h('div',{class:'bh-savebar'},err,h('div',{class:'grow'}),p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug+'/blocks')}},'Block builder'):null,p?h('button',{class:'btn',type:'button',on:{click:()=>go('/bots/'+p.slug)}},'View page'):null,save)
 return h('div',{class:'bh-edit'},h('div',{class:'bh-ecol'},toc),h('div',{class:'bh-emain'},body,bar),h('div',{class:'bh-ecol r'},preview))
 }
 
@@ -250,7 +257,7 @@ dialog(name+' is ready',h('div',{class:'bd'},tokenBox(token),h('p',{class:'hint'
 }
 
 export function botsPage(r){
-const title=r.view==='new'?'New bot':r.view==='edit'?'Edit bot':r.view==='mine'?'My bots':r.view==='project'?'Bot':'Bots'
+const title=r.view==='new'?'New bot':r.view==='edit'?'Edit bot':r.view==='blocks'?'Bot blocks':r.view==='mine'?'My bots':r.view==='project'?'Bot':'Bots'
 const tp=r.view==='browse'?'Add bots to your servers, or build your own':''
 const nav=h('div',{class:'row',style:{gap:'4px'}},
 h('button',{class:'btn sm'+(r.view==='browse'?' pri':''),on:{click:()=>go('/bots')}},'Browse'),
@@ -264,6 +271,7 @@ if(r.view==='browse')mount(scroller,browse())
 else if(r.view==='mine')mount(scroller,await mineView())
 else if(r.view==='new')mount(scroller,await editor(null))
 else if(r.view==='edit')mount(scroller,await editor(r.slug))
+else if(r.view==='blocks')mount(scroller,await blocksPage(r.slug))
 else{const v=await projectView(r.slug,r.tab);mount(scroller,v.node);if(v.title)document.title=v.title+' • Parley'}
 }
 res.ready=fill().catch(e=>mount(scroller,h('div',{class:'err',style:{padding:'24px'}},e.message)))
