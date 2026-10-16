@@ -4,7 +4,7 @@ import{go}from'./nav.js'
 import{sendAll}from'./net.js'
 import{V,leaveVoice}from'./voice.js'
 import{membersPanel,pinsPanel,searchPanel,savedPanel,inboxPanel,threadsPanel}from'./panels.js'
-import{createServerDialog,inviteDialog,channelDialog,categoryDialog,newDmDialog,quickSwitcher}from'./dialogs.js'
+import{createServerDialog,inviteDialog,channelDialog,categoryDialog,newDmDialog,quickSwitcher,openDm}from'./dialogs.js'
 import{openSettings}from'./settings.js'
 import{openServerSettings,channelSettings,leaveServer}from'./ssettings.js'
 import{accountsDialog}from'./accounts.js'
@@ -149,6 +149,9 @@ if(open)for(const c of list)kids.push(chanItem(sid,c))
 else for(const c of list)if(unreadOf(c.id)||V.ch===c.id||S.nav.room===c.id)kids.push(chanItem(sid,c))
 }
 if(!d.channels.length)kids.push(h('div',{class:'hint',style:{padding:'12px'}},'No channels you can see yet.'))
+const sv=d.server
+const canInv=can(sid,P.CREATE_INVITE),canSet=can(sid,P.MANAGE_SERVER)
+if(sv.description||canInv||canSet)kids.push(h('div',{class:'sabout'},h('b',null,'About '+sv.name),sv.description?h('p',null,sv.description):canSet?h('p',{class:'hint'},'Add a description in server settings so new members know what this place is.'):null,h('div',{class:'row',style:{gap:'6px',flexWrap:'wrap'}},canInv?h('button',{class:'btn sm pri',on:{click:()=>inviteDialog(sid)}},icon('plus','s'),'Invite'):null,canSet?h('button',{class:'btn sm',on:{click:()=>openServerSettings(sid)}},icon('sliders','s'),'Settings'):null)))
 return h('div',{class:'ctx-b'},kids)
 }
 
@@ -183,6 +186,10 @@ const reqs=S.convs.filter(c=>!c.accepted)
 if(reqs.length){kids.push(h('div',{class:'cat'},h('span',null,'Message requests — '+reqs.length)));for(const c of reqs)kids.push(dmItem(c))}
 for(const c of S.convs.filter(c=>c.accepted))kids.push(dmItem(c))
 if(!S.convs.length)kids.push(h('div',{class:'hint',style:{padding:'8px'}},'No conversations yet. Add a friend or start one with +.'))
+const online=S.fr.friends.filter(f=>S.pres[f.id])
+kids.push(h('div',{class:'cat'},h('span',null,'Online friends — '+online.length)))
+if(online.length)for(const f of online.slice(0,12))kids.push(h('button',{class:'ci',on:{click:()=>{openDm(f.id);closeDrawers()}}},avatar(f,'sm',S.pres[f.id]),h('span',{class:'nm'},f.display_name)))
+else kids.push(h('div',{class:'hint',style:{padding:'4px 8px'}},S.fr.friends.length?'Nobody is online right now.':'Add friends to see who is online.'))
 return h('div',{class:'ctx-b'},kids)
 }
 

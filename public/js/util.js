@@ -139,6 +139,7 @@ return p
 }
 
 export const fileUrl=id=>'/api/files/'+id
+export const gtag=(t,e,i)=>t?h('span',{class:'gtag',title:'Server tag'},i?h('img',{src:fileUrl(i),alt:'',loading:'lazy'}):e?h('span',{class:'gte'},e):null,t):null
 export function fmtSize(n){
 if(n<1024)return n+' B'
 if(n<1048576)return (n/1024).toFixed(1)+' KB'

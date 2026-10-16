@@ -1,4 +1,4 @@
-import{h,mount,clear,icon,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey}from'./util.js'
+import{h,mount,clear,icon,gtag,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey}from'./util.js'
 import{render,plain}from'./md.js'
 import{emojiPicker}from'./emoji.js'
 import{S,P,on,emit,cacheUser,user,isDm,chanInfo,conv,convTitle,roomPerms,setting,hubOf,loadMembers,can}from'./state.js'
@@ -281,7 +281,7 @@ main.append(r.deleted?h('div',{class:'rp'},icon('reply','s'),'Original message w
 }
 if(!cont){
 const nm=h('b',{on:{click:e=>openProfile(e,m.author)}},m.author.display_name)
-main.append(h('div',{class:'mh'},nm,m.author.guild_tag?h('span',{class:'gtag',title:'Server tag'},m.author.guild_tag):null,h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
+main.append(h('div',{class:'mh'},nm,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
@@ -672,7 +672,7 @@ const nonce=rid()
 const body={content:text,nonce}
 if(C.replyTo)body.reply_to=C.replyTo.id
 if(ready.length)body.attachments=ready.map(f=>f.id)
-const tmp={id:'~'+nonce,room:C.room,author:{id:S.me.id,username:S.me.username,display_name:S.me.display_name,avatar_id:S.me.avatar_id,accent:S.me.accent,guild_tag:S.servers.find(x=>x.id===S.me.tag_server)?.tag||null},content:text,created_at:Date.now(),edited_at:null,pinned:false,reply:C.replyTo?{id:C.replyTo.id,author:C.replyTo.author.display_name,content:C.replyTo.content.slice(0,140)}:null,attachments:ready.map(f=>({id:f.id,name:f.name,mime:f.mime,size:f.size})),reactions:[],pending:true,body}
+const tmp={id:'~'+nonce,room:C.room,author:{id:S.me.id,username:S.me.username,display_name:S.me.display_name,avatar_id:S.me.avatar_id,accent:S.me.accent,guild_tag:S.servers.find(x=>x.id===S.me.tag_server)?.tag||null,guild_tag_emoji:S.servers.find(x=>x.id===S.me.tag_server)?.tag_emoji||null,guild_tag_icon_id:S.servers.find(x=>x.id===S.me.tag_server)?.tag_icon_id||null},content:text,created_at:Date.now(),edited_at:null,pinned:false,reply:C.replyTo?{id:C.replyTo.id,author:C.replyTo.author.display_name,content:C.replyTo.content.slice(0,140)}:null,attachments:ready.map(f=>({id:f.id,name:f.name,mime:f.mime,size:f.size})),reactions:[],pending:true,body}
 C.ta.value=''
 try{localStorage.removeItem('parley:draft:'+tmp.room)}catch{}
 C.files=[]

@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,PATCH,PUT,DEL,upload,avatar,heroBox,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
+import{h,mount,icon,GET,POST,PATCH,PUT,DEL,upload,avatar,heroBox,gtag,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
 import{render}from'./md.js'
 import{S,emit,cacheUser,user,conv,convTitle,convOther,can,loadServers,loadServer,loadConvs,loadFriends}from'./state.js'
 import{go}from'./nav.js'
@@ -94,7 +94,8 @@ d.close()
 go('/s/'+r.server_id)
 }catch(e){err.textContent=e.message;btn.disabled=false}
 }}},already?'Open server':'Accept invite')
-mount(body,h('div',{class:'row'},avatar({id:inv.server.id,name:inv.server.name,icon_id:inv.server.icon_id,display_name:inv.server.name},'lg'),h('div',null,h('h3',{style:{margin:0,color:'var(--strong)'}},inv.server.name),h('div',{class:'hint'},inv.members+' members'+(inv.inviter?' · invited by '+inv.inviter:'')))),inv.server.description?h('p',null,inv.server.description):null,err,h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'12px'}},h('button',{class:'btn',on:{click:d.close}},'Cancel'),btn))
+const sv=inv.server
+mount(body,h('div',{class:'invc'},heroBox(sv.accent,sv.banner_id,'ihero'),h('div',{class:'ibody'},h('div',{class:'iico'},avatar({id:sv.id,name:sv.name,icon_id:sv.icon_id,display_name:sv.name},'lg')),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},h('h3',{style:{margin:0,color:'var(--strong)'}},sv.name),gtag(sv.tag,sv.tag_emoji,sv.tag_icon_id)),h('div',{class:'hint'},inv.members+' members'+(inv.inviter?' · invited by '+inv.inviter:'')),sv.description?h('p',null,sv.description):null)),err,h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'12px'}},h('button',{class:'btn',on:{click:d.close}},'Cancel'),btn))
 }catch(e){mount(body,h('div',{class:'err'},e.message),h('div',{class:'row',style:{justifyContent:'flex-end'}},h('button',{class:'btn',on:{click:d.close}},'Close')))}
 }
 

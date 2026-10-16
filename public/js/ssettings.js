@@ -4,7 +4,7 @@ import{go}from'./nav.js'
 import{casesPage,warnDialog,templateShare,caseFilter}from'./modcases.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
-import{fileUrl}from'./util.js'
+import{fileUrl,gtag}from'./util.js'
 
 
 const row=(label,sub,control)=>h('div',{class:'row sp',style:{padding:'8px 0',borderBottom:'1px solid var(--border)'}},h('div',null,h('div',{style:{color:'var(--strong)'}},label),sub?h('div',{class:'hint',style:{margin:0}},sub):null),control)
@@ -110,6 +110,15 @@ const desc=h('textarea',{class:'inp',rows:3,maxLength:500},s.description||'')
 const welcome=h('textarea',{class:'inp',rows:3,maxLength:1000},s.welcome||'')
 const rules=h('textarea',{class:'inp',rows:4,maxLength:3000},s.rules||'')
 const tag=h('input',{class:'inp',maxLength:4,value:s.tag||'',placeholder:'None','aria-label':'Server tag'})
+const temo=h('input',{class:'inp',maxLength:8,value:s.tag_emoji||'',placeholder:'🙂','aria-label':'Tag emoji',style:{width:'80px'}})
+const tprev=h('div')
+let ticon=s.tag_icon_id||null
+const drawTag=()=>mount(tprev,h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},h('span',{class:'hint'},'Preview'),gtag(tag.value.trim().toUpperCase()||'TAG',ticon?null:temo.value.trim(),ticon),h('button',{class:'btn sm',type:'button',on:{click:async()=>{
+const f=await pickCropped({aspect:1,round:false,width:128,title:'Crop tag icon'});if(!f)return
+try{const up=await uploadImage('server_icon',{server:sid},f);ticon=up.id;drawTag()}catch(e){fail(e)}
+}}},'Upload image'),ticon?h('button',{class:'btn sm',type:'button',on:{click:()=>{ticon=null;drawTag()}}},'Remove image'):null))
+tag.addEventListener('input',drawTag);temo.addEventListener('input',drawTag)
+drawTag()
 const cat=h('select',{class:'sel'},h('option',{value:''},'None'),CATEGORIES.map(c=>h('option',{value:c,selected:s.category===c},c[0].toUpperCase()+c.slice(1))))
 const ver=h('select',{class:'sel'},[['0','None'],['1','Account must be older than 5 minutes'],['2','Account must be older than 10 minutes']].map(([v,l])=>h('option',{value:v,selected:String(s.verification)===v},l)))
 let pub=!!s.is_public
@@ -137,14 +146,14 @@ const f=await pickCropped(kind==='server_icon'?{aspect:1,round:true,width:512,ti
 try{const up=await uploadImage(kind,{server:sid},f);await PATCH('/api/servers/'+sid,{[key]:up.id});await loadServer(sid);await loadServers();overview(pg,sid)}catch(e){fail(e)}
 }}},'Upload '+label),s[key]?h('button',{class:'btn sm',on:{click:async()=>{try{await PATCH('/api/servers/'+sid,{[key]:null});await loadServer(sid);await loadServers();overview(pg,sid)}catch(e){fail(e)}}}},'Remove'):null)
 mount(pg,h('h3',null,'Overview'),
-field('Server name',name),field('Description',desc),field('Server tag',tag,'2 to 4 letters or numbers. Members can show it next to their name.'),field('Icon',img('server_icon','icon_id','icon')),field('Banner',img('server_banner','banner_id','banner')),field('Accent colour',sws),
+field('Server name',name),field('Description',desc),field('Server tag',tag,'2 to 4 letters or numbers. Members can show it next to their name.'),field('Tag emoji',temo,'Optional. Shown before the tag. An uploaded image replaces it.'),tprev,field('Icon',img('server_icon','icon_id','icon')),field('Banner',img('server_banner','banner_id','banner')),field('Accent colour',sws),
 field('Welcome message',welcome,'Shown to new members. Markdown is supported.'),field('Rules',rules,'Markdown is supported.'),
 field('Discovery category',cat),
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(pub,v=>{pub=v},'Listed in Discover'),h('span',null,'Listed in Discover (anyone can join without an invite)')),
 field('Verification level',ver),ageRow,scanBox,
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 try{
-await PATCH('/api/servers/'+sid,{name:name.value.trim(),tag:tag.value.trim(),description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan})
+await PATCH('/api/servers/'+sid,{name:name.value.trim(),tag:tag.value.trim(),tag_emoji:temo.value.trim(),tag_icon_id:ticon,description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan})
 await loadServer(sid);await loadServers();toast('Saved','ok')
 }catch(e){fail(e)}
 }}},'Save changes')))
