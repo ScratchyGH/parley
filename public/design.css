@@ -288,3 +288,6 @@ body.sthemed .ctx{background:color-mix(in srgb,var(--side) 92%,transparent)}
 .tile{border-radius:14px}
 .tile:hover{border-color:var(--hi)}
 .ctx-h{font-weight:600}
+
+.wbtn,.wbtn.on,.wbtn:focus,.wbtn:focus-visible,.wbtn:active{border:0;outline:0;box-shadow:none}
+.wbtn.on{background:var(--sel)}
