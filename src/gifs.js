@@ -6,7 +6,7 @@ import{explicitText}from'./safety.js'
 const MAX=10*1048576
 const base=env=>(env.GIF_API_BASE||(env.TENOR_API_KEY?'https://tenor.googleapis.com/v2':'')).replace(/\/+$/,'')
 const key=env=>env.GIF_API_KEY||env.TENOR_API_KEY||''
-const hosts=env=>(env.GIF_MEDIA_HOSTS||'tenor.com,klipy.com,giphy.com').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
+const hosts=env=>(env.GIF_MEDIA_HOSTS||'tenor.com,klipy.com,giphy.com,cdn.otakugifs.xyz,upload.wikimedia.org').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
 
 export function mediaUrl(env,v){
 let u
@@ -26,9 +26,49 @@ const d=big.dims||small.dims||[]
 return{id:String(m.id).slice(0,80),title:String(m.content_description||m.title||'').slice(0,120),preview:small.url,url:big.url,w:d[0]||0,h:d[1]||0}
 }
 
+const REACTIONS=['hug','happy','laugh','dance','cry','wave','clap','facepalm','cheers','thumbsup','wink','smile','shrug','sleep','celebrate','cool','confused','no','nervous','blush','pat','poke','highfive','handhold','nom','smug','sad','mad','think','yes']
+const UA={'user-agent':'ParleyGifSearch/1.0 (https://github.com/scratchygh/parley)',accept:'application/json'}
+const BANNED=new Set(['lick','nosebleed','kiss','bite','drool','airkiss','cuddle','nuzzle'])
+async function reaction(name){
+try{
+const r=await fetch('https://api.otakugifs.xyz/gif?reaction='+encodeURIComponent(name),{headers:UA})
+if(!r.ok)return null
+const d=await r.json()
+if(!d.url)return null
+return{id:'o:'+d.url.split('/').pop().replace(/\.gif$/,''),title:name,preview:d.url,url:d.url,w:0,h:0}
+}catch{return null}
+}
+async function commons(q){
+try{
+const u=new URL('https://commons.wikimedia.org/w/api.php')
+for(const[k,v]of Object.entries({action:'query',generator:'search',gsrsearch:q+' filetype:bitmap',gsrnamespace:'6',gsrlimit:'30',prop:'imageinfo',iiprop:'url|mime|size',format:'json',origin:'*'}))u.searchParams.set(k,v)
+const r=await fetch(u,{headers:UA})
+if(!r.ok)return[]
+const d=await r.json()
+return Object.values(d.query?.pages||{}).map(p=>{
+const i=(p.imageinfo||[])[0]
+if(!i||i.mime!=='image/gif'||i.size>3000000||!i.url)return null
+return{id:'w:'+p.pageid,title:String(p.title||'').replace(/^File:/,'').replace(/\.gif$/i,'').slice(0,120),preview:i.url,url:i.url,w:i.width||0,h:i.height||0}
+}).filter(Boolean)
+}catch{return[]}
+}
+async function keyless(q){
+const pool=REACTIONS.filter(x=>!BANNED.has(x))
+const t=q.toLowerCase()
+const hit=pool.filter(x=>t&&(x.includes(t)||t.includes(x)))
+let names
+if(!t)names=[...pool].sort(()=>Math.random()-.5).slice(0,12)
+else if(hit.length)names=hit.flatMap(x=>[x,x,x,x]).slice(0,8)
+else names=[]
+const[a,w]=await Promise.all([Promise.all(names.map(reaction)),t?commons(t):Promise.resolve([])])
+const seen=new Set()
+const items=[...a.filter(Boolean),...w].filter(x=>!explicitText(x.title)&&!seen.has(x.id)&&seen.add(x.id))
+return{results:items,next:''}
+}
+
 async function upstream(c,path,params){
 const b=base(c.env)
-if(!b)fail(503,'GIF search is not set up on this server')
+if(!b)return keyless(params.q||'')
 const u=new URL(b+path)
 u.searchParams.set('key',key(c.env))
 u.searchParams.set('client_key','parley')
@@ -60,7 +100,7 @@ return{buf,type}
 }
 
 export default function(r){
-r.add('GET','/api/gifs/status',async c=>({enabled:!!base(c.env),note:base(c.env)?'':'Set GIF_API_BASE and GIF_API_KEY to a Tenor-compatible provider. Google shut the Tenor API down on 30 June 2026.'}))
+r.add('GET','/api/gifs/status',async c=>({enabled:true,note:base(c.env)?'':'Built-in search: reaction GIFs from otakugifs.xyz and GIFs from Wikimedia Commons. No API key needed.'}))
 
 r.add('GET','/api/gifs/search',async c=>{
 limit('gif:'+c.user.id,60,60000)
