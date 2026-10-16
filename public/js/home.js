@@ -8,7 +8,7 @@ const hello=()=>{const hr=new Date().getHours();return hr<5?'Still up':hr<12?'Go
 const plural=(n,w)=>n+' '+w+(n===1?'':'s')
 
 function tile(ic,title,sub,fn){
-return h('button',{class:'tile',on:{click:fn}},h('span',{class:'tico'},icon(ic)),h('b',null,title),h('small',null,sub))
+return h('button',{class:'htile',on:{click:fn}},h('span',{class:'tico'},icon(ic)),h('b',null,title),h('small',null,sub))
 }
 
 export function homePage(){
@@ -23,9 +23,9 @@ if(dm)bits.push(plural(dm.count||dm.mentions,'unread message'))
 if(reqs)bits.push(plural(reqs,'friend request'))
 const unread=S.servers.filter(s=>serverUnread(s.id))
 if(unread.length)bits.push(plural(unread.length,'server')+' with news')
-const hero=h('section',{class:'hero'},
-h('div',{class:'hero-t'},h('h1',null,hello()+', ',h('span',null,S.me.display_name)),h('p',null,bits.length?bits.join('. ')+'.':'You are all caught up.')),
-h('div',{class:'hero-a'},
+const hero=h('section',{class:'hh'},
+h('div',{class:'hh-t'},h('h1',null,hello()+', ',h('span',null,S.me.display_name)),h('p',null,bits.length?bits.join('. ')+'.':'You are all caught up.')),
+h('div',{class:'hh-a'},
 tile('plus','Start a server','Make a space for your people',()=>createServerDialog()),
 tile('compass','Find a community','Browse public servers',()=>go('/discover')),
 tile('useradd','Add a friend','Send a request by username',()=>go('/friends/add')),
@@ -44,7 +44,7 @@ const chats=h('section',{class:'hsec'},h('div',{class:'row sp'},h('h2',null,'Con
 recent.length?h('div',{class:'clist'},recent.map(c=>{
 const o=convOther(c)
 const u=unreadOf(c.id)
-return h('button',{class:'crow'+(u?' un':''),on:{click:()=>go('/dm/'+c.id)}},c.type==='group'?h('span',{class:'gico'},icon('users')):avatar(o||{},'',S.pres[o?.id]||null),h('span',{class:'grow'},h('b',null,convTitle(c)),h('small',null,c.last_message_at?fmtRel(c.last_message_at):'No messages yet')),u?h('span',{class:'bdg'},u.mentions||u.count):null)
+return h('button',{class:'hrow'+(u?' un':''),on:{click:()=>go('/dm/'+c.id)}},c.type==='group'?h('span',{class:'gico'},icon('users')):avatar(o||{},'',S.pres[o?.id]||null),h('span',{class:'grow'},h('b',null,convTitle(c)),h('small',null,c.last_message_at?fmtRel(c.last_message_at):'No messages yet')),u?h('span',{class:'bdg'},u.mentions||u.count):null)
 })):h('div',{class:'hempty'},h('b',null,'Nothing here yet'),h('p',null,'Message a friend to start a conversation.')))
 const disc=found&&found.length?h('section',{class:'hsec'},h('div',{class:'row sp'},h('h2',null,'Worth a look'),h('button',{class:'btn sm',on:{click:()=>go('/discover')}},'See all')),h('div',{class:'dgrid'},found.map(s=>{
 const joined=S.servers.some(x=>x.id===s.id)
