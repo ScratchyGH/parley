@@ -313,3 +313,4 @@ input[type=file]{box-sizing:border-box;width:100%;padding:12px;border:2px dashed
 input[type=file]:hover{border-color:var(--neutral);background:var(--panel)}
 input[type=file]::file-selector-button{margin-right:14px;padding:8px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer;transition:filter .12s}
 input[type=file]::file-selector-button:hover{filter:brightness(1.15)}
+.grid>.empty,.sgrid>.empty,.stkgrid>.empty{grid-column:1/-1;width:100%;max-width:none}
