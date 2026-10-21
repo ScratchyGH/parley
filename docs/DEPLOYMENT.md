@@ -151,3 +151,9 @@ Add a route or custom domain to the worker in the dashboard. Cookies are `Secure
 - Backups: D1 Time Travel keeps point-in-time history (about 30 days on paid plans, 7 on the free plan). List and restore with `npx wrangler d1 time-travel info DB` and `npx wrangler d1 time-travel restore DB --timestamp=<unix or ISO time>`. A restore replaces the live database, so put the site in maintenance mode first (Admin > Overview). For an extra copy run `npx wrangler d1 export DB --remote --output backup.sql`. Files in R2 are not versioned.
 - Admin > Overview shows a Health panel. If Scheduler is red, check that the cron trigger deployed.
 - Event webhooks send from the Worker to the address the server owner enters. Addresses must be public https hosts; localhost and IP addresses are refused.
+
+## 2026.10.24 notes
+- Migrations `0023` (terms acceptance), `0024` (nameplates), `0025` (server plugins) must be applied before the new code runs. They also run automatically through src/migrate.js.
+- Terms: signed-in users must accept the current terms before any write request. Set `TOS_OFF=1` as a variable only for local tests.
+- Backups: the daily cron writes a gzip copy of every table except sessions, uploads, sign-in attempts and file contents, and keeps the last 7. Admin > Backups (owner only) can create, download, restore and delete them. Restore adds back rows that are missing and never overwrites or deletes existing rows. Backups contain password hashes.
+- Local test server: `wrangler dev --var TOS_OFF:1 --var OWNER_USERNAME:testowner`.

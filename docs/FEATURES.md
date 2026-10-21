@@ -263,3 +263,9 @@ Verified here means covered by `node test/features.mjs` (66 checks) against a lo
 - Group calls beyond the existing 12-person mesh limit, and a hosted media server (SFU).
 - Anything that needs a real browser session with real audio or video has not been run: call quality controls, captions, system-audio sharing.
 - Call-panel, notification and composer-spacing fixes from earlier updates are written but were not checked in a live browser.
+
+## Plugins, backups, group calls, terms
+- Server settings > Plugins (Manage server): welcome message, leave notice, auto role. Messages come from a bot named Server plugins; `{user}`, `{username}`, `{server}` are replaced.
+- Admin > Backups (owner): create, download, restore, delete; daily automatic backup keeps 7.
+- Group DM calls: the call bar has Add people, which rings chosen members or everyone not in the call. Mesh calls are limited to 12 people.
+- Terms gate: new and returning users choose the short or full terms and must accept before continuing; the server rejects writes until accepted.
