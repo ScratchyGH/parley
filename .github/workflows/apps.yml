@@ -3,44 +3,85 @@ on:
   workflow_dispatch:
   push:
     tags: ['app-v*']
+    branches: [main]
+    paths:
+      - '.github/workflows/apps.yml'
+      - 'public/logo-512.png'
 permissions:
   contents: write
 env:
   SITE: https://parley.heavengtwashere.workers.dev
+  FEED: https://github.com/ScratchyGH/parley/releases/download/apps
 jobs:
-  windows:
-    runs-on: windows-latest
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+          - os: ubuntu-latest
+            target: linux
+    runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - shell: bash
         run: |
           mkdir desktop && cd desktop
-          cat > package.json <<'EOF'
-          {"name":"parley-desktop","version":"1.0.0","description":"Parley desktop app","author":"Parley","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","artifactName":"Parley-Setup.exe","win":{"target":"nsis"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true}}}
+          mkdir build
+          cp ../public/logo-512.png build/icon.png
+          cat > package.json <<EOF
+          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":"nsis","icon":"build/icon.png"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"artifactName":"Parley-Setup.exe"},"linux":{"target":"AppImage","icon":"build/icon.png","category":"Network","artifactName":"Parley.AppImage"}}}
           EOF
           cat > main.js <<'EOF'
-          const{app,BrowserWindow,shell,session}=require('electron')
-          const SITE=process.env.PARLEY_SITE||'https://parley.heavengtwashere.workers.dev'
+          const{app,BrowserWindow,shell,session,dialog}=require('electron')
+          const{autoUpdater}=require('electron-updater')
+          const SITE=process.env.PARLEY_SITE||'__SITE__'
+          let win
+          function updates(){
+          autoUpdater.autoDownload=true
+          autoUpdater.autoInstallOnAppQuit=true
+          autoUpdater.on('update-downloaded',()=>{
+          dialog.showMessageBox(win,{type:'info',buttons:['Restart now','Later'],defaultId:0,title:'Parley update',message:'A new version of the Parley app is ready.',detail:'Restart to finish updating. The site itself is always up to date.'}).then(r=>{if(r.response===0)autoUpdater.quitAndInstall()})
+          })
+          autoUpdater.on('error',()=>{})
+          const check=()=>autoUpdater.checkForUpdates().catch(()=>{})
+          check()
+          setInterval(check,4*3600*1000)
+          }
+          const lock=app.requestSingleInstanceLock()
+          if(!lock)app.quit()
+          app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus()}})
           app.whenReady().then(()=>{
           session.defaultSession.setPermissionRequestHandler((wc,perm,cb)=>cb(['media','notifications','display-capture','clipboard-sanitized-write'].includes(perm)&&new URL(wc.getURL()).origin===new URL(SITE).origin))
-          const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#212829',autoHideMenuBar:true,webPreferences:{contextIsolation:true,sandbox:true}})
-          w.loadURL(SITE)
-          w.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
+          win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
+          win.loadURL(SITE)
+          win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
+          if(app.isPackaged)updates()
           })
           app.on('window-all-closed',()=>app.quit())
           EOF
-          sed -i "s#https://parley.heavengtwashere.workers.dev#${SITE}#" main.js
+          sed -i "s#__SITE__#${SITE}#" main.js
+          npm i --save electron-updater@6
           npm i --save-dev electron@33 electron-builder@25
-          npx electron-builder --win --publish never
+          npx electron-builder --${{ matrix.target }} --publish never
       - uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: desktop/dist/Parley-Setup.exe
+          name: ${{ matrix.target }}
+          path: |
+            desktop/dist/Parley-Setup.exe
+            desktop/dist/Parley-Setup.exe.blockmap
+            desktop/dist/Parley.AppImage
+            desktop/dist/latest.yml
+            desktop/dist/latest-linux.yml
+          if-no-files-found: error
   android:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -59,6 +100,8 @@ jobs:
           EOF
           npx cap add android
           sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application#' android/app/src/main/AndroidManifest.xml
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do n=${d%%:*}; s=${d##*:}; mkdir -p android/app/src/main/res/mipmap-$n; for f in ic_launcher ic_launcher_round ic_launcher_foreground; do convert ../public/logo-512.png -resize ${s}x${s} android/app/src/main/res/mipmap-$n/$f.png; done; done
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           npx cap sync android
           cd android && ./gradlew assembleDebug
           cp app/build/outputs/apk/debug/app-debug.apk ../../Parley.apk
@@ -67,12 +110,16 @@ jobs:
           name: android
           path: Parley.apk
   publish:
-    needs: [windows, android]
+    needs: [desktop, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Desktop and Android wrappers that open Parley. The Android file is debug-signed for sideloading." || true
-          gh release upload apps windows/Parley-Setup.exe android/Parley.apk --clobber --repo "$GITHUB_REPOSITORY"
+          ls -R out
+          gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Parley apps for Windows, Linux (AppImage) and Android. The desktop apps check this release for updates. The Android file is debug-signed for sideloading." || true
+          gh release upload apps out/* --clobber --repo "$GITHUB_REPOSITORY"
