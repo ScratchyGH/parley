@@ -12,6 +12,7 @@ const out={...DEF}
 for(const k of Object.keys(DEF))if(Number.isFinite(o[k]))out[k]=o[k]
 return out
 }
+const inbox=(env,uid,from,kind,itemId,label,amount)=>env.DB.prepare('insert into gift_inbox(id,user_id,from_name,kind,item_id,label,amount,created_at) values(?,?,?,?,?,?,?,?)').bind(newId('gf'),uid,from,kind,itemId||null,label,amount||0,now()).run().catch(()=>{})
 const bal=async(env,id)=>(await env.DB.prepare('select pars from users where id=?').bind(id).first())?.pars||0
 const txRow=(env,uid,delta,kind,ref,note)=>env.DB.prepare('insert into par_tx(id,user_id,delta,kind,ref,note,created_at) values(?,?,?,?,?,?,?)').bind(newId('pt'),uid,delta,kind,ref||null,note||'',now())
 export async function grant(env,uid,n,kind,ref,note){
@@ -48,6 +49,13 @@ return u
 }
 const shapeItem=i=>({hidden:!i.enabled,id:i.id,kind:i.kind,name:i.name,descr:i.descr,price:i.price,scope:i.scope,mb:i.mb,data:i.data})
 export default function(r){
+r.add('GET','/api/pars/gifts',async c=>({gifts:(await c.env.DB.prepare('select id,from_name,kind,item_id,label,amount,created_at from gift_inbox where user_id=? and seen=0 order by created_at limit 12').bind(c.user.id).all()).results}))
+r.add('POST','/api/pars/gifts/seen',async c=>{
+const b=await body(c.req)
+const ids=(Array.isArray(b.ids)?b.ids:[]).slice(0,50).map(String)
+for(const id of ids)await c.env.DB.prepare('update gift_inbox set seen=1 where id=? and user_id=?').bind(id,c.user.id).run()
+return{ok:true}
+})
 r.add('GET','/api/pars',async c=>{
 const cfg=await parsCfg(c.env)
 const[items,owned,tx,me,beat]=await Promise.all([
@@ -189,7 +197,7 @@ if(String(e.message).includes('UNIQUE'))return{ok:true,duplicate:true,balance:aw
 throw e
 }
 if(sid)c.pub?.('s_'+sid,{t:'server.update',server_id:sid})
-if(to)c.pub?.('u_'+to.id,{t:'pars.gift',from:c.user.username,item:it.name})
+if(to){await inbox(c.env,to.id,c.user.username,it.kind,it.id,it.name,0);c.pub?.('u_'+to.id,{t:'pars.gift',from:c.user.username,item:it.name})}
 return json({ok:true,balance:await bal(c.env,c.user.id),spent:price},201)
 })
 r.add('POST','/api/pars/equip',async c=>{
@@ -230,6 +238,7 @@ await c.env.DB.prepare('update users set pars=pars+? where id=?').bind(n,c.user.
 if(String(e.message).includes('UNIQUE'))return{ok:true,duplicate:true,balance:await bal(c.env,c.user.id)}
 throw e
 }
+await inbox(c.env,to.id,c.user.username,'pars',null,n+' Pars',n)
 c.pub?.('u_'+to.id,{t:'pars.gift',from:c.user.username,amount:n})
 return json({ok:true,balance:await bal(c.env,c.user.id)},201)
 })
@@ -276,6 +285,7 @@ const u=await findUser(c.env,b.user)
 const note=typeof b.note==='string'?b.note.slice(0,80):''
 await grant(c.env,u.id,n,'bonus',null,(n>0?'Bonus':'Adjustment')+(note?': '+note:''))
 await c.env.DB.prepare('insert into mod_log(id,server_id,actor_id,action,target_id,detail,created_at) values(?,?,?,?,?,?,?)').bind(newId('ml'),null,c.user.id,'pars.grant',u.id,n+' '+note,now()).run()
+if(n>0)await inbox(c.env,u.id,'Parley','pars',null,n+' Pars',n)
 c.pub?.('u_'+u.id,{t:'pars.gift',from:'Parley',amount:n})
 return{ok:true,balance:await bal(c.env,u.id)}
 })

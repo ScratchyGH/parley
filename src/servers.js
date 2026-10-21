@@ -2,6 +2,7 @@ import{ownsVanity}from'./pars.js'
 import{place}from'./store.js'
 import{signMsg}from'./sign.js'
 import{ICON,BANNER}from'./brand.js'
+import{extendCommunity}from'./community.js'
 import{fireHooks}from'./devhooks.js'
 import{runPlugins}from'./plugins.js'
 import{expCfg,expActive}from'./program.js'
@@ -129,6 +130,7 @@ db.prepare('insert into channels(id,server_id,category_id,name,type,position,rea
 s={id:sid}
 }
 try{await brandCommunity(c,s,owner.id)}catch(e){console.log('brand',e&&e.message)}
+try{await extendCommunity(c,s,owner.id)}catch(e){console.log('extend',e&&e.message)}
 if(!(await db.prepare('select 1 x from auto_joined where user_id=?').bind(c.user.id).first())){
 await db.batch([
 db.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(s.id,c.user.id,t),
