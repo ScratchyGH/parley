@@ -878,21 +878,14 @@ ins{text-decoration:none;border-bottom:2px solid #4ade80}
 .sh-nav{z-index:60}
 .par-card,.pb-card,.ts,.par-hero{isolation:isolate}
 .par-sec{position:relative;z-index:0}
-.par-sec>h3,.ov-top h2,.ts h3,.hh-m h1{font-family:"Parli-Bold",var(--disp)}
-.ts h3{font-size:32px;letter-spacing:.01em;background:linear-gradient(90deg,#fde68a,#fff,#7dd3fc,#fde68a);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tsshine 6s linear infinite}
-@keyframes tsshine{to{background-position:250% 0}}
-@property --ta{syntax:"<angle>";inherits:false;initial-value:0deg}
-@keyframes tsborder{to{--ta:360deg}}
-.ts{border:2px solid transparent;background:radial-gradient(120% 140% at 0% 0%,#312e81,#0b1020 55%,#422006) padding-box,conic-gradient(from var(--ta),#facc15,#38bdf8,#a78bfa,#fb923c,#facc15) border-box;animation:tsborder 7s linear infinite;box-shadow:0 0 36px rgba(99,102,241,.35),0 18px 50px rgba(15,23,42,.6)}
-.ts::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(1.5px 1.5px at 12% 22%,#fff,transparent),radial-gradient(1.5px 1.5px at 38% 78%,#fde68a,transparent),radial-gradient(2px 2px at 61% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 84% 66%,#bae6fd,transparent),radial-gradient(1.5px 1.5px at 92% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 24% 54%,#fde68a,transparent);animation:tstwinkle 3.4s ease-in-out infinite alternate}
-@keyframes tstwinkle{from{opacity:.25}to{opacity:1}}
-.ts .pb-prev{position:relative}
-.ts .pb-prev::before{content:"";position:absolute;width:250px;height:250px;left:50%;top:40%;margin:-125px 0 0 -125px;border-radius:50%;background:repeating-conic-gradient(rgba(250,204,21,.22) 0 2deg,transparent 2deg 15deg);-webkit-mask:radial-gradient(circle,transparent 56%,#000 57% 63%,transparent 64%);mask:radial-gradient(circle,transparent 56%,#000 57% 63%,transparent 64%);animation:tsspin 40s linear infinite;pointer-events:none;z-index:-1}
-.ts .pb-prev::after{content:"";position:absolute;width:190px;height:190px;left:50%;top:40%;margin:-95px 0 0 -95px;border-radius:50%;border:1px dashed rgba(125,211,252,.45);animation:tsspinr 26s linear infinite;pointer-events:none;z-index:-1}
-.ts-tag{animation:tspulse 2.2s ease-in-out infinite}
-@keyframes tspulse{50%{box-shadow:0 0 0 6px rgba(250,204,21,.18)}}
-.ts-time{display:inline-block;align-self:flex-start;padding:4px 14px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(250,204,21,.45);text-shadow:0 0 10px rgba(250,204,21,.7);font-family:"Parli-Bold",var(--disp);letter-spacing:.04em}
-.ts .btn.pri{background:linear-gradient(135deg,#f59e0b,#ef4444);border:0;color:#fff;box-shadow:0 6px 20px rgba(245,158,11,.4)}
-@media(prefers-reduced-motion:reduce){.ts,.ts::after,.ts h3,.ts-tag,.ts .pb-prev::before,.ts .pb-prev::after{animation:none}}
+.par-sec>h3,.ov-top h2,.hh-m h1{font-family:"Parli-Bold",var(--disp)}
 .vsec{font-family:"Parli-Bold",var(--disp);font-size:13px;color:var(--muted);padding:10px 14px 2px}
 .vaud .tile{min-height:110px}
+.lo-grid{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:18px;align-items:start}
+.lo-prev{background:var(--surf2);border-radius:16px;padding:18px 10px;min-height:220px;justify-content:center}
+.lo-sels{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.lo-f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+.lo-saved{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.lo-chip{display:inline-flex;gap:2px}
+@media(max-width:640px){.lo-grid{grid-template-columns:1fr}}
+.lo-prev{display:flex;flex-direction:column;align-items:center;gap:12px}
