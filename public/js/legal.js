@@ -1,42 +1,46 @@
 import{h,dialog,mount,POST,fail}from'./util.js'
 import{S}from'./state.js'
+const UPDATED='October 22, 2026'
 const PRIVACY=[
-['What Parley stores','Your account (username, display name, password hash, profile), the messages, files and reactions you post, your servers and friends, your settings, and your active sessions. Direct messages are stored on the server so they can be delivered and searched; they are not end-to-end encrypted.'],
-['Technical data','Requests are rate limited by IP address, which is not kept in your profile. A random per-browser device id is stored in your browser and sent with requests; its hash is kept so moderators can block a banned device. It is not your hardware id and clearing site data resets it.'],
-['Crash reports','Only if you turn on "Send crash reports" in Privacy and safety. When on, the browser sends the error message, the script name and the page address when something breaks. Reports are deleted after 30 days. Message text is never included.'],
-['Retention','Server owners can set messages to delete automatically after 30 days, 90 days or a year (pinned messages are kept). You can export your data or delete your account in Settings > Data and deletion.'],
-['Who runs this','Parley is run by whoever deployed this site. They can see stored data. Contact them for anything not covered here.']
+['Information we store','Account details (username, display name, password hash, profile, connected sign-in providers), content you create (messages, files, reactions, polls, scheduled messages), your servers, friends and settings, and active sessions. Direct messages are stored on the server so they can be delivered, searched and moderated; they are not end-to-end encrypted.'],
+['Technical information','Requests are rate limited by IP address; the address is not added to your profile. A random per-browser device identifier is sent with requests, and only its hash is kept so moderators can block a banned device. Clearing site data resets it. A session cookie keeps you signed in; Parley does not use advertising or tracking cookies.'],
+['Optional diagnostics','Crash reports are off unless you enable them in Privacy and safety. When on, the browser sends the error text, script name and page address, never message content. Reports are deleted after 30 days.'],
+['Third-party services','Features you use can contact other services: GIF search providers, link previews for addresses you post, sign-in providers you connect (GitHub, Google, Discord), and AI services used for optional assistants and content screening. Only what the feature needs is sent. Each service applies its own policy.'],
+['Backups','The operator keeps automatic daily backups of the database for 7 days. Backups include account records and messages, and are accessible only to the site owner.'],
+['Retention and deletion','Server owners can delete messages automatically after 30 days, 90 days or one year; pinned messages are kept. You can export your data or delete your account in Settings. Deleting your account removes your profile and sessions; messages in shared spaces may remain without your name. Deleted data can persist in backups until they expire.'],
+['Security','Passwords are hashed, messages are signed, requests are rate limited and sessions can be reviewed and ended in Settings. No online service is perfectly secure; report vulnerabilities to the operator.'],
+['Operator and contact','Parley is run by the person who deployed this site. They can access stored data and are responsible for it. Contact them for access, correction or deletion requests that Settings does not cover.']
 ]
 const TERMS=[
-['Be decent','No harassment, threats, spam, or attempts to break the service. Moderators can remove content and suspend accounts.'],
-['Illegal content','Do not post illegal content. Child sexual abuse material is removed immediately, the account is suspended and devices can be banned. Reports are handled by moderators, who are responsible for reporting to the proper authorities.'],
-['Your content','You keep your content and allow Parley to store and show it to the people you send it to. You are responsible for what you post.'],
-['Pars','Pars are a free reward for using Parley. They have no cash value, cannot be bought, and can be removed if they were earned by abuse.'],
-['Service','Parley is provided as is, may change or go down, and may be limited by free hosting quotas.']
+['Acceptable use','Do not harass, threaten or impersonate others, send spam, distribute malware, scrape private data, or try to disrupt or bypass the service. Moderators and server owners may remove content, time out members and suspend accounts.'],
+['Illegal and harmful content','Do not post content that is illegal under applicable law. Child sexual abuse material is removed immediately, the account is suspended, devices can be banned, and the matter is referred to the proper authorities.'],
+['Your content','You keep ownership of what you post. You give Parley permission to store, process and display it to the people and spaces you choose, and to run safety checks on it. You are responsible for your content and for having the right to share it.'],
+['Accounts','Keep your password secure and do not share or sell your account. Do not create accounts to evade a suspension or ban. You can appeal a suspension from the sign-in screen.'],
+['Pars and cosmetics','Pars are a free reward for taking part. They have no cash value, cannot be bought, sold or transferred outside Parley, and may be removed if earned through abuse. Cosmetics and boosts apply only within Parley.'],
+['Bots, plugins and webhooks','You are responsible for what your bots, plugins and webhooks do. Automation that spams, scrapes private data, evades limits or violates these terms can be disabled.'],
+['Service availability','Parley is provided as is, without warranties. It may change, be limited by hosting quotas or become unavailable, and features can be removed. The operator is not liable for loss resulting from use of the service, to the extent the law allows.']
 ]
-const doc=(title,list)=>dialog(title,h('div',{class:'bd'},list.map(([t,x])=>h('section',{style:{marginBottom:'12px'}},h('h4',{style:{margin:'0 0 4px'}},t),h('p',{style:{margin:0}},x)))),{footer:c=>[h('button',{class:'btn pri',on:{click:c}},'Close')]})
+const doc=(title,list)=>dialog(title,h('div',{class:'bd legal'},h('p',{class:'hint',style:{marginTop:0}},'Last updated '+UPDATED),list.map(([t,x],i)=>h('section',null,h('h4',null,(i+1)+'. '+t),h('p',null,x)))),{footer:c=>[h('button',{class:'btn pri',on:{click:c}},'Close')]})
 export const privacyDialog=()=>doc('Privacy policy',PRIVACY)
 export const termsDialog=()=>doc('Terms of service',TERMS)
 
 const SHORT=[
-['You own what you post','You keep your content. Parley stores it and shows it to the people you send it to.'],
-['Be decent','No harassment, threats, spam or illegal content. Moderators can remove content and suspend accounts.'],
-['Child safety','Child sexual abuse material is removed at once, the account is suspended and devices can be banned.'],
-['Your data','Parley stores your account, messages, files and settings. Direct messages are readable by the server operator. Crash reports are off unless you turn them on.'],
-['No guarantees','Parley is free, may change or go down, and is limited by free hosting. Pars have no cash value.']
+['Your content stays yours','You own what you post. Parley stores it and shows it to the people and spaces you choose.'],
+['Respect others','No harassment, threats, spam, malware or illegal content. Moderators can remove content and suspend accounts, and you can appeal.'],
+['Child safety','Child sexual abuse material is removed at once, the account is suspended and the matter is referred to authorities.'],
+['What we store','Your account, messages, files and settings. Direct messages are not end-to-end encrypted, so the site operator can access them. Daily backups are kept for 7 days.'],
+['Your choices','Crash reports are off unless you turn them on. You can export your data or delete your account at any time in Settings.'],
+['No guarantees','Parley is free and provided as is. It can change or go down, and Pars have no cash value.']
 ]
 const LONG=[
 ['Terms of service',null],
 ...TERMS,
-['Account','You are responsible for your account and password. Do not share it, sell it, or create accounts to evade a suspension or ban. Accounts used to evade moderation can be removed.'],
-['Moderation','Moderators and server owners can delete content, time out members and suspend accounts. You can appeal a suspension from the sign-in screen. Decisions can be reversed or upheld.'],
-['Bots and the developer API','Bots, webhooks and plugins you run must follow these terms. You are responsible for what your bot does. Bots that spam, scrape private data or evade limits can be removed.'],
 ['Privacy policy',null],
 ...PRIVACY,
-['Your choices','You can change your settings, export your data and delete your account in Settings. Deleting your account removes your profile and sessions; messages you sent in shared spaces may remain without your name.'],
-['Changes','When these terms change in a meaningful way you will be asked to read and accept them again.']
+['Changes to these documents','When these documents change in a meaningful way, you will be asked to read and accept them again before continuing. The date above shows the latest revision.']
 ]
-const sections=list=>list.map(([t,x])=>x===null?h('h3',{style:{margin:'18px 0 6px',color:'var(--strong)'}},t):h('section',{style:{marginBottom:'12px'}},h('h4',{style:{margin:'0 0 4px'}},t),h('p',{style:{margin:0}},x)))
+let n
+const sections=list=>{n=0;return[h('p',{class:'hint',style:{marginTop:0}},'Last updated '+UPDATED),...list.map(([t,x])=>{if(x===null){n=0;return h('h3',{class:'legal-h'},t)}n++;return h('section',{class:'legal-s'},h('h4',null,(list===SHORT?'':n+'. ')+t),h('p',null,x))})]}
 export const shortTerms=()=>doc('Terms and privacy, short version',SHORT)
 export function tosGate(preview){
 return new Promise(res=>{

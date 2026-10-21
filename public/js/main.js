@@ -1,6 +1,6 @@
 import{h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce}from'./util.js'
 import{render}from'./md.js'
-import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
+import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
 import{setRooms,sendAll,stopAll}from'./net.js'
 import{go,parse,setRouteHandler,lastChan,setLastChan}from'./nav.js'
 import{renderAuth,renderAppeal}from'./auth.js'
@@ -27,6 +27,7 @@ let booted=false
 let routeGen=0
 
 async function boot(){
+applyCachedLook()
 const r=parse()
 const ae=new URLSearchParams(location.search).get('autherror')
 if(ae){history.replaceState(null,'','/');setTimeout(()=>toast(ae,'err'),600)}
@@ -51,7 +52,7 @@ applySettingsDefault()
 renderAuth(root,async u=>{await start(u)},note)
 }
 function applySettingsDefault(){
-document.documentElement.dataset.theme='dimmed'
+if(!applyCachedLook())document.documentElement.dataset.theme='dimmed'
 document.title='Parley'
 }
 
