@@ -54,5 +54,13 @@ t('***','<hr></hr>')
 const deep='**'.repeat(1)+'a'
 t(deep,'<p>**a</p>')
 if(plain('**hi** ```code``` ||x||')!=='hi [code] [spoiler]'){fail++;console.log('FAIL plain',plain('**hi** ```code``` ||x||'))}else pass++
+t('[rainbow]hi[/rainbow]','<p><span class="fx fx-rainbow">hi</span></p>')
+t('[color=red]x[/color]','<p><span class="fx fc-red">x</span></p>')
+t('press [[Ctrl]]','<p>press <kbd>Ctrl</kbd></p>')
+t('++new++','<p><ins>new</ins></p>')
+t('> [!TIP] Try this','<div class="callout co-tip"><b class="co-t">Tip</b><div>Try this</div></div>')
+t('-> mid <-','<p class="mcenter">mid</p>')
+t('+++ More\nbody\n+++','<details class="mdet"><summary>More</summary><div>body</div></details>')
+t('[color=javascript:x]a[/color]','<p>[color=javascript:x]a[/color]</p>')
 console.log(`${pass} passed, ${fail} failed`)
 process.exit(fail?1:0)
