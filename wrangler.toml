@@ -43,7 +43,7 @@ tag = "v1"
 new_sqlite_classes = ["Hub"]
 
 [triggers]
-crons = ["17 3 * * *"]
+crons = ["* * * * *"]
 
 [vars]
 MAX_UPLOAD_MB = "25"
