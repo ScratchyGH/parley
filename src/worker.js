@@ -24,6 +24,9 @@ import gifRoutes from'./gifs.js'
 import caseRoutes from'./cases.js'
 import templateRoutes from'./templates.js'
 import{sweepExplicitServers}from'./servers.js'
+import botxRoutes from'./botx.js'
+import{roleOf}from'./botlab.js'
+import hookRoutes from'./devhooks.js'
 import legalRoutes from'./legal.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
 import{d1Store}from'./store.js'
@@ -53,6 +56,8 @@ screenRoutes(router)
 aiRoutes(router)
 appRoutes(router)
 deviceRoutes(router)
+botxRoutes(router)
+hookRoutes(router)
 botlabRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
@@ -140,6 +145,9 @@ const ok=await env.DB.prepare('select 1 x from conv_members where conv_id=? and 
 if(!ok)return new Response('Not a member',{status:403})
 }else if(room.startsWith('u_')){
 if(room!=='u_'+user.id)return new Response('Forbidden',{status:403})
+}else if(room.startsWith('bw_')){
+const p=await env.DB.prepare('select id,owner_id from bot_projects where id=?').bind(room.slice(3)).first()
+if(!p||!await roleOf(env,p,user.id))return new Response('Not a collaborator',{status:403})
 }else return new Response('Bad room',{status:400})
 const stub=env.HUB.get(env.HUB.idFromName(room))
 const r2=new Request(req)
@@ -192,6 +200,7 @@ return json({error:'Something went wrong on the server'},500,SEC)
 async scheduled(ev,env0){
 const env=await wrap(env0)
 const t=now()
+try{await env.DB.prepare("insert into app_settings(k,v) values('last_cron',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()}catch{}
 try{
 const pend=[]
 const ec={waitUntil:p=>{pend.push(p)}}

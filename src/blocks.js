@@ -43,7 +43,7 @@ await c.env.DB.prepare('insert into bot_vars(bot_id,server_id,k,v) values(?,?,?,
 return getVar(c,botId,sid,k)
 }
 
-function makeIo(c,botId,sid,room,user,message){
+export function makeIo(c,botId,sid,room,user,message){
 const uid=user.id
 return{
 send:(text,reply)=>say(c,room,sid,botId,text,reply&&message?message.id:null),
@@ -128,7 +128,7 @@ try{await execute(graph,ctx,makeIo(c,row.bot_id,sid,ch.id,user,null))}catch{}
 }
 }
 
-export async function dryRun(graph,text,user,event){
+export async function dryRun(graph,text,user,event,hook){
 const sent=[]
 const mem=new Map()
 const io={
@@ -145,6 +145,23 @@ pin:async()=>{sent.push({note:'Pins the message'})},
 timeout:async m=>{sent.push({note:'Times the member out for '+m+' minutes'})},
 role:async(n,a)=>{sent.push({note:(a?'Gives':'Takes')+' the role '+n})}
 }
-const log=await execute(graph,{user,channel:'general',server:'Your server',text:event==='join'?'':text,event:event==='join'?'join':undefined,mentioned:/<@bot>/.test(text),attachments:/\[image\]/.test(text)?1:0,at:Date.now()},io)
+const log=await execute(graph,{user,channel:'general',server:'Your server',text:event==='join'?'':text,event:event||undefined,hook:event==='hook'?hook:undefined,mentioned:/<@bot>/.test(text),attachments:/\[image\]/.test(text)?1:0,at:Date.now()},io)
 return{log,sent}
+}
+
+export async function runHook(c,project,name,text,who){
+const rows=(await c.env.DB.prepare("select i.server_id from bot_installs i join members m on m.server_id=i.server_id and m.user_id=? where i.project_id=? limit 25").bind(project.bot_id,project.id).all()).results
+let ran=0
+for(const row of rows){
+const chs=(await c.env.DB.prepare("select id,name from channels where server_id=? and type='text' order by position,created_at limit 20").bind(row.server_id).all()).results
+const ch=chs.find(x=>x.name==='general')||chs[0]
+if(!ch)continue
+const srv=await c.env.DB.prepare('select name from servers where id=?').bind(row.server_id).first()
+let graph
+try{graph=JSON.parse(project.blocks)}catch{continue}
+const user={id:'hook_'+name,username:'webhook',display_name:who||'Webhook'}
+const ctx={event:'hook',hook:name,user,channel:ch.name,server:srv?srv.name:'',text,at:Date.now()}
+try{await execute(graph,ctx,makeIo(c,project.bot_id,row.server_id,ch.id,user,null));ran++}catch{}
+}
+return ran
 }

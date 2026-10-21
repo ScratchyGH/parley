@@ -30,6 +30,26 @@ return{users:u.n,servers:s.n,messages:m.n,storage_bytes:f.n,files:f.c,open_repor
 note:'Provider quota usage (D1 rows, requests, R2 operations) is shown in the Cloudflare dashboard; Workers do not expose it to the application.'}
 })
 
+r.add('GET','/api/admin/health',async c=>{
+guard(c)
+const q=s=>c.env.DB.prepare(s).first()
+const t=now()
+const[cron,sweep,errs,errs1,sched,hooks,failing,susp]=await Promise.all([
+q("select v from app_settings where k='last_cron'"),
+q("select v from app_settings where k='last_sweep'"),
+q('select count(*) n from client_errors where created_at>?'.replace('?',String(t-86400000))),
+q('select count(*) n from client_errors where created_at>?'.replace('?',String(t-3600000))),
+q("select count(*) n,min(send_at) oldest from scheduled_msgs where status='pending'").catch(()=>({n:0})),
+q('select count(*) n from server_hooks').catch(()=>({n:0})),
+q('select count(*) n from server_hooks where enabled=0').catch(()=>({n:0})),
+q('select count(*) n from users where suspended=1')
+])
+const lc=cron?Number(cron.v):0,ls=sweep?Number(sweep.v):0
+const out={time:t,cron:{last:lc||null,ok:!!lc&&t-lc<5*60000,note:'The scheduler runs every minute. It reports ok when it ran in the last 5 minutes.'},sweep:{last:ls||null,ok:!!ls&&t-ls<30*3600000},client_errors_24h:errs.n,client_errors_1h:errs1.n,scheduled_pending:sched.n,scheduled_overdue:sched.oldest&&sched.oldest<t-5*60000?1:0,event_webhooks:hooks.n,event_webhooks_disabled:failing.n,suspended_users:susp.n}
+try{await c.env.DB.prepare('select 1').first();out.db='ok'}catch{out.db='error'}
+out.backups='Cloudflare D1 keeps point-in-time history (Time Travel) for 30 days on paid plans and 7 days on the free plan. Restore with: npx wrangler d1 time-travel restore DB --timestamp=<time>. See DEPLOYMENT.md.'
+return out
+})
 r.add('POST','/api/admin/studio',async c=>{
 guard(c)
 limit('studio:'+c.user.id,6,60000)

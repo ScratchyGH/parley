@@ -1,3 +1,4 @@
+import{fireHooks}from'./devhooks.js'
 import{GTAG}from'./auth.js'
 import{stickerFor}from'./perks.js'
 import{fail,now,newId,msgId,str,limit,body,json,clamp,placeholders}from'./util.js'
@@ -194,6 +195,7 @@ await c.env.DB.batch(stmts)
 const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
 const[message]=await hydrate(c.env,[row],c.user.id)
 await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEveryone,roles:roleIds}})
+if(rr.kind==='channel'&&!c.user.is_bot)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
 if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})

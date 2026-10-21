@@ -81,6 +81,12 @@ const ac=await this.access(a.uid)
 const canView=ch=>ac.v==='*'||(typeof ch==='string'&&ac.v.includes(ch))
 if(m.t==='ping'){ws.send('{"t":"pong"}');return}
 if(m.t==='typing'){if(canView(m.ch))await this.broadcast({t:'typing',ch:m.ch,uid:a.uid},m.ch,a.uid);return}
+if(m.t==='bw.cursor'){
+const x=Number(m.x),y=Number(m.y)
+if(!Number.isFinite(x)||!Number.isFinite(y))return
+await this.broadcast({t:'bw.cursor',uid:a.uid,x:Math.round(x),y:Math.round(y),b:typeof m.b==='string'?m.b.slice(0,40):''},null,a.uid)
+return
+}
 if(m.t==='presence'){
 if(!['online','idle','busy','invisible'].includes(m.s))return
 ws.serializeAttachment({...a,pres:m.s})

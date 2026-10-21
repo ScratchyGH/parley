@@ -6,8 +6,9 @@ import{LICENSES,TAGS}from'../public/js/licenses.js'
 const LIC=new Set(LICENSES.map(l=>l[0]))
 const TAGSET=new Set(TAGS)
 const VIS=['private','unlisted','public']
-const MAXP=10
-const RES=new Set(['meta','mine','new','api','admin'])
+export const MAXP=10
+const RES=new Set(['meta','mine','new','api','admin','invites','templates'])
+const RANK={viewer:1,editor:2,maintainer:3,owner:4}
 
 const url=(v,n)=>{
 if(v==null||v==='')return ''
@@ -17,7 +18,7 @@ try{u=new URL(v.trim())}catch{fail(400,n+' must be a full https:// link')}
 if(u.protocol!=='https:')fail(400,n+' must be a full https:// link')
 return u.href
 }
-const slugOf=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,32)
+export const slugOf=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,32)
 const tagList=v=>{
 if(v==null)return[]
 if(!Array.isArray(v)||v.length>5)fail(400,'Pick up to 5 tags')
@@ -25,9 +26,9 @@ const out=[...new Set(v.map(String))]
 for(const t of out)if(!TAGSET.has(t))fail(400,'Unknown tag: '+t)
 return out
 }
-const cols='p.id,p.owner_id,p.bot_id,p.slug,p.name,p.summary,p.avatar_id,p.license,p.visibility,p.installs,p.created_at,p.updated_at,p.screen_status,p.screen_score,p.screen_uncertainty'
+export const cols='p.id,p.owner_id,p.bot_id,p.slug,p.name,p.summary,p.avatar_id,p.license,p.visibility,p.installs,p.created_at,p.updated_at,p.screen_status,p.screen_score,p.screen_uncertainty,p.rev,p.forks,p.rating_sum,p.rating_n,p.forked_from,p.fork_note'
 
-async function withTags(env,rows){
+export async function withTags(env,rows){
 if(!rows.length)return rows
 const ids=rows.map(r=>r.id)
 const t=await env.DB.prepare(`select project_id,tag from bot_project_tags where project_id in (${ids.map(()=>'?').join(',')})`).bind(...ids).all()
@@ -36,17 +37,26 @@ for(const x of t.results)(m[x.project_id]||=[]).push(x.tag)
 for(const r of rows)r.tags=(m[r.id]||[]).sort()
 return rows
 }
-async function mint(env,bid){
+export async function mint(env,bid){
 const token='pb_'+randHex(32)
 await env.DB.batch([env.DB.prepare('delete from bot_tokens where bot_id=?').bind(bid),env.DB.prepare('insert into bot_tokens(token_hash,bot_id,created_at) values(?,?,?)').bind(await sha(token),bid,now())])
 return token
 }
-async function mine(c,id){
-const p=await c.env.DB.prepare('select * from bot_projects where id=? and owner_id=?').bind(id,c.user.id).first()
+export async function roleOf(env,p,uid){
+if(p.owner_id===uid)return'owner'
+const m=await env.DB.prepare("select role from bot_members where project_id=? and user_id=? and status='active'").bind(p.id,uid).first()
+return m?m.role:null
+}
+export async function mine(c,id,need='owner'){
+const p=await c.env.DB.prepare('select * from bot_projects where id=?').bind(id).first()
 if(!p)fail(404,'Project not found')
+const role=await roleOf(c.env,p,c.user.id)
+if(!role)fail(404,'Project not found')
+if(RANK[role]<RANK[need])fail(403,'You need the '+need+' role on this project')
+p.role=role
 return p
 }
-async function freeSlug(env,base){
+export async function freeSlug(env,base){
 const b=base.length>=3?base:'bot-'+base
 for(let i=0;i<6;i++){
 const s=i?b.slice(0,28)+'-'+randHex(2):b
@@ -98,19 +108,41 @@ if(sum.length<10)fail(400,'Add a summary of at least 10 characters before listin
 }
 return o
 }
-function shape(p,viewerId){
+export function shape(p,viewerId){
 const out={id:p.id,slug:p.slug,name:p.name,summary:p.summary,avatar_id:p.avatar_id,license:p.license,visibility:p.visibility,installs:p.installs,created_at:p.created_at,updated_at:p.updated_at,tags:p.tags||[],owner:p.owner_name?{id:p.owner_id,name:p.owner_name,username:p.owner_username}:undefined}
-if(viewerId&&p.owner_id===viewerId){out.mine=true;out.screen={status:p.screen_status,score:p.screen_score,uncertainty:p.screen_uncertainty}}
+out.rating=p.rating_n?Math.round(p.rating_sum/p.rating_n*10)/10:null;out.ratings=p.rating_n||0;out.forks=p.forks||0;out.rev=p.rev||0
+if(p.forked_from)out.fork_note=p.fork_note
+if(p.role)out.role=p.role
+if(viewerId&&p.owner_id===viewerId){out.mine=true;out.role='owner'}
+if(viewerId&&(p.owner_id===viewerId||p.role)){out.screen={status:p.screen_status,score:p.screen_score,uncertainty:p.screen_uncertainty}}
 return out
 }
 
 import{cleanGraph}from'./blockrun.js'
 import{runScreen,LISTED}from'./screen.js'
 import{dryRun}from'./blocks.js'
+import{validateGraph}from'./botcheck.js'
+import{diffSummary}from'../public/js/gmerge.js'
+export async function writeBlocks(c,p,g,summary,expectRev){
+const t=now()
+let old=null
+try{old=p.blocks?JSON.parse(p.blocks):null}catch{}
+const sum=String(summary||'').trim().slice(0,120)||diffSummary(old,g)
+const res=await c.env.DB.prepare('update bot_projects set blocks=?,rev=rev+1,updated_at=? where id=? and rev=?').bind(g?JSON.stringify(g):null,t,p.id,expectRev??(p.rev||0)).run()
+if(!res.meta.changes)return null
+const rev=(p.rev||0)+1
+await c.env.DB.batch([
+c.env.DB.prepare('insert into bot_versions(id,project_id,rev,blocks,summary,author_id,created_at) values(?,?,?,?,?,?,?)').bind(newId('bv'),p.id,rev,g?JSON.stringify(g):null,sum,c.user.id,t),
+c.env.DB.prepare('delete from bot_versions where project_id=? and id not in (select id from bot_versions where project_id=? order by created_at desc,rev desc limit 60)').bind(p.id,p.id)
+])
+c.pub('bw_'+p.id,{t:'bot.blocks',rev,by:c.user.id,name:c.user.display_name,summary:sum})
+if(p.visibility==='public'&&p.screen_status!=='pending_human')await runScreen(c.env,p.id,c.user.id,'Blocks changed',false)
+return rev
+}
 export default function botlabRoutes(r){
 r.add('GET','/api/bothub/meta',async c=>({licenses:LICENSES,tags:TAGS,max:MAXP}))
 r.add('GET','/api/bothub/mine',async c=>{
-const rows=(await c.env.DB.prepare(`select ${cols} from bot_projects p where p.owner_id=? order by p.updated_at desc`).bind(c.user.id).all()).results
+const rows=(await c.env.DB.prepare(`select ${cols},(select role from bot_members m where m.project_id=p.id and m.user_id=?1 and m.status='active') role from bot_projects p where p.owner_id=?1 or p.id in (select project_id from bot_members where user_id=?1 and status='active') order by p.updated_at desc`).bind(c.user.id).all()).results
 await withTags(c.env,rows)
 return{projects:rows.map(p=>shape(p,c.user.id))}
 })
@@ -126,7 +158,7 @@ const where=["p.visibility='public'",LISTED],args=[]
 if(q){where.push("(lower(p.name) like ? escape '\\' or lower(p.summary) like ? escape '\\')");const l='%'+q.replace(/[\\%_]/g,m=>'\\'+m)+'%';args.push(l,l)}
 if(tag){if(!TAGSET.has(tag))fail(400,'Unknown tag');where.push('p.id in (select project_id from bot_project_tags where tag=?)');args.push(tag)}
 if(lic){if(!LIC.has(lic))fail(400,'Unknown license');where.push('p.license=?');args.push(lic)}
-const order=sort==='new'?'p.created_at desc':sort==='updated'?'p.updated_at desc':'p.installs desc,p.updated_at desc'
+const order=sort==='rating'?'(case when p.rating_n>0 then p.rating_sum*1.0/p.rating_n else 0 end) desc,p.rating_n desc':sort==='forks'?'p.forks desc,p.installs desc':sort==='new'?'p.created_at desc':sort==='updated'?'p.updated_at desc':'p.installs desc,p.updated_at desc'
 const rows=(await c.env.DB.prepare(`select ${cols},u.display_name owner_name,u.username owner_username from bot_projects p join users u on u.id=p.owner_id where ${where.join(' and ')} order by ${order} limit ? offset ?`).bind(...args,limitN+1,off).all()).results
 const more=rows.length>limitN
 if(more)rows.pop()
@@ -135,7 +167,10 @@ return{projects:rows.map(p=>shape(p,c.user.id)),more}
 })
 r.add('GET','/api/bothub/:slug',async c=>{
 const p=await c.env.DB.prepare('select p.*,u.display_name owner_name,u.username owner_username from bot_projects p join users u on u.id=p.owner_id where p.slug=?').bind(c.p.slug).first()
-if(!p||((p.visibility==='private'||(p.visibility==='public'&&!['approved','legacy'].includes(p.screen_status)))&&p.owner_id!==c.user.id))fail(404,'Bot not found')
+if(!p)fail(404,'Bot not found')
+const myRole=await roleOf(c.env,p,c.user.id)
+if((p.visibility==='private'||(p.visibility==='public'&&!['approved','legacy'].includes(p.screen_status)))&&!myRole)fail(404,'Bot not found')
+if(myRole)p.role=myRole
 await withTags(c.env,[p])
 const rel=(await c.env.DB.prepare('select id,version,changelog,created_at from bot_releases where project_id=? order by created_at desc limit 30').bind(p.id).all()).results
 const out={...shape(p,c.user.id),readme:p.readme,license_url:p.license_url,source_url:p.source_url,website_url:p.website_url,support_url:p.support_url,bot_id:p.bot_id,releases:rel}
@@ -161,7 +196,7 @@ if(o.visibility==='public')await runScreen(c.env,pid,c.user.id)
 return json({id:pid,slug,bot_id:bid,token:await mint(c.env,bid)},201)
 })
 r.add('PATCH','/api/bothub/:id',async c=>{
-const cur=await mine(c,c.p.id)
+const cur=await mine(c,c.p.id,'maintainer')
 limit('bothubw:'+c.user.id,60,3600000)
 const b=await body(c.req)
 const o=fields(c,b,cur)
@@ -194,31 +229,43 @@ if(vis==='public'&&(['unscreened','rejected','needs_review','changes_requested']
 return{ok:true}
 })
 r.add('GET','/api/bothub/:id/blocks',async c=>{
-const p=await mine(c,c.p.id)
+const p=await mine(c,c.p.id,'viewer')
 let g=null
 try{g=p.blocks?JSON.parse(p.blocks):null}catch{}
-return{blocks:g}
+return{blocks:g,rev:p.rev||0}
 })
 r.add('PUT','/api/bothub/:id/blocks',async c=>{
-const p=await mine(c,c.p.id)
-limit('bothubb:'+c.user.id,120,3600000)
+const p=await mine(c,c.p.id,'editor')
+limit('bothubb:'+c.user.id,600,3600000)
 const b=await body(c.req,60000)
 const g=cleanGraph(b.blocks)
-await c.env.DB.prepare('update bot_projects set blocks=?,updated_at=? where id=?').bind(g?JSON.stringify(g):null,now(),p.id).run()
-if(p.visibility==='public'&&p.screen_status!=='pending_human')await runScreen(c.env,p.id,c.user.id,'Blocks changed',false)
-return{ok:true,blocks:g}
+if(b.base_rev!==undefined&&Number(b.base_rev)!==(p.rev||0)){
+let cur=null
+try{cur=p.blocks?JSON.parse(p.blocks):null}catch{}
+return json({error:'Someone else saved changes first',conflict:true,rev:p.rev||0,blocks:cur},409)
+}
+const rev=await writeBlocks(c,p,g,b.summary,null)
+if(rev===null){
+const q=await c.env.DB.prepare('select rev,blocks from bot_projects where id=?').bind(p.id).first()
+let cur=null
+try{cur=q.blocks?JSON.parse(q.blocks):null}catch{}
+return json({error:'Someone else saved changes first',conflict:true,rev:q.rev,blocks:cur},409)
+}
+return{ok:true,blocks:g,rev}
 })
 r.add('POST','/api/bothub/:id/blocks/test',async c=>{
-const p=await mine(c,c.p.id)
+const p=await mine(c,c.p.id,'viewer')
 limit('bothubt2:'+c.user.id,120,600000)
 const b=await body(c.req,60000)
 const g=cleanGraph(b.blocks)
 if(!g)fail(400,'Add some blocks first')
 const text=typeof b.text==='string'?b.text.slice(0,500):''
-return dryRun(g,text,{id:c.user.id,username:c.user.username,display_name:c.user.display_name},b.event==='join'?'join':'')
+const res=await dryRun(g,text,{id:c.user.id,username:c.user.username,display_name:c.user.display_name},b.event==='join'?'join':b.event==='hook'?'hook':'',typeof b.hook==='string'?b.hook.slice(0,24):'')
+res.warnings=validateGraph(g)
+return res
 })
 r.add('POST','/api/bothub/:id/token',async c=>{
-const p=await mine(c,c.p.id)
+const p=await mine(c,c.p.id,'owner')
 limit('bothubt:'+c.user.id,10,3600000)
 return{token:await mint(c.env,p.bot_id)}
 })
@@ -236,7 +283,7 @@ c.env.DB.prepare('delete from bot_projects where id=?').bind(p.id)
 return{ok:true}
 })
 r.add('POST','/api/bothub/:id/releases',async c=>{
-const p=await mine(c,c.p.id)
+const p=await mine(c,c.p.id,'maintainer')
 limit('bothubr:'+c.user.id,30,3600000)
 const b=await body(c.req)
 const version=str(b.version,1,24,'Version')
@@ -250,7 +297,7 @@ await c.env.DB.batch([c.env.DB.prepare('insert into bot_releases(id,project_id,v
 return json({release:{id,version,changelog:log,created_at:t}},201)
 })
 r.add('DELETE','/api/bothub/:id/releases/:rid',async c=>{
-const p=await mine(c,c.p.id)
+const p=await mine(c,c.p.id,'maintainer')
 await c.env.DB.prepare('delete from bot_releases where id=? and project_id=?').bind(c.p.rid,p.id).run()
 return{ok:true}
 })

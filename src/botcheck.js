@@ -1,0 +1,39 @@
+import{TYPES}from'./blockrun.js'
+const BUILTIN=new Set(['user','username','userid','mention','channel','server','text','time','hour','date','weekday','args','arg1','arg2','arg3'])
+export function validateGraph(g){
+const out=[]
+if(!g||!g.nodes.length)return out
+const by=new Map(g.nodes.map(n=>[n.id,n]))
+const trig=g.nodes.filter(n=>TYPES[n.type].trigger)
+if(!trig.length)out.push({level:'error',msg:'Add a trigger block so the bot knows when to run.'})
+const next=new Map()
+for(const e of g.edges){(next.get(e.f)||next.set(e.f,[]).get(e.f)).push(e.t)}
+const subs=new Map(g.nodes.filter(n=>n.type==='sub').map(n=>[n.p.name.toLowerCase(),n]))
+const reach=new Set()
+const walk=id=>{if(reach.has(id))return;reach.add(id);const n=by.get(id);if(n?.type==='call'){const s=subs.get(n.p.name.toLowerCase());if(s)walk(s.id)}for(const t of next.get(id)||[])walk(t)}
+for(const n of g.nodes)if(TYPES[n.type].trigger)walk(n.id)
+const set=new Set()
+for(const n of g.nodes){
+if(n.p.name&&['pick','set','count','setcount','math','text','randnum','map'].includes(n.type))set.add(n.p.name.toLowerCase())
+}
+const cmds=new Map()
+for(const n of g.nodes){
+const T=TYPES[n.type]
+if(!T.trigger&&!T.entry&&!reach.has(n.id))out.push({id:n.id,level:'warn',msg:'This block is not connected to any trigger, so it never runs.'})
+if(T.trigger&&!(next.get(n.id)||[]).length)out.push({id:n.id,level:'warn',msg:'This trigger has nothing after it yet.'})
+if((n.type==='say'||n.type==='sayto')&&!n.p.text.trim())out.push({id:n.id,level:'warn',msg:'The message is empty, so nothing will be sent.'})
+if(n.type==='say'||n.type==='sayto'||n.type==='if'||n.type==='switch'){
+for(const v of Object.values(n.p))for(const m of String(v).matchAll(/\{([a-z0-9_]{1,24})\}/gi)){const k=m[1].toLowerCase();if(!BUILTIN.has(k)&&!set.has(k))out.push({id:n.id,level:'warn',msg:'{'+m[1]+'} is not set by any block, so it will be empty.'})}
+}
+if(n.type==='call'&&!subs.has(n.p.name.toLowerCase()))out.push({id:n.id,level:'error',msg:'No subflow is named "'+n.p.name+'".'})
+if(n.type==='sub'&&!g.nodes.some(x=>x.type==='call'&&x.p.name.toLowerCase()===n.p.name.toLowerCase()))out.push({id:n.id,level:'warn',msg:'Nothing calls this subflow.'})
+if(n.type==='cmd'){const k=n.p.prefix+n.p.name.toLowerCase();if(cmds.has(k))out.push({id:n.id,level:'warn',msg:'Another block already listens for '+k+'.'});cmds.set(k,n.id)}
+if(n.type==='delete'||n.type==='timeout'||n.type==='addrole'||n.type==='removerole')out.push({id:n.id,level:'info',msg:'Needs the matching permission for the bot in each server.'})
+}
+const color=new Map()
+let cyc=null
+const dfs=id=>{if(cyc)return;color.set(id,1);for(const t of next.get(id)||[]){if(color.get(t)===1){cyc=t;return}if(!color.has(t))dfs(t)}color.set(id,2)}
+for(const n of g.nodes)if(!color.has(n.id))dfs(n.id)
+if(cyc)out.push({id:cyc,level:'warn',msg:'Blocks loop back on themselves. Each run stops after 60 steps.'})
+return out
+}

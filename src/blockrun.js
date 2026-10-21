@@ -1,9 +1,10 @@
 import{fail}from'./util.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
-const FNS=['upper','lower','title','trim','length','reverse','first','last','replace']
+const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words']
 const MATH=['+','-','*','/','%','max','min']
 const YN=['yes','no']
 const NX=['next']
+const CASES=['c1','c2','c3','c4','else']
 export const TYPES={
 msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0']},def:{mode:'contains',text:'',ci:'1'}},
 cmd:{out:NX,trigger:true,spec:{prefix:3,name:32},def:{prefix:'!',name:'ping'}},
@@ -34,7 +35,13 @@ setcount:{out:NX,spec:{name:24,value:8,scope:['server','user']},def:{name:'count
 math:{out:NX,spec:{name:24,a:100,op:MATH,b:100},def:{name:'result',a:'1',op:'+',b:'1'}},
 text:{out:NX,spec:{name:24,input:300,fn:FNS,arg:100},def:{name:'result',input:'{text}',fn:'upper',arg:''}},
 randnum:{out:NX,spec:{name:24,min:9,max:9},def:{name:'roll',min:'1',max:'6'}},
-map:{out:NX,spec:{name:24,input:200,table:1500,fallback:200},def:{name:'result',input:'{arg1}',table:'',fallback:''}}
+map:{out:NX,spec:{name:24,input:200,table:1500,fallback:200},def:{name:'result',input:'{arg1}',table:'',fallback:''}},
+gate:{out:YN,spec:{on:['1','0']},def:{on:'1'}},
+switch:{out:CASES,spec:{input:200,v1:60,v2:60,v3:60,v4:60},def:{input:'{arg1}',v1:'',v2:'',v3:'',v4:''}},
+sub:{out:NX,entry:true,spec:{name:24},def:{name:'shared'}},
+call:{out:NX,spec:{name:24},def:{name:'shared'}},
+note:{out:[],entry:true,spec:{text:300},def:{text:''}},
+hook:{out:NX,trigger:true,spec:{name:24},def:{name:'alert'}}
 }
 export const MAX_NODES=100
 const NAMEF=['name']
@@ -58,6 +65,7 @@ v=String(v)
 if(Array.isArray(spec)){if(!spec.includes(v))bad('Invalid value for '+k);p[k]=v}
 else{if(v.length>spec)bad(k+' is too long');p[k]=v}
 }
+if((n.type==='sub'||n.type==='call'||n.type==='hook')&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Names use letters, numbers and underscores')
 if(n.type==='cmd'&&!/^[a-z0-9_]{1,32}$/i.test(p.name))bad('Command names use letters, numbers and underscores')
 if(n.type==='chance')p.percent=num(p.percent,0,100,'Percent')
 if(n.type==='count')p.by=num(p.by,-1000,1000,'Add')
@@ -68,14 +76,15 @@ if(n.type==='timeout')p.minutes=num(p.minutes,1,60,'Minutes')
 if(n.type==='randnum'){p.min=num(p.min,-1000000,1000000,'Minimum');p.max=num(p.max,-1000000,1000000,'Maximum')}
 if(n.type==='sayto'&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
 if(T.spec.name!==undefined&&p.name&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Variable names use letters, numbers and underscores')
-nodes.push({id:n.id,type:n.type,x:Math.max(-5000,Math.min(5000,Math.round(Number(n.x)||0))),y:Math.max(-5000,Math.min(5000,Math.round(Number(n.y)||0))),p})
+const dd=typeof n.d==='string'?n.d.trim().slice(0,200):''
+nodes.push({...(dd?{d:dd}:{}),id:n.id,type:n.type,x:Math.max(-5000,Math.min(5000,Math.round(Number(n.x)||0))),y:Math.max(-5000,Math.min(5000,Math.round(Number(n.y)||0))),p})
 }
 const by=new Map(nodes.map(n=>[n.id,n]))
 const seen=new Set(),edges=[]
 for(const e of g.edges){
 if(!e||!by.has(e.f)||!by.has(e.t))bad('Invalid connection')
 if(!TYPES[by.get(e.f).type].out.includes(e.o))bad('Invalid connection')
-if(TYPES[by.get(e.t).type].trigger)bad('Nothing can lead into a trigger')
+if(TYPES[by.get(e.t).type].trigger||TYPES[by.get(e.t).type].entry)bad('Nothing can lead into a trigger, subflow start or note')
 const k=e.f+':'+e.o
 if(seen.has(k))continue
 seen.add(k)
@@ -106,7 +115,8 @@ return false
 const triggered=(n,ctx)=>{
 const t=ctx.text.trim()
 if(n.type==='join')return ctx.event==='join'
-if(ctx.event==='join')return false
+if(n.type==='hook')return ctx.event==='hook'&&String(ctx.hook||'').toLowerCase()===n.p.name.toLowerCase()
+if(ctx.event)return false
 if(n.type==='mention')return!!ctx.mentioned
 if(n.type==='link')return/https?:\/\//i.test(t)
 if(n.type==='image')return(ctx.attachments||0)>0
@@ -137,6 +147,7 @@ case'lower':return s.toLowerCase()
 case'title':return titleCase(s)
 case'trim':return s.trim()
 case'length':return String(s.length)
+case'words':return String(s.trim()?s.trim().split(/\s+/).length:0)
 case'reverse':return[...s].reverse().join('')
 case'first':return s.trim().split(/\s+/)[0]||''
 case'last':return s.trim().split(/\s+/).pop()||''
@@ -160,15 +171,14 @@ const vars=baseVars(ctx,rnd)
 const log=[]
 let steps=0,sends=0,acts=0
 const setv=(name,v)=>{vars[name.toLowerCase()]=clip(v,500);return vars[name.toLowerCase()]}
-for(const trig of graph.nodes.filter(n=>TYPES[n.type].trigger&&triggered(n,ctx))){
-log.push({id:trig.id,did:'start'})
-let cur=next(trig.id,'next')
+async function chain(start,depth){
+let cur=start
 while(cur&&steps<60){
 steps++
 const n=by.get(cur)
 if(!n)break
 const P=n.p,R=s=>render(s,vars)
-let branch=null
+let branch=null,route=null
 switch(n.type){
 case'if':branch=test(P.op,R(P.left),R(P.right));break
 case'chance':branch=rnd()*100<Number(P.percent);break
@@ -177,7 +187,10 @@ case'hasrole':branch=P.role?await io.hasRole(R(P.role)):false;break
 case'time':{const h=new Date(ctx.at||Date.now()).getUTCHours(),a=Number(P.from),b=Number(P.to);branch=a<=b?h>=a&&h<=b:h>=a||h<=b;break}
 case'cooldown':branch=await io.cooldown(n.id,Number(P.seconds),P.scope);break
 case'once':branch=(await io.count('once_'+n.id,1,'user'))===1;break
-case'stop':log.push({id:n.id,did:'stop'});cur=null;continue
+case'stop':log.push({id:n.id,did:'stop'});return
+case'gate':branch=P.on==='1';break
+case'switch':{const v=R(P.input).trim().toLowerCase();route='else';for(const k of['1','2','3','4']){const c=P['v'+k].trim().toLowerCase();if(c&&c===v){route='c'+k;break}}break}
+case'call':{if(depth<4){const sb=graph.nodes.find(x=>x.type==='sub'&&x.p.name.toLowerCase()===P.name.toLowerCase());if(sb){log.push({id:n.id,did:'call',name:P.name});await chain(next(sb.id,'next'),depth+1)}}break}
 case'say':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.send(t,P.reply==='1');log.push({id:n.id,did:'say',text:t})}break}
 case'sayto':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P.channel).replace(/^#/,''),t);log.push({id:n.id,did:'sayto',text:t})}break}
 case'react':if(P.emoji&&acts<8){acts++;await io.react(P.emoji);log.push({id:n.id,did:'react',emoji:P.emoji})}break
@@ -194,9 +207,14 @@ case'text':if(P.name)log.push({id:n.id,did:'text',value:setv(P.name,xform(P.fn,R
 case'randnum':if(P.name){const a=Number(P.min),b=Number(P.max),lo=Math.min(a,b),hi=Math.max(a,b);log.push({id:n.id,did:'randnum',value:setv(P.name,String(lo+Math.floor(rnd()*(hi-lo+1))))})}break
 case'map':if(P.name){const k=R(P.input).trim().toLowerCase();let out=null;for(const line of P.table.split('\n')){const i=line.indexOf('=');if(i>0&&line.slice(0,i).trim().toLowerCase()===k){out=line.slice(i+1).trim();break}}log.push({id:n.id,did:'map',value:setv(P.name,out===null?R(P.fallback):R(out))})}break
 }
-if(branch!==null){log.push({id:n.id,did:branch?'yes':'no'});cur=next(n.id,branch?'yes':'no')}
+if(route!==null){log.push({id:n.id,did:route});cur=next(n.id,route)}
+else if(branch!==null){log.push({id:n.id,did:branch?'yes':'no'});cur=next(n.id,branch?'yes':'no')}
 else cur=next(n.id,'next')
 }
+}
+for(const trig of graph.nodes.filter(n=>TYPES[n.type].trigger&&triggered(n,ctx))){
+log.push({id:trig.id,did:'start'})
+await chain(next(trig.id,'next'),0)
 }
 return log
 }

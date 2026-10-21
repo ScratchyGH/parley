@@ -1,3 +1,4 @@
+import{fireHooks}from'./devhooks.js'
 import{expCfg,expActive}from'./program.js'
 import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
@@ -629,6 +630,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where user_id
 if(count.n>=100)fail(400,'You have reached the safety limit of 100 servers')
 await c.env.DB.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(sid,c.user.id,now()).run()
 c.pub('s_'+sid,{t:'member.join',uid:c.user.id})
+fireHooks(c,sid,'member.join',{user:{id:c.user.id,username:c.user.username,display_name:c.user.display_name}})
 try{await runJoin(c,sid,c.user)}catch{}
 }
 
