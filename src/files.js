@@ -1,3 +1,4 @@
+import{boostMb}from'./pars.js'
 import{fail,now,newId,limit,str,clamp,body,hex,json}from'./util.js'
 import{resolveRoom,loadMember,P,need}from'./perms.js'
 import{place}from'./store.js'
@@ -45,14 +46,14 @@ const e=ext(name)
 if(BLOCKED.has(e))fail(415,'This file type is not allowed')
 const maxMb=parseInt(c.env.MAX_UPLOAD_MB)||100
 const bigMb=parseInt(c.env.MAX_FILE_MB)||1024
-const lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:kind==='sticker'?2:10)
+let lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:kind==='sticker'?2:10)
 if(!len||len<1)fail(411,'File size required')
-if(len>lim*1048576)fail(413,`File is larger than the ${lim} MB limit`)
 let room=null,serverId=null
 if(kind==='attachment'){
 const rr=await resolveRoom(c.env,roomQ,c.user.id)
 need(rr.perms,P.ATTACH,'You cannot attach files here')
 room=rr.room
+lim+=await boostMb(c.env,c.user.id,rr.serverId||null)
 }else if(kind==='server_icon'||kind==='server_banner'||kind==='server_bg'||kind==='emoji'||(kind==='sticker'&&serverQ)){
 serverId=serverQ
 const m=await loadMember(c.env,serverId||'',c.user.id)
@@ -63,6 +64,7 @@ room=roomQ
 const rr=await resolveRoom(c.env,room,c.user.id)
 if(rr.kind!=='dm'||rr.conv.type!=='group')fail(400,'Not a group conversation')
 }
+if(len>lim*1048576)fail(413,`File is larger than the ${lim} MB limit`)
 const quota=(parseInt(c.env.USER_QUOTA_MB)||1024)*1048576
 const used=await c.env.DB.prepare('select coalesce((select sum(size) from files where owner_id=?1),0)+coalesce((select sum(size) from uploads where owner_id=?1),0) s').bind(c.user.id).first()
 if(used.s+len>quota)fail(413,'You have reached your storage quota. Delete some uploads to free space.')

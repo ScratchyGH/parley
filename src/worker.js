@@ -11,6 +11,12 @@ import extraRoutes from'./extras.js'
 import totpRoutes from'./totp.js'
 import pushRoutes from'./push.js'
 import perkRoutes from'./perks.js'
+import parsRoutes from'./pars.js'
+import programRoutes from'./program.js'
+import screenRoutes from'./screen.js'
+import aiRoutes from'./ai.js'
+import appRoutes from'./apps.js'
+import deviceRoutes,{checkDevice}from'./devices.js'
 import botlabRoutes from'./botlab.js'
 import signinRoutes from'./signin.js'
 import labRoutes from'./lab.js'
@@ -39,6 +45,12 @@ extraRoutes(router)
 totpRoutes(router)
 pushRoutes(router)
 perkRoutes(router)
+parsRoutes(router)
+programRoutes(router)
+screenRoutes(router)
+aiRoutes(router)
+appRoutes(router)
+deviceRoutes(router)
 botlabRoutes(router)
 caseRoutes(router)
 templateRoutes(router)
@@ -89,6 +101,7 @@ if(m){hit=r;r.keys.forEach((k,i)=>{try{params[k]=decodeURIComponent(m[i+1])}catc
 }
 if(!hit)fail(404,'Not found')
 const user=await sessionUser(env,req)
+await checkDevice(env,req,user,url.pathname)
 if(hit.auth&&!user)fail(401,'Not signed in')
 if(user&&user.is_bot&&!/^\/api\/(rooms|channels|threads|upload|files|stickers)\b|^\/api\/me$|^\/api\/servers\/[^/]+$/.test(url.pathname))fail(403,'Bots cannot use this endpoint')
 if(user&&user.is_bot&&/^\/api\/(me|servers\/[^/]+)$/.test(url.pathname)&&method!=='GET')fail(403,'Bots cannot use this endpoint')
@@ -188,6 +201,11 @@ env.DB.prepare('delete from invites where (expires_at is not null and expires_at
 env.DB.prepare('delete from notifications where created_at<?').bind(t-60*86400000)
 ])
 try{await sweepExplicitServers(env)}catch(e){}
+try{
+const D=86400000
+await env.DB.batch([30,90,365].map(n=>env.DB.prepare("update messages set deleted_at=?,content='' where deleted_at is null and pinned=0 and created_at<? and server_id in (select id from servers where retention_days=?)").bind(t,t-n*D,n)))
+await env.DB.prepare('delete from client_errors where created_at<?').bind(t-30*D).run()
+}catch(e){}
 try{await env.DB.exec('PRAGMA optimize')}catch(e){}
 }
 }

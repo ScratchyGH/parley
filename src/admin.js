@@ -1,5 +1,7 @@
 import{fail,now,newId,str,body,clamp,limit,json}from'./util.js'
 import{invalidateMaintenance}from'./worker.js'
+import{aiAsk,pick}from'./ai.js'
+import{banUserDevices,unbanUserDevices}from'./devices.js'
 
 const guard=c=>{if(!c.user.admin)fail(404,'Not found')}
 const ownerOnly=c=>{if(!c.user.owner)fail(404,'Not found');limit('dbadm:'+c.user.id,240,60000)}
@@ -9,19 +11,6 @@ const q=n=>'"'+n.replace(/"/g,'""')+'"'
 const SKIP=/^(sqlite_|_cf_|_migrations$|d1_migrations$|blob_chunks$)/
 const alog=(c,action,target,detail='')=>c.env.DB.prepare('insert into mod_log(id,server_id,actor_id,action,target_id,detail,created_at) values(?,?,?,?,?,?,?)').bind(newId('ml'),null,c.user.id,action,target,String(detail).slice(0,500),now())
 
-let FREE={at:0,ids:[]}
-async function freeModels(){
-if(FREE.ids.length&&Date.now()-FREE.at<3600000)return FREE.ids
-try{
-const r=await fetch('https://openrouter.ai/api/v1/models',{signal:AbortSignal.timeout(10000)})
-const j=await r.json()
-const list=(j.data||[]).filter(m=>m&&typeof m.id==='string'&&m.pricing&&Number(m.pricing.prompt)===0&&Number(m.pricing.completion)===0&&!/embed|guard|vision|-vl|image|audio|moderation|lyria|router/i.test(m.id)&&(!m.architecture||!m.architecture.output_modalities||m.architecture.output_modalities.join().includes('text'))&&(m.context_length||0)>=16000)
-const score=m=>{const mm=m.id.match(/(\d+(?:\.\d+)?)b/i);const size=mm?Math.min(parseFloat(mm[1]),700):0;const sup=(m.supported_parameters||[]).includes('response_format')?60:0;return size*3+Math.log2(m.context_length||1)*8+sup+(/coder|instruct|chat|gpt-oss|deepseek|qwen|llama|glm|kimi|gemini|mistral/i.test(m.id)?20:0)}
-const ids=list.sort((a,b)=>score(b)-score(a)).slice(0,4).map(m=>m.id)
-if(ids.length){FREE={at:Date.now(),ids};return ids}
-}catch{}
-return FREE.ids.length?FREE.ids:['openrouter/free']
-}
 export default function(r){
 dbRoutes(r)
 r.add('GET','/api/admin/stats',async c=>{
@@ -46,20 +35,9 @@ guard(c)
 limit('studio:'+c.user.id,6,60000)
 const b=await body(c.req)
 const prompt=str(b.prompt,10,12000,'Brief')
-const msgs=[{role:'system',content:'You reply with one valid JSON object only. No markdown, no commentary.'},{role:'user',content:prompt}]
-const key=c.env.OPENROUTER_API_KEY
-if(!key)fail(400,'OPENROUTER_API_KEY is not set on this Worker. Add it as a Secret on the parley Worker (Settings, Variables and Secrets), then try again')
-const models=(c.env.OPENROUTER_MODEL?[c.env.OPENROUTER_MODEL]:await freeModels()).slice(0,3)
-const attempt=async model=>{
-let res
-try{res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key,'x-title':'Parley'},body:JSON.stringify({model,messages:msgs,max_tokens:4500,temperature:0.7}),signal:AbortSignal.timeout(45000)})}catch{throw new Error(model+' did not answer in 45 seconds')}
-if(!res.ok){const t=(await res.text().catch(()=>'')).slice(0,160);throw new Error('OpenRouter '+res.status+' on '+model+': '+t)}
-const j=await res.json().catch(()=>null)
-const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
-if(typeof text!=='string'||text.trim().length<2)throw new Error(model+' returned nothing')
-return{text,via:'OpenRouter ('+model+')'}
-}
-try{return await Promise.any(models.map(attempt))}catch(e){fail(502,(e.errors&&e.errors[0]&&e.errors[0].message)||'OpenRouter did not answer. Try again')}
+const provider=b.provider||'openrouter'
+const text=await aiAsk(c.env,{...pick(b),provider,system:'You reply with one valid JSON object only. No markdown, no commentary.',user:prompt,max:4500,ms:45000})
+return{text,via:provider}
 })
 
 r.add('POST','/api/admin/maintenance',async c=>{
@@ -77,7 +55,7 @@ r.add('GET','/api/admin/users',async c=>{
 guard(c)
 const qs=(c.url.searchParams.get('q')||'').trim().slice(0,40)
 if(qs.length<2)fail(400,'Enter at least 2 characters')
-const rows=(await c.env.DB.prepare("select id,username,display_name,created_at,suspended,deleted_at,labs from users where username like ? escape '\\' order by created_at desc limit 25").bind('%'+qs.replace(/[\\%_]/g,'\\$&')+'%').all()).results
+const rows=(await c.env.DB.prepare("select id,username,display_name,created_at,suspended,suspended_until,suspend_reason,deleted_at,labs from users where username like ? escape '\\' order by created_at desc limit 25").bind('%'+qs.replace(/[\\%_]/g,'\\$&')+'%').all()).results
 return{users:rows}
 })
 
@@ -88,18 +66,24 @@ const t=await c.env.DB.prepare('select id,username from users where id=? and del
 if(!t)fail(404,'User not found')
 if(t.id===c.user.id)fail(400,'You cannot suspend yourself')
 const on=b.suspended?1:0
+const hours=clamp(b.hours,0,0,24*365)
+const until=on&&hours?now()+hours*3600000:null
+const reason=str(b.reason||'no reason given',1,300,'Reason')
 await c.env.DB.batch([
-c.env.DB.prepare('update users set suspended=? where id=?').bind(on,t.id),
+c.env.DB.prepare('update users set suspended=?,suspended_until=?,suspend_reason=? where id=?').bind(on,until,on?reason:null,t.id),
 ...(on?[c.env.DB.prepare('delete from sessions where user_id=?').bind(t.id)]:[]),
-alog(c,on?'user.suspend':'user.unsuspend',t.id,str(b.reason||'no reason given',1,300,'Reason'))
+alog(c,on?'user.suspend':'user.unsuspend',t.id,reason+(until?' ('+hours+'h)':on?' (permanent)':''))
 ])
+let devices=0
+if(on&&b.device)devices=await banUserDevices(c.env,t.id,reason)
+if(!on)await unbanUserDevices(c.env,t.id)
 if(on)c.pubClose('u_'+t.id,{close:[t.id]})
-return{ok:true}
+return{ok:true,devices_banned:devices,until}
 })
 
 r.add('GET','/api/admin/reports',async c=>{
 guard(c)
-const rows=(await c.env.DB.prepare("select r.id,r.target_type,r.target_id,r.server_id,r.reason,r.created_at,u.username reporter from reports r join users u on u.id=r.reporter_id where r.status='open' order by r.created_at desc limit 100").all()).results
+const rows=(await c.env.DB.prepare("select r.id,r.target_type,r.target_id,r.server_id,r.reason,r.created_at,u.username reporter,(select author_id from messages where id=r.target_id) msg_author from reports r join users u on u.id=r.reporter_id where r.status='open' order by r.created_at desc limit 100").all()).results
 return{reports:rows}
 })
 r.add('POST','/api/admin/reports/:id',async c=>{
@@ -110,7 +94,7 @@ return{ok:true}
 
 r.add('GET','/api/admin/appeals',async c=>{
 guard(c)
-const rows=(await c.env.DB.prepare("select a.id,a.user_id,a.message,a.created_at,u.username from appeals a join users u on u.id=a.user_id where a.server_id is null and a.status='open' order by a.created_at desc limit 100").all()).results
+const rows=(await c.env.DB.prepare("select a.id,a.user_id,a.message,a.evidence,a.created_at,u.username from appeals a join users u on u.id=a.user_id where a.server_id is null and a.status='open' order by a.created_at desc limit 100").all()).results
 return{appeals:rows}
 })
 r.add('POST','/api/admin/appeals/:id',async c=>{

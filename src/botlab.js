@@ -25,7 +25,7 @@ const out=[...new Set(v.map(String))]
 for(const t of out)if(!TAGSET.has(t))fail(400,'Unknown tag: '+t)
 return out
 }
-const cols='p.id,p.owner_id,p.bot_id,p.slug,p.name,p.summary,p.avatar_id,p.license,p.visibility,p.installs,p.created_at,p.updated_at'
+const cols='p.id,p.owner_id,p.bot_id,p.slug,p.name,p.summary,p.avatar_id,p.license,p.visibility,p.installs,p.created_at,p.updated_at,p.screen_status,p.screen_score,p.screen_uncertainty'
 
 async function withTags(env,rows){
 if(!rows.length)return rows
@@ -100,11 +100,12 @@ return o
 }
 function shape(p,viewerId){
 const out={id:p.id,slug:p.slug,name:p.name,summary:p.summary,avatar_id:p.avatar_id,license:p.license,visibility:p.visibility,installs:p.installs,created_at:p.created_at,updated_at:p.updated_at,tags:p.tags||[],owner:p.owner_name?{id:p.owner_id,name:p.owner_name,username:p.owner_username}:undefined}
-if(viewerId&&p.owner_id===viewerId)out.mine=true
+if(viewerId&&p.owner_id===viewerId){out.mine=true;out.screen={status:p.screen_status,score:p.screen_score,uncertainty:p.screen_uncertainty}}
 return out
 }
 
 import{cleanGraph}from'./blockrun.js'
+import{runScreen,LISTED}from'./screen.js'
 import{dryRun}from'./blocks.js'
 export default function botlabRoutes(r){
 r.add('GET','/api/bothub/meta',async c=>({licenses:LICENSES,tags:TAGS,max:MAXP}))
@@ -121,7 +122,7 @@ const lic=u.get('license')||''
 const sort=u.get('sort')||'installs'
 const limitN=clamp(u.get('limit'),24,1,48)
 const off=clamp(u.get('offset'),0,0,5000)
-const where=["p.visibility='public'"],args=[]
+const where=["p.visibility='public'",LISTED],args=[]
 if(q){where.push("(lower(p.name) like ? escape '\\' or lower(p.summary) like ? escape '\\')");const l='%'+q.replace(/[\\%_]/g,m=>'\\'+m)+'%';args.push(l,l)}
 if(tag){if(!TAGSET.has(tag))fail(400,'Unknown tag');where.push('p.id in (select project_id from bot_project_tags where tag=?)');args.push(tag)}
 if(lic){if(!LIC.has(lic))fail(400,'Unknown license');where.push('p.license=?');args.push(lic)}
@@ -134,7 +135,7 @@ return{projects:rows.map(p=>shape(p,c.user.id)),more}
 })
 r.add('GET','/api/bothub/:slug',async c=>{
 const p=await c.env.DB.prepare('select p.*,u.display_name owner_name,u.username owner_username from bot_projects p join users u on u.id=p.owner_id where p.slug=?').bind(c.p.slug).first()
-if(!p||(p.visibility==='private'&&p.owner_id!==c.user.id))fail(404,'Bot not found')
+if(!p||((p.visibility==='private'||(p.visibility==='public'&&!['approved','legacy'].includes(p.screen_status)))&&p.owner_id!==c.user.id))fail(404,'Bot not found')
 await withTags(c.env,[p])
 const rel=(await c.env.DB.prepare('select id,version,changelog,created_at from bot_releases where project_id=? order by created_at desc limit 30').bind(p.id).all()).results
 const out={...shape(p,c.user.id),readme:p.readme,license_url:p.license_url,source_url:p.source_url,website_url:p.website_url,support_url:p.support_url,bot_id:p.bot_id,releases:rel}
@@ -156,6 +157,7 @@ c.env.DB.prepare('insert into users(id,username,display_name,pass_hash,pass_salt
 c.env.DB.prepare('insert into bot_projects(id,owner_id,bot_id,slug,name,summary,readme,avatar_id,license,license_url,source_url,website_url,support_url,visibility,created_at,updated_at) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(pid,c.user.id,bid,slug,o.name,o.summary??'',o.readme??'',avatar,o.license,o.license_url??'',o.source_url??'',o.website_url??'',o.support_url??'',o.visibility,t,t),
 ...tags.map(x=>c.env.DB.prepare('insert into bot_project_tags(project_id,tag) values(?,?)').bind(pid,x))
 ])
+if(o.visibility==='public')await runScreen(c.env,pid,c.user.id)
 return json({id:pid,slug,bot_id:bid,token:await mint(c.env,bid)},201)
 })
 r.add('PATCH','/api/bothub/:id',async c=>{
@@ -187,6 +189,8 @@ const tags=tagList(b.tags)
 st.push(c.env.DB.prepare('delete from bot_project_tags where project_id=?').bind(cur.id),...tags.map(x=>c.env.DB.prepare('insert into bot_project_tags(project_id,tag) values(?,?)').bind(cur.id,x)))
 }
 try{await c.env.DB.batch(st)}catch(e){if(String(e.message).includes('UNIQUE'))fail(409,'That link name is taken');throw e}
+const vis=o.visibility??cur.visibility
+if(vis==='public'&&(['unscreened','rejected','needs_review','changes_requested'].includes(cur.screen_status)||o.name!==undefined||o.summary!==undefined)&&cur.screen_status!=='pending_human')await runScreen(c.env,cur.id,c.user.id,cur.visibility!=='public'?'Submitted for the marketplace':'Listing details changed')
 return{ok:true}
 })
 r.add('GET','/api/bothub/:id/blocks',async c=>{
@@ -201,6 +205,7 @@ limit('bothubb:'+c.user.id,120,3600000)
 const b=await body(c.req,60000)
 const g=cleanGraph(b.blocks)
 await c.env.DB.prepare('update bot_projects set blocks=?,updated_at=? where id=?').bind(g?JSON.stringify(g):null,now(),p.id).run()
+if(p.visibility==='public'&&p.screen_status!=='pending_human')await runScreen(c.env,p.id,c.user.id,'Blocks changed',false)
 return{ok:true,blocks:g}
 })
 r.add('POST','/api/bothub/:id/blocks/test',async c=>{
@@ -253,8 +258,8 @@ r.add('POST','/api/bothub/:id/install',async c=>{
 limit('bothubi:'+c.user.id,30,3600000)
 const b=await body(c.req)
 const sid=str(b.server_id,1,64,'Server')
-const p=await c.env.DB.prepare('select id,owner_id,bot_id,visibility,name from bot_projects where id=?').bind(c.p.id).first()
-if(!p||(p.visibility==='private'&&p.owner_id!==c.user.id))fail(404,'Bot not found')
+const p=await c.env.DB.prepare('select id,owner_id,bot_id,visibility,name,screen_status from bot_projects where id=?').bind(c.p.id).first()
+if(!p||((p.visibility==='private'||(p.visibility==='public'&&!['approved','legacy'].includes(p.screen_status)))&&p.owner_id!==c.user.id))fail(404,'Bot not found')
 const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Server not found')
 if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage server permission to add bots')

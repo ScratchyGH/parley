@@ -13,7 +13,10 @@ import m12 from'../migrations/0012_bot_vars.sql'
 import m13 from'../migrations/0013_more_indexes.sql'
 import m14 from'../migrations/0014_maintenance_bypass.sql'
 import m15 from'../migrations/0015_cases_templates_tags.sql'
-const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9],['0010_profile_gifs_automod',m10],['0011_server_theme_blocks',m11],['0012_bot_vars',m12],['0013_more_indexes',m13],['0014_maintenance_bypass',m14],['0015_cases_templates_tags',m15]]
+import m16 from'../migrations/0016_tag_icons.sql'
+import m17 from'../migrations/0017_pars_program_screening.sql'
+import m18 from'../migrations/0018_moderation_retention.sql'
+const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9],['0010_profile_gifs_automod',m10],['0011_server_theme_blocks',m11],['0012_bot_vars',m12],['0013_more_indexes',m13],['0014_maintenance_bypass',m14],['0015_cases_templates_tags',m15],['0016_tag_icons',m16],['0017_pars_program_screening',m17],['0018_moderation_retention',m18]]
 let ran=null
 export function ensureSchema(db){
 if(!ran)ran=run(db).catch(e=>{ran=null;throw e})

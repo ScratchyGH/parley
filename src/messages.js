@@ -11,6 +11,16 @@ import{urlsIn,inspectLink,imageExplicit,filterOn}from'./safety.js'
 const MAX_LEN=10000
 const floorId=t=>t.toString(36).padStart(9,'0')
 
+async function extBlock(env,rr,content,stk){
+if(rr.kind!=='channel'||!rr.m.server.block_ext_emoji)return
+const sid=rr.m.server.id
+if(stk&&stk.server_id!==sid)fail(422,'This server only allows its own stickers')
+const ids=[...new Set([...String(content).matchAll(/<:[a-zA-Z0-9_]{2,32}:(f_[a-z0-9]{16})>/g)].map(x=>x[1]))].slice(0,30)
+if(!ids.length)return
+const own=(await env.DB.prepare(`select file_id from emoji where server_id=? and file_id in (${placeholders(ids)})`).bind(sid,...ids).all()).results.map(x=>x.file_id)
+if(ids.some(i=>!own.includes(i)))fail(422,'This server only allows its own emoji')
+}
+
 export async function hydrate(env,rows,meId){
 if(!rows.length)return[]
 const ids=rows.map(r=>r.id)
@@ -20,7 +30,7 @@ const q=(s,...a)=>env.DB.prepare(s).bind(...a).all().then(x=>x.results)
 const pollIds=rows.filter(r=>r.has_poll).map(r=>r.id)
 const thIds=[...new Set(rows.map(r=>r.thread_id).filter(Boolean))]
 const[au,at,rx,rp,pd,th]=await Promise.all([
-q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
+q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
 q(`select id,message_id,name,mime,size,sha256 from files where message_id in (${placeholders(ids)})`,...ids),
 q(`select message_id,emoji,count(*) n,max(user_id=?) me from reactions where message_id in (${placeholders(ids)}) group by message_id,emoji order by min(rowid)`,meId,...ids),
 replies.length?q(`select m.id,m.content,m.deleted_at,u.id uid,u.display_name from messages m join users u on u.id=m.author_id where m.id in (${placeholders(replies)})`,...replies):[],
@@ -115,6 +125,7 @@ const ex=await c.env.DB.prepare('select * from messages where author_id=? and no
 if(ex)return{message:(await hydrate(c.env,[ex],c.user.id))[0],duplicate:true}
 }
 await automod(c.env,rr,content)
+await extBlock(c.env,rr,content,stk)
 const last=await c.env.DB.prepare('select content,created_at from messages where room=? and author_id=? order by id desc limit 1').bind(rr.room,c.user.id).first()
 if(last){
 const priv=rr.kind==='channel'&&(rr.perms&(P.MANAGE_MESSAGES|P.MODERATE))
@@ -207,6 +218,7 @@ limit('edit:'+c.user.id,30,60000)
 const b=await body(c.req,40000)
 const content=str(b.content,1,MAX_LEN,'Message')
 await automod(c.env,rr,content)
+await extBlock(c.env,rr,content,null)
 const et=now()
 await c.env.DB.prepare('update messages set content=?,edited_at=?,sig=? where id=?').bind(content,et,await signMsg(c.env,{id:m.id,room:m.room,author_id:m.author_id,created_at:m.created_at,edited_at:et,content}),m.id).run()
 const[message]=await hydrate(c.env,[await c.env.DB.prepare('select * from messages where id=?').bind(m.id).first()],c.user.id)

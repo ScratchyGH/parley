@@ -2,7 +2,9 @@ const LEET={'0':'o','1':'i','3':'e','4':'a','5':'s','7':'t','@':'a','$':'s','!':
 const SEP='[._\\-*+|~\'`^]?'
 const STRONG=['porn','pornhub','porno','pornography','hentai','xvideos','xnxx','xhamster','redtube','youporn','rule34','camgirl','camgirls','cumshot','creampie','gangbang','blowjob','handjob','bukkake','futanari','ahegao','lolicon','shotacon','onlyfansleaks','nudeleaks','sexcam','sextape','erotica','incest','deepthroat','threesome','nsfwart','pornstar','jerkoff','masturbat','cumslut','hornyhub','spankbang','chaturbate','stripchat','livejasmin','brazzers','bangbros','nhentai','rule34xxx','fakku']
 const TOKEN=['sex','xxx','cum','tits','boobs','pussy','nudes','nude','fap','fapping','milf','anal','orgy','slut','sluts','horny','thots','lewds','lewd','loli','shota','jav','hentais','nsfw18','sexting','nudez']
-const fold=s=>s.normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[​-‏⁠﻿]/g,'').replace(/[0134578@$!|+]/g,m=>LEET[m]||m)
+const GLYPH={'а':'a','е':'e','о':'o','р':'p','с':'c','у':'y','х':'x','і':'i','ј':'j','ѕ':'s','ԁ':'d','һ':'h','ո':'n','ɡ':'g','ӏ':'l','ѵ':'v','α':'a','ε':'e','ι':'i','ο':'o','ν':'v','ρ':'p','τ':'t','υ':'u','χ':'x','κ':'k','β':'b','η':'n','μ':'u','ѡ':'w','ɩ':'i','ᴀ':'a','ʙ':'b','ᴄ':'c','ᴅ':'d','ᴇ':'e','ɢ':'g','ʜ':'h','ɪ':'i','ᴊ':'j','ᴋ':'k','ʟ':'l','ᴍ':'m','ɴ':'n','ᴏ':'o','ᴘ':'p','ʀ':'r','ᴛ':'t','ᴜ':'u','ᴠ':'v','ᴡ':'w','ʏ':'y','ᴢ':'z'}
+const glyphs=s=>s.replace(/[\u0370-\u03ff\u0400-\u04ff\u0250-\u02af\u1d00-\u1d7f]/g,m=>GLYPH[m]||m)
+const fold=s=>glyphs(s.normalize('NFKD').toLowerCase()).replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[​-‏⁠﻿]/g,'').replace(/[0134578@$!|+]/g,m=>LEET[m]||m)
 const loose=w=>new RegExp(fold(w).split('').join(SEP))
 const STRONG_RE=STRONG.map(w=>loose(w))
 const SQUASH_RE=new RegExp(STRONG.filter(w=>w.length>=6).map(fold).join('|'))
@@ -93,5 +95,8 @@ const esc=w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')
 if(w.replace(/[^a-z0-9]/g,'').length<4)return new RegExp('(?:^|[^a-z0-9])'+esc.replace(/\s+/g,'\\s+')+'(?![a-z0-9])').test(f)
 if(f.includes(w))return true
 const sq=w.replace(/[^a-z0-9]/g,'')
-return f.replace(/[^a-z0-9]/g,'').includes(sq)
+const fs=f.replace(/[^a-z0-9]/g,'')
+if(fs.includes(sq))return true
+const dd=x=>x.replace(/(.)\1+/g,'$1')
+return dd(fs).includes(dd(sq))
 }

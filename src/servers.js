@@ -1,3 +1,4 @@
+import{expCfg,expActive}from'./program.js'
 import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
@@ -94,8 +95,9 @@ const roles=(await c.env.DB.prepare('select id,name,color,position,perms,is_ever
 const count=await c.env.DB.prepare('select count(*) n from members where server_id=?').bind(m.server.id).first()
 const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
 const s=m.server
+const expc=await expCfg(c.env)
 return{
-server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,tag:s.tag||null,tag_emoji:s.tag_emoji||null,tag_icon_id:s.tag_icon_id||null,theme:themeOf(s.theme),vanity:s.vanity||null,welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
+server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,tag:s.tag||null,tag_emoji:s.tag_emoji||null,tag_icon_id:s.tag_icon_id||null,theme:themeOf(s.theme),vanity:s.vanity||null,block_ext_emoji:!!s.block_ext_emoji,retention_days:s.retention_days||0,experimental:expActive(s,expc),welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
 me:{perms:m.base,role_ids:m.roleIds,owner:m.owner,nickname:m.nickname,timeout_until:m.timeout_until,top:m.owner?9999:m.top},
 categories:cats,
 channels:vis.map(({ch,perms})=>({id:ch.id,category_id:ch.category_id,name:ch.name,type:ch.type,topic:ch.topic,position:ch.position,readonly:ch.readonly,locked:ch.locked,slowmode:ch.slowmode,last_msg:ch.last_msg,perms})),
@@ -143,6 +145,8 @@ o.image=f.id
 add('theme',JSON.stringify(o))
 }
 }
+if('block_ext_emoji'in b)add('block_ext_emoji',b.block_ext_emoji?1:0)
+if('retention_days'in b){if(![0,30,90,365].includes(b.retention_days))fail(400,'Choose off, 30, 90 or 365 days');add('retention_days',b.retention_days)}
 if('welcome'in b)add('welcome',clean(opt(b.welcome,1000,'Welcome message')))
 if('rules'in b)add('rules',clean(opt(b.rules,3000,'Rules')))
 if('verification'in b)add('verification',int(b.verification,0,2,'Verification level'))
@@ -454,7 +458,7 @@ const args=[m.server.id]
 let where=''
 if(q){where=" and (u.username like ? escape '\\' or u.display_name like ? escape '\\' or m.nickname like ? escape '\\')";args.push(like(q),like(q),like(q))}
 args.push(after,lim)
-const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
 return{members:rows.map(x=>({...x,roles:x.roles?x.roles.split(','):[]})),next:rows.length===lim?rows[rows.length-1].id:null}
 })
 

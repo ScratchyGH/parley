@@ -2,6 +2,7 @@ import{fail,now,newId,str,limit,body,clamp}from'./util.js'
 import{P,resolveRoom,loadMember}from'./perms.js'
 import{explicitText}from'./safety.js'
 import{sweepExplicitServers}from'./servers.js'
+import{aiAsk,pick}from'./ai.js'
 
 const POLL='https://gen.pollinations.ai'
 const TYPES=['text','announce','voice','forum']
@@ -22,28 +23,8 @@ c.ec.waitUntil(caches.default.put(key,new Response(JSON.stringify(out),{headers:
 return out
 }
 
-async function ask(c,model,system,user,key){
-if(!modelOk(model))fail(400,'Pick a model')
-const list=await models(c)
-if(!list.some(m=>m.name===model))fail(400,'That model is not available')
-const ctl=new AbortController()
-const timer=setTimeout(()=>ctl.abort(),40000)
-try{
-const hd={'content-type':'application/json'}
-const tok=typeof key==='string'&&/^[A-Za-z0-9_.-]{8,200}$/.test(key)?key:c.env.POLLINATIONS_KEY
-if(tok)hd.authorization='Bearer '+tok
-const res=await fetch(POLL+'/v1/chat/completions',{method:'POST',signal:ctl.signal,headers:hd,body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:user}]})})
-if(res.status===429)fail(429,'Pollinations is busy. Wait about 15 seconds and try again')
-if(res.status===401||res.status===402)fail(502,'Pollinations needs an API key for this request. Paste yours in the Pollinations key box (or ask the server operator to set POLLINATIONS_KEY)')
-if(!res.ok)fail(502,'Pollinations returned an error ('+res.status+')')
-const j=await res.json()
-const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content
-if(typeof text!=='string'||!text.trim())fail(502,'The model returned nothing')
-return text
-}catch(e){
-if(e&&e.name==='AbortError')fail(504,'The model took too long')
-throw e
-}finally{clearTimeout(timer)}
+async function ask(c,b,system,user){
+return aiAsk(c.env,{...pick(b),system,user,ms:40000})
 }
 
 const slug=s=>String(s||'').toLowerCase().trim().replace(/[\s_]+/g,'-').replace(/[^\p{L}\p{N}-]/gu,'').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,50)
@@ -118,7 +99,7 @@ limit('lab-ai:'+c.user.id,6,60000)
 const b=await body(c.req)
 const prompt=str(b.prompt,8,600,'Prompt')
 if(explicitText(prompt))fail(400,'That prompt is not allowed')
-const text=await ask(c,b.model,SYSTEM,prompt,b.key)
+const text=await ask(c,b,SYSTEM,prompt)
 return{layout:cleanLayout(text)}
 })
 
@@ -187,7 +168,7 @@ const rows=(await c.env.DB.prepare("select u.display_name n,m.content from messa
 if(rows.length<5)fail(400,'There are not enough messages to summarise yet')
 let t=rows.map(x=>x.n+': '+x.content.replace(/<@&?[a-z0-9_]+>/g,'@someone')).join('\n')
 t=t.slice(-12000)
-const text=await ask(c,b.model,'Summarise this chat log in under 150 words. Start with the main topic, then list decisions and open questions as short bullet lines starting with "- ". Plain text only.',t,b.key)
+const text=await ask(c,b,'Summarise this chat log in under 150 words. Start with the main topic, then list decisions and open questions as short bullet lines starting with "- ". Plain text only.',t)
 return{summary:text.slice(0,2000),count:rows.length}
 })
 

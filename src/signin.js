@@ -1,6 +1,6 @@
 import{fail,now,newId,randHex,sha,pbkdf2,str,limit,body,json,safeEq}from'./util.js'
 import{nameProblem,claimOwner,claimStmt}from'./names.js'
-import{sessionUser,makeSession,ip,iters,recoveryCode,me,isOwner}from'./auth.js'
+import{sessionUser,makeSession,ip,iters,recoveryCode,me,isOwner,liftIfLapsed}from'./auth.js'
 
 const PROV={
 github:{name:'GitHub',auth:'https://github.com/login/oauth/authorize',token:'https://github.com/login/oauth/access_token',user:'https://api.github.com/user',scope:'read:user',pick:j=>({id:String(j.id),name:j.login,label:j.login})},
@@ -163,7 +163,8 @@ const existing=await sessionUser(c.env,c.req)
 uid=existing&&!existing.is_bot?existing.id:await newUser(c,prof.name,prof.label)
 await c.env.DB.prepare('insert into oauth_identities(provider,subject,user_id,label,created_at) values(?,?,?,?,?)').bind(c.p.p,prof.id,uid,String(prof.label||'').slice(0,60),now()).run()
 }
-const u=await c.env.DB.prepare('select suspended,deleted_at from users where id=?').bind(uid).first()
+const u=await c.env.DB.prepare('select id,suspended,suspended_until,deleted_at from users where id=?').bind(uid).first()
+if(u)await liftIfLapsed(c.env,u)
 if(!u||u.deleted_at)return page(c,'That account no longer exists',clear)
 if(u.suspended)return page(c,'This account is suspended. You can submit an appeal at /appeal.',clear)
 const sc=await makeSession(c,uid)
@@ -245,7 +246,7 @@ const raw=asBytes(b.clientDataJSON,'Client data')
 const cd=clientData(c,raw,'webauthn.get')
 await takeChallenge(c,cd.challenge,'auth',null)
 const credId=typeof b.id==='string'&&b.id.length<=1024?b.id:fail(400,'Bad credential')
-const row=await c.env.DB.prepare('select p.*,u.suspended,u.deleted_at from passkeys p join users u on u.id=p.user_id where p.id=?').bind(credId).first()
+const row=await c.env.DB.prepare('select p.*,u.id uid,u.suspended,u.suspended_until,u.deleted_at from passkeys p join users u on u.id=p.user_id where p.id=?').bind(credId).first()
 if(!row||row.deleted_at)fail(401,'Passkey not recognised')
 const ad=asBytes(b.authenticatorData,'Authenticator data')
 if(ad.length<37||!eqBytes(ad.slice(0,32),await rpHash(c.url))||!(ad[32]&1))fail(401,'Passkey check failed')
@@ -257,7 +258,9 @@ const good=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,derToRaw
 if(!good)fail(401,'Passkey check failed')
 const ctr=new DataView(ad.buffer,ad.byteOffset+33,4).getUint32(0)
 if((ctr||row.counter)&&ctr<=row.counter)fail(401,'Passkey check failed')
-if(row.suspended)fail(403,'This account is suspended. You can submit an appeal at /appeal.')
+const u2={id:row.uid,suspended:row.suspended,suspended_until:row.suspended_until}
+await liftIfLapsed(c.env,u2)
+if(u2.suspended)fail(403,'This account is suspended. You can submit an appeal at /appeal.')
 await c.env.DB.prepare('update passkeys set counter=?,last_used=? where id=?').bind(ctr,now(),row.id).run()
 const sc=await makeSession(c,row.user_id)
 const u=await c.env.DB.prepare('select * from users where id=?').bind(row.user_id).first()
