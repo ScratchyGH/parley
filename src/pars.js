@@ -30,8 +30,15 @@ const permVanity=async(env,sid)=>!!(await env.DB.prepare("select 1 x from par_ow
 export async function expireVanity(env){
 await env.DB.prepare("update servers set vanity=null where vanity is not null and not exists(select 1 from par_owned o where o.server_id=servers.id and o.item_id='vanity' and (o.expires_at is null or o.expires_at>?))").bind(now()).run()
 }
-const COSMETIC=['nameplate','frame','effect','namefx','badge']
-const bundleOf=it=>{let d={};try{d=JSON.parse(it.data||'{}')}catch{}return{items:Array.isArray(d.items)?d.items:[],vanity_days:Number(d.vanity_days)||0}}
+const COSMETIC=['nameplate','frame','effect','namefx','badge','title','bubble']
+const bundleOf=(it,v)=>{
+let d={};try{d=JSON.parse(it.data||'{}')}catch{}
+const vs=d.variants||{main:{items:d.items,vanity_days:d.vanity_days,price:it.price,gift_price:it.price}}
+const key=v&&vs[v]?v:Object.keys(vs).length===1?Object.keys(vs)[0]:null
+if(!key)fail(400,'Choose Legacy or Modern')
+const x=vs[key]
+return{key,items:Array.isArray(x.items)?x.items:[],vanity_days:Number(x.vanity_days)||0,price:Number(x.price)||it.price,gift_price:Number(x.gift_price)||Number(x.price)||it.price,server_price:Number(x.server_price)||0,ends_at:Number(d.ends_at)||0}
+}
 async function findUser(env,name){
 const n=String(name||'').trim().replace(/^@/,'')
 if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(n))fail(400,'Enter a username')
@@ -47,11 +54,11 @@ const[items,owned,tx,me,beat]=await Promise.all([
 c.env.DB.prepare('select * from par_items where enabled=1 or id in (select item_id from par_owned where user_id=?) order by sort,price').bind(c.user.id).all(),
 c.env.DB.prepare('select o.id,o.item_id,o.server_id,o.gift_from,o.created_at,o.expires_at,s.name server_name from par_owned o left join servers s on s.id=o.server_id where o.user_id=? order by o.created_at desc limit 200').bind(c.user.id).all(),
 c.env.DB.prepare('select id,delta,kind,note,created_at from par_tx where user_id=? order by created_at desc limit 40').bind(c.user.id).all(),
-c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge from users where id=?').bind(c.user.id).first(),
+c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge,title,bubble from users where id=?').bind(c.user.id).first(),
 c.env.DB.prepare('select total_ms,day,day_ms from par_beats where user_id=?').bind(c.user.id).first()
 ])
 const today=beat&&beat.day===dayOf(now())?beat.day_ms:0
-return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
+return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
 })
 r.add('GET','/api/pars/history',async c=>{
 const before=clamp(c.url.searchParams.get('before'),now()+1,0,now()+1)
@@ -105,8 +112,39 @@ if(!it)fail(404,'That item is not available')
 const ref='buy:'+req
 const dup=await c.env.DB.prepare("select 1 x from par_tx where user_id=? and kind='purchase' and ref=?").bind(c.user.id,ref).first()
 if(dup)return{ok:true,duplicate:true,balance:await bal(c.env,c.user.id)}
-let owner=c.user.id,sid=null,from=null,note=it.name,bun=null,todo=[]
-if(it.kind==='vanity'||(it.kind==='boost'&&b.target==='server')){
+const gifting=!!String(b.to||'').trim()&&(COSMETIC.includes(it.kind)||it.kind==='bundle')
+const viaServer=b.target==='server'&&it.kind==='bundle'
+let owner=c.user.id,sid=null,from=null,note=it.name,bun=null,todo=[],price=it.price,marker=null,to=null
+if(gifting){
+const cfg=await parsCfg(c.env)
+const me=await c.env.DB.prepare('select created_at from users where id=?').bind(c.user.id).first()
+if(now()-me.created_at<cfg.giftMinAgeHours*3600000)fail(403,'New accounts can send gifts after '+cfg.giftMinAgeHours+' hours')
+to=await findUser(c.env,b.to)
+if(to.id===c.user.id)fail(400,'Use Buy to get this for yourself')
+owner=to.id;from=c.user.id
+}
+if(it.kind==='bundle'){
+bun=bundleOf(it,b.variant)
+if(bun.ends_at&&now()>bun.ends_at)fail(409,'This bundle is no longer available')
+price=viaServer?bun.server_price:gifting?bun.gift_price:bun.price
+if(viaServer){
+if(!bun.vanity_days)fail(400,'This bundle has nothing for a server')
+}else{
+marker='bundle:'+it.id+':'+bun.key
+if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(owner,marker).first())fail(409,gifting?to.username+' already has this bundle':'You already own this bundle')
+const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${bun.items.map(()=>'?').join(',')})`).bind(owner,...bun.items).all()).results.map(x=>x.item_id))
+todo=bun.items.filter(x=>!have.has(x))
+}
+if(viaServer||(!gifting&&bun.vanity_days)){
+sid=String(b.server_id||'')
+const m=await loadMember(c.env,sid,c.user.id)
+if(!m)fail(404,'Choose a server for the vanity link')
+if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission for that server')
+if(await permVanity(c.env,sid))fail(409,'That server already has a permanent vanity link')
+note+=' for '+m.server.name
+}
+if(gifting)note+=' gift to '+to.username
+}else if(it.kind==='vanity'||(it.kind==='boost'&&b.target==='server')){
 sid=String(b.server_id||'')
 const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Server not found')
@@ -122,33 +160,22 @@ owner=u.id;from=c.user.id;note+=' gift to '+u.username
 }else if(it.kind==='boost'&&b.target==='self'){
 note+=' for your account'
 }else if(COSMETIC.includes(it.kind)){
-if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,it.id).first())fail(409,'You already own this')
-}else if(it.kind==='bundle'){
-bun=bundleOf(it)
-const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${bun.items.map(()=>'?').join(',')})`).bind(c.user.id,...bun.items).all()).results.map(x=>x.item_id))
-todo=bun.items.filter(x=>!have.has(x))
-if(!todo.length&&!bun.vanity_days)fail(409,'You already own everything in this bundle')
-if(bun.vanity_days){
-sid=String(b.server_id||'')
-const m=await loadMember(c.env,sid,c.user.id)
-if(!m)fail(404,'Choose a server for the vanity link')
-if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission for that server')
-if(await permVanity(c.env,sid))fail(409,'That server already has a permanent vanity link')
-note+=' for '+m.server.name
-}
+if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(owner,it.id).first())fail(409,gifting?to.username+' already has this':'You already own this')
+if(gifting)note+=' gift to '+to.username
 }else fail(400,'Choose where to apply this')
 if(it.kind==='boost'){
 const cfg=await parsCfg(c.env)
 const cur=await boostMb(c.env,sid?'':owner,sid||null)
 if(cur+it.mb>cfg.boostCapMb)fail(409,'That would go over the '+cfg.boostCapMb+' MB boost limit')
 }
-const ok=await c.env.DB.prepare('update users set pars=pars-? where id=? and pars>=?').bind(it.price,c.user.id,it.price).run()
-if(!ok.meta.changes)fail(402,'You need '+it.price+' Pars for this')
+const ok=await c.env.DB.prepare('update users set pars=pars-? where id=? and pars>=?').bind(price,c.user.id,price).run()
+if(!ok.meta.changes)fail(402,'You need '+price+' Pars for this')
 try{
-const st=[txRow(c.env,c.user.id,-it.price,'purchase',ref,note)]
+const st=[txRow(c.env,c.user.id,-price,'purchase',ref,note)]
 if(bun){
-for(const x of todo)st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),c.user.id,x,null,'bundle:'+it.id,now()))
-if(bun.vanity_days){
+if(marker)st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),owner,marker,null,from,now()))
+for(const x of todo)st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),owner,x,null,from||'bundle:'+it.id,now()))
+if(sid&&bun.vanity_days){
 const cur=await c.env.DB.prepare("select id,expires_at from par_owned where server_id=? and item_id='vanity' and expires_at is not null order by expires_at desc limit 1").bind(sid).first()
 const add=bun.vanity_days*86400000
 if(cur&&cur.expires_at>now())st.push(c.env.DB.prepare('update par_owned set expires_at=? where id=?').bind(cur.expires_at+add,cur.id))
@@ -157,12 +184,13 @@ else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_i
 }else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),owner,it.id,sid,from,now()))
 await c.env.DB.batch(st)
 }catch(e){
-await c.env.DB.prepare('update users set pars=pars+? where id=?').bind(it.price,c.user.id).run()
+await c.env.DB.prepare('update users set pars=pars+? where id=?').bind(price,c.user.id).run()
 if(String(e.message).includes('UNIQUE'))return{ok:true,duplicate:true,balance:await bal(c.env,c.user.id)}
 throw e
 }
 if(sid)c.pub?.('s_'+sid,{t:'server.update',server_id:sid})
-return json({ok:true,balance:await bal(c.env,c.user.id),spent:it.price},201)
+if(to)c.pub?.('u_'+to.id,{t:'pars.gift',from:c.user.username,item:it.name})
+return json({ok:true,balance:await bal(c.env,c.user.id),spent:price},201)
 })
 r.add('POST','/api/pars/equip',async c=>{
 const b=await body(c.req,500)

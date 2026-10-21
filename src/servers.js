@@ -494,7 +494,7 @@ const args=[m.server.id]
 let where=''
 if(q){where=" and (u.username like ? escape '\\' or u.display_name like ? escape '\\' or m.nickname like ? escape '\\')";args.push(like(q),like(q),like(q))}
 args.push(after,lim)
-const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,u.title,u.bubble,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
 return{members:rows.map(x=>({...x,roles:x.roles?x.roles.split(','):[]})),next:rows.length===lim?rows[rows.length-1].id:null}
 })
 
