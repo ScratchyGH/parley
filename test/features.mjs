@@ -454,12 +454,13 @@ r=await A.get('/api/admin/backups')
 ok(r.s===404,'backups are owner only')
 r=await A.post('/api/me/tos',{version:'old',read:'short'})
 ok(r.s===400,'stale terms version rejected')
-r=await A.post('/api/me/tos',{version:'2026-10-21',read:'short'})
+r=await A.post('/api/me/tos',{version:'2026-10-22',read:'short'})
 ok(r.s===200,'terms acceptance recorded')
 r=await A.get('/api/me')
 ok(r.s===200&&r.j.user?.tos_ok===true,'user reports terms accepted')
 r=await A.get('/api/pars')
 ok(r.j.items.filter(i=>i.id.startsWith('np_')).length>=10,'premium nameplates in shop')
+ok(r.j.items.filter(i=>i.id.startsWith('ef_')).length>=16&&r.j.items.filter(i=>i.id.startsWith('fr_')).length>=9,'new effects and frames in shop')
 }
 {
 const OW=new U('x');OW.name='testowner'
