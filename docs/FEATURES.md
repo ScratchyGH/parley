@@ -221,6 +221,24 @@ Verified here means covered by `node test/features.mjs` (66 checks) against a lo
 | Update popup shown once per account, with acknowledgement saved | API tested |
 | Settings > Apps downloads | Lists a release only if one exists. `.github/workflows/apps.yml` is **unverified**: it has never run |
 
-### Not built in this update
+### Second update
 
-Bot builder upgrades (forking, subflows, drag editor, sandbox, version history), collaborative bot workspaces, category right-click rename and permissions, scheduled messages, bookmarks, YouTube thumbnails (the strict CSP blocks external images; this needs a Worker image proxy), upload retries and draft recovery, CSAM reporting workflow and hash matching, avatar effects and personal fonts, Universal Inbox, Workflow Marketplace, Performance Mode, screen-streaming quality controls, group calls and captions, public developer API and plugins, automated backups and monitoring. Call-panel, notification and composer-spacing fixes are written but have not been checked in a live browser.
+`node test/features.mjs` now has 93 checks.
+
+| Feature | Status |
+| --- | --- |
+| Pars shop at `/pars`, linked in the sidebar under Friends; Settings > Pars redirects there | UI written; served as a normal page route |
+| Avatar effects (halo, crown, aurora ring, sparkle, ember, neon, frost, void) and 8 more nameplates, bought and equipped with Pars, shown on messages, member lists and profiles | API tested; the CSS animations have only been checked by reading, look at them in a browser |
+| Scheduled messages (up to 25 pending, 30 days ahead), sent by the cron as the author with their current permissions | API tested including delivery. The cron now runs every minute; the daily cleanup is gated to about once a day |
+| Right-click a category: rename, set one role's permissions on every channel inside, delete | API tested; menu UI written |
+| Illegal-content reports (child safety, other illegal, threat) in a priority queue; acting removes the message and attachments, blocks the file hashes, can suspend and device-ban | API tested. This does **not** file anything with authorities: reporting (for example to NCMEC) is a manual step |
+| Blocked file hash list (exact SHA-256 match) checked on upload | Works only when the upload carries a SHA-256 or storage returns one. No image or perceptual matching, no third-party hash service |
+| YouTube thumbnails through `/api/yt-thumb/:id` (same-origin, cached) | Id validation tested; the live fetch needs the site to reach i.ytimg.com |
+| Performance mode (no animations or effects) | UI written |
+| In-app Privacy policy and Terms; crash reports are off unless you opt in | UI written. The text is a short general draft; have the site operator review it |
+| Simple uploads retry up to 3 times on network or server errors | UI written |
+| Drafts are saved per chat, and Saved messages already existed | Existing behaviour |
+
+### Not built
+
+Bot builder upgrades (forking, subflows, drag editor, sandbox, version history), collaborative bot workspaces, personal fonts and theme presets, Workflow Marketplace, screen-streaming quality controls, group calls and captions, a public developer API and plugins, automated backups and monitoring (D1 Time Travel from Cloudflare covers restores). Call-panel, notification and composer-spacing fixes are written but have not been checked in a live browser.
