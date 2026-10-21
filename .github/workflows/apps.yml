@@ -1,0 +1,78 @@
+name: Build apps
+on:
+  workflow_dispatch:
+  push:
+    tags: ['app-v*']
+permissions:
+  contents: write
+env:
+  SITE: https://parley.heavengtwashere.workers.dev
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - shell: bash
+        run: |
+          mkdir desktop && cd desktop
+          cat > package.json <<'EOF'
+          {"name":"parley-desktop","version":"1.0.0","description":"Parley desktop app","author":"Parley","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","artifactName":"Parley-Setup.exe","win":{"target":"nsis"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true}}}
+          EOF
+          cat > main.js <<'EOF'
+          const{app,BrowserWindow,shell,session}=require('electron')
+          const SITE=process.env.PARLEY_SITE||'https://parley.heavengtwashere.workers.dev'
+          app.whenReady().then(()=>{
+          session.defaultSession.setPermissionRequestHandler((wc,perm,cb)=>cb(['media','notifications','display-capture','clipboard-sanitized-write'].includes(perm)&&new URL(wc.getURL()).origin===new URL(SITE).origin))
+          const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#212829',autoHideMenuBar:true,webPreferences:{contextIsolation:true,sandbox:true}})
+          w.loadURL(SITE)
+          w.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
+          })
+          app.on('window-all-closed',()=>app.quit())
+          EOF
+          sed -i "s#https://parley.heavengtwashere.workers.dev#${SITE}#" main.js
+          npm i --save-dev electron@33 electron-builder@25
+          npx electron-builder --win --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: desktop/dist/Parley-Setup.exe
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: |
+          mkdir cap && cd cap
+          npm init -y
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          mkdir www
+          echo '<!doctype html><title>Parley</title>' > www/index.html
+          cat > capacitor.config.json <<EOF
+          {"appId":"app.parley.android","appName":"Parley","webDir":"www","server":{"url":"${SITE}","androidScheme":"https"}}
+          EOF
+          npx cap add android
+          sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application#' android/app/src/main/AndroidManifest.xml
+          npx cap sync android
+          cd android && ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../../Parley.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: Parley.apk
+  publish:
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Desktop and Android wrappers that open Parley. The Android file is debug-signed for sideloading." || true
+          gh release upload apps windows/Parley-Setup.exe android/Parley.apk --clobber --repo "$GITHUB_REPOSITORY"
