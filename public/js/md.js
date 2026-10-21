@@ -8,12 +8,22 @@ sql:'select from where insert into values update set delete create table drop al
 go:'break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var true false nil',
 rust:'as break const continue crate else enum extern false fn for if impl in let loop match mod move mut pub ref return self Self static struct super trait true type unsafe use where while async await dyn',
 c:'auto break case char const continue default do double else enum extern float for goto if inline int long register return short signed sizeof static struct switch typedef union unsigned void volatile while class public private protected new delete template namespace using bool true false null nullptr this try catch throw final abstract interface implements extends package import string',
-css:'important'
+css:'important',
+rb:'alias and begin break case class def defined do else elsif end ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield require include attr_accessor puts',
+lua:'and break do else elseif end false for function goto if in local nil not or repeat return then true until while',
+yaml:'true false null yes no on off',
+ps:'begin break catch class continue data do dynamicparam else elseif end exit filter finally for foreach from function if in param process return switch throw trap try until using var while true false null',
+hs:'case class data deriving do else if import in infix infixl infixr instance let module newtype of then type where True False Nothing Just',
+ex:'after alias and case catch cond def defmodule defp do else end false fn for if import in nil not or quote raise receive require rescue true try unless use when with',
+dart:'abstract as assert async await break case catch class const continue covariant default deferred do dynamic else enum export extends extension external factory false final finally for Function get hide if implements import in interface is late library mixin new null on operator part required rethrow return set show static super switch sync this throw true try typedef var void while with yield',
+r:'if else repeat while function for in next break TRUE FALSE NULL NA Inf NaN library return',
+scala:'abstract case catch class def do else extends false final finally for forSome if implicit import lazy match new null object override package private protected return sealed super this throw trait true try type val var while with yield given using enum',
+diff:''
 }
-const FAM={js:'js',javascript:'js',ts:'js',typescript:'js',jsx:'js',tsx:'js',json:'js',mjs:'js',py:'py',python:'py',sh:'sh',bash:'sh',zsh:'sh',shell:'sh',sql:'sql',go:'go',golang:'go',rust:'rust',rs:'rust',c:'c',cpp:'c',h:'c',java:'c',cs:'c',csharp:'c',kt:'c',swift:'c',php:'c',css:'css',scss:'css',html:'html',xml:'html',svg:'html'}
+const FAM={js:'js',javascript:'js',ts:'js',typescript:'js',jsx:'js',tsx:'js',json:'js',mjs:'js',py:'py',python:'py',sh:'sh',bash:'sh',zsh:'sh',shell:'sh',sql:'sql',go:'go',golang:'go',rust:'rust',rs:'rust',c:'c',cpp:'c',h:'c',java:'c',cs:'c',csharp:'c',kt:'c',swift:'c',php:'c',css:'css',scss:'css',html:'html',xml:'html',svg:'html',rb:'rb',ruby:'rb',lua:'lua',yaml:'yaml',yml:'yaml',toml:'yaml',ini:'yaml',powershell:'ps',ps1:'ps',pwsh:'ps',haskell:'hs',hs:'hs',elixir:'ex',ex:'ex',exs:'ex',dart:'dart',r:'r',scala:'scala',kotlin:'c',kts:'c',zig:'rust',dockerfile:'sh',makefile:'sh',vue:'html',jsonc:'js',cc:'c',hpp:'c',objc:'c',perl:'sh',pl:'sh'}
 const SETS={}
 for(const[k,v]of Object.entries(KW))SETS[k]=new Set(v.split(' '))
-const CMT={js:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',py:'#[^\\n]*',sh:'#[^\\n]*',sql:'--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',go:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',rust:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',c:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',css:'\\/\\*[\\s\\S]*?\\*\\/',html:'<!--[\\s\\S]*?-->'}
+const CMT={js:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',py:'#[^\\n]*',sh:'#[^\\n]*',sql:'--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',go:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',rust:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',c:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',css:'\\/\\*[\\s\\S]*?\\*\\/',html:'<!--[\\s\\S]*?-->',rb:'#[^\\n]*',lua:'--\\[\\[[\\s\\S]*?\\]\\]|--[^\\n]*',yaml:'#[^\\n]*',ps:'#[^\\n]*|<#[\\s\\S]*?#>',hs:'--[^\\n]*|\\{-[\\s\\S]*?-\\}',ex:'#[^\\n]*',dart:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/',r:'#[^\\n]*',scala:'\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/'}
 const CACHE={}
 function re(fam){
 if(CACHE[fam])return CACHE[fam]

@@ -7,6 +7,7 @@ import{LICENSES,TAGS,licenseName,licenseUrl}from'./licenses.js'
 import{pickCropped}from'./cropper.js'
 import{uploadImage}from'./dialogs.js'
 import{blocksEditor}from'./blocks.js'
+import{screenPill,screenPanel}from'./screenui.js'
 
 const hue=s=>{let x=0;for(const c of String(s))x=(x*31+c.charCodeAt(0))%360;return x}
 const tone=s=>`hsl(${hue(s)} 40% 44%)`
@@ -108,7 +109,7 @@ try{
 const d=await GET('/api/bothub/mine')
 if(!d.projects.length){mount(box,h('div',{class:'empty'},h('div',null,h('h2',{style:{color:'var(--strong)'}},'Build your first bot'),h('p',null,'Create a bot account, write its page, pick a license, then keep it private or list it for everyone.'),h('button',{class:'btn pri',on:{click:()=>go('/lab/new')}},icon('plus','s'),'New bot'))));return box}
 mount(box,h('div',{class:'bh-col'},d.projects.map(p=>h('div',{class:'bh-row mine',style:{'--tone':tone(p.id)}},botIcon(p),
-h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,p.name),pill(p.visibility)),h('p',null,p.summary||'No summary yet.'),chips(p.tags)),
+h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,p.name),pill(p.visibility),p.visibility==='public'?screenPill(p.screen):null),h('p',null,p.summary||'No summary yet.'),chips(p.tags)),
 h('div',{class:'bh-side'},h('div',{class:'bh-stat'},h('b',null,String(p.installs)),h('span',null,p.installs===1?'server':'servers')),
 h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},'Blocks'),h('button',{class:'btn sm pri',on:{click:()=>go('/lab/'+p.slug+'/edit')}},'Edit')))))))
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
@@ -213,6 +214,7 @@ drawRel()
 body.push(sec('releases','Releases',h('p',{class:'hint',style:{marginTop:0}},'Release notes are for people who run the bot. Publishing one marks the page as updated.'),rel,h('div',{class:'row',style:{alignItems:'flex-start',marginTop:'8px'}},h('div',{style:{width:'140px'}},ver),h('div',{class:'grow'},log),h('button',{class:'btn',type:'button',on:{click:async()=>{
 try{const r=await POST(`/api/bothub/${p.id}/releases`,{version:ver.value.trim(),changelog:log.value});p.releases.unshift(r.release);ver.value='';log.value='';drawRel();toast('Release published','ok')}catch(e){fail(e)}
 }}},'Publish'))))
+body.push(sec('screening','Quality screening',screenPanel(p)))
 const tokOut=h('div')
 body.push(sec('access','Access',field('Page address',slugIn,'parley link: /bots/'+d.slug),h('p',{class:'hint'},'Bot account ID: '+p.bot_id),h('button',{class:'btn',type:'button',on:{click:async()=>{
 if(!await confirmBox('Generate a new token?','The old token stops working immediately.','Generate',true))return

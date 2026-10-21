@@ -99,8 +99,18 @@ s.append(p)
 return s
 }
 
+let devId=''
+export function deviceId(){
+if(devId)return devId
+try{devId=localStorage.getItem('parley:dev')||''}catch{}
+if(!/^[a-f0-9]{32}$/.test(devId)){
+devId=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('')
+try{localStorage.setItem('parley:dev',devId)}catch{}
+}
+return devId
+}
 export async function api(method,path,body){
-const init={method,credentials:'same-origin',headers:{}}
+const init={method,credentials:'same-origin',headers:{'x-device':deviceId()}}
 if(body!==undefined||method==='POST'||method==='PUT'||method==='PATCH'){init.body=JSON.stringify(body??{});init.headers['content-type']='application/json'}
 let r
 try{r=await fetch(path,init)}catch{const e=new Error('Network error. Check your connection.');e.status=0;throw e}
@@ -204,7 +214,7 @@ else if(grad)el.style.backgroundImage=bg
 return el
 }
 export function avatar(u,size,status){
-const el=h('div',{class:'av '+(size||''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
+const el=h('div',{class:'av '+(size||'')+(u?.frame?' '+u.frame:''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
 if(u?.avatar_id||u?.icon_id){
 const img=h('img',{src:fileUrl(u.avatar_id||u.icon_id),alt:'',loading:'lazy',decoding:'async'})
 img.onerror=()=>{img.remove();el.prepend(initials(u.display_name||u.name))}
@@ -217,14 +227,14 @@ export const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeou
 export const sleep=ms=>new Promise(r=>setTimeout(r,ms))
 export const rid=()=>Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join('')
 
-export function toast(text,kind,action){
+export function toast(text,kind,action,sticky){
 const el=h('div',{class:'toast '+(kind||''),role:kind==='err'?'alert':'status'},h('div',null,text))
 if(action){
 const row=h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>{action.fn();el.remove()}}},action.label))
 el.append(row)
 }
 document.getElementById('toasts').append(el)
-setTimeout(()=>el.remove(),action?10000:5000)
+if(!sticky)setTimeout(()=>el.remove(),action?10000:5000)
 return el
 }
 export const fail=e=>toast(e?.message||'Something went wrong','err')

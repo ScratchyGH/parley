@@ -1,5 +1,6 @@
 import{h,mount,POST,PATCH,DEL,fail,toast,field,confirmBox}from'./util.js'
 import{S,P,can,loadServer,loadServers}from'./state.js'
+import{chooseProvider}from'./provider.js'
 
 const BRIEF='Parley Community is the official home of Parley, a free, open Discord alternative that runs on Cloudflare. Members chat, report bugs, suggest features, share bots and themes built in the Bot Lab, and hang out in voice. Tone: friendly, welcoming, a little playful. Brand colours: deep fjord teal backgrounds with a maroon accent.'
 const SHAPE='Reply with one JSON object only, no markdown. Shape: {"tag":"2 to 4 letters or numbers","accent":"#rrggbb","description":"under 200 characters","welcome":"under 500 characters","rules":"numbered plain text rules, under 1200 characters","theme":{"bg":"#rrggbb","side":"#rrggbb","panel":"#rrggbb","text":"#rrggbb","accent":"#rrggbb","dim":55},"categories":[{"name":"decorated category name","channels":[{"name":"channel-name","type":"text|announce|voice|forum","topic":"under 120 characters"}]}],"roles":[{"name":"Role name","color":"#rrggbb"}]}. Rules: at most 8 categories, 10 channels each, 10 roles. Category names may use a few Unicode symbols for style such as ✦ ❖ ◆ ➤ ☾ but no emoji. Channel names are lowercase with hyphens. Include welcome, rules, announcements, general chat, help, bug reports, feature ideas, a showcase for bots and themes, off-topic, and voice lounges. Dark theme with readable contrast. Safe for work.'
@@ -61,10 +62,12 @@ const gen=h('button',{class:'btn pri',type:'button'},'Generate')
 const redo=h('button',{class:'btn',type:'button',hidden:true},'Apply my change request')
 let result=null,raw='',via=''
 async function run(prompt){
+const ch=await chooseProvider()
+if(!ch)return
 gen.disabled=redo.disabled=true
 status.textContent='Designing. This can take a minute.'
 try{
-const r=await Promise.race([POST('/api/admin/studio',{prompt}),new Promise((_,no)=>setTimeout(()=>no(new Error('The AI took longer than 2 minutes. Try again')),120000))])
+const r=await Promise.race([POST('/api/admin/studio',{prompt,...ch}),new Promise((_,no)=>setTimeout(()=>no(new Error('The AI took longer than 2 minutes. Try again')),120000))])
 raw=r.text;via=r.via
 result=parse(r.text)
 status.textContent='Designed with '+via
@@ -112,11 +115,13 @@ editBtn.addEventListener('click',async()=>{
 const req=note.value.trim()
 if(!target.value||!req){toast('Write what to rename or delete in the change request first','err');return}
 const sid=target.value
+const ch=await chooseProvider()
+if(!ch)return
 editBtn.disabled=true
 status.textContent='Reading the server structure. This can take a minute.'
 try{
 if(!S.sdata[sid])await loadServer(sid)
-const r=await Promise.race([POST('/api/admin/studio',{prompt:'Here is the current structure of a Discord-style server as JSON:\n'+structure(sid)+'\nRequest: '+req+'\n'+EDIT_SHAPE}),new Promise((_,no)=>setTimeout(()=>no(new Error('The AI took longer than 2 minutes. Try again')),120000))])
+const r=await Promise.race([POST('/api/admin/studio',{...ch,prompt:'Here is the current structure of a Discord-style server as JSON:\n'+structure(sid)+'\nRequest: '+req+'\n'+EDIT_SHAPE}),new Promise((_,no)=>setTimeout(()=>no(new Error('The AI took longer than 2 minutes. Try again')),120000))])
 const e=parseEdits(r.text,sid)
 status.textContent='Planned with '+r.via
 const total=e.rc.length+e.rh.length+e.dc.length+e.dh.length

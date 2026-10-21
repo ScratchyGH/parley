@@ -1,5 +1,5 @@
 import{h,mount,icon,GET,POST,avatar,toast,fail,popup,field,toggle}from'./util.js'
-import{tone}from'./notify.js'
+import{tone,desktop}from'./notify.js'
 import{S,on,emit}from'./state.js'
 import{send as wsSend,isOpen}from'./net.js'
 
@@ -469,7 +469,8 @@ rings.delete(room)
 }
 export function ringToast(from,room,accept){
 stopRing(room)
-const t=toast(`${from.display_name} is calling you`,'ok')
+const t=toast(`${from.display_name} is calling you`,'ok',null,true)
+desktop(`${from.display_name} is calling you`,'Open Parley to answer','call_'+room,()=>{stopRing(room);accept()})
 const ring=()=>tone([[740,.12],[587,.12],[740,.12],[587,.12]],.13)
 ring()
 const iv=setInterval(ring,2400)

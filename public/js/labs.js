@@ -1,5 +1,6 @@
 import{h,mount,GET,POST,fail,toast,field}from'./util.js'
 import{S,loadServer}from'./state.js'
+import{chooseProvider}from'./provider.js'
 
 let frame=null,loaded=null,puterOn=false,seq=0
 const waiting=new Map()
@@ -123,7 +124,9 @@ if(prompt.value.trim().length<8){toast('Describe the server in a sentence or two
 gen.disabled=true
 note.textContent='Asking '+model.sel.value+'. This can take up to 40 seconds.'
 try{
-const r=await POST('/api/lab/ai/layout',{prompt:prompt.value.trim(),model:model.sel.value,key:getKey()})
+const ch=await chooseProvider()
+if(!ch){note.textContent='';return}
+const r=await POST('/api/lab/ai/layout',{prompt:prompt.value.trim(),...ch,model:ch.model||(ch.provider==='pollinations'?model.sel.value:undefined)})
 layout=r.layout
 note.textContent=''
 show()
@@ -154,7 +157,9 @@ if(!ch.sel.value){toast('Pick a channel','err');return}
 go.disabled=true
 res.textContent='Working'
 try{
-const r=await POST('/api/lab/ai/summary',{room:ch.sel.value,model:model.sel.value,key:getKey()})
+const pv=await chooseProvider()
+if(!pv){res.textContent='';return}
+const r=await POST('/api/lab/ai/summary',{room:ch.sel.value,...pv,model:pv.model||(pv.provider==='pollinations'?model.sel.value:undefined)})
 res.textContent=r.summary
 }catch(e){res.textContent='';fail(e)}finally{go.disabled=false}
 })

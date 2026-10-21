@@ -1,3 +1,4 @@
+import{programPage}from'./exp.js'
 import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers,applyThemeObj,applyServerTheme}from'./state.js'
 import{go}from'./nav.js'
@@ -87,6 +88,7 @@ if(can(sid,P.BAN))pages.push(['appeals','Ban appeals'])
 if(can(sid,P.MODERATE))pages.push(['cases','Mod cases'])
 if(can(sid,P.MODERATE))pages.push(['reports','Reports'])
 if(can(sid,P.MODERATE|P.MANAGE_SERVER|P.BAN|P.KICK))pages.push(['log','Audit log'])
+if(d0.me.owner)pages.push(['program','Experimental program'])
 if(d0.me.owner)pages.push(['danger','Ownership and deletion'])
 let cur=pages.some(x=>x[0]===page)?page:pages[0][0]
 const nav=h('nav',{'aria-label':'Server settings sections'})
@@ -96,7 +98,7 @@ function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/s/'+sid+'/settings/'+k)}},l)),
 h('button',{on:{click:()=>go('/s/'+sid)}},'Back to server'))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
@@ -122,7 +124,8 @@ drawTag()
 const cat=h('select',{class:'sel'},h('option',{value:''},'None'),CATEGORIES.map(c=>h('option',{value:c,selected:s.category===c},c[0].toUpperCase()+c.slice(1))))
 const ver=h('select',{class:'sel'},[['0','None'],['1','Account must be older than 5 minutes'],['2','Account must be older than 10 minutes']].map(([v,l])=>h('option',{value:v,selected:String(s.verification)===v},l)))
 let pub=!!s.is_public
-let age=!!s.age_restricted,scan=!!s.scan_explicit
+let age=!!s.age_restricted,scan=!!s.scan_explicit,ext=!!s.block_ext_emoji
+const ret=h('select',{class:'sel'},[['0','Keep forever'],['30','30 days'],['90','90 days'],['365','1 year']].map(([v,l])=>h('option',{value:v,selected:String(s.retention_days||0)===v},l)))
 const scanBox=h('div')
 const drawScan=()=>mount(scanBox,age?h('div',{class:'perm'},toggle(scan,v=>{scan=v},'Scan for explicit content'),h('span',null,'Remove explicit links and images, and block explicit text')):h('div',{class:'hint'},'Explicit text, links and images are always blocked in this server because it is not 18+ Only.'))
 drawScan()
@@ -151,9 +154,11 @@ field('Welcome message',welcome,'Shown to new members. Markdown is supported.'),
 field('Discovery category',cat),
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(pub,v=>{pub=v},'Listed in Discover'),h('span',null,'Listed in Discover (anyone can join without an invite)')),
 field('Verification level',ver),ageRow,scanBox,
+h('div',{class:'perm',style:{marginTop:'12px'}},toggle(ext,v=>{ext=v},'Only this server\'s emoji and stickers'),h('span',null,'Block emoji and stickers from other servers in messages here')),
+field('Message retention',ret,'Older messages are removed automatically (pinned messages are kept). This cannot be undone.'),
 h('div',{style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 try{
-await PATCH('/api/servers/'+sid,{name:name.value.trim(),tag:tag.value.trim(),tag_emoji:temo.value.trim(),tag_icon_id:ticon,description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan})
+await PATCH('/api/servers/'+sid,{name:name.value.trim(),tag:tag.value.trim(),tag_emoji:temo.value.trim(),tag_icon_id:ticon,description:desc.value.trim(),welcome:welcome.value.trim(),rules:rules.value.trim(),category:cat.value,is_public:pub,accent:accent||null,verification:+ver.value,age_restricted:age,scan_explicit:scan,block_ext_emoji:ext,retention_days:+ret.value})
 await loadServer(sid);await loadServers();toast('Saved','ok')
 }catch(e){fail(e)}
 }}},'Save changes')))
@@ -532,7 +537,7 @@ mount(pg,h('h3',null,'AutoMod'),h('p',{class:'hint'},'Word, link and mention rul
 field('Blocked words and phrases',words,'Up to 100 entries, 2 to 40 characters each.'),testBox,
 field('Maximum mentions per message (0 = no limit)',mm),holder,
 h('h4',{style:{marginTop:'16px'}},'Raid protection'),field('Lock joins when this many people join within a minute (0 = off)',rj,'The lock lasts 10 minutes. You can unlock earlier.'),lk,
-h('h4',{style:{marginTop:'16px'}},'Vanity invite link'),field('Custom link',h('div',{class:'row'},h('span',{class:'hint',style:{margin:0}},location.host+'/invite/'),van,h('button',{class:'btn sm',on:{click:async()=>{try{const r=await PUT(`/api/servers/${sid}/vanity`,{slug:van.value.trim()||null});S.sdata[sid].server.vanity=r.vanity;toast('Vanity link saved','ok')}catch(e){fail(e)}}}},'Save')),'3 to 32 letters, numbers or dashes. Free for everyone.'),err,
+h('h4',{style:{marginTop:'16px'}},'Vanity invite link'),field('Custom link',h('div',{class:'row'},h('span',{class:'hint',style:{margin:0}},location.host+'/invite/'),van,h('button',{class:'btn sm',on:{click:async()=>{try{const r=await PUT(`/api/servers/${sid}/vanity`,{slug:van.value.trim()||null});S.sdata[sid].server.vanity=r.vanity;toast('Vanity link saved','ok')}catch(e){fail(e)}}}},'Save')),'3 to 32 letters, numbers or dashes. Unlock vanity links for a server in Settings > Pars (25 Pars).'),err,
 h('div',{style:{marginTop:'12px'}},h('button',{class:'btn pri',on:{click:async()=>{
 err.textContent=''
 try{

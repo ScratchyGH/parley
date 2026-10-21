@@ -9,15 +9,16 @@ import{pickCropped}from'./cropper.js'
 import{passkeysSupported,registerPasskey}from'./webauthn.js'
 import{go}from'./nav.js'
 import{voiceSettingsView}from'./voice.js'
-import{requestDesktop}from'./notify.js'
+import{requestDesktop,testDesktop}from'./notify.js'
 import{pref,setPref}from'./prefs.js'
 import{p2pStats,clearP2PCache,startP2P,stopP2P}from'./p2p/index.js'
 import{nativeSupport}from'./codec.js'
 import{labsPage}from'./labs.js'
+import{parsPage}from'./pars.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
-['account','My account'],['profile','Profile'],['appearance','Appearance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['sessions','Sessions'],['data','Data and deletion']
+['account','My account'],['profile','Profile'],['pars','Pars'],['appearance','Appearance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
 ]
 
 async function saveSettings(patch){
@@ -50,7 +51,7 @@ try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 drawNav()
-const fn={account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
+const fn={apps:appsPage,pars:parsPage,account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
 mount(pg)
 fn(pg,{close:()=>go('/')})
 GET('/api/lab/status').then(x=>{if(x.labs){labs=true;drawNav()}}).catch(()=>{})
@@ -259,6 +260,7 @@ function notifications(pg){
 mount(pg,h('h3',null,'Notifications'),
 sw('sound',true,'Notification sounds','A short tone for new mentions and direct messages while this tab is open.'),
 sw('desktop',false,'Desktop notifications','Shown for mentions and direct messages when this tab is not focused. Works only while Parley is open in a browser tab.',async v=>{if(v){const ok=await requestDesktop();if(!ok){toast('Notifications are blocked in your browser settings','err');saveSettings({desktop:false}).then(()=>notifications(pg))}}}),
+row('Test desktop notification','Sends one right now so you can check your browser and system settings.',h('button',{class:'btn sm',on:{click:async()=>{try{toast((await testDesktop())?'Sent. Look for it in your system notifications':'Notifications are blocked or unsupported in this browser',null)}catch(e){fail(e)}}}},'Send test')),
 sw('dnd',false,'Do not disturb','Silences sounds and desktop notifications. Unread badges still show.'),
 sw('quiet_on',false,'Quiet hours','Silence sounds and desktop notifications between the times below.'),
 h('div',{class:'row',style:{padding:'8px 0'}},
@@ -385,4 +387,15 @@ h('div',{style:{marginBottom:'8px'}},h('button',{class:'btn pri',on:{click:()=>{
 h('p',{class:'hint'},'A bot is an account that posts through the HTTP API with an Authorization header: Bot <token>. Bots can read and send messages, react and upload files in servers they are added to, limited by their permissions. There is no gateway: bots poll the REST API or receive nothing in real time. Up to 5 bots.'),
 h('div',{class:'row'},name,h('button',{class:'btn pri',on:{click:async()=>{try{const r=await POST('/api/bots',{name:name.value.trim()});name.value='';showToken(r.token,'Bot created. Copy the token now; it is shown once.');draw()}catch(e){fail(e)}}}},'Create bot')),out,list)
 draw()
+}
+
+async function appsPage(pg){
+mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These wrappers open the same site in their own window, so you always get the latest version.'),h('div',{class:'hint'},'Checking for downloads'))
+let d={windows:null,android:null}
+try{d=await GET('/api/app/downloads')}catch{}
+const dl=(label,sub,x,ext)=>h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,label),h('div',{class:'hint'},sub),x?h('a',{class:'btn pri',href:x.url,rel:'noopener',download:''},'Download '+ext+' ('+(x.size/1048576).toFixed(0)+' MB)'):h('div',{class:'hint'},'Not published yet. The build runs from the repository Actions tab (Build apps), and the file appears here once it finishes.'))
+mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These wrappers open the same site in their own window, so you always get the latest version.'),
+dl('Windows','Installer for Windows 10 and 11. Windows may warn that the app is unsigned.',d.windows,'.exe'),
+dl('Android','Debug-signed package for sideloading. Allow installs from your browser or file manager, then open the file.',d.android,'.apk'),
+h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'Install from your browser'),h('div',{class:'hint'},'Chrome, Edge and most Android browsers offer Install app in the address bar or menu. Safari: Share, then Add to Home Screen.')))
 }

@@ -1,16 +1,19 @@
 import{h,mount,icon,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast}from'./util.js'
 import{S}from'./state.js'
 import{studio}from'./studio.js'
+import{parsAdmin}from'./pars.js'
+import{programAdmin}from'./exp.js'
+import{screeningAdmin}from'./screenui.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],...(S.me.owner?[['db','Database']]:[])]
+const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={stats,users,reports,appeals,log,db,studio}[cur]
+const fn={stats,users,reports,appeals,log,db,studio,pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),nav,body)
@@ -36,11 +39,11 @@ const run=async()=>{
 if(q.value.trim().length<2){mount(list);return}
 try{
 const d=await GET('/api/admin/users?q='+encodeURIComponent(q.value.trim()))
-mount(list,d.users.map(u=>h('div',{class:'li'},h('div',{class:'grow'},h('b',null,u.display_name+' (@'+u.username+')'),h('small',null,'Joined '+fmtStamp(u.created_at)+(u.suspended?' · suspended':'')+(u.deleted_at?' · deleted':''))),
+mount(list,d.users.map(u=>h('div',{class:'li'},h('div',{class:'grow'},h('b',null,u.display_name+' (@'+u.username+')'),h('small',null,'Joined '+fmtStamp(u.created_at)+(u.suspended?' · suspended'+(u.suspended_until?' until '+fmtStamp(u.suspended_until):' (permanent)'):'')+(u.deleted_at?' · deleted':''))),
 u.deleted_at?null:h('button',{class:'btn sm'+(u.labs?' pri':''),title:'Give or take away the Experimental tab',on:{click:async()=>{try{await POST(`/api/admin/users/${u.id}/labs`,{on:!u.labs});u.labs=u.labs?0:1;run()}catch(e){fail(e)}}}},u.labs?'Experimental on':'Experimental off'),
 u.deleted_at||u.id===S.me.id?null:h('button',{class:'btn sm'+(u.suspended?'':' dng'),on:{click:async()=>{
-if(!u.suspended&&!await confirmBox('Suspend @'+u.username,'They will be signed out and unable to log in.','Suspend',true))return
-try{await POST(`/api/admin/users/${u.id}/suspend`,{suspended:!u.suspended,reason:'admin action'});run()}catch(e){fail(e)}
+if(!u.suspended){suspendDialog(u,run);return}
+try{await POST(`/api/admin/users/${u.id}/suspend`,{suspended:false,reason:'admin action'});run()}catch(e){fail(e)}
 }}},u.suspended?'Unsuspend':'Suspend'))))
 }catch(e){mount(list,h('div',{class:'err'},e.message))}
 }
@@ -48,18 +51,33 @@ q.oninput=debounce(run,300)
 mount(pg,h('h3',null,'Users'),q,list)
 }
 
+const DURS=[['1','1 hour'],['24','1 day'],['168','7 days'],['720','30 days'],['0','Permanent']]
+export function suspendDialog(u,done){
+const dur=h('select',{class:'sel'},DURS.map(([v,l])=>h('option',{value:v,selected:v==='24'},l)))
+const why=h('input',{class:'inp',maxLength:300,placeholder:'Reason (recorded in the audit log)'})
+const dev=h('input',{type:'checkbox'})
+dialog('Suspend @'+u.username,h('div',null,
+h('p',{class:'hint'},'They are signed out now and cannot sign in until the suspension ends or an administrator lifts it.'),
+field('Length',dur),field('Reason',why),
+h('label',{class:'perm'},dev,h('span',null,'Also ban the devices they have used. Best effort only: it blocks this browser profile, not the hardware.'))),
+{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn dng',on:{click:async()=>{
+if(!why.value.trim()){toast('Add a reason first','err');return}
+try{await POST(`/api/admin/users/${u.id}/suspend`,{suspended:true,reason:why.value.trim(),hours:+dur.value,device:dev.checked});close();toast('Suspended','ok');done?.()}catch(e){fail(e)}
+}}},'Suspend')]})
+}
+
 async function reports(pg){
 mount(pg,h('h3',null,'Reports'),h('div',{class:'hint'},'Loading…'))
 try{
 const d=await GET('/api/admin/reports')
-mount(pg,h('h3',null,'Open reports'),h('div',{class:'list'},d.reports.length?d.reports.map(r=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${r.target_type} · reported by @${r.reporter}`),h('div',null,r.reason),h('small',null,`${r.target_id}${r.server_id?' in '+r.server_id:''} · ${fmtStamp(r.created_at)}`)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id,{});reports(pg)}catch(e){fail(e)}}}},'Resolve'))):h('div',{class:'hint'},'No open reports')))
+mount(pg,h('h3',null,'Open reports'),h('div',{class:'list'},d.reports.length?d.reports.map(r=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${r.target_type} · reported by @${r.reporter}`),h('div',null,r.reason),h('small',null,`${r.target_id}${r.server_id?' in '+r.server_id:''} · ${fmtStamp(r.created_at)}`)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id,{});reports(pg)}catch(e){fail(e)}}}},'Resolve'),(()=>{const uid=r.target_type==='user'?r.target_id:r.msg_author;return uid&&uid!==S.me.id?h('button',{class:'btn sm dng',on:{click:()=>suspendDialog({id:uid,username:r.target_type==='user'?'user':'message author'},()=>reports(pg))}},'Suspend…'):null})())):h('div',{class:'hint'},'No open reports')))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
 }
 async function appeals(pg){
 mount(pg,h('h3',null,'Account appeals'),h('div',{class:'hint'},'Loading…'))
 try{
 const d=await GET('/api/admin/appeals')
-mount(pg,h('h3',null,'Account appeals'),h('div',{class:'list'},d.appeals.length?d.appeals.map(a=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,'@'+a.username),h('div',null,a.message),h('small',null,fmtStamp(a.created_at))),
+mount(pg,h('h3',null,'Account appeals'),h('div',{class:'list'},d.appeals.length?d.appeals.map(a=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,'@'+a.username),h('div',null,a.message),a.evidence?h('div',null,(()=>{try{return JSON.parse(a.evidence)}catch{return[]}})().map(l=>h('a',{href:l,target:'_blank',rel:'noopener noreferrer',style:{display:'block'}},l))):null,h('small',null,fmtStamp(a.created_at))),
 h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/appeals/'+a.id,{accept:true});appeals(pg)}catch(e){fail(e)}}}},'Accept'),
 h('button',{class:'btn sm dng',on:{click:async()=>{try{await POST('/api/admin/appeals/'+a.id,{accept:false});appeals(pg)}catch(e){fail(e)}}}},'Deny'))):h('div',{class:'hint'},'No open appeals')))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}

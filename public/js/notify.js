@@ -57,8 +57,21 @@ o.stop(ctx.currentTime+.25)
 export function desktop(title,body,tag,onclick){
 if(!setting('desktop',false)||quiet()||!('Notification'in window)||Notification.permission!=='granted')return
 if(document.hasFocus()&&!document.hidden)return
+const opts={body:String(body).slice(0,140),tag,silent:true,icon:'/favicon.svg'}
 try{
-const n=new Notification(title,{body:body.slice(0,140),tag,silent:true})
+const n=new Notification(title,opts)
 n.onclick=()=>{window.focus();onclick?.();n.close()}
-}catch{}
+}catch{
+navigator.serviceWorker?.getRegistration().then(r=>r?.showNotification(title,{...opts,data:{url:'/'}})).catch(()=>{})
+}
+}
+export async function testDesktop(){
+if(!(await requestDesktop()))return false
+const opts={body:'Notifications are working.',tag:'parley_test',icon:'/favicon.svg'}
+try{new Notification('Parley',opts)}catch{
+const r=await navigator.serviceWorker?.getRegistration()
+if(!r)return false
+await r.showNotification('Parley',{...opts,data:{url:'/'}})
+}
+return true
 }

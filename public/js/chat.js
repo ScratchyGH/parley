@@ -280,7 +280,7 @@ const r=m.reply
 main.append(r.deleted?h('div',{class:'rp'},icon('reply','s'),'Original message was deleted'):h('div',{class:'rp',role:'button',tabindex:'0',on:{click:()=>jumpTo(r.id),keydown:e=>{if(e.key==='Enter')jumpTo(r.id)}}},icon('reply','s'),h('b',null,r.author),h('span',null,plain(r.content,100))))
 }
 if(!cont){
-const nm=h('b',{on:{click:e=>openProfile(e,m.author)}},m.author.display_name)
+const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click:e=>openProfile(e,m.author)}},m.author.display_name)
 main.append(h('div',{class:'mh'},nm,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){

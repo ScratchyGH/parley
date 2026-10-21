@@ -15,6 +15,9 @@ import{openSettings,settingsPage}from'./settings.js'
 import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
 import{startP2P}from'./p2p/index.js'
+import{startPars}from'./pars.js'
+import{whatsNew}from'./whatsnew.js'
+import{checkOffer}from'./exp.js'
 
 const root=document.getElementById('app')
 let cleanup=null
@@ -60,6 +63,8 @@ booted=true
 await Promise.all([loadServers(),loadConvs(),loadFriends(),loadUnread().catch(()=>{}),loadNotifCount().catch(()=>{})]).catch(fail)
 setRouteHandler(route)
 await route()
+startPars()
+setTimeout(whatsNew,1200)
 }
 
 function desiredRooms(){
@@ -118,6 +123,7 @@ try{await loadServer(sid)}catch(e){fail(e);go('/',true);return}
 if(gen!==routeGen)return
 }
 const d=S.sdata[sid]
+checkOffer(sid)
 if(r.name==='ssettings'){
 S.nav={kind:'server',sid,room:null}
 syncChrome()
@@ -195,7 +201,13 @@ syncChrome()
 const pane=h('div',{style:{flex:'1',display:'flex',flexDirection:'column',minHeight:0,position:'relative'}})
 const chatBox=h('div',{style:{flex:'1',display:'flex',flexDirection:'column',minHeight:0,position:'relative'}})
 if(!c.accepted)pane.append(requestBanner(c))
-pane.append(chatBox)
+const callBox=h('div',{class:'dmcall'})
+const stopRoom=mountVoiceRoom(callBox,c.id,convTitle(c),c.id,'/dm/'+c.id)
+const syncCall=()=>{callBox.hidden=!(V.ch===c.id||Object.keys(S.voice[c.id]||{}).length)}
+syncCall()
+const offCall=on('voice:update',syncCall)
+cleanup=()=>{stopRoom?.();offCall()}
+pane.append(callBox,chatBox)
 layoutMain(chatTop(c.id),pane)
 openChat(chatBox,c.id,r.m||null)
 if(r.m)history.replaceState(null,'','/dm/'+c.id)
@@ -273,6 +285,7 @@ case'poll.update':case'msg.update':case'msg.delete':case'reaction':case'att.dele
 chatEvent(room,m)
 break
 case'safety.removed':toast('A message of yours was removed because this server scans for explicit content','err');break
+case'pars.gift':emit('pars.gift',m);break
 case'notif':
 S.notifN++
 emit('notifn')
