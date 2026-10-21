@@ -1,0 +1,15 @@
+insert or ignore into par_items(id,kind,name,descr,price,scope,mb,data,sort) values
+('ef_orbit','effect','Orbit','A small bright moon circling your avatar.',20,'user',0,'#93c5fd',50),
+('ef_hearts','effect','Hearts','Pink hearts floating up from your avatar.',20,'user',0,'#f472b6',51),
+('ef_thunder','effect','Thunder','A crackling yellow ring with a flickering bolt.',20,'user',0,'#fde047',52),
+('ef_ears','effect','Cat ears','Pointed ears on top of your avatar.',20,'user',0,'#f9a8d4',53),
+('ef_snow','effect','Snowfall','Snowflakes drifting past your avatar.',15,'user',0,'#e0f2fe',54),
+('ef_matrix','effect','Matrix','A green digital ring that pulses.',15,'user',0,'#22c55e',55),
+('ef_rainbow','effect','Rainbow ring','A fast spinning rainbow ring.',20,'user',0,'#f472b6',56),
+('ef_double','effect','Double ring','Two thin gold rings with a soft glow.',15,'user',0,'#fbbf24',57),
+('fr_rose','frame','Rose frame','A soft rose ring around your avatar.',10,'user',0,'#fb7185',23),
+('fr_ruby','frame','Ruby frame','A deep red ring with a glow.',12,'user',0,'#dc2626',24),
+('fr_ice','frame','Ice frame','A pale blue ring with a frosted glow.',12,'user',0,'#7dd3fc',25),
+('fr_obsidian','frame','Obsidian frame','A black ring edged in violet.',12,'user',0,'#6d28d9',26),
+('fr_duo','frame','Twin frame','A double ring in white and your accent.',12,'user',0,'#ffffff',27),
+('fr_emerald','frame','Emerald frame','A rich green ring with a glow.',12,'user',0,'#10b981',28);
