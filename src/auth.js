@@ -1,3 +1,4 @@
+import{TOS_VERSION}from'./tos.js'
 import{checkSecondFactor}from'./totp.js'
 import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
@@ -87,7 +88,7 @@ return{label,url:u.href}
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
+return{tos_ok:u.tos_version===TOS_VERSION,tos_version:TOS_VERSION,pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
 }
 
 const tokenOf=(req,name)=>{

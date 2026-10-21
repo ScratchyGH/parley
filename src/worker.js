@@ -27,7 +27,10 @@ import{sweepExplicitServers}from'./servers.js'
 import botxRoutes from'./botx.js'
 import{roleOf}from'./botlab.js'
 import hookRoutes from'./devhooks.js'
+import pluginRoutes from'./plugins.js'
+import backupRoutes,{dailyBackup}from'./backup.js'
 import legalRoutes from'./legal.js'
+import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
 import{d1Store}from'./store.js'
 import{tursoDb}from'./turso.js'
@@ -58,6 +61,8 @@ appRoutes(router)
 deviceRoutes(router)
 botxRoutes(router)
 hookRoutes(router)
+pluginRoutes(router)
+backupRoutes(router)
 botlabRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
@@ -114,6 +119,7 @@ if(!asUser)await checkDevice(env,req,user,url.pathname)
 if(hit.auth&&!user)fail(401,'Not signed in')
 if(user&&user.is_bot&&!/^\/api\/(rooms|channels|threads|upload|files|stickers)\b|^\/api\/me$|^\/api\/servers\/[^/]+$/.test(url.pathname))fail(403,'Bots cannot use this endpoint')
 if(user&&user.is_bot&&/^\/api\/(me|servers\/[^/]+)$/.test(url.pathname)&&method!=='GET')fail(403,'Bots cannot use this endpoint')
+if(user&&!user.is_bot&&!env.TOS_OFF&&user.tos_version!==TOS_VERSION&&method!=='GET'&&method!=='HEAD'&&!tosExempt(url.pathname))throw Object.assign(new HttpError(403,'Accept the Terms and Privacy Policy to continue'),{tos:true})
 if(user)limit('api:'+user.id,600,60000)
 else limit('anon:'+(req.headers.get('cf-connecting-ip')||'local'),120,60000)
 if(user&&!user.admin&&await maintenance(env)&&!/^\/api\/auth\/logout$/.test(url.pathname))fail(503,'Parley is in maintenance mode. Please try again shortly.')
@@ -190,7 +196,7 @@ const h=new Headers(res.headers)
 for(const[k,v]of Object.entries(SEC))if(!h.has(k))h.set(k,v)
 return new Response(res.body,{status:res.status,statusText:res.statusText,headers:h})
 }catch(e){
-if(e instanceof HttpError)return json({error:e.message},e.status,SEC)
+if(e instanceof HttpError)return json({error:e.message,...(e.tos?{tos:true}:{})},e.status,SEC)
 const msg=String(e&&e.message||e)
 console.error('unhandled',msg)
 if(/exceeded|quota|limit/i.test(msg)&&/D1|row|daily/i.test(msg))return json({error:'The free database quota for today has been used up. It resets at 00:00 UTC.'},503,SEC)
@@ -214,6 +220,7 @@ await Promise.allSettled(pend)
 const last=await env.DB.prepare("select v from app_settings where k='last_sweep'").first().catch(()=>null)
 if(last&&t-Number(last.v)<20*3600000)return
 await env.DB.prepare("insert into app_settings(k,v) values('last_sweep',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()
+try{await dailyBackup(env)}catch(e){console.error('backup',String(e&&e.message||e))}
 const orphans=(await env.DB.prepare('select id,r2_key from files where kind=? and message_id is null and created_at<?').bind('attachment',t-86400000).all()).results
 for(const f of orphans)await env.FILES.delete(f.r2_key)
 const stale=(await env.DB.prepare('select id,r2_key,upload_id from uploads where created_at<?').bind(t-86400000).all()).results

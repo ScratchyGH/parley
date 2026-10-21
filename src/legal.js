@@ -1,3 +1,4 @@
+import{TOS_VERSION}from'./tos.js'
 import{fail,now,newId,str,body,limit}from'./util.js'
 import{banUserDevices}from'./devices.js'
 const guard=c=>{if(!c.user.admin)fail(404,'Not found')}
@@ -7,6 +8,13 @@ if(!sum||!HEX.test(sum))return false
 return!!(await env.DB.prepare('select 1 x from blocked_hashes where hash=?').bind(sum).first())
 }
 export default function(r){
+r.add('POST','/api/me/tos',async c=>{
+const b=await body(c.req)
+if(b.version!==TOS_VERSION)fail(400,'These terms were updated. Reload the page and read them again.')
+const how=b.read==='short'?'short':'long'
+await c.env.DB.prepare('update users set tos_version=?,tos_at=?,tos_read=? where id=?').bind(TOS_VERSION,now(),how,c.user.id).run()
+return{ok:true}
+})
 r.add('POST','/api/content-reports',async c=>{
 limit('creport:'+c.user.id,10,3600000)
 const b=await body(c.req)

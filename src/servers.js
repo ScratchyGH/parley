@@ -1,4 +1,5 @@
 import{fireHooks}from'./devhooks.js'
+import{runPlugins}from'./plugins.js'
 import{expCfg,expActive}from'./program.js'
 import{raidCheck}from'./perks.js'
 import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
@@ -208,6 +209,7 @@ c.env.DB.prepare('delete from members where server_id=? and user_id=?').bind(m.s
 c.env.DB.prepare('delete from read_state where user_id=? and room in (select id from channels where server_id=?)').bind(c.user.id,m.server.id)
 ])
 c.pub('s_'+m.server.id,{t:'member.leave',uid:c.user.id})
+runPlugins(c,m.server.id,'leave',c.user)
 c.pubClose('s_'+m.server.id,{close:[c.user.id],purge:true})
 return{ok:true}
 })
@@ -630,6 +632,7 @@ const count=await c.env.DB.prepare('select count(*) n from members where user_id
 if(count.n>=100)fail(400,'You have reached the safety limit of 100 servers')
 await c.env.DB.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(sid,c.user.id,now()).run()
 c.pub('s_'+sid,{t:'member.join',uid:c.user.id})
+runPlugins(c,sid,'join',c.user)
 fireHooks(c,sid,'member.join',{user:{id:c.user.id,username:c.user.username,display_name:c.user.display_name}})
 try{await runJoin(c,sid,c.user)}catch{}
 }

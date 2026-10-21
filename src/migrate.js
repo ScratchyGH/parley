@@ -20,7 +20,10 @@ import m19 from'../migrations/0019_scheduled_inbox_reports.sql'
 import m20 from'../migrations/0020_avatar_effects.sql'
 import m21 from'../migrations/0021_bot_workspaces.sql'
 import m22 from'../migrations/0022_server_hooks.sql'
-const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9],['0010_profile_gifs_automod',m10],['0011_server_theme_blocks',m11],['0012_bot_vars',m12],['0013_more_indexes',m13],['0014_maintenance_bypass',m14],['0015_cases_templates_tags',m15],['0016_tag_icons',m16],['0017_pars_program_screening',m17],['0018_moderation_retention',m18],['0019_scheduled_inbox_reports',m19],['0020_avatar_effects',m20],['0021_bot_workspaces',m21],['0022_server_hooks',m22]]
+import m23 from'../migrations/0023_tos.sql'
+import m24 from'../migrations/0024_premium_nameplates.sql'
+import m25 from'../migrations/0025_server_plugins.sql'
+const LIST=[['0001_init',m1],['0002_features',m2],['0003_free_perks',m3],['0004_d1_blobs',m4],['0005_indexes',m5],['0006_bot_projects',m6],['0007_signin',m7],['0008_cleanup_indexes',m8],['0009_safety_labs',m9],['0010_profile_gifs_automod',m10],['0011_server_theme_blocks',m11],['0012_bot_vars',m12],['0013_more_indexes',m13],['0014_maintenance_bypass',m14],['0015_cases_templates_tags',m15],['0016_tag_icons',m16],['0017_pars_program_screening',m17],['0018_moderation_retention',m18],['0019_scheduled_inbox_reports',m19],['0020_avatar_effects',m20],['0021_bot_workspaces',m21],['0022_server_hooks',m22],['0023_tos',m23],['0024_premium_nameplates',m24],['0025_server_plugins',m25]]
 let ran=null
 export function ensureSchema(db){
 if(!ran)ran=run(db).catch(e=>{ran=null;throw e})

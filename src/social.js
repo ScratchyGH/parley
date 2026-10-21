@@ -267,9 +267,11 @@ limit('ring:'+c.user.id,6,60000)
 const rr=await resolveRoom(c.env,c.p.id,c.user.id)
 if(rr.kind!=='dm'||!(rr.perms&P.CONNECT))fail(403,'You cannot call here')
 if(rr.perms===P.VIEW)fail(403,'You cannot call this user')
-const ms=(await c.env.DB.prepare('select user_id from conv_members where conv_id=? and user_id!=? and accepted=1').bind(rr.room,c.user.id).all()).results
+const b=await body(c.req).catch(()=>({}))
+const only=Array.isArray(b.user_ids)?new Set(b.user_ids.filter(x=>typeof x==='string').slice(0,20)):null
+const ms=(await c.env.DB.prepare('select user_id from conv_members where conv_id=? and user_id!=? and accepted=1').bind(rr.room,c.user.id).all()).results.filter(m=>!only||only.has(m.user_id))
 for(const m of ms)c.pub('u_'+m.user_id,{t:'call.ring',room:rr.room,from:{id:c.user.id,display_name:c.user.display_name,avatar_id:c.user.avatar_id}})
-return{ok:true}
+return{ok:true,rang:ms.length}
 })
 
 r.add('POST','/api/conversations/:id/ring/:action',async c=>{
