@@ -173,7 +173,7 @@ if(u){count+=u.count;mentions+=u.mentions}
 return count||mentions?{count,mentions}:null
 }
 
-export const FONTS={'':['Default','"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'],figtree:['Figtree','"Figtree",sans-serif'],bricolage:['Bricolage Grotesque','"Bricolage","Figtree",sans-serif'],system:['System font','system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'],serif:['Serif','Georgia,"Times New Roman",serif'],mono:['Monospace','ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'],rounded:['Rounded','ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,Nunito,"Varela Round",sans-serif'],humanist:['Humanist','Seravek,"Gill Sans Nova",Ubuntu,Calibri,"DejaVu Sans",sans-serif'],legible:['Easy to read','"Atkinson Hyperlegible",Lexend,Verdana,Tahoma,sans-serif']}
+export const FONTS={parli:['Parli-Bold (whole site)','"Parli-Bold","Figtree",sans-serif'],'':['Default','"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'],figtree:['Figtree','"Figtree",sans-serif'],bricolage:['Bricolage Grotesque','"Bricolage","Figtree",sans-serif'],system:['System font','system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'],serif:['Serif','Georgia,"Times New Roman",serif'],mono:['Monospace','ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'],rounded:['Rounded','ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,Nunito,"Varela Round",sans-serif'],humanist:['Humanist','Seravek,"Gill Sans Nova",Ubuntu,Calibri,"DejaVu Sans",sans-serif'],legible:['Easy to read','"Atkinson Hyperlegible",Lexend,Verdana,Tahoma,sans-serif']}
 export const PRESETS={midnight:['Midnight','dimmed','#4f46e5','#0f1220'],forest:['Forest','dimmed','#2f855a','#14201a'],sunset:['Sunset','dimmed','#d9622b','#241818'],ocean:['Ocean','dimmed','#0e7490','#0f1f26'],rose:['Rose','dimmed','#be3a6a','#241520'],graphite:['Graphite','dimmed','#7c8794','#1b1d21'],paper:['Paper','light','#3b6ea5','']}
 export function applySettings(over){
 const s=over||S.me?.settings||{}
@@ -182,6 +182,7 @@ root.dataset.theme=s.theme||'dimmed'
 root.dataset.density=s.density||'comfortable'
 root.style.setProperty('--fs',(s.font_size||15)+'px')
 if(s.font_ui&&FONTS[s.font_ui])root.style.setProperty('--font',FONTS[s.font_ui][1]);else root.style.removeProperty('--font')
+if(s.font_ui==='parli')root.style.setProperty('--disp',FONTS.parli[1]);else root.style.removeProperty('--disp')
 if(s.font_msg&&FONTS[s.font_msg])root.style.setProperty('--fontm',FONTS[s.font_msg][1]);else root.style.removeProperty('--fontm')
 const dark=(s.theme||'dimmed')!=='light'
 if(s.ui_color&&dark){
