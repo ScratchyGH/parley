@@ -894,7 +894,7 @@ ins{text-decoration:none;border-bottom:2px solid #4ade80}
 .gx-out{opacity:0}
 .gx-t{font-family:"Parli-Bold",var(--disp);font-size:22px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.6);animation:gxin .6s both}
 .gx-t b{color:#fde68a}
-.gx-stage{position:relative;width:320px;height:340px;perspective:1100px}
+.gx-stage{margin-top:70px;position:relative;width:320px;height:340px;perspective:1100px}
 .gx-3d{position:absolute;left:50%;top:150px;width:0;height:0;transform-style:preserve-3d;transform:translateY(var(--by,0)) rotateX(-20deg) rotateY(-28deg) rotateZ(var(--bz,0))}
 .gx-box,.gx-lid{position:absolute;left:0;top:0;transform-style:preserve-3d}
 .gx-f{position:absolute;backface-visibility:hidden}
@@ -919,8 +919,8 @@ ins{text-decoration:none;border-bottom:2px solid #4ade80}
 .gx-big{display:grid;place-items:center;width:88px;height:88px;border-radius:26px;background:linear-gradient(135deg,#6366f1,#a855f7);box-shadow:0 0 30px rgba(168,85,247,.7)}
 .gx-big svg{width:46px;height:46px;color:#fff}
 .gx-rise .gx-item{animation:gxrise 1.5s cubic-bezier(.2,.8,.3,1) forwards,gxbob 2.4s 1.5s ease-in-out infinite}
-@keyframes gxrise{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1}100%{opacity:1;transform:translate(-50%,calc(-50% - 120px)) scale(1)}}
-@keyframes gxbob{0%,100%{opacity:1;transform:translate(-50%,calc(-50% - 120px)) scale(1)}50%{opacity:1;transform:translate(-50%,calc(-50% - 132px)) scale(1.03)}}
+@keyframes gxrise{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1}100%{opacity:1;transform:translate(-50%,calc(-50% - 70px)) scale(1)}}
+@keyframes gxbob{0%,100%{opacity:1;transform:translate(-50%,calc(-50% - 70px)) scale(1)}50%{opacity:1;transform:translate(-50%,calc(-50% - 82px)) scale(1.03)}}
 @keyframes gxglow{to{opacity:1}}
 @keyframes gxin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 .gx-drop .gx-stage{animation:gxdrop .9s cubic-bezier(.3,1.35,.5,1)}
