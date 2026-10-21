@@ -1,0 +1,37 @@
+alter table users add column namefx text;
+alter table users add column badge text;
+alter table par_owned add column expires_at integer;
+insert or ignore into par_items(id,kind,name,descr,price,scope,mb,data,sort,enabled) values
+('fr_void','frame','Void frame','A dark violet ring that breathes, wrapped in drifting stars.',15,'user',0,'',60,1),
+('fr_halo','frame','Angel Halo frame','A gold ring with a floating halo and feathered wings.',20,'user',0,'',61,1),
+('fr_devil','frame','Evil Embodiment frame','A crimson ring with curved horns and a barbed tail.',20,'user',0,'',62,1),
+('fr_blox','frame','Bloxtime frame','A chunky brick frame with studs on top.',15,'user',0,'',63,1),
+('np_void','nameplate','Void nameplate','A starfield pulled into a violet singularity.',12,'user',0,'',64,1),
+('np_blox','nameplate','Bloxtime nameplate','A glossy red brick with studs.',12,'user',0,'',65,1),
+('np_god','nameplate','Gods Descendent nameplate','Radiant gold with rays of light. Only available in the Eyes of God bundle.',99,'user',0,'',66,0),
+('nf_gold','namefx','Gold name','Polished gold lettering.',8,'user',0,'',70,1),
+('nf_rainbow','namefx','Rainbow name','Letters that slowly cycle through every color.',8,'user',0,'',71,1),
+('nf_fire','namefx','Fire name','Letters that burn from red to yellow.',8,'user',0,'',72,1),
+('nf_ice','namefx','Ice name','Frosted white to sky blue.',8,'user',0,'',73,1),
+('nf_neon','namefx','Neon name','A glowing cyan sign.',8,'user',0,'',74,1),
+('nf_sakura','namefx','Sakura name','Soft pink with a slow shimmer.',8,'user',0,'',75,1),
+('nf_void','namefx','Void name','Deep violet with a drifting glow.',8,'user',0,'',76,1),
+('nf_toxic','namefx','Toxic name','Acid green with a glow.',8,'user',0,'',77,1),
+('bd_star','badge','Star badge','A gold star next to your name.',6,'user',0,'',80,1),
+('bd_flame','badge','Flame badge','A flame next to your name.',6,'user',0,'',81,1),
+('bd_gem','badge','Gem badge','A blue gem next to your name.',6,'user',0,'',82,1),
+('bd_crown','badge','Crown badge','A small crown next to your name.',6,'user',0,'',83,1),
+('bd_bolt','badge','Bolt badge','A lightning bolt next to your name.',6,'user',0,'',84,1),
+('bd_heart','badge','Heart badge','A heart next to your name.',6,'user',0,'',85,1),
+('bd_skull','badge','Skull badge','A skull next to your name.',6,'user',0,'',86,1),
+('bd_leaf','badge','Leaf badge','A leaf next to your name.',6,'user',0,'',87,1),
+('bd_blocks','badge','Bricks badge','Two studded bricks next to your name.',6,'user',0,'',88,1),
+('bd_ghost','badge','Ghost badge','A friendly ghost next to your name.',6,'user',0,'',89,1),
+('bn_void','bundle','Void bundle','Void frame, Void nameplate and one month of a vanity server link.',45,'any',0,'{"items":["fr_void","np_void"],"vanity_days":30}',2,1),
+('bn_god','bundle','Eyes of God bundle','Angel Halo frame, the exclusive Gods Descendent nameplate and one month of a vanity server link.',70,'any',0,'{"items":["fr_halo","np_god"],"vanity_days":30}',3,1),
+('bn_devil','bundle','Devils Demise bundle','Evil Embodiment frame with horns and a tail, plus the Inferno nameplate.',40,'user',0,'{"items":["fr_devil","np_inferno"]}',4,1),
+('bn_blox','bundle','Bloxtime bundle','A brick-styled set: Bloxtime frame, Bloxtime nameplate and the Bricks badge.',35,'user',0,'{"items":["fr_blox","np_blox","bd_blocks"]}',5,1),
+('bn_sakura','bundle','Sakura Dream bundle','Sakura nameplate, Rose frame, Hearts effect and Sakura name.',40,'user',0,'{"items":["np_sakura","fr_rose","ef_hearts","nf_sakura"]}',6,1),
+('bn_frost','bundle','Frostbite bundle','Glacier nameplate, Ice frame, Snowfall effect and Ice name.',40,'user',0,'{"items":["np_glacier","fr_ice","ef_snow","nf_ice"]}',7,1),
+('bn_royal','bundle','Royal Court bundle','Gilded nameplate, Gold frame, Crown effect, Gold name and the Crown badge.',55,'user',0,'{"items":["np_gold","fr_gold","ef_crown","nf_gold","bd_crown"]}',8,1);
+update par_items set name='Evil Embodiment frame' where id='fr_devil';
