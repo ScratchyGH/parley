@@ -240,3 +240,37 @@ const who=h('input',{class:'inp',placeholder:'Username'}),amt=h('input',{class:'
 const gr=h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/admin/pars/grant',{user:who.value,amount:Number(amt.value),note:why.value});toast('Done')}catch(e){fail(e)}}}},'Grant or adjust')
 return h('section',{class:'lab'},h('h3',null,'Pars'),h('p',{class:'hint'},d.total_supply+' Pars held by '+d.holders+' people.'),cfg.map(c=>c.row),save,h('h4',null,'Prices'),items,h('h4',null,'Bonus Pars'),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},who,amt,why,gr))
 }
+export function loadoutBox(){
+const KS=[['frame','Avatar frame'],['effect','Avatar effect'],['nameplate','Nameplate'],['namefx','Name style'],['badge','Badge'],['title','Title'],['bubble','Message style']]
+const box=h('div',{class:'lo'},h('div',{class:'hint'},'Loading'))
+const key='parley.looks'
+const looks=()=>{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}}
+const saveLooks=a=>{try{localStorage.setItem(key,JSON.stringify(a.slice(0,8)))}catch{}}
+let d=null
+async function load(){
+try{d=await GET('/api/pars');for(const[k]of KS)S.me[k]=d[k];draw()}catch(e){mount(box,h('div',{class:'hint'},e.message))}
+}
+const mine=k=>d.items.filter(i=>i.kind===k&&owns(d,i.id))
+async function set(k,v){
+try{await POST('/api/pars/equip',{kind:k,item:v||null});S.me[k]=v||null;d[k]=v||null;draw()}catch(e){fail(e)}
+}
+async function apply(l){
+try{for(const[k]of KS){const v=l[k]&&owns(d,l[k])?l[k]:null;await POST('/api/pars/equip',{kind:k,item:v});S.me[k]=v;d[k]=v}draw();toast('Look applied')}catch(e){fail(e)}
+}
+function draw(){
+const cur=Object.fromEntries(KS.map(([k])=>[k,d[k]||null]))
+const nm=cur.namefx?h('span',{class:'nf '+cur.namefx},S.me.display_name):S.me.display_name
+const prev=h('div',{class:'pb-prev lo-prev'},h('div',{class:'par-av'},avatar({...S.me,frame:cur.frame,effect:cur.effect},'lg')),h('b',{class:cur.nameplate?'np '+cur.nameplate:null,style:{padding:'4px 12px'}},nm,cur.badge?h('span',{class:'bdg-i '+cur.badge}):null,cur.title?h('span',{class:'ttl '+cur.title}):null),cur.bubble?h('div',{class:'par-msg '+cur.bubble},'Your messages look like this.'):null)
+const sels=KS.map(([k,l])=>{
+const list=mine(k)
+const s=h('select',{class:'sel','aria-label':l,on:{change:e=>set(k,e.target.value)}},h('option',{value:''},'None'),...list.map(i=>h('option',{value:i.id,selected:cur[k]===i.id},i.name)))
+return h('label',{class:'lo-f'},h('span',null,l+(list.length?'':' (none owned)')),s)
+})
+const ls=looks()
+const nameIn=h('input',{class:'inp',placeholder:'Name this look',maxlength:24,'aria-label':'Look name'})
+const saved=h('div',{class:'lo-saved'},ls.length?ls.map((l,i)=>h('span',{class:'lo-chip'},h('button',{class:'btn sm',on:{click:()=>apply(l)}},l.name),h('button',{class:'btn sm',title:'Delete look','aria-label':'Delete '+l.name,on:{click:()=>{const a=looks();a.splice(i,1);saveLooks(a);draw()}}},'×'))):h('span',{class:'hint',style:{margin:0}},'No saved looks yet.'))
+mount(box,h('div',{class:'lo-grid'},prev,h('div',{class:'lo-sels'},...sels)),h('div',{class:'row',style:{gap:'8px',marginTop:'12px',flexWrap:'wrap'}},nameIn,h('button',{class:'btn',on:{click:()=>{const n=nameIn.value.trim();if(!n)return;const a=looks().filter(x=>x.name!==n);a.unshift({name:n,...cur});saveLooks(a);draw();toast('Look saved on this device')}}},'Save this look')),saved,h('div',{class:'hint'},'Mix any items you own. Get more in the Pars shop.'))
+}
+load()
+return box
+}

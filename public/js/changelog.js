@@ -8,7 +8,6 @@ export const RELEASES=[
 ['Pars shop',[
 ['Legacy and Modern on every bundle','Legacy uses items from the regular shop. Modern adds titles and message styles that are only available inside bundles.'],
 ['Fixes','Bundle contents show real item names, shop art no longer draws over the section bar, cat ears were redrawn and upload boosts and vanity links have icons.'],
-['Timeskipper','A new animated border, starfield and clock rings.'],
 ['Parli-Bold','A new bold display font used for headings.']]]]},
 {v:'2026.10.27',date:'October 21, 2026',title:'Shop overhaul, gifting and new text effects',summary:'A rebuilt Pars shop with gifting, Legacy and Modern bundles and the limited Timeskipper bundle, full-screen Settings and shop, and more message formatting.',sections:[
 ['Pars shop',[

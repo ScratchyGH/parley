@@ -15,7 +15,7 @@ import{pref,setPref}from'./prefs.js'
 import{p2pStats,clearP2PCache,startP2P,stopP2P}from'./p2p/index.js'
 import{nativeSupport}from'./codec.js'
 import{labsPage}from'./labs.js'
-import{parsPage}from'./pars.js'
+import{parsPage,loadoutBox}from'./pars.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
@@ -248,6 +248,7 @@ const themes=[['dimmed','Deep Fjord (default)'],['silver','Silver'],['light','Li
 const dens=[['compact','Compact'],['comfortable','Comfortable'],['spacious','Spacious']]
 const fs=h('input',{type:'range',min:12,max:22,step:1,value:setting('font_size',15),'aria-label':'Message font size',on:{change:async e=>{try{await saveSettings({font_size:+e.target.value})}catch(x){fail(x)}}}})
 mount(pg,h('h3',null,'Appearance and accessibility'),
+field('Your look',loadoutBox()),
 field('Theme',h('div',{class:'tabs',style:{flexWrap:'wrap'}},themes.map(([k,l])=>h('button',{class:setting('theme','dimmed')===k?'on':'','aria-pressed':String(setting('theme','dimmed')===k),on:{click:async e=>{try{await saveSettings({theme:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
 field('Theme presets',h('div',{class:'bh-radios pre-row'},Object.entries(PRESETS).map(([k,[l,th,ac,bg]])=>h('button',{type:'button',class:'preset'+(setting('preset','')===k?' on':''),'aria-pressed':String(setting('preset','')===k),style:{'--pa':ac,'--pb':bg||'#f6f8fa'},on:{click:async()=>{try{await saveSettings({theme:th,ui_color:ac,ui_bg:bg,preset:k});appearance(pg)}catch(x){fail(x)}}}},h('i'),h('span',null,l))),h('button',{type:'button',class:'btn sm',on:{click:async()=>{try{await saveSettings({preset:'',ui_color:'',ui_bg:''});appearance(pg)}catch(x){fail(x)}}}},'Clear preset')),'One click sets the theme, accent and background. You can still fine-tune the colours below.'),
 field('Interface font',fontSel('font_ui')),
