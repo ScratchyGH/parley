@@ -51,7 +51,7 @@ export default function(r){
 r.add('GET','/api/pars',async c=>{
 const cfg=await parsCfg(c.env)
 const[items,owned,tx,me,beat]=await Promise.all([
-c.env.DB.prepare('select * from par_items where enabled=1 or id in (select item_id from par_owned where user_id=?) order by sort,price').bind(c.user.id).all(),
+c.env.DB.prepare('select * from par_items order by sort,price').all(),
 c.env.DB.prepare('select o.id,o.item_id,o.server_id,o.gift_from,o.created_at,o.expires_at,s.name server_name from par_owned o left join servers s on s.id=o.server_id where o.user_id=? order by o.created_at desc limit 200').bind(c.user.id).all(),
 c.env.DB.prepare('select id,delta,kind,note,created_at from par_tx where user_id=? order by created_at desc limit 40').bind(c.user.id).all(),
 c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge,title,bubble from users where id=?').bind(c.user.id).first(),
