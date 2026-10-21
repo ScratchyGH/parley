@@ -282,3 +282,6 @@ Bundle items grant several cosmetics at once; vanity links from bundles expire a
 
 ## Apps
 `.github/workflows/apps.yml` builds the Windows installer, Linux AppImage and Android APK and publishes them to the `apps` release together with update feeds. Desktop apps check that release for updates.
+
+## Shop overhaul (migration 0029)
+Items gained `title` and `bubble` kinds (`users.title`, `users.bubble`). Bundle `data` is `{"variants":{"legacy":{...},"modern":{...}},"ends_at":ms}`; each variant has `items`, `vanity_days`, `price`, `gift_price`, `server_price`. Ownership of a bundle version is a `par_owned` row with `item_id='bundle:<id>:<variant>'`, enforced once-only by a partial unique index. `POST /api/pars/buy` accepts `variant`, `to` (gift a cosmetic or bundle; gifts exclude the vanity link) and `target:'server'` for a bundle's vanity time. The Timeskipper bundle (`bn_time`) stops selling at `ends_at`.
