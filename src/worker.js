@@ -24,6 +24,8 @@ import gifRoutes from'./gifs.js'
 import caseRoutes from'./cases.js'
 import templateRoutes from'./templates.js'
 import{sweepExplicitServers}from'./servers.js'
+import legalRoutes from'./legal.js'
+import scheduleRoutes,{deliverDue}from'./schedule.js'
 import{d1Store}from'./store.js'
 import{tursoDb}from'./turso.js'
 import{ensureSchema}from'./migrate.js'
@@ -52,6 +54,8 @@ aiRoutes(router)
 appRoutes(router)
 deviceRoutes(router)
 botlabRoutes(router)
+scheduleRoutes(router)
+legalRoutes(router)
 caseRoutes(router)
 templateRoutes(router)
 gifRoutes(router)
@@ -85,7 +89,7 @@ return maint.v
 }
 export const invalidateMaintenance=()=>{maint.t=0}
 
-async function api(req,env,ec,url){
+async function api(req,env,ec,url,asUser){
 const method=req.method
 if(method!=='GET'&&method!=='HEAD'){
 const origin=req.headers.get('origin')
@@ -100,8 +104,8 @@ const m=url.pathname.match(r.re)
 if(m){hit=r;r.keys.forEach((k,i)=>{try{params[k]=decodeURIComponent(m[i+1])}catch{fail(400,'Bad path')}});break}
 }
 if(!hit)fail(404,'Not found')
-const user=await sessionUser(env,req)
-await checkDevice(env,req,user,url.pathname)
+const user=asUser||await sessionUser(env,req)
+if(!asUser)await checkDevice(env,req,user,url.pathname)
 if(hit.auth&&!user)fail(401,'Not signed in')
 if(user&&user.is_bot&&!/^\/api\/(rooms|channels|threads|upload|files|stickers)\b|^\/api\/me$|^\/api\/servers\/[^/]+$/.test(url.pathname))fail(403,'Bots cannot use this endpoint')
 if(user&&user.is_bot&&/^\/api\/(me|servers\/[^/]+)$/.test(url.pathname)&&method!=='GET')fail(403,'Bots cannot use this endpoint')
@@ -188,6 +192,19 @@ return json({error:'Something went wrong on the server'},500,SEC)
 async scheduled(ev,env0){
 const env=await wrap(env0)
 const t=now()
+try{
+const pend=[]
+const ec={waitUntil:p=>{pend.push(p)}}
+await deliverDue(env,async(u,method,path,b)=>{
+const url=new URL('https://parley.internal'+path)
+const res=await api(new Request(url,{method,headers:{'content-type':'application/json'},body:JSON.stringify(b)}),env,ec,url,u)
+if(!res.ok){let m='Failed';try{m=(await res.json()).error||m}catch{}throw new Error(m)}
+})
+await Promise.allSettled(pend)
+}catch(e){console.error('scheduled send',String(e&&e.message||e))}
+const last=await env.DB.prepare("select v from app_settings where k='last_sweep'").first().catch(()=>null)
+if(last&&t-Number(last.v)<20*3600000)return
+await env.DB.prepare("insert into app_settings(k,v) values('last_sweep',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()
 const orphans=(await env.DB.prepare('select id,r2_key from files where kind=? and message_id is null and created_at<?').bind('attachment',t-86400000).all()).results
 for(const f of orphans)await env.FILES.delete(f.r2_key)
 const stale=(await env.DB.prepare('select id,r2_key,upload_id from uploads where created_at<?').bind(t-86400000).all()).results

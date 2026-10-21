@@ -30,7 +30,7 @@ const q=(s,...a)=>env.DB.prepare(s).bind(...a).all().then(x=>x.results)
 const pollIds=rows.filter(r=>r.has_poll).map(r=>r.id)
 const thIds=[...new Set(rows.map(r=>r.thread_id).filter(Boolean))]
 const[au,at,rx,rp,pd,th]=await Promise.all([
-q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
+q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
 q(`select id,message_id,name,mime,size,sha256 from files where message_id in (${placeholders(ids)})`,...ids),
 q(`select message_id,emoji,count(*) n,max(user_id=?) me from reactions where message_id in (${placeholders(ids)}) group by message_id,emoji order by min(rowid)`,meId,...ids),
 replies.length?q(`select m.id,m.content,m.deleted_at,u.id uid,u.display_name from messages m join users u on u.id=m.author_id where m.id in (${placeholders(replies)})`,...replies):[],

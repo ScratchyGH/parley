@@ -5,7 +5,7 @@ import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,bod
 export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
 const GT=c=>`(select s.${c} from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_${c}`
 export const GTAG=[GT('tag'),GT('tag_emoji'),GT('tag_icon_id')].join(',')
-export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,${GTAG},u.created_at`
+export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,u.effect,${GTAG},u.created_at`
 const SESSION_MS=30*86400000
 const NAME=/^[a-zA-Z0-9_.-]{3,24}$/
 
@@ -56,7 +56,7 @@ if(!o||typeof o!=='object'||Array.isArray(o))fail(400,'Invalid settings')
 const out={}
 for(const[k,v]of Object.entries(o)){
 if(k in SETTINGS_KEYS){if(!SETTINGS_KEYS[k].includes(v))fail(400,k+' is invalid');out[k]=v}
-else if(['reduced_motion','show_presence','sound','desktop','dnd','quiet_on','send_ctrl_enter','link_previews'].includes(k)){if(typeof v!=='boolean')fail(400,k+' is invalid');out[k]=v}
+else if(['reduced_motion','show_presence','sound','desktop','dnd','quiet_on','send_ctrl_enter','link_previews','performance','diagnostics'].includes(k)){if(typeof v!=='boolean')fail(400,k+' is invalid');out[k]=v}
 else if(k==='font_size'){if(!Number.isInteger(v)||v<12||v>22)fail(400,'font_size is invalid');out.font_size=v}
 else if(k==='ui_color'||k==='ui_bg'){if(typeof v!=='string'||(v!==''&&!/^#[0-9a-fA-F]{6}$/.test(v)))fail(400,k+' is invalid');out[k]=v.toLowerCase()}
 else if(k==='quiet_start'||k==='quiet_end'){if(typeof v!=='string'||!/^\d\d:\d\d$/.test(v))fail(400,k+' is invalid');out[k]=v}
@@ -87,7 +87,7 @@ return{label,url:u.href}
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
+return{pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
 }
 
 const tokenOf=(req,name)=>{

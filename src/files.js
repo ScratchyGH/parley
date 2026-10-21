@@ -1,3 +1,4 @@
+import{hashBlocked}from'./legal.js'
 import{boostMb}from'./pars.js'
 import{fail,now,newId,limit,str,clamp,body,hex,json}from'./util.js'
 import{resolveRoom,loadMember,P,need}from'./perms.js'
@@ -98,6 +99,7 @@ if(want)opts.sha256=want
 let obj
 try{obj=await c.env.FILES.put(key,buf,opts)}catch(x){fail(400,'Checksum mismatch or storage error')}
 const sum=want||(obj&&obj.checksums&&obj.checksums.sha256?hex(obj.checksums.sha256):null)
+if(await hashBlocked(c.env,sum)){await c.env.FILES.delete(key);fail(422,'This file is not allowed on Parley')}
 await c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,r2_key,name,mime,size,sha256,verified,created_at) values(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.user.id,kind,p.room,p.serverId,key,p.name,p.mime,buf.byteLength,sum,want?1:0,now()).run()
 return json({id,name:p.name,mime:p.mime,size:buf.byteLength,kind,sha256:sum},201)
 })
@@ -161,6 +163,7 @@ const head=await c.env.FILES.get(u.r2_key,{range:{offset:0,length:16},size:u.siz
 if(head&&!sniff(await head.arrayBuffer(),u.mime))await bad('File content does not match its type')
 }
 const id=newId('f')
+if(await hashBlocked(c.env,sum||u.sha256))await bad('This file is not allowed on Parley')
 const claim=u.sha256&&sum&&u.sha256!==sum
 if(claim)await bad('Checksum mismatch')
 await c.env.DB.batch([
@@ -233,6 +236,21 @@ const rr=await resolveRoom(c.env,c.p.room,c.user.id)
 const before=clamp(c.url.searchParams.get('before'),9e15,0,9e15)
 const rows=(await c.env.DB.prepare("select f.id,f.name,f.mime,f.size,f.created_at,f.message_id,f.owner_id from files f join messages m on m.id=f.message_id and m.deleted_at is null where f.room=? and f.kind='attachment' and f.created_at<? order by f.created_at desc limit ?").bind(rr.room,before,clamp(c.url.searchParams.get('limit'),30,1,100)).all()).results
 return{files:rows}
+})
+
+r.add('GET','/api/yt-thumb/:id',async c=>{
+limit('yt:'+c.user.id,120,60000)
+if(!/^[A-Za-z0-9_-]{11}$/.test(c.p.id))fail(400,'Invalid video id')
+const key=new Request('https://yt.cache/'+c.p.id)
+const hit=await caches.default.match(key)
+if(hit)return hit
+const res=await fetch('https://i.ytimg.com/vi/'+c.p.id+'/mqdefault.jpg',{cf:{cacheTtl:86400}})
+if(!res.ok||!(res.headers.get('content-type')||'').startsWith('image/jpeg'))fail(404,'No thumbnail')
+const buf=await res.arrayBuffer()
+if(buf.byteLength>400000)fail(404,'No thumbnail')
+const out=new Response(buf,{headers:{'content-type':'image/jpeg','cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
+c.ec.waitUntil(caches.default.put(key,out.clone()))
+return out
 })
 
 r.add('GET','/api/unfurl',async c=>{

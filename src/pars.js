@@ -41,11 +41,11 @@ const[items,owned,tx,me,beat]=await Promise.all([
 c.env.DB.prepare('select * from par_items where enabled=1 order by sort,price').all(),
 c.env.DB.prepare('select o.id,o.item_id,o.server_id,o.gift_from,o.created_at,s.name server_name from par_owned o left join servers s on s.id=o.server_id where o.user_id=? order by o.created_at desc limit 200').bind(c.user.id).all(),
 c.env.DB.prepare('select id,delta,kind,note,created_at from par_tx where user_id=? order by created_at desc limit 40').bind(c.user.id).all(),
-c.env.DB.prepare('select pars,nameplate,frame from users where id=?').bind(c.user.id).first(),
+c.env.DB.prepare('select pars,nameplate,frame,effect from users where id=?').bind(c.user.id).first(),
 c.env.DB.prepare('select total_ms,day,day_ms from par_beats where user_id=?').bind(c.user.id).first()
 ])
 const today=beat&&beat.day===dayOf(now())?beat.day_ms:0
-return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
+return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
 })
 r.add('GET','/api/pars/history',async c=>{
 const before=clamp(c.url.searchParams.get('before'),now()+1,0,now()+1)
@@ -115,7 +115,7 @@ if(u.id===c.user.id)fail(400,'Use "My account" to boost yourself')
 owner=u.id;from=c.user.id;note+=' gift to '+u.username
 }else if(it.kind==='boost'&&b.target==='self'){
 note+=' for your account'
-}else if(it.kind==='nameplate'||it.kind==='frame'){
+}else if(it.kind==='nameplate'||it.kind==='frame'||it.kind==='effect'){
 if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,it.id).first())fail(409,'You already own this')
 }else fail(400,'Choose where to apply this')
 if(it.kind==='boost'){
@@ -137,7 +137,7 @@ return json({ok:true,balance:await bal(c.env,c.user.id),spent:it.price},201)
 })
 r.add('POST','/api/pars/equip',async c=>{
 const b=await body(c.req,500)
-if(!['nameplate','frame'].includes(b.kind))fail(400,'Invalid cosmetic')
+if(!['nameplate','frame','effect'].includes(b.kind))fail(400,'Invalid cosmetic')
 let id=null
 if(b.item){
 id=String(b.item)

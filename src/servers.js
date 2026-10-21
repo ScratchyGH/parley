@@ -333,6 +333,37 @@ c.pub('s_'+m.server.id,{t:'server.update'})
 return{ok:true}
 })
 
+r.add('PUT','/api/servers/:sid/categories/:cid/overrides',async c=>{
+const m=await mem(c,c.p.sid)
+must(m,P.MANAGE_CHANNELS)
+const b=await body(c.req)
+if(!['role','user'].includes(b.target_type))fail(400,'Invalid target type')
+const allow=int(b.allow??0,0,ALL,'allow'),deny=int(b.deny??0,0,ALL,'deny')
+if(allow&deny)fail(400,'A permission cannot be both allowed and denied')
+if(!m.owner&&!m.admin&&((allow|deny)&~m.base)!==0)fail(403,'You cannot change permissions you do not have')
+const cat=await c.env.DB.prepare('select id,name from categories where id=? and server_id=?').bind(c.p.cid,m.server.id).first()
+if(!cat)fail(404,'Category not found')
+const tid=String(b.target_id)
+if(b.target_type==='role'){
+const role=await c.env.DB.prepare('select id,position,is_everyone from roles where id=? and server_id=?').bind(tid,m.server.id).first()
+if(!role)fail(404,'Role not found')
+if(!role.is_everyone&&!m.owner&&role.position>=m.top)fail(403,'That role is above yours')
+}else if(!await c.env.DB.prepare('select 1 x from members where server_id=? and user_id=?').bind(m.server.id,tid).first())fail(404,'Member not found')
+const chans=(await c.env.DB.prepare('select id from channels where category_id=? and server_id=?').bind(cat.id,m.server.id).all()).results
+const stmts=[]
+let applied=0
+for(const ch of chans){
+const a=await channelAccess(c.env,m,ch.id)
+if(!(a.perms&P.VIEW))continue
+applied++
+stmts.push(allow||deny?c.env.DB.prepare('insert into overrides(channel_id,target_type,target_id,allow,deny) values(?,?,?,?,?) on conflict(channel_id,target_type,target_id) do update set allow=excluded.allow,deny=excluded.deny').bind(ch.id,b.target_type,tid,allow,deny):c.env.DB.prepare('delete from overrides where channel_id=? and target_type=? and target_id=?').bind(ch.id,b.target_type,tid))
+}
+stmts.push(c.logStmt(m.server.id,'category.override',cat.id,`${b.target_type}:${tid} allow=${allow} deny=${deny} channels=${applied}`))
+await c.env.DB.batch(stmts)
+resync(c,m.server.id)
+return{ok:true,applied,skipped:chans.length-applied}
+})
+
 r.add('GET','/api/channels/:cid/overrides',async c=>{
 const{ch}=await chanCtx(c,c.p.cid)
 return{overrides:(await c.env.DB.prepare('select target_type,target_id,allow,deny from overrides where channel_id=?').bind(ch.id).all()).results}
@@ -458,7 +489,7 @@ const args=[m.server.id]
 let where=''
 if(q){where=" and (u.username like ? escape '\\' or u.display_name like ? escape '\\' or m.nickname like ? escape '\\')";args.push(like(q),like(q),like(q))}
 args.push(after,lim)
-const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
 return{members:rows.map(x=>({...x,roles:x.roles?x.roles.split(','):[]})),next:rows.length===lim?rows[rows.length-1].id:null}
 })
 
