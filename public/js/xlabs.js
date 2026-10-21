@@ -152,7 +152,7 @@ GET(api(sid)+'/counting').then(x=>mount(sec,'Current count '+x.last+', best '+x.
 }
 if(on('giveaways')){
 const sec=h('div');parts.push(box('Giveaways',sec))
-GET(api(sid)+'/giveaways').then(x=>mount(sec,x.items.length?x.items.slice(0,8).map(g=>row(h('b',null,g.prize),h('span',{class:'hint'},g.ended?'Ended':'Running until '+fmtStamp(g.ends_at))))):empty('No giveaways right now.'))).catch(e=>mount(sec,e.message))
+GET(api(sid)+'/giveaways').then(x=>mount(sec,x.items.length?x.items.slice(0,8).map(g=>row(h('b',null,g.prize),h('span',{class:'hint'},g.ended?'Ended':'Running until '+fmtStamp(g.ends_at)))):empty('No giveaways right now.'))).catch(e=>mount(sec,e.message))
 }
 if(on('confessions')){
 const t=h('textarea',{class:'inp',rows:3,maxLength:1500,placeholder:'Write your confession','aria-label':'Confession'})
