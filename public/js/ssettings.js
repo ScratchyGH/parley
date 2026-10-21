@@ -1,6 +1,6 @@
 import{labsPage}from'./xlabs.js'
 import{programPage}from'./exp.js'
-import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
+import{VC,h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers,applyThemeObj,applyServerTheme}from'./state.js'
 import{go}from'./nav.js'
 import{casesPage,warnDialog,templateShare,caseFilter}from'./modcases.js'
@@ -195,7 +195,7 @@ cats[j].position=c.position
 c.position=t
 save()
 }
-const item=c=>h('div',{class:'li'},icon(c.type==='voice'?'volume':c.type==='announce'?'mega':'hash','s'),h('div',{class:'grow'},c.name),
+const item=c=>h('div',{class:'li'},icon(c.type==='voice'?'volume':c.type==='stage'?'hand':c.type==='announce'?'mega':'hash','s'),h('div',{class:'grow'},c.name),
 h('button',{class:'ib',title:'Move up','aria-label':'Move '+c.name+' up',on:{click:()=>moveChan(c,-1)}},icon('down','s')),
 h('button',{class:'ib',title:'Edit','aria-label':'Edit '+c.name,on:{click:()=>channelSettings(sid,c.id)}},icon('edit','s')))
 mount(pg,h('h3',null,'Channels'),
@@ -236,7 +236,7 @@ const cat=h('select',{class:'sel'},h('option',{value:''},'No category'),d.catego
 const slow=h('select',{class:'sel'},SLOW.map(([v,l])=>h('option',{value:v,selected:ch.slowmode===v},l)))
 let ro=!!ch.readonly,lock=!!ch.locked
 mount(el,field('Name',name),field('Topic',topic),field('Category',cat),field('Slow mode',slow,'Members without Manage Messages or Manage Channels wait between messages.'),
-ch.type!=='voice'?h('div',{class:'perm',style:{marginTop:'8px'}},toggle(ro,v=>{ro=v},'Read-only'),h('span',null,'Read-only (only members who can manage messages may post)')):null,
+!VC(ch.type)?h('div',{class:'perm',style:{marginTop:'8px'}},toggle(ro,v=>{ro=v},'Read-only'),h('span',null,'Read-only (only members who can manage messages may post)')):null,
 h('div',{class:'perm'},toggle(lock,v=>{lock=v},'Locked'),h('span',null,'Locked (members cannot send or react)')),
 h('div',{class:'row sp',style:{marginTop:'16px'}},
 h('button',{class:'btn dng',on:{click:async()=>{

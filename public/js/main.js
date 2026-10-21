@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce}from'./util.js'
+import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce}from'./util.js'
 import{render}from'./md.js'
 import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
 import{setRooms,sendAll,stopAll}from'./net.js'
@@ -181,7 +181,7 @@ const ca=d.categories.find(c=>c.id===a.category_id)?.position??-1
 const cb=d.categories.find(c=>c.id===b.category_id)?.position??-1
 return ca-cb||a.position-b.position
 })
-ch=order.find(c=>c.type!=='voice')||order[0]
+ch=order.find(c=>!VC(c.type))||order[0]
 }
 if(ch){go(`/s/${sid}/${ch.id}`,true);return}
 S.nav={kind:'server',sid,room:null}
@@ -192,10 +192,10 @@ return
 setLastChan(sid,ch.id)
 S.nav={kind:'server',sid,room:ch.id}
 syncChrome()
-if(ch.type==='voice'){
+if(VC(ch.type)){
 const box=h('div',{style:{flex:'1',display:'flex',flexDirection:'column',minHeight:0}})
 layoutMain(chatTop(ch.id),box)
-cleanup=mountVoiceRoom(box,ch.id,`${ch.name} / ${d.server.name}`,'s_'+sid,`/s/${sid}/${ch.id}`)
+cleanup=mountVoiceRoom(box,ch.id,`${ch.name} / ${d.server.name}`,'s_'+sid,`/s/${sid}/${ch.id}`,ch.type==='stage')
 document.title=`${ch.name} • ${d.server.name}`
 return
 }

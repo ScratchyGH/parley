@@ -131,7 +131,7 @@ export function channelDialog(sid,categoryId){
 const d0=S.sdata[sid]
 const err=errBox()
 const name=h('input',{class:'inp',maxLength:40,required:true,autofocus:true,placeholder:'new-channel'})
-const type=h('select',{class:'sel'},h('option',{value:'text'},'Text'),h('option',{value:'announce'},'Announcement (read-only for most members)'),h('option',{value:'voice'},'Voice'),h('option',{value:'forum'},'Forum (one thread per post)'))
+const type=h('select',{class:'sel'},h('option',{value:'text'},'Text'),h('option',{value:'announce'},'Announcement (read-only for most members)'),h('option',{value:'voice'},'Voice'),h('option',{value:'stage'},'Stage (speakers and an audience)'),h('option',{value:'rules'},'Rules (read-only info channel)'),h('option',{value:'forum'},'Forum (one thread per post)'))
 const topic=h('input',{class:'inp',maxLength:200})
 const cat=h('select',{class:'sel'},h('option',{value:''},'No category'),d0.categories.map(c=>h('option',{value:c.id,selected:c.id===categoryId},c.name)))
 const btn=h('button',{class:'btn pri',type:'submit'},'Create channel')
@@ -206,7 +206,7 @@ const out=[]
 for(const s of S.servers){
 out.push({label:s.name,sub:'Server',icon:'compass',path:'/s/'+s.id})
 const dd=S.sdata[s.id]
-if(dd)for(const c of dd.channels)out.push({label:c.name,sub:s.name,icon:c.type==='voice'?'volume':'hash',path:`/s/${s.id}/${c.id}`})
+if(dd)for(const c of dd.channels)out.push({label:c.name,sub:s.name,icon:c.type==='voice'?'volume':c.type==='stage'?'hand':'hash',path:`/s/${s.id}/${c.id}`})
 }
 for(const c of S.convs)out.push({label:convTitle(c),sub:'Direct message',icon:c.type==='group'?'users':'chat',path:'/dm/'+c.id,av:convOther(c)})
 for(const u of S.fr.friends)out.push({label:u.display_name,sub:'@'+u.username,icon:'user',fn:()=>openDm(u.id)})

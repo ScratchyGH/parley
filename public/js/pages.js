@@ -84,7 +84,7 @@ return h('div',{class:'swel',style:s.accent?{'--c':s.accent}:{}},
 h('div',{class:'swel-b'},avatar({id:sid,name:s.name,icon_id:s.icon_id,display_name:s.name},'lg'),h('h1',null,s.name,s.age_restricted?h('span',{class:'b18'},'18+'):null),s.description?h('p',null,s.description):null,
 s.welcome?h('p',{class:'swel-w'},s.welcome):null,
 h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap',justifyContent:'center'}},can(sid,P.CREATE_INVITE)?h('button',{class:'btn pri',on:{click:()=>inviteDialog(sid)}},'Invite people'):null,
-...chans.map(c=>h('button',{class:'btn',on:{click:()=>go(`/s/${sid}/${c.id}`)}},(c.type==='voice'?'Voice  ':'#')+c.name)))))
+...chans.map(c=>h('button',{class:'btn',on:{click:()=>go(`/s/${sid}/${c.id}`)}},(c.type==='voice'?'Voice  ':c.type==='stage'?'Stage  ':'#')+c.name)))))
 }
 
 export function forumPage(ch,sid){

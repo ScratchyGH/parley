@@ -364,3 +364,4 @@ document.body.append(a)
 a.click()
 setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)
 }
+export const VC=t=>t==='voice'||t==='stage'

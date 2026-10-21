@@ -24,7 +24,7 @@ let timers=[]
 const sig=(to,data)=>wsSend(V.hub,{t:'sig',to,ch:V.ch,data})
 const setState=()=>wsSend(V.hub,{t:'voice.state',m:V.muted||V.deaf,d:V.deaf,vid:!!V.cam,scr:!!V.scr,h:!!V.hand})
 
-export async function joinVoice({ch,hub,label,path}){
+export async function joinVoice({ch,hub,label,path,stage}){
 if(V.joining)return
 if(V.ch===ch)return
 if(V.ch)await leaveVoice()
@@ -48,7 +48,7 @@ V.ch=ch;V.hub=hub;V.label=label;V.path=path
 V.joined=false
 V.joining=false
 if(V.mic){
-if(pr.ptt){V.mic.getAudioTracks().forEach(t=>t.enabled=false);V.muted=true}
+if(pr.ptt||stage){V.mic.getAudioTracks().forEach(t=>t.enabled=false);V.muted=true}
 watchStream('me',V.mic)
 }
 wsSend(hub,{t:'voice.join',ch,m:V.muted,d:false})
@@ -482,12 +482,13 @@ return field('Push-to-talk key',b,'Push to talk only works while this tab is foc
 return wrap
 }
 
-export function mountVoiceRoom(container,chId,label,hub,path){
+export function mountVoiceRoom(container,chId,label,hub,path,stage){
 const draw=()=>{
 const users=S.voice[chId]||{}
 const joined=V.ch===chId
 const ids=Object.keys(users)
 const grid=h('div',{class:'vgrid',style:{gridTemplateColumns:`repeat(auto-fit,minmax(${ids.length>4?'200px':'280px'},1fr))`}})
+const aud=h('div',{class:'vgrid vaud',style:{gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))'}})
 const mkTile=(uid,opts={})=>{
 const u=uid===S.me.id?S.me:S.users.get(uid)||{id:uid,display_name:'Member'}
 const st=users[uid]||{}
@@ -509,7 +510,7 @@ popup([h('div',{style:{padding:'8px'}},h('div',{class:'hint'},'Volume for '+u.di
 return tile
 }
 for(const uid of ids){
-grid.append(mkTile(uid))
+(stage&&(users[uid]||{}).m?aud:grid).append(mkTile(uid))
 if(uid===S.me.id){
 if(V.cam)grid.append(mkTile(uid,{stream:V.cam,label:'You (camera)'}))
 if(V.scr)grid.append(mkTile(uid,{stream:V.scr,label:'You (screen)'}))
@@ -526,7 +527,8 @@ grid.append(mkTile(uid,{stream,label:(u?.display_name||'Member')+(kind==='screen
 }
 }
 }
-if(!ids.length)grid.append(h('div',{class:'empty',style:{gridColumn:'1/-1'}},h('div',{class:'vempty'},h('b',null,'Nobody is here yet'),h('p',null,'Join to talk, turn on your camera or share your screen.'))))
+if(stage&&!grid.children.length&&ids.length)grid.append(h('div',{class:'empty',style:{gridColumn:'1/-1'}},h('div',{class:'vempty'},h('b',null,'Nobody is speaking'),h('p',null,'Listeners can raise a hand; unmute to take the stage.'))))
+if(!ids.length)grid.append(h('div',{class:'empty',style:{gridColumn:'1/-1'}},h('div',{class:'vempty'},h('b',null,stage?'The stage is empty':'Nobody is here yet'),h('p',null,stage?'Join as a listener, raise your hand and unmute to speak.':'Join to talk, turn on your camera or share your screen.'))))
 const btn=(ic,t,fn,cls)=>h('button',{class:'ib '+(cls||''),title:t,'aria-label':t,'aria-pressed':cls?.includes('on')?'true':'false',on:{click:fn}},icon(ic))
 const bar=h('div',{class:'vbar',role:'toolbar','aria-label':'Voice controls'})
 if(joined){
@@ -539,12 +541,12 @@ btn('screen',V.scr?'Stop sharing screen':'Share screen',toggleScreen,V.scr?'on':
 conv(chId)?.members?.length>2?h('button',{class:'ib',title:'Add people to this call','aria-label':'Add people to this call',on:{click:e=>invitePeople(chId,e.currentTarget)}},icon('plus')):null,
 btn('sliders','Voice settings',()=>emit('ui:voicesettings')),
 btn('leave','Disconnect',leaveVoice,'dng'))
-}else bar.append(h('button',{class:'btn pri',on:{click:()=>joinVoice({ch:chId,hub,label,path})}},icon('volume','s'),'Join voice'),h('button',{class:'btn',on:{click:()=>emit('ui:voicesettings')}},icon('sliders','s'),'Settings'))
+}else bar.append(h('button',{class:'btn pri',on:{click:()=>joinVoice({ch:chId,hub,label,path,stage})}},icon(stage?'hand':'volume','s'),stage?'Join stage':'Join voice'),h('button',{class:'btn',on:{click:()=>emit('ui:voicesettings')}},icon('sliders','s'),'Settings'))
 const clock=h('span',{class:'vtime'})
 const tick=()=>{if(V.ch===chId&&V.since){const s=Math.floor((Date.now()-V.since)/1000);clock.textContent=(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s%3600/60)).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')}else clock.textContent=''}
 tick()
 if(joined)bar.prepend(clock)
-mount(container,h('div',{class:'vroom'},grid,capBar,bar))
+mount(container,h('div',{class:'vroom'},...(stage?[h('div',{class:'vsec'},'On stage'),grid,h('div',{class:'vsec'},'Audience ('+aud.children.length+')'),aud]:[grid]),capBar,bar))
 }
 const capBar=h('div',{class:'vcaps','aria-live':'polite',hidden:true})
 const caps=[]

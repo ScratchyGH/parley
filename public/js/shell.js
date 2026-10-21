@@ -2,7 +2,7 @@ import{categoryMenu}from'./catmenu.js'
 import{parIcon}from'./pars.js'
 import{expTag}from'./exp.js'
 import{communityDialog}from'./xlabs.js'
-import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
+import{VC,h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
 import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{sendAll}from'./net.js'
@@ -106,19 +106,19 @@ return items
 }
 
 function chanIcon(c){
-if(c.type==='voice')return icon('volume','s')
+if(c.type==='stage')return icon('hand','s');if(c.type==='voice')return icon('volume','s');if(c.type==='rules')return icon('check','s')
 if(c.type==='announce')return icon('mega','s')
 if(c.type==='forum')return icon('chat','s')
 return c.locked||(c.perms&P.SEND)===0?icon('lock','s'):icon('hash','s')
 }
 function chanItem(sid,c){
-const u=c.type==='voice'?null:unreadOf(c.id)
+const u=VC(c.type)?null:unreadOf(c.id)
 const active=S.nav.kind==='server'&&S.nav.room===c.id
 const inCall=V.ch===c.id
 const gear=can(sid,P.MANAGE_CHANNELS)?h('button',{class:'ib gear',title:'Edit channel','aria-label':'Edit '+c.name,on:{click:e=>{e.stopPropagation();channelSettings(sid,c.id)}}},icon('sliders','s')):null
 const row=h('div',{class:'ci'+(active?' on':'')+(u&&!active?' un':''),on:{contextmenu:e=>ctxMenu(e,[
-c.type!=='voice'?{icon:'check',label:'Mark as read',fn:()=>markRead([c.id])}:null,
-...(c.type!=='voice'?muteItems(c.id):[]),
+!VC(c.type)?{icon:'check',label:'Mark as read',fn:()=>markRead([c.id])}:null,
+...(!VC(c.type)?muteItems(c.id):[]),
 can(sid,P.MANAGE_CHANNELS)?'-':null,
 can(sid,P.MANAGE_CHANNELS)?{icon:'sliders',label:'Edit channel',fn:()=>channelSettings(sid,c.id)}:null,
 {icon:'copy',label:'Copy channel ID',fn:()=>copyText(c.id)}
@@ -126,7 +126,7 @@ can(sid,P.MANAGE_CHANNELS)?{icon:'sliders',label:'Edit channel',fn:()=>channelSe
 h('button',{class:'cib','aria-current':active?'page':null,on:{click:()=>{go(`/s/${sid}/${c.id}`);closeDrawers()}}},chanIcon(c),h('span',{class:'nm'},c.name),inCall?h('span',{style:{color:'var(--ok)'}},icon('volume','s')):null),
 u&&!active&&u.mentions?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},u.mentions):null,
 gear)
-if(c.type!=='voice')return row
+if(!VC(c.type))return row
 const users=S.voice[c.id]||{}
 const ids=Object.keys(users)
 return h('div',null,row,ids.map(id=>{
@@ -349,7 +349,7 @@ const c=isDm(room)?conv(room):null
 const actions=h('div',{class:'row',style:{gap:'2px'}})
 const pn=panel?.kind
 if(c&&c.accepted&&(c.perms===undefined||c.perms&P.CONNECT))actions.append(tbtn('phone','Start voice call',()=>emit('ui:call',room)))
-const voice=!!info&&info.ch.type==='voice'
+const voice=!!info&&VC(info.ch.type)
 if(!voice)actions.append(tbtn('pin','Pinned messages',()=>emit('ui:panel',pn==='pins'?null:{kind:'pins',arg:room}),pn==='pins'))
 if(info&&!info.thread&&info.ch.type!=='forum'&&!voice)actions.append(tbtn('chat','Threads',()=>emit('ui:panel',pn==='threads'?null:{kind:'threads',arg:room}),pn==='threads'))
 if(info&&info.thread){

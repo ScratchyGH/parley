@@ -1,4 +1,4 @@
-import{h,mount,GET,POST,fail,toast,field}from'./util.js'
+import{VC,h,mount,GET,POST,fail,toast,field}from'./util.js'
 import{S,loadServer}from'./state.js'
 import{chooseProvider}from'./provider.js'
 
@@ -48,7 +48,7 @@ return sel
 }
 async function channelsOf(sid){
 await loadServer(sid)
-return(S.sdata[sid]?.channels||[]).filter(c=>c.type!=='voice')
+return(S.sdata[sid]?.channels||[]).filter(c=>!VC(c.type))
 }
 function chanPick(){
 const sel=h('select',{class:'sel'})
