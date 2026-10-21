@@ -1,3 +1,4 @@
+import{beforeSend as labsBefore,afterSend as labsAfter,onReaction as labsReact}from'./xlabs.js'
 import{fireHooks}from'./devhooks.js'
 import{GTAG}from'./auth.js'
 import{stickerFor}from'./perks.js'
@@ -31,7 +32,7 @@ const q=(s,...a)=>env.DB.prepare(s).bind(...a).all().then(x=>x.results)
 const pollIds=rows.filter(r=>r.has_poll).map(r=>r.id)
 const thIds=[...new Set(rows.map(r=>r.thread_id).filter(Boolean))]
 const[au,at,rx,rp,pd,th]=await Promise.all([
-q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
+q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
 q(`select id,message_id,name,mime,size,sha256 from files where message_id in (${placeholders(ids)})`,...ids),
 q(`select message_id,emoji,count(*) n,max(user_id=?) me from reactions where message_id in (${placeholders(ids)}) group by message_id,emoji order by min(rowid)`,meId,...ids),
 replies.length?q(`select m.id,m.content,m.deleted_at,u.id uid,u.display_name from messages m join users u on u.id=m.author_id where m.id in (${placeholders(replies)})`,...replies):[],
@@ -127,6 +128,7 @@ if(ex)return{message:(await hydrate(c.env,[ex],c.user.id))[0],duplicate:true}
 }
 await automod(c.env,rr,content)
 await extBlock(c.env,rr,content,stk)
+await labsBefore(c,rr,content)
 const last=await c.env.DB.prepare('select content,created_at from messages where room=? and author_id=? order by id desc limit 1').bind(rr.room,c.user.id).first()
 if(last){
 const priv=rr.kind==='channel'&&(rr.perms&(P.MANAGE_MESSAGES|P.MODERATE))
@@ -195,6 +197,7 @@ await c.env.DB.batch(stmts)
 const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
 const[message]=await hydrate(c.env,[row],c.user.id)
 await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEveryone,roles:roleIds}})
+labsAfter(c,rr,message)
 if(rr.kind==='channel'&&!c.user.is_bot)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
 if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
@@ -310,14 +313,14 @@ const m=await getMsg(c,rr,c.p.mid)
 const ex=await c.env.DB.prepare('select count(distinct emoji) n,max(emoji=?) has from reactions where message_id=?').bind(c.p.emoji,m.id).first()
 if(!ex.has&&ex.n>=20)fail(400,'This message has too many different reactions')
 const res=await c.env.DB.prepare('insert or ignore into reactions(message_id,user_id,emoji) values(?,?,?)').bind(m.id,c.user.id,c.p.emoji).run()
-if(res.meta.changes)await publishMsg(c,rr,{t:'reaction',room:rr.room,mid:m.id,emoji:c.p.emoji,uid:c.user.id,add:true})
+if(res.meta.changes){await publishMsg(c,rr,{t:'reaction',room:rr.room,mid:m.id,emoji:c.p.emoji,uid:c.user.id,add:true});labsReact(c,rr,m,c.p.emoji,c.user.id,true)}
 return{ok:true}
 })
 r.add('DELETE','/api/rooms/:room/messages/:mid/reactions/:emoji',async c=>{
 const rr=await resolveRoom(c.env,c.p.room,c.user.id)
 const m=await getMsg(c,rr,c.p.mid)
 const res=await c.env.DB.prepare('delete from reactions where message_id=? and user_id=? and emoji=?').bind(m.id,c.user.id,c.p.emoji).run()
-if(res.meta.changes)await publishMsg(c,rr,{t:'reaction',room:rr.room,mid:m.id,emoji:c.p.emoji,uid:c.user.id,add:false})
+if(res.meta.changes){await publishMsg(c,rr,{t:'reaction',room:rr.room,mid:m.id,emoji:c.p.emoji,uid:c.user.id,add:false});labsReact(c,rr,m,c.p.emoji,c.user.id,false)}
 return{ok:true}
 })
 

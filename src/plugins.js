@@ -9,7 +9,7 @@ goodbye:{name:'Leave notice',descr:'Posts a short note in a channel when someone
 autorole:{name:'Auto role',descr:'Gives every new member a role when they join.',fields:[['role_id','role','Role']],def:{role_id:''}}
 }
 const fill=(t,u,s)=>String(t||'').replace(/\{user\}/g,u.display_name).replace(/\{username\}/g,u.username).replace(/\{server\}/g,s).slice(0,1000)
-async function pluginBot(env,sid){
+export async function pluginBot(env,sid){
 const row=await env.DB.prepare("select config from server_plugins where server_id=? and plugin='_bot'").bind(sid).first()
 if(row){try{return JSON.parse(row.config).user_id}catch{}}
 const id=newId('u'),t=now()
@@ -19,18 +19,19 @@ env.DB.prepare("insert into server_plugins(server_id,plugin,enabled,config,updat
 ])
 return id
 }
-async function post(c,sid,channelId,content){
+export async function post(c,sid,channelId,content,replyTo=null){
 const ch=await c.env.DB.prepare('select id,server_id,type from channels where id=? and server_id=?').bind(channelId,sid).first()
-if(!ch||!['text','announce'].includes(ch.type))return
+if(!ch||!['text','announce'].includes(ch.type))return null
 const bot=await pluginBot(c.env,sid)
 const id=msgId(),t=now()
 const sig=await signMsg(c.env,{id,room:ch.id,author_id:bot,created_at:t,edited_at:null,content})
 await c.env.DB.batch([
-c.env.DB.prepare('insert into messages(id,room,server_id,author_id,content,created_at,sig) values(?,?,?,?,?,?,?)').bind(id,ch.id,sid,bot,content,t,sig),
+c.env.DB.prepare('insert into messages(id,room,server_id,author_id,content,reply_to,created_at,sig) values(?,?,?,?,?,?,?,?)').bind(id,ch.id,sid,bot,content,replyTo,t,sig),
 c.env.DB.prepare('update channels set last_msg=? where id=?').bind(id,ch.id)
 ])
 const[message]=await hydrate(c.env,[await c.env.DB.prepare('select * from messages where id=?').bind(id).first()],bot)
 c.pub('s_'+sid,{t:'msg.new',m:message,ment:{users:[],everyone:false,roles:[]}},{ch:ch.id})
+return id
 }
 export function runPlugins(c,sid,event,user){
 c.ec.waitUntil((async()=>{

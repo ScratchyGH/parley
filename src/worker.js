@@ -11,7 +11,7 @@ import extraRoutes from'./extras.js'
 import totpRoutes from'./totp.js'
 import pushRoutes from'./push.js'
 import perkRoutes from'./perks.js'
-import parsRoutes from'./pars.js'
+import parsRoutes,{expireVanity}from'./pars.js'
 import programRoutes from'./program.js'
 import screenRoutes from'./screen.js'
 import aiRoutes from'./ai.js'
@@ -20,6 +20,7 @@ import deviceRoutes,{checkDevice}from'./devices.js'
 import botlabRoutes from'./botlab.js'
 import signinRoutes from'./signin.js'
 import labRoutes from'./lab.js'
+import xlabsRoutes,{xlabsCron}from'./xlabs.js'
 import gifRoutes from'./gifs.js'
 import caseRoutes from'./cases.js'
 import templateRoutes from'./templates.js'
@@ -64,6 +65,7 @@ hookRoutes(router)
 pluginRoutes(router)
 backupRoutes(router)
 botlabRoutes(router)
+xlabsRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
 caseRoutes(router)
@@ -216,11 +218,14 @@ const res=await api(new Request(url,{method,headers:{'content-type':'application
 if(!res.ok){let m='Failed';try{m=(await res.json()).error||m}catch{}throw new Error(m)}
 })
 await Promise.allSettled(pend)
+await xlabsCron(env,ec)
+await Promise.allSettled(pend)
 }catch(e){console.error('scheduled send',String(e&&e.message||e))}
 const last=await env.DB.prepare("select v from app_settings where k='last_sweep'").first().catch(()=>null)
 if(last&&t-Number(last.v)<20*3600000)return
 await env.DB.prepare("insert into app_settings(k,v) values('last_sweep',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()
 try{await dailyBackup(env)}catch(e){console.error('backup',String(e&&e.message||e))}
+try{await expireVanity(env)}catch(e){}
 const orphans=(await env.DB.prepare('select id,r2_key from files where kind=? and message_id is null and created_at<?').bind('attachment',t-86400000).all()).results
 for(const f of orphans)await env.FILES.delete(f.r2_key)
 const stale=(await env.DB.prepare('select id,r2_key,upload_id from uploads where created_at<?').bind(t-86400000).all()).results

@@ -24,8 +24,14 @@ const s=sid?await env.DB.prepare("select coalesce(sum(i.mb),0) s from par_owned 
 return(a?.s||0)+(s?.s||0)
 }
 export async function ownsVanity(env,sid){
-return!!(await env.DB.prepare("select 1 x from par_owned where server_id=? and item_id='vanity'").bind(sid).first())
+return!!(await env.DB.prepare("select 1 x from par_owned where server_id=? and item_id='vanity' and (expires_at is null or expires_at>?)").bind(sid,now()).first())
 }
+const permVanity=async(env,sid)=>!!(await env.DB.prepare("select 1 x from par_owned where server_id=? and item_id='vanity' and expires_at is null").bind(sid).first())
+export async function expireVanity(env){
+await env.DB.prepare("update servers set vanity=null where vanity is not null and not exists(select 1 from par_owned o where o.server_id=servers.id and o.item_id='vanity' and (o.expires_at is null or o.expires_at>?))").bind(now()).run()
+}
+const COSMETIC=['nameplate','frame','effect','namefx','badge']
+const bundleOf=it=>{let d={};try{d=JSON.parse(it.data||'{}')}catch{}return{items:Array.isArray(d.items)?d.items:[],vanity_days:Number(d.vanity_days)||0}}
 async function findUser(env,name){
 const n=String(name||'').trim().replace(/^@/,'')
 if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(n))fail(400,'Enter a username')
@@ -33,19 +39,19 @@ const u=await env.DB.prepare('select id,username,display_name,is_bot,created_at 
 if(!u||u.is_bot)fail(404,'User not found')
 return u
 }
-const shapeItem=i=>({id:i.id,kind:i.kind,name:i.name,descr:i.descr,price:i.price,scope:i.scope,mb:i.mb,data:i.data})
+const shapeItem=i=>({hidden:!i.enabled,id:i.id,kind:i.kind,name:i.name,descr:i.descr,price:i.price,scope:i.scope,mb:i.mb,data:i.data})
 export default function(r){
 r.add('GET','/api/pars',async c=>{
 const cfg=await parsCfg(c.env)
 const[items,owned,tx,me,beat]=await Promise.all([
-c.env.DB.prepare('select * from par_items where enabled=1 order by sort,price').all(),
-c.env.DB.prepare('select o.id,o.item_id,o.server_id,o.gift_from,o.created_at,s.name server_name from par_owned o left join servers s on s.id=o.server_id where o.user_id=? order by o.created_at desc limit 200').bind(c.user.id).all(),
+c.env.DB.prepare('select * from par_items where enabled=1 or id in (select item_id from par_owned where user_id=?) order by sort,price').bind(c.user.id).all(),
+c.env.DB.prepare('select o.id,o.item_id,o.server_id,o.gift_from,o.created_at,o.expires_at,s.name server_name from par_owned o left join servers s on s.id=o.server_id where o.user_id=? order by o.created_at desc limit 200').bind(c.user.id).all(),
 c.env.DB.prepare('select id,delta,kind,note,created_at from par_tx where user_id=? order by created_at desc limit 40').bind(c.user.id).all(),
-c.env.DB.prepare('select pars,nameplate,frame,effect from users where id=?').bind(c.user.id).first(),
+c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge from users where id=?').bind(c.user.id).first(),
 c.env.DB.prepare('select total_ms,day,day_ms from par_beats where user_id=?').bind(c.user.id).first()
 ])
 const today=beat&&beat.day===dayOf(now())?beat.day_ms:0
-return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
+return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
 })
 r.add('GET','/api/pars/history',async c=>{
 const before=clamp(c.url.searchParams.get('before'),now()+1,0,now()+1)
@@ -99,14 +105,14 @@ if(!it)fail(404,'That item is not available')
 const ref='buy:'+req
 const dup=await c.env.DB.prepare("select 1 x from par_tx where user_id=? and kind='purchase' and ref=?").bind(c.user.id,ref).first()
 if(dup)return{ok:true,duplicate:true,balance:await bal(c.env,c.user.id)}
-let owner=c.user.id,sid=null,from=null,note=it.name
+let owner=c.user.id,sid=null,from=null,note=it.name,bun=null,todo=[]
 if(it.kind==='vanity'||(it.kind==='boost'&&b.target==='server')){
 sid=String(b.server_id||'')
 const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Server not found')
 if(it.kind==='vanity'){
 if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission')
-if(await ownsVanity(c.env,sid))fail(409,'This server already has vanity links unlocked')
+if(await permVanity(c.env,sid))fail(409,'This server already has vanity links unlocked')
 }
 note+=' for '+m.server.name
 }else if(it.kind==='boost'&&b.target==='user'){
@@ -115,8 +121,21 @@ if(u.id===c.user.id)fail(400,'Use "My account" to boost yourself')
 owner=u.id;from=c.user.id;note+=' gift to '+u.username
 }else if(it.kind==='boost'&&b.target==='self'){
 note+=' for your account'
-}else if(it.kind==='nameplate'||it.kind==='frame'||it.kind==='effect'){
+}else if(COSMETIC.includes(it.kind)){
 if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,it.id).first())fail(409,'You already own this')
+}else if(it.kind==='bundle'){
+bun=bundleOf(it)
+const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${bun.items.map(()=>'?').join(',')})`).bind(c.user.id,...bun.items).all()).results.map(x=>x.item_id))
+todo=bun.items.filter(x=>!have.has(x))
+if(!todo.length&&!bun.vanity_days)fail(409,'You already own everything in this bundle')
+if(bun.vanity_days){
+sid=String(b.server_id||'')
+const m=await loadMember(c.env,sid,c.user.id)
+if(!m)fail(404,'Choose a server for the vanity link')
+if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission for that server')
+if(await permVanity(c.env,sid))fail(409,'That server already has a permanent vanity link')
+note+=' for '+m.server.name
+}
 }else fail(400,'Choose where to apply this')
 if(it.kind==='boost'){
 const cfg=await parsCfg(c.env)
@@ -126,7 +145,17 @@ if(cur+it.mb>cfg.boostCapMb)fail(409,'That would go over the '+cfg.boostCapMb+' 
 const ok=await c.env.DB.prepare('update users set pars=pars-? where id=? and pars>=?').bind(it.price,c.user.id,it.price).run()
 if(!ok.meta.changes)fail(402,'You need '+it.price+' Pars for this')
 try{
-await c.env.DB.batch([txRow(c.env,c.user.id,-it.price,'purchase',ref,note),c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),owner,it.id,sid,from,now())])
+const st=[txRow(c.env,c.user.id,-it.price,'purchase',ref,note)]
+if(bun){
+for(const x of todo)st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),c.user.id,x,null,'bundle:'+it.id,now()))
+if(bun.vanity_days){
+const cur=await c.env.DB.prepare("select id,expires_at from par_owned where server_id=? and item_id='vanity' and expires_at is not null order by expires_at desc limit 1").bind(sid).first()
+const add=bun.vanity_days*86400000
+if(cur&&cur.expires_at>now())st.push(c.env.DB.prepare('update par_owned set expires_at=? where id=?').bind(cur.expires_at+add,cur.id))
+else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at,expires_at) values(?,?,?,?,?,?,?)').bind(newId('po'),c.user.id,'vanity',sid,'bundle:'+it.id,now(),now()+add))
+}
+}else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),owner,it.id,sid,from,now()))
+await c.env.DB.batch(st)
 }catch(e){
 await c.env.DB.prepare('update users set pars=pars+? where id=?').bind(it.price,c.user.id).run()
 if(String(e.message).includes('UNIQUE'))return{ok:true,duplicate:true,balance:await bal(c.env,c.user.id)}
@@ -137,7 +166,7 @@ return json({ok:true,balance:await bal(c.env,c.user.id),spent:it.price},201)
 })
 r.add('POST','/api/pars/equip',async c=>{
 const b=await body(c.req,500)
-if(!['nameplate','frame','effect'].includes(b.kind))fail(400,'Invalid cosmetic')
+if(!COSMETIC.includes(b.kind))fail(400,'Invalid cosmetic')
 let id=null
 if(b.item){
 id=String(b.item)

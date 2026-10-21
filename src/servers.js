@@ -1,3 +1,4 @@
+import{ownsVanity}from'./pars.js'
 import{fireHooks}from'./devhooks.js'
 import{runPlugins}from'./plugins.js'
 import{expCfg,expActive}from'./program.js'
@@ -36,6 +37,7 @@ env.DB.prepare('delete from messages where room in (select id from channels wher
 env.DB.prepare('delete from messages where room in (select id from threads where channel_id in (select id from channels where server_id=?))').bind(sid),
 env.DB.prepare('delete from read_state where room in (select id from channels where server_id=?)').bind(sid),
 env.DB.prepare('delete from member_roles where server_id=?').bind(sid),
+...['xf_cfg','xf_state','xf_star','xf_xp','xf_rr','xf_give','xf_count','xf_qotd','xf_conf','xf_bday','xf_sugg','xf_sticky'].map(t=>env.DB.prepare(`delete from ${t} where server_id=?`).bind(sid)),
 env.DB.prepare('delete from servers where id=?').bind(sid)
 ])
 }
@@ -492,7 +494,7 @@ const args=[m.server.id]
 let where=''
 if(q){where=" and (u.username like ? escape '\\' or u.display_name like ? escape '\\' or m.nickname like ? escape '\\')";args.push(like(q),like(q),like(q))}
 args.push(after,lim)
-const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
+const rows=(await c.env.DB.prepare(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,${GTAG},${STATUS},m.nickname,m.joined_at,m.timeout_until,(select group_concat(role_id) from member_roles mr where mr.server_id=m.server_id and mr.user_id=m.user_id) roles from members m join users u on u.id=m.user_id where m.server_id=? and u.deleted_at is null${where} and u.id>? order by u.id limit ?`).bind(...args).all()).results
 return{members:rows.map(x=>({...x,roles:x.roles?x.roles.split(','):[]})),next:rows.length===lim?rows[rows.length-1].id:null}
 })
 
@@ -606,7 +608,7 @@ return{ok:true}
 
 async function validInvite(c,code){
 const vs=await c.env.DB.prepare('select s.id server_id,s.name,s.description,s.icon_id,s.banner_id,s.accent,s.tag,s.tag_emoji,s.tag_icon_id,s.is_public,u.display_name inviter_name from servers s join users u on u.id=s.owner_id where s.vanity=?').bind(code).first()
-if(vs)return{...vs,code,vanity:true,revoked:0}
+if(vs&&await ownsVanity(c.env,vs.server_id))return{...vs,code,vanity:true,revoked:0}
 const inv=await c.env.DB.prepare('select i.*,s.name,s.description,s.icon_id,s.banner_id,s.accent,s.tag,s.tag_emoji,s.tag_icon_id,s.is_public,u.display_name inviter_name from invites i join servers s on s.id=i.server_id join users u on u.id=i.inviter_id where i.code=?').bind(code).first()
 if(!inv||inv.revoked||(inv.expires_at&&inv.expires_at<now())||(inv.max_uses&&inv.uses>=inv.max_uses))fail(404,'This invite is invalid or has expired')
 return inv

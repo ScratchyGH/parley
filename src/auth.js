@@ -6,7 +6,7 @@ import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,bod
 export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
 const GT=c=>`(select s.${c} from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_${c}`
 export const GTAG=[GT('tag'),GT('tag_emoji'),GT('tag_icon_id')].join(',')
-export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,u.effect,${GTAG},u.created_at`
+export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,${GTAG},u.created_at`
 const SESSION_MS=30*86400000
 const NAME=/^[a-zA-Z0-9_.-]{3,24}$/
 
@@ -88,7 +88,7 @@ return{label,url:u.href}
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{tos_ok:u.tos_version===TOS_VERSION,tos_version:TOS_VERSION,pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
+return{tos_ok:u.tos_version===TOS_VERSION,tos_version:TOS_VERSION,pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,namefx:u.namefx||null,badge:u.badge||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
 }
 
 const tokenOf=(req,name)=>{
