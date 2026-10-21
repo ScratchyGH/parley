@@ -139,3 +139,11 @@ Add a route or custom domain to the worker in the dashboard. Cookies are `Secure
 ## Workers AI binding
 
 `wrangler.toml` declares `[ai] binding = "AI"` for the image part of the explicit content scanner. Workers AI has a free daily allowance on the free plan. `wrangler dev` cannot start with that binding when you are not logged in to Cloudflare, so `npm run dev` writes a copy of the config without it (`wrangler.local.toml`, ignored by git) and the image check is simply off locally. To run the integration tests start the server with `npx wrangler dev -c wrangler.local.toml --port 8787 --test-scheduled`.
+
+## Secrets and notes for the October 2026 update
+
+- Migrations `0017` and `0018` run automatically in the Workers Builds command.
+- Optional secret `OPENROUTER_API_KEY`: lets admins use OpenRouter without pasting a key each time.
+- Device bans are best effort (see `docs/FEATURES.md`).
+- `.github/workflows/apps.yml` builds the desktop and Android apps into a release tagged `apps`. It has never been run; check its first run before relying on the download buttons.
+- Message retention runs in the daily cron.

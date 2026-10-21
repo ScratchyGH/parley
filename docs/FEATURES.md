@@ -198,3 +198,29 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 - Full text search is still a LIKE scan: D1 FTS5 would roughly triple message write cost on the free plan.
 - Not buildable on the free tier without a third party: email verification and recovery, end to end encryption, full text search, an SFU for large calls.
 - HEIC/HEIF files are accepted and downloadable but not displayed inline.
+
+## October 2026 update
+
+Verified here means covered by `node test/features.mjs` (66 checks) against a local `wrangler dev`; the older suites still pass (`npm test`, `npm run test:static`).
+
+| Feature | Status |
+| --- | --- |
+| Pars: 5 per active hour with anti-AFK checks (trusted input only, one beat per window, daily cap), balance, history, gifts, trades, admin-set prices and rewards, idempotent purchases | API tested, UI written (not seen in a browser) |
+| Pars shop: vanity link (25), nameplates (5), frames, upload boosts (50/75/125 for +25/+45/+65 MB) applied to a server, your account, or gifted | API tested, UI written |
+| Pars cannot be bought with money | No payment code exists |
+| Experimental Servers Program: random selection, owner offer popup, accept/decline stored, toggle in server settings, Experimental tag tied to participation, admin override and emergency disable, feedback | API tested, UI written |
+| Bot quality screening: static analysis score, uncertainty rule (25% or more goes to a person), review history, reviewer approve/reject/request changes with reasons, creator appeals, flagged bots hidden from the marketplace | API tested, UI written |
+| AI-assisted screening | Optional and advisory only: it can escalate, never approve. Uses the chosen provider; if the provider fails, local checks stand alone |
+| AI Provider Chooser (Pollinations, Ch.at, OpenRouter, custom https endpoint) on the admin studio and Lab AI features | API validation tested; live provider calls depend on those services being up. OpenRouter needs a key (per request or the `OPENROUTER_API_KEY` secret) |
+| Temporary and permanent suspensions from user search and from reports; lapse lifts at next sign in | API tested, UI written |
+| Device bans | Best effort: a random id stored in the browser is sent as `x-device`. Browsers cannot read a real hardware id, so a cleared browser or new device gets around it |
+| Appeals with up to 5 https evidence links | API tested, UI written |
+| Slur filter: homoglyph, leetspeak and repeated-letter evasion | Unit tested |
+| Server option: block emoji and stickers from other servers | API tested; the check runs on send and edit |
+| Server option: message retention (30, 90, 365 days), swept by the daily cron; pinned messages are kept | Setting tested; the sweep itself has not been run against real data |
+| Update popup shown once per account, with acknowledgement saved | API tested |
+| Settings > Apps downloads | Lists a release only if one exists. `.github/workflows/apps.yml` is **unverified**: it has never run |
+
+### Not built in this update
+
+Bot builder upgrades (forking, subflows, drag editor, sandbox, version history), collaborative bot workspaces, category right-click rename and permissions, scheduled messages, bookmarks, YouTube thumbnails (the strict CSP blocks external images; this needs a Worker image proxy), upload retries and draft recovery, CSAM reporting workflow and hash matching, avatar effects and personal fonts, Universal Inbox, Workflow Marketplace, Performance Mode, screen-streaming quality controls, group calls and captions, public developer API and plugins, automated backups and monitoring. Call-panel, notification and composer-spacing fixes are written but have not been checked in a live browser.
