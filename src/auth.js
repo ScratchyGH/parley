@@ -51,7 +51,7 @@ row.admin=!!row.is_admin||row.owner||(env.ADMIN_USERNAMES||'').toLowerCase().spl
 return row
 }
 
-export const SETTINGS_KEYS={theme:['dimmed','silver','light','contrast'],density:['compact','comfortable','spacious'],font_ui:['','figtree','bricolage','system','serif','mono','rounded','humanist','legible'],font_msg:['','figtree','bricolage','system','serif','mono','rounded','humanist','legible'],preset:['','midnight','forest','sunset','ocean','rose','graphite','paper'],dm_policy:['everyone','friends','none'],friend_policy:['everyone','none']}
+export const SETTINGS_KEYS={theme:['dimmed','silver','light','contrast'],density:['compact','comfortable','spacious'],font_ui:['','parli','figtree','bricolage','system','serif','mono','rounded','humanist','legible'],font_msg:['','parli','figtree','bricolage','system','serif','mono','rounded','humanist','legible'],preset:['','midnight','forest','sunset','ocean','rose','graphite','paper'],dm_policy:['everyone','friends','none'],friend_policy:['everyone','none']}
 export function cleanSettings(o){
 if(!o||typeof o!=='object'||Array.isArray(o))fail(400,'Invalid settings')
 const out={}
