@@ -239,6 +239,27 @@ Verified here means covered by `node test/features.mjs` (66 checks) against a lo
 | Simple uploads retry up to 3 times on network or server errors | UI written |
 | Drafts are saved per chat, and Saved messages already existed | Existing behaviour |
 
+### Third update
+
+`node test/features.mjs` now has 154 checks (npm test 582, static 49).
+
+| Feature | Status |
+| --- | --- |
+| Bot builder editor: Save and Test at the top, autosave, right-click menus on blocks and canvas, block descriptions, multi-select, duplicate, templates, import and export as JSON | Server side tested. The editor ran in a headless browser (templates, save, test, version list, context menu) with no console errors |
+| New blocks: On/off switch, Choose a path (4 paths + otherwise), Subflow start, Run a subflow (nesting up to 4 deep), Note, Webhook trigger, Count words | Validated and executed in tests |
+| Checker: unconnected blocks, empty messages, unset variables, missing or unused subflows, duplicate commands, loops, permission notes | Tested; warnings show on the blocks |
+| Collaborative bot workspaces: viewer, editor, maintainer, owner roles; invitations; ownership transfer; version history with restore; branches with 3-way merge and per-block conflict choices; revision checks so saves never overwrite a teammate silently | API tested. Two browsers verified live cursors, live updates, and the conflict dialog |
+| Workflow Marketplace: ratings and reviews, sort by rating or forks, fork with license checks (all-rights-reserved blocked, custom licenses need acceptance, copyleft licenses stay the same) and automatic credit in the fork's description | API tested; rating and fork flow verified in a browser |
+| Bot webhooks: `POST /api/hooks/bot/:id/:name?key=` runs a hook flow in every server where the bot is installed | API tested with right and wrong keys; running the flow in a real server was not exercised |
+| Personal interface font and message font (self-hosted or system stacks only) and seven theme presets | Settings validated by tests; the look was not reviewed |
+| Screen share: resolution, frame rate, bitrate cap and optional system audio; live captions from the browser's speech recognition; calls retry ICE after a short disconnect | **Not exercised.** These need real WebRTC peers and a real screen picker. Code only |
+| Server event webhooks (message.create, member.join): HMAC-signed, https only, no IP literals or localhost, pause after 10 failures | Validation, permissions and storage tested. Delivery to a real endpoint was not exercised |
+| Admin Health panel: database, scheduler heartbeat, nightly cleanup, overdue scheduled messages, browser errors, paused webhooks | API tested |
+
 ### Not built
 
-Bot builder upgrades (forking, subflows, drag editor, sandbox, version history), collaborative bot workspaces, personal fonts and theme presets, Workflow Marketplace, screen-streaming quality controls, group calls and captions, a public developer API and plugins, automated backups and monitoring (D1 Time Travel from Cloudflare covers restores). Call-panel, notification and composer-spacing fixes are written but have not been checked in a live browser.
+- Plugins (no plugin system was added; bot blocks, bot tokens with the REST API, incoming webhooks and event webhooks cover integrations).
+- Self-managed backups: restores rely on Cloudflare D1 Time Travel (see DEPLOYMENT.md). There is no in-app backup or restore button.
+- Group calls beyond the existing 12-person mesh limit, and a hosted media server (SFU).
+- Anything that needs a real browser session with real audio or video has not been run: call quality controls, captions, system-audio sharing.
+- Call-panel, notification and composer-spacing fixes from earlier updates are written but were not checked in a live browser.

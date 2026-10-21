@@ -147,3 +147,7 @@ Add a route or custom domain to the worker in the dashboard. Cookies are `Secure
 - Device bans are best effort (see `docs/FEATURES.md`).
 - `.github/workflows/apps.yml` builds the desktop and Android apps into a release tagged `apps`. It has never been run; check its first run before relying on the download buttons.
 - Message retention runs in the daily cron.
+- Migrations `0019` to `0022` also run in the Workers Builds command. The cron in `wrangler.toml` now runs every minute (scheduled messages); the cleanup inside it is gated to once a day.
+- Backups: D1 Time Travel keeps point-in-time history (about 30 days on paid plans, 7 on the free plan). List and restore with `npx wrangler d1 time-travel info DB` and `npx wrangler d1 time-travel restore DB --timestamp=<unix or ISO time>`. A restore replaces the live database, so put the site in maintenance mode first (Admin > Overview). For an extra copy run `npx wrangler d1 export DB --remote --output backup.sql`. Files in R2 are not versioned.
+- Admin > Overview shows a Health panel. If Scheduler is red, check that the cron trigger deployed.
+- Event webhooks send from the Worker to the address the server owner enters. Addresses must be public https hosts; localhost and IP addresses are refused.
