@@ -34,7 +34,7 @@ jobs:
           mkdir build
           cp ../public/logo-512.png build/icon.png
           cat > package.json <<EOF
-          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":"nsis","icon":"build/icon.png"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"artifactName":"Parley-Setup.exe"},"linux":{"target":"AppImage","icon":"build/icon.png","category":"Network","artifactName":"Parley.AppImage"}}}
+          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":"nsis","icon":"build/icon.png"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"artifactName":"Parley-Setup.exe"},"linux":{"target":"AppImage","icon":"build/icon.png","category":"Network","executableArgs":["--no-sandbox"],"artifactName":"Parley.AppImage"}}}
           EOF
           cat > main.js <<'EOF'
           const{app,BrowserWindow,shell,session,dialog}=require('electron')
@@ -42,17 +42,25 @@ jobs:
           const SITE=process.env.PARLEY_SITE||'__SITE__'
           let win
           function updates(){
-          autoUpdater.autoDownload=true
-          autoUpdater.autoInstallOnAppQuit=true
-          autoUpdater.on('update-downloaded',()=>{
-          dialog.showMessageBox(win,{type:'info',buttons:['Restart now','Later'],defaultId:0,title:'Parley update',message:'A new version of the Parley app is ready.',detail:'Restart to finish updating. The site itself is always up to date.'}).then(r=>{if(r.response===0)autoUpdater.quitAndInstall()})
-          })
-          autoUpdater.on('error',()=>{})
-          const check=()=>autoUpdater.checkForUpdates().catch(()=>{})
-          check()
-          setInterval(check,4*3600*1000)
-          }
-          const lock=app.requestSingleInstanceLock()
+autoUpdater.autoDownload=true
+autoUpdater.autoInstallOnAppQuit=true
+autoUpdater.allowDowngrade=false
+autoUpdater.setFeedURL({provider:'generic',url:'__FEED__'})
+let manual=false,shownErr=false
+autoUpdater.on('update-downloaded',()=>{
+dialog.showMessageBox(win,{type:'info',buttons:['Restart now','Later'],defaultId:0,title:'Parley update',message:'A new version of the Parley app is ready.',detail:'Restart to finish updating. The site itself is always up to date.'}).then(r=>{if(r.response===0)autoUpdater.quitAndInstall(false,true)})
+})
+autoUpdater.on('update-available',()=>{manual=true})
+autoUpdater.on('error',e=>{
+if(manual&&!shownErr){shownErr=true;dialog.showMessageBox(win,{type:'warning',buttons:['Open download page','Dismiss'],defaultId:0,title:'Parley update',message:'The automatic update could not finish.',detail:'Download the newest app and replace the old file.'}).then(r=>{if(r.response===0)shell.openExternal('__FEED__/'+(process.platform==='linux'?'Parley.AppImage':'Parley-Setup.exe'))})}
+})
+let lastCheck=0
+const check=()=>{lastCheck=Date.now();return autoUpdater.checkForUpdates().catch(()=>{})}
+setTimeout(check,5000)
+setInterval(check,3600*1000)
+app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check()})
+}
+const lock=app.requestSingleInstanceLock()
           if(!lock)app.quit()
           app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus()}})
           app.whenReady().then(()=>{
@@ -64,7 +72,7 @@ jobs:
           })
           app.on('window-all-closed',()=>app.quit())
           EOF
-          sed -i "s#__SITE__#${SITE}#" main.js
+          sed -i "s#__SITE__#${SITE}#g;s#__FEED__#${FEED}#g" main.js
           npm i --save electron-updater@6
           npm i --save-dev electron@33 electron-builder@25
           npx electron-builder --${{ matrix.target }} --publish never
@@ -124,4 +132,4 @@ jobs:
         run: |
           ls -R out
           gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Parley apps for Windows, Linux (AppImage) and Android. The desktop apps check this release for updates. The Android file is debug-signed for sideloading." || true
-          gh release upload apps out/* --clobber --repo "$GITHUB_REPOSITORY"
+          ls out/*.yml && gh release upload apps out/* --clobber --repo "$GITHUB_REPOSITORY"
