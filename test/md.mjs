@@ -48,9 +48,9 @@ t('```\n**not bold**\n```','<pre><code>**not bold**</code></pre>')
 t('||secret||','<p><span class="sp">secret</span></p>')
 t('hi <@everyone> and a@b.com','<p>hi <span class="mn all">@everyone</span> and a@b.com</p>')
 t('plain @bob stays text','<p>plain @bob stays text</p>')
-t('# Title','<p><strong>Title</strong></p>')
+t('# Title','<h2 class="mh">Title</h2>')
 t('**unclosed','<p>**unclosed</p>')
-t('***','<p>***</p>')
+t('***','<hr></hr>')
 const deep='**'.repeat(1)+'a'
 t(deep,'<p>**a</p>')
 if(plain('**hi** ```code``` ||x||')!=='hi [code] [spoiler]'){fail++;console.log('FAIL plain',plain('**hi** ```code``` ||x||'))}else pass++

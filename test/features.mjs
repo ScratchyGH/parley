@@ -416,5 +416,71 @@ r=await A.req('PATCH','/api/me',{settings:{font_ui:'Comic Sans; background:url(x
 ok(r.s===400,'unknown font rejected')
 }
 
+{
+const ps=(await A.post('/api/servers',{name:'Plug '+run})).j
+r=await B.get('/api/servers/'+ps.id+'/plugins')
+ok(r.s===404||r.s===403,'plugins hidden from non-members')
+r=await A.get('/api/servers/'+ps.id+'/plugins')
+ok(r.s===200&&r.j.plugins.length===3&&r.j.plugins.every(x=>!x.enabled),'plugin catalog lists three, all off')
+r=await A.put('/api/servers/'+ps.id+'/plugins/welcome',{enabled:true,config:{channel_id:'',text:'Hi {user}'}})
+ok(r.s===400,'cannot enable welcome without a channel')
+r=await A.put('/api/servers/'+ps.id+'/plugins/nope',{enabled:true,config:{}})
+ok(r.s===404,'unknown plugin rejected')
+r=await A.put('/api/servers/'+ps.id+'/plugins/welcome',{enabled:true,config:{channel_id:'zzz',text:'x'}})
+ok(r.s===400,'channel from elsewhere rejected')
+r=await A.put('/api/servers/'+ps.id+'/plugins/welcome',{enabled:true,config:{channel_id:ps.default_channel,text:'Welcome {user} to {server}'}})
+ok(r.s===200,'welcome plugin saved')
+r=await A.put('/api/servers/'+ps.id+'/plugins/goodbye',{enabled:true,config:{channel_id:ps.default_channel,text:'{user} left'}})
+ok(r.s===200,'goodbye plugin saved')
+const role=(await A.post('/api/servers/'+ps.id+'/roles',{name:'Newbie'})).j
+const rid=role.id||role.role?.id
+r=await A.put('/api/servers/'+ps.id+'/plugins/autorole',{enabled:true,config:{role_id:rid}})
+ok(r.s===200,'autorole plugin saved')
+const inv=(await A.post('/api/servers/'+ps.id+'/invites',{})).j
+r=await B.post('/api/invites/'+inv.code+'/join')
+ok(r.s===200,'member joins')
+await new Promise(x=>setTimeout(x,1500))
+r=await A.get('/api/rooms/'+ps.default_channel+'/messages')
+ok(r.s===200&&r.j.messages.some(m=>m.content===`Welcome ${B.name} to Plug ${run}`||m.content.startsWith('Welcome ')),'welcome message posted on join')
+const hasRole=sql(`select count(*) n from member_roles where user_id='${B.id}' and role_id='${rid}'`)
+ok(/"n": 1/.test(hasRole),'autorole assigned on join')
+r=await B.post('/api/servers/'+ps.id+'/leave')
+await new Promise(x=>setTimeout(x,1500))
+r=await A.get('/api/rooms/'+ps.default_channel+'/messages')
+ok(r.j.messages.some(m=>m.content.endsWith(' left')),'goodbye message posted on leave')
+}
+{
+r=await A.get('/api/admin/backups')
+ok(r.s===404,'backups are owner only')
+r=await A.post('/api/me/tos',{version:'old',read:'short'})
+ok(r.s===400,'stale terms version rejected')
+r=await A.post('/api/me/tos',{version:'2026-10-21',read:'short'})
+ok(r.s===200,'terms acceptance recorded')
+r=await A.get('/api/me')
+ok(r.s===200&&r.j.user?.tos_ok===true,'user reports terms accepted')
+r=await A.get('/api/pars')
+ok(r.j.items.filter(i=>i.id.startsWith('np_')).length>=10,'premium nameplates in shop')
+}
+{
+const OW=new U('x');OW.name='testowner'
+let lr=await OW.post('/api/auth/register',{username:OW.name,password:'correct horse battery'})
+if(lr.s!==201&&lr.s!==200)lr=await OW.post('/api/auth/login',{username:OW.name,password:'correct horse battery'})
+if(lr.s===200||lr.s===201){
+r=await OW.post('/api/admin/backups')
+ok(r.s===200&&r.j.size>100,'owner creates a backup')
+const nm=r.j.name
+r=await OW.get('/api/admin/backups')
+ok(r.j.backups.some(b=>b.name===nm),'backup is listed')
+r=await OW.post('/api/admin/backups/'+nm+'/restore',{})
+ok(r.s===400,'restore needs confirmation')
+r=await OW.post('/api/admin/backups/'+nm+'/restore',{confirm:true})
+ok(r.s===200&&typeof r.j.added==='number','restore runs')
+r=await OW.req('DELETE','/api/admin/backups/'+nm)
+ok(r.s===200,'backup deleted')
+r=await OW.get('/api/admin/backups/../x')
+ok(r.s===404,'bad backup name rejected')
+}
+}
+
 console.log(`${pass} passed, ${failn} failed`)
 process.exit(failn?1:0)
