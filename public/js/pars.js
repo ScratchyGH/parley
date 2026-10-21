@@ -40,8 +40,8 @@ if(it.kind==='namefx')return h('div',{class:'par-np'},h('b',null,h('span',{class
 if(it.kind==='badge')return h('div',{class:'par-np'},h('b',null,S.me.display_name,h('span',{class:'bdg-i '+it.id})))
 if(it.kind==='title')return h('div',{class:'par-np'},h('b',null,S.me.display_name,h('span',{class:'ttl '+it.id})))
 if(it.kind==='bubble')return h('div',{class:'par-msg '+it.id},h('b',null,S.me.display_name),' Hey, this is how your messages will look.')
-if(it.kind==='vanity')return h('div',{class:'par-np'},h('b',null,'parley.chat/your-name'))
-if(it.kind==='boost')return h('div',{class:'par-np'},h('b',null,'+'+it.mb+' MB uploads'))
+if(it.kind==='vanity')return h('div',{class:'par-big'},h('span',{class:'par-bi'},icon('link')),h('b',null,'/your-name'))
+if(it.kind==='boost')return h('div',{class:'par-big'},h('span',{class:'par-bi'},icon('upload')),h('b',null,'+'+it.mb+' MB'))
 return null
 }
 export function parsPage(pg){
