@@ -153,7 +153,7 @@ Add a route or custom domain to the worker in the dashboard. Cookies are `Secure
 - Event webhooks send from the Worker to the address the server owner enters. Addresses must be public https hosts; localhost and IP addresses are refused.
 
 ## 2026.10.24 notes
-- Migrations `0023` (terms acceptance), `0024` (nameplates), `0025` (server plugins) must be applied before the new code runs. They also run automatically through src/migrate.js.
+- Migrations `0023` (terms acceptance), `0024` (nameplates), `0025` (server plugins), `0026` (more cosmetics) must be applied before the new code runs. They also run automatically through src/migrate.js.
 - Terms: signed-in users must accept the current terms before any write request. Set `TOS_OFF=1` as a variable only for local tests.
 - Backups: the daily cron writes a gzip copy of every table except sessions, uploads, sign-in attempts and file contents, and keeps the last 7. Admin > Backups (owner only) can create, download, restore and delete them. Restore adds back rows that are missing and never overwrites or deletes existing rows. Backups contain password hashes.
 - Local test server: `wrangler dev --var TOS_OFF:1 --var OWNER_USERNAME:testowner`.

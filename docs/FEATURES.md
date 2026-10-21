@@ -269,3 +269,7 @@ Verified here means covered by `node test/features.mjs` (66 checks) against a lo
 - Admin > Backups (owner): create, download, restore, delete; daily automatic backup keeps 7.
 - Group DM calls: the call bar has Add people, which rings chosen members or everyone not in the call. Mesh calls are limited to 12 people.
 - Terms gate: new and returning users choose the short or full terms and must accept before continuing; the server rejects writes until accepted.
+
+## Appearance persistence and cosmetics
+- The last signed-in account's theme, colors and fonts are cached in the browser and applied on the sign-in screen; signing in to another account applies that account's settings.
+- Pars shop: 8 more avatar effects and 6 more frames (migration `0026`). Terms version `2026-10-22`; everyone accepts again after the rewrite.
