@@ -42,25 +42,25 @@ jobs:
           const SITE=process.env.PARLEY_SITE||'__SITE__'
           let win
           function updates(){
-autoUpdater.autoDownload=true
-autoUpdater.autoInstallOnAppQuit=true
-autoUpdater.allowDowngrade=false
-autoUpdater.setFeedURL({provider:'generic',url:'__FEED__'})
-let manual=false,shownErr=false
-autoUpdater.on('update-downloaded',()=>{
-dialog.showMessageBox(win,{type:'info',buttons:['Restart now','Later'],defaultId:0,title:'Parley update',message:'A new version of the Parley app is ready.',detail:'Restart to finish updating. The site itself is always up to date.'}).then(r=>{if(r.response===0)autoUpdater.quitAndInstall(false,true)})
-})
-autoUpdater.on('update-available',()=>{manual=true})
-autoUpdater.on('error',e=>{
-if(manual&&!shownErr){shownErr=true;dialog.showMessageBox(win,{type:'warning',buttons:['Open download page','Dismiss'],defaultId:0,title:'Parley update',message:'The automatic update could not finish.',detail:'Download the newest app and replace the old file.'}).then(r=>{if(r.response===0)shell.openExternal('__FEED__/'+(process.platform==='linux'?'Parley.AppImage':'Parley-Setup.exe'))})}
-})
-let lastCheck=0
-const check=()=>{lastCheck=Date.now();return autoUpdater.checkForUpdates().catch(()=>{})}
-setTimeout(check,5000)
-setInterval(check,3600*1000)
-app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check()})
-}
-const lock=app.requestSingleInstanceLock()
+          autoUpdater.autoDownload=true
+          autoUpdater.autoInstallOnAppQuit=true
+          autoUpdater.allowDowngrade=false
+          autoUpdater.setFeedURL({provider:'generic',url:'__FEED__'})
+          let manual=false,shownErr=false
+          autoUpdater.on('update-downloaded',()=>{
+          dialog.showMessageBox(win,{type:'info',buttons:['Restart now','Later'],defaultId:0,title:'Parley update',message:'A new version of the Parley app is ready.',detail:'Restart to finish updating. The site itself is always up to date.'}).then(r=>{if(r.response===0)autoUpdater.quitAndInstall(false,true)})
+          })
+          autoUpdater.on('update-available',()=>{manual=true})
+          autoUpdater.on('error',e=>{
+          if(manual&&!shownErr){shownErr=true;dialog.showMessageBox(win,{type:'warning',buttons:['Open download page','Dismiss'],defaultId:0,title:'Parley update',message:'The automatic update could not finish.',detail:'Download the newest app and replace the old file.'}).then(r=>{if(r.response===0)shell.openExternal('__FEED__/'+(process.platform==='linux'?'Parley.AppImage':'Parley-Setup.exe'))})}
+          })
+          let lastCheck=0
+          const check=()=>{lastCheck=Date.now();return autoUpdater.checkForUpdates().catch(()=>{})}
+          setTimeout(check,5000)
+          setInterval(check,3600*1000)
+          app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check()})
+          }
+          const lock=app.requestSingleInstanceLock()
           if(!lock)app.quit()
           app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus()}})
           app.whenReady().then(()=>{
