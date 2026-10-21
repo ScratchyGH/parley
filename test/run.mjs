@@ -638,6 +638,7 @@ const dir='.wrangler/state/v3/d1/miniflare-D1DatabaseObject/'
 const f=fs.readdirSync(dir).filter(x=>x.endsWith('.sqlite')&&x!=='metadata.sqlite').map(x=>dir+x).find(x=>{const t=new DatabaseSync(x);const has=t.prepare("select 1 x from sqlite_master where name='users'").get();t.close();return!!has})
 const db=new DatabaseSync(f)
 db.prepare('update servers set name=? where id=?').run('Hentai Zone',ssid)
+db.prepare("delete from app_settings where k='last_sweep'").run()
 db.close()
 await fetch(BASE+'/cdn-cgi/handler/scheduled')
 await sleep(1500)
