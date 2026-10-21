@@ -181,7 +181,7 @@ const q=(sql,...a)=>c.env.DB.prepare(sql).bind(...a)
 const[tot,busy,quiet,posters]=await c.env.DB.batch([
 q('select (select count(*) from members where server_id=?) members,(select count(*) from members where server_id=? and joined_at>?) joined,(select count(*) from messages where server_id=? and created_at>? and deleted_at is null) msgs,(select count(distinct author_id) from messages where server_id=? and created_at>? and deleted_at is null) active,(select count(*) from roles where server_id=?) roles,(select count(*) from channels where server_id=?) channels,(select count(*) from bans where server_id=?) bans',sid,sid,w,sid,w,sid,w,sid,sid,sid),
 q('select ch.id,ch.name,count(*) n from messages m join channels ch on ch.id=m.room where m.server_id=? and m.created_at>? and m.deleted_at is null group by ch.id order by n desc limit 5',sid,w),
-q("select ch.id,ch.name from channels ch where ch.server_id=? and ch.type!='voice' and not exists(select 1 from messages m where m.room=ch.id and m.created_at>? and m.deleted_at is null) order by ch.position limit 20",sid,mo),
+q("select ch.id,ch.name from channels ch where ch.server_id=? and ch.type not in ('voice','stage') and not exists(select 1 from messages m where m.room=ch.id and m.created_at>? and m.deleted_at is null) order by ch.position limit 20",sid,mo),
 q('select u.display_name name,count(*) n from messages m join users u on u.id=m.author_id where m.server_id=? and m.created_at>? and m.deleted_at is null group by m.author_id order by n desc limit 5',sid,w)
 ])
 return{totals:tot.results[0],busiest:busy.results,quiet:quiet.results,posters:posters.results}

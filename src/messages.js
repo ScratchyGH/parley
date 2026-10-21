@@ -2,7 +2,7 @@ import{beforeSend as labsBefore,afterSend as labsAfter,onReaction as labsReact}f
 import{fireHooks}from'./devhooks.js'
 import{GTAG}from'./auth.js'
 import{stickerFor}from'./perks.js'
-import{fail,now,newId,msgId,str,limit,body,json,clamp,placeholders}from'./util.js'
+import{VC,fail,now,newId,msgId,str,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember,chanPerms,visibleChannels}from'./perms.js'
 import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
@@ -341,7 +341,7 @@ r.add('GET','/api/unread',async c=>{
 const out=[]
 const servers=(await c.env.DB.prepare('select server_id,joined_at from members where user_id=?').bind(c.user.id).all()).results
 const joined=Object.fromEntries(servers.map(s=>[s.server_id,s.joined_at]))
-const cand=(await c.env.DB.prepare("select c.id,c.server_id,c.last_msg,rs.last_read,coalesce(rs.mentions,0) mentions from channels c join members m on m.server_id=c.server_id and m.user_id=? left join read_state rs on rs.user_id=? and rs.room=c.id where c.type!='voice' and c.last_msg!=''").bind(c.user.id,c.user.id).all()).results
+const cand=(await c.env.DB.prepare("select c.id,c.server_id,c.last_msg,rs.last_read,coalesce(rs.mentions,0) mentions from channels c join members m on m.server_id=c.server_id and m.user_id=? left join read_state rs on rs.user_id=? and rs.room=c.id where c.type not in ('voice','stage') and c.last_msg!=''").bind(c.user.id,c.user.id).all()).results
 const need=cand.filter(x=>x.last_msg>(x.last_read||floorId(joined[x.server_id])))
 const bySrv={}
 for(const x of need)(bySrv[x.server_id]||=[]).push(x)
@@ -372,7 +372,7 @@ rooms=[rr.room]
 }else if(scope==='server'){
 const m=await loadMember(c.env,sp.get('server')||'',c.user.id)
 if(!m)fail(404,'Server not found')
-rooms=(await visibleChannels(c.env,m)).filter(x=>x.ch.type!=='voice').map(x=>x.ch.id)
+rooms=(await visibleChannels(c.env,m)).filter(x=>!VC(x.ch.type)).map(x=>x.ch.id)
 }else if(scope==='dm'){
 rooms=(await c.env.DB.prepare('select conv_id from conv_members where user_id=? limit 90').bind(c.user.id).all()).results.map(x=>x.conv_id)
 }else fail(400,'Invalid scope')

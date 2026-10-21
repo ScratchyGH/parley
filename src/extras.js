@@ -1,4 +1,4 @@
-import{fail,now,newId,msgId,str,opt,int,limit,body,json,clamp,sha,randHex,placeholders}from'./util.js'
+import{VC,fail,now,newId,msgId,str,opt,int,limit,body,json,clamp,sha,randHex,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember,need}from'./perms.js'
 import{hydrate,publishMsg}from'./messages.js'
 import{signMsg,pubKey}from'./sign.js'
@@ -59,7 +59,7 @@ r.add('GET','/api/p2p/key',async c=>({alg:'Ed25519',key:await pubKey(c.env),form
 
 r.add('POST','/api/rooms/:room/messages/:mid/thread',async c=>{
 const rr=await resolveRoom(c.env,c.p.room,c.user.id)
-if(rr.kind!=='channel'||rr.room.startsWith('th_')||rr.ch.type==='forum'||rr.ch.type==='voice')fail(400,'Threads can only start from channel messages')
+if(rr.kind!=='channel'||rr.room.startsWith('th_')||rr.ch.type==='forum'||VC(rr.ch.type))fail(400,'Threads can only start from channel messages')
 need(rr.perms,P.SEND,'You cannot start threads here')
 limit('thr:'+c.user.id,10,60000)
 const m=await c.env.DB.prepare('select * from messages where id=? and room=? and deleted_at is null').bind(c.p.mid,rr.room).first()
@@ -301,7 +301,7 @@ return{webhooks:(await c.env.DB.prepare('select id,channel_id,name,created_at fr
 })
 r.add('POST','/api/channels/:cid/webhooks',async c=>{
 const rr=await chanOf(c,c.p.cid,P.MANAGE_SERVER)
-if(rr.ch.type==='voice'||rr.ch.type==='forum')fail(400,'Webhooks post to text channels')
+if(VC(rr.ch.type)||rr.ch.type==='forum')fail(400,'Webhooks post to text channels')
 const n=await c.env.DB.prepare('select count(*) n from webhooks where server_id=?').bind(rr.serverId).first()
 if(n.n>=10)fail(409,'Too many webhooks')
 const b=await body(c.req)

@@ -63,6 +63,30 @@ if(!m.owner&&(p&~m.base)!==0)fail(403,'You cannot grant permissions you do not h
 return p
 }
 
+async function ensureCommunity(c){
+const db=c.env.DB
+const owner=await db.prepare('select id from users where lower(username)=lower(?)').bind(c.env.OWNER_USERNAME||'ParleyOfficial').first()
+if(!owner)return
+let s=await db.prepare("select id from servers where owner_id=? and lower(name) in ('parley community','parley official server') order by created_at limit 1").bind(owner.id).first()
+const t=now()
+if(!s){
+const sid=newId('sv'),ev=newId('r'),c1=newId('ct'),c2=newId('ct'),c3=newId('ct')
+await db.batch([
+db.prepare('insert into servers(id,owner_id,name,description,is_public,category,created_at) values(?,?,?,?,1,?,?)').bind(sid,owner.id,'Parley Community','The official Parley community. Say hi, share feedback and hang out.','',t),
+db.prepare('insert into roles(id,server_id,name,position,perms,is_everyone) values(?,?,?,?,?,1)').bind(ev,sid,'@everyone',0,DEFAULT),
+db.prepare('insert into members(server_id,user_id,joined_at) values(?,?,?)').bind(sid,owner.id,t),
+db.prepare('insert into categories(id,server_id,name,position) values(?,?,?,0),(?,?,?,1),(?,?,?,2)').bind(c1,sid,'Start here',c2,sid,'Community',c3,sid,'Voice and stages'),
+db.prepare('insert into channels(id,server_id,category_id,name,type,position,readonly,created_at) values(?,?,?,?,?,0,1,?),(?,?,?,?,?,1,1,?),(?,?,?,?,?,2,0,?),(?,?,?,?,?,3,0,?),(?,?,?,?,?,4,0,?),(?,?,?,?,?,5,0,?)').bind(newId('ch'),sid,c1,'rules','rules',t,newId('ch'),sid,c1,'announcements','announce',t,newId('ch'),sid,c2,'general','text',t,newId('ch'),sid,c2,'feedback','text',t,newId('ch'),sid,c3,'Lounge','voice',t,newId('ch'),sid,c3,'Community stage','stage',t)
+])
+s={id:sid}
+}
+if(!(await db.prepare('select 1 x from auto_joined where user_id=?').bind(c.user.id).first())){
+await db.batch([
+db.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(s.id,c.user.id,t),
+db.prepare('insert or ignore into auto_joined(user_id,server_id,created_at) values(?,?,?)').bind(c.user.id,s.id,t)
+])
+}
+}
 export default function(r){
 r.add('POST','/api/servers',async c=>{
 limit('mksrv:'+c.user.id,10,3600000)
@@ -87,6 +111,7 @@ return json({id:sid,default_channel:gen},201)
 })
 
 r.add('GET','/api/servers',async c=>{
+try{await ensureCommunity(c)}catch{}
 const rows=(await c.env.DB.prepare('select s.id,s.name,s.tag,s.tag_emoji,s.tag_icon_id,s.icon_id,s.banner_id,s.owner_id,s.is_public,s.accent,m.joined_at from members m join servers s on s.id=m.server_id where m.user_id=? order by m.joined_at').bind(c.user.id).all()).results
 return{servers:rows}
 })
@@ -262,14 +287,14 @@ const m=await mem(c,c.p.sid)
 must(m,P.MANAGE_CHANNELS)
 const b=await body(c.req)
 const type=b.type||'text'
-if(!['text','announce','voice','forum'].includes(type))fail(400,'Invalid channel type')
+if(!['text','announce','voice','forum','stage','rules'].includes(type))fail(400,'Invalid channel type')
 const count=await c.env.DB.prepare('select count(*) n from channels where server_id=?').bind(m.server.id).first()
 if(count.n>=200)fail(400,'This server has reached the channel limit (200)')
 if(b.category_id){const ok=await c.env.DB.prepare('select 1 x from categories where id=? and server_id=?').bind(b.category_id,m.server.id).first();if(!ok)fail(400,'Category not found')}
 const pos=await c.env.DB.prepare('select coalesce(max(position),-1)+1 p from channels where server_id=?').bind(m.server.id).first()
 const id=newId('ch')
 await c.env.DB.batch([
-c.env.DB.prepare('insert into channels(id,server_id,category_id,name,type,topic,position,readonly,slowmode,created_at) values(?,?,?,?,?,?,?,?,?,?)').bind(id,m.server.id,b.category_id||null,channelName(b.name),type,clean(opt(b.topic,300,'Topic')),pos.p,b.readonly?1:0,int(b.slowmode??0,0,21600,'Slow mode'),now()),
+c.env.DB.prepare('insert into channels(id,server_id,category_id,name,type,topic,position,readonly,slowmode,created_at) values(?,?,?,?,?,?,?,?,?,?)').bind(id,m.server.id,b.category_id||null,channelName(b.name),type,clean(opt(b.topic,300,'Topic')),pos.p,b.readonly||type==='rules'?1:0,int(b.slowmode??0,0,21600,'Slow mode'),now()),
 c.logStmt(m.server.id,'channel.create',id,b.name)
 ])
 resync(c,m.server.id)
@@ -712,7 +737,7 @@ r.add('GET','/api/discover/:sid',async c=>{
 const s=await c.env.DB.prepare(`select ${SRV} from servers where id=? and is_public=1`).bind(c.p.sid).first()
 if(!s||(s.age_restricted&&!c.user.adult_ok))fail(404,'Server not found')
 const ev=await c.env.DB.prepare('select id,perms from roles where server_id=? and is_everyone=1').bind(s.id).first()
-const chs=(await c.env.DB.prepare("select * from channels where server_id=? and type!='voice' order by position").bind(s.id).all()).results
+const chs=(await c.env.DB.prepare("select * from channels where server_id=? and type not in ('voice','stage') order by position").bind(s.id).all()).results
 const ovs=(await c.env.DB.prepare('select o.* from overrides o join channels c on c.id=o.channel_id where c.server_id=?').bind(s.id).all()).results
 const pseudo={admin:false,base:ev.perms,everyone:ev.id,roleIds:[],userId:'',timeout_until:0}
 const preview=chs.filter(ch=>chanPerms(pseudo,ch,ovs.filter(o=>o.channel_id===ch.id))&P.VIEW).map(ch=>({id:ch.id,name:ch.name,type:ch.type}))

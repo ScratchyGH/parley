@@ -74,3 +74,4 @@ try{const v=JSON.parse(t);if(!v||typeof v!=='object')fail(400,'Invalid JSON body
 }
 export const placeholders=a=>a.map(()=>'?').join(',')
 export const clamp=(v,d,min,max)=>{const x=parseInt(v);return Number.isNaN(x)?d:Math.min(max,Math.max(min,x))}
+export const VC=t=>t==='voice'||t==='stage'
