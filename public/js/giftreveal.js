@@ -39,7 +39,7 @@ setLid()
 let last=performance.now(),phase='drop',pt=0
 root.classList.add('gx-drop')
 const frame=now=>{
-if(!root.isConnected)return
+if(!root.isConnected){done();return}
 const dt=Math.min(.033,(now-last)/1000);last=now;pt+=dt
 const l=st.lid
 if(phase==='drop'&&pt>0.9){phase='shake';pt=0;root.classList.remove('gx-drop')}
@@ -59,6 +59,7 @@ if(phase==='rest'&&pt>3.2){phase='fall';pt=0;root.classList.add('gx-fall');st.bo
 if(phase==='fall'){st.box.vy+=1900*dt;st.box.y+=st.box.vy*dt;st.box.vrz+=40*dt;st.box.rz+=st.box.vrz*dt;if(st.box.y>900){phase='end';root.classList.add('gx-end')}}
 setLid();setBox()
 if(phase!=='end'||pt<9999)requestAnimationFrame(frame)
+else done()
 }
 requestAnimationFrame(frame)
 })
@@ -67,16 +68,28 @@ async function run(){
 if(busy)return
 busy=true
 try{
-const r=await GET('/api/pars/gifts')
-for(const g of r.gifts||[]){
-if(shown.has(g.id))continue
+for(let n=0;n<10;n++){
+let r
+try{r=await GET('/api/pars/gifts')}catch{break}
+const list=(r.gifts||[]).filter(g=>!shown.has(g.id))
+if(!list.length)break
+for(const g of list){
 shown.add(g.id)
-await play(g)
-POST('/api/pars/gifts/seen',{ids:[g.id]}).catch(()=>{})
+try{await play(g)}catch(e){document.querySelectorAll('.gx').forEach(x=>x.remove())}
+try{await POST('/api/pars/gifts/seen',{ids:[g.id]})}catch{}
 await sleep(250)
 }
-}catch{}
-busy=false
 }
-export function checkGifts(){setTimeout(run,300)}
+}finally{busy=false}
+}
+let started=false
+export function checkGifts(){
+setTimeout(run,300)
+if(started)return
+started=true
+setInterval(run,45000)
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(run,300)})
+addEventListener('focus',()=>setTimeout(run,300))
+addEventListener('online',()=>setTimeout(run,1000))
+}
 export{play as previewGift}
