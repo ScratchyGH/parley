@@ -423,6 +423,23 @@ if(!sel)t.setSelectionRange(s+a.length,s+a.length)
 t.focus()
 autoGrow()
 }
+function prefix(p){
+const t=C.ta,v=t.value,s=t.selectionStart,e=t.selectionEnd
+const ls=v.lastIndexOf('\n',s-1)+1
+let le=v.indexOf('\n',e);if(le<0)le=v.length
+const seg=v.slice(ls,le).split('\n').map(x=>x.startsWith(p)?x.slice(p.length):p+x).join('\n')
+t.setRangeText(seg,ls,le,'end')
+t.focus()
+autoGrow()
+}
+function link(){
+const t=C.ta,s=t.selectionStart,e=t.selectionEnd,sel=t.value.slice(s,e)
+if(/^https?:\/\//.test(sel)){t.setRangeText('[link]('+sel+')',s,e,'end')}
+else{t.setRangeText('['+(sel||'text')+'](https://)',s,e,'end');const p=t.selectionEnd-1;t.setSelectionRange(p-8,p)}
+t.focus()
+autoGrow()
+}
+function stampIns(){insert('<t:'+Math.floor(Date.now()/1000+3600)+':R>')}
 function insert(text){
 const t=C.ta
 t.setRangeText(text,t.selectionStart,t.selectionEnd,'end')
@@ -472,6 +489,7 @@ keydown:onKey,
 paste:e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length){e.preventDefault();addFiles(fs)}},
 blur:()=>setTimeout(closeAc,150)
 }})
+const tx=(l,t,fn)=>h('button',{type:'button',class:'ib t',title:t,'aria-label':t,on:{click:fn}},l)
 const tb=(ic,t,fn)=>h('button',{type:'button',class:'ib',title:t,'aria-label':t,on:{click:fn}},icon(ic,'s'))
 C.fileIn=h('input',{type:'file',multiple:true,style:{display:'none'},on:{change:e=>{addFiles([...e.target.files]);e.target.value=''}}})
 C.sendBtn=h('button',{type:'button',class:'ib',title:'Send','aria-label':'Send message',on:{click:submit}},icon('send'))
@@ -479,8 +497,9 @@ const perms=roomPerms(C.room)
 mount(C.compWrap,h('div',{class:'cbox'},
 C.bar,C.chips,
 h('div',{class:'ctb',role:'toolbar','aria-label':'Formatting'},
-tb('bold','Bold (Ctrl+B)',()=>wrapSel('**')),tb('italic','Italic (Ctrl+I)',()=>wrapSel('*')),tb('strike','Strikethrough',()=>wrapSel('~~')),tb('code','Inline code',()=>wrapSel('`')),
-tb('list','Code block',()=>wrapSel('```\n','\n```')),tb('quote','Quote',()=>insert('> ')),tb('eyeoff','Spoiler',()=>wrapSel('||'))),
+tx('B','Bold (Ctrl+B)',()=>wrapSel('**')),tx('I','Italic (Ctrl+I)',()=>wrapSel('*')),tx('U','Underline',()=>wrapSel('__')),tx('S','Strikethrough',()=>wrapSel('~~')),tx('H','Highlight',()=>wrapSel('==')),h('span',{class:'sep'}),
+tx('H1','Heading',()=>prefix('## ')),tx('•','Bulleted list',()=>prefix('- ')),tx('1.','Numbered list',()=>prefix('1. ')),tx('☑','Task list',()=>prefix('- [ ] ')),tx('❝','Quote',()=>prefix('> ')),h('span',{class:'sep'}),
+tb('code','Inline code',()=>wrapSel('`')),tb('file','Code block',()=>wrapSel('```\n','\n```')),tb('link','Link',()=>link()),tb('eyeoff','Spoiler',()=>wrapSel('||')),tb('clock','Insert a time that shows in everyone\'s timezone',()=>stampIns())),
 h('div',{class:'crow'},
 perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'Attach files','aria-label':'Attach files',on:{click:()=>C.fileIn.click()}},icon('clip')):null,
 C.fileIn,C.ta,

@@ -1,25 +1,22 @@
 import{h,POST,dialog}from'./util.js'
 import{S}from'./state.js'
 import{parIcon}from'./pars.js'
-
-export const VERSION='2026.10.23'
-const SECTIONS=[
-['New',[
-'Bot builder: Save and Test are at the top, with autosave, right-click menus, block descriptions, templates, import and export, and a checker that flags problems on the blocks.',
-'New blocks: On/off switch, Choose a path, Subflows, Notes and Webhook triggers.',
-'Work on a bot together: invite people as viewers, editors or maintainers, see their cursors live, restore earlier versions, and use branches with merging and conflict choices.',
-'Bot hub: rate bots, sort by rating or forks, and fork a bot with its license and credit kept.',
-'Settings > Appearance: theme presets, plus an interface font and a message font.',
-'Screen sharing: choose resolution, frame rate and bitrate, and share sound. Optional live captions in calls.',
-'Server settings > Webhooks: signed event webhooks for new messages and joins.',
-'Admins get a Health panel on the overview page.'
-]],
-['Changed',[
-'Calls retry the connection on their own if it drops for a few seconds.'
-]]
-]
-export function whatsNew(){
-if(!S.me||S.me.seen_version===VERSION)return
-const close=()=>{S.me.seen_version=VERSION;POST('/api/me/seen-version',{version:VERSION}).catch(()=>{})}
-dialog('What is new in Parley',h('div',{class:'bd wn'},h('div',{class:'row',style:{gap:'10px',alignItems:'center'}},parIcon(30),h('div',null,h('b',null,''),h('div',{class:'hint',style:{margin:0}},'Look in the sidebar under Friends.'))),SECTIONS.map(([t,l])=>h('section',null,h('h4',null,t),h('ul',null,l.map(x=>h('li',null,x)))))),{onclose:close,footer:c=>[h('button',{class:'btn pri',on:{click:c}},'Got it')]})
+import{VERSION,RELEASES}from'./changelog.js'
+export{VERSION}
+const TAG={New:'ok',Changed:'info',Fixed:'warn'}
+const card=r=>h('article',{class:'wn-rel'},
+h('div',{class:'wn-meta'},h('span',{class:'wn-v'},'v'+r.v),h('span',{class:'wn-d'},r.date)),
+h('h3',{class:'wn-t'},r.title),
+r.sections.map(([k,items])=>h('div',{class:'wn-sec'},h('span',{class:'wn-tag '+(TAG[k]||'info')},k),h('ul',null,items.map(x=>h('li',null,x))))))
+export function updatesBoard(){
+dialog('Parley Updated!',h('div',{class:'bd wn-board'},RELEASES.map(card)),{cls:'wn-dlg',footer:close=>[h('button',{class:'btn pri',on:{click:close}},'Close')]})
+}
+export function whatsNew(force){
+if(!force&&(!S.me||S.me.seen_version===VERSION))return
+const r=RELEASES[0]
+const close=()=>{if(force)return;S.me.seen_version=VERSION;POST('/api/me/seen-version',{version:VERSION}).catch(()=>{})}
+dialog('Parley Updated!',h('div',{class:'wn'},
+h('div',{class:'wn-hero'},h('div',{class:'wn-badge'},parIcon(34)),h('div',null,h('div',{class:'wn-kick'},'v'+r.v+' · '+r.date),h('h2',null,r.title))),
+h('div',{class:'wn-scroll'},r.sections.map(([k,items])=>h('div',{class:'wn-sec'},h('span',{class:'wn-tag '+(TAG[k]||'info')},k),h('ul',null,items.map(x=>h('li',null,x))))))),
+{cls:'wn-dlg',bare:true,onclose:close,footer:c=>[h('button',{class:'btn',on:{click:()=>{c();updatesBoard()}}},'Earlier updates'),h('button',{class:'btn pri',on:{click:c}},'Got it')]})
 }

@@ -1,6 +1,6 @@
 import{h,mount,icon,GET,POST,avatar,toast,fail,popup,field,toggle}from'./util.js'
 import{tone,desktop}from'./notify.js'
-import{S,on,emit}from'./state.js'
+import{S,on,emit,conv}from'./state.js'
 import{send as wsSend,isOpen}from'./net.js'
 
 export const V={ch:null,hub:null,label:'',path:'',peers:new Map(),mic:null,cam:null,scr:null,muted:false,deaf:false,speaking:new Set(),quality:{},ice:null,watch:new Map(),joining:false}
@@ -536,6 +536,7 @@ btn(V.deaf?'deaf':'headphones',V.deaf?'Undeafen':'Deafen',toggleDeaf,V.deaf?'on'
 btn(V.cam?'video':'videooff',V.cam?'Turn camera off':'Turn camera on',toggleCam,V.cam?'on':''),
 btn('hand',V.hand?'Lower hand':'Raise hand',toggleHand,V.hand?'on':''),
 btn('screen',V.scr?'Stop sharing screen':'Share screen',toggleScreen,V.scr?'on':''),
+conv(chId)?.members?.length>2?h('button',{class:'ib',title:'Add people to this call','aria-label':'Add people to this call',on:{click:e=>invitePeople(chId,e.currentTarget)}},icon('plus')):null,
 btn('sliders','Voice settings',()=>emit('ui:voicesettings')),
 btn('leave','Disconnect',leaveVoice,'dng'))
 }else bar.append(h('button',{class:'btn pri',on:{click:()=>joinVoice({ch:chId,hub,label,path})}},icon('volume','s'),'Join voice'),h('button',{class:'btn',on:{click:()=>emit('ui:voicesettings')}},icon('sliders','s'),'Settings'))
@@ -574,4 +575,21 @@ const iv=setInterval(ring,2400)
 const to=setTimeout(()=>stopRing(room),30000)
 rings.set(room,{t,iv,to})
 t.append(h('div',{class:'row'},h('button',{class:'btn sm pri',on:{click:()=>{stopRing(room);accept()}}},'Answer'),h('button',{class:'btn sm',on:{click:()=>{stopRing(room);POST(`/api/conversations/${room}/ring/decline`,{}).catch(()=>{})}}},'Decline')))
+}
+
+function invitePeople(room,anchor){
+const c=conv(room)
+if(!c)return
+const inCall=new Set(Object.keys(S.voice[room]||{}))
+const others=c.members.filter(m=>m.id!==S.me.id)
+const r=anchor.getBoundingClientRect()
+const rows=others.map(m=>{
+const here=inCall.has(m.id)
+return h('div',{class:'li',style:{padding:'6px 10px',minWidth:'240px'}},avatar(m,28),h('div',{class:'grow'},h('b',null,m.display_name),h('small',null,here?'In the call':'Not in the call')),here?null:h('button',{class:'btn sm',on:{click:async e=>{
+e.currentTarget.disabled=true
+try{await POST(`/api/conversations/${room}/ring`,{user_ids:[m.id]});e.currentTarget.textContent='Ringing'}catch(x){fail(x);e.currentTarget.disabled=false}
+}}},'Ring'))
+})
+const missing=others.filter(m=>!inCall.has(m.id))
+popup(h('div',null,h('div',{class:'hint',style:{padding:'8px 10px'}},`${inCall.size} of 12 in the call. Calls use direct connections, so 12 is the limit.`),rows,missing.length?h('div',{style:{padding:'8px 10px'}},h('button',{class:'btn pri sm',on:{click:async()=>{try{await POST(`/api/conversations/${room}/ring`,{user_ids:missing.map(m=>m.id)});toast('Ringing '+missing.length+' people','ok')}catch(x){fail(x)}}}},'Ring everyone not here')):null),Math.max(8,r.left-200),Math.max(8,r.top-60-others.length*46))
 }

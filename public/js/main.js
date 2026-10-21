@@ -18,6 +18,7 @@ import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
 import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
+import{tosGate}from'./legal.js'
 import{checkOffer}from'./exp.js'
 
 const root=document.getElementById('app')
@@ -58,6 +59,7 @@ async function start(user){
 S.me=user
 cacheUser(user)
 applySettings()
+if(!user.tos_ok)await tosGate()
 S.servers=[];S.sdata={};S.convs=[];S.unread={};S.pres={};S.voice={}
 buildShell(root)
 booted=true

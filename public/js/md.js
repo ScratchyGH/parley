@@ -64,6 +64,11 @@ const INLINE=[
 ['bold',/\*\*([\s\S]+?)\*\*/],
 ['spoiler',/\|\|([\s\S]+?)\|\|/],
 ['strike',/~~([\s\S]+?)~~/],
+['underline',/__([^_\n]+?)__/],
+['mark',/==([^=\n]+?)==/],
+['sup',/\^\(([^)\n]{1,40})\)|\^([A-Za-z0-9]{1,12})/],
+['sub',/(?<!~)~([^~\n\s][^~\n]{0,40}?)~(?!~)/],
+['time',/<t:(\d{1,12})(?::([tTdDfFR]))?>/],
 ['italic',/(?<![\w*])\*([^*\n]+?)\*(?!\*)|(?<!\w)_([^_\n]+?)_(?!\w)/],
 ['url',/https?:\/\/[^\s<>()]{1,2000}[^\s<>().,;:!?'"*_]/],
 ['mention',/<@(everyone|u_[a-z0-9]{16}|&r_[a-z0-9]{16})>/],
@@ -79,6 +84,23 @@ return x.href
 }catch{return null}
 }
 
+function stamp(sec,f){
+const d=new Date(sec*1000)
+if(isNaN(d))return document.createTextNode('invalid time')
+const L=(o)=>d.toLocaleString(undefined,o)
+let t
+if(f==='t')t=L({hour:'numeric',minute:'2-digit'})
+else if(f==='T')t=L({hour:'numeric',minute:'2-digit',second:'2-digit'})
+else if(f==='d')t=L({dateStyle:'short'})
+else if(f==='D')t=L({dateStyle:'long'})
+else if(f==='F')t=L({dateStyle:'full',timeStyle:'short'})
+else if(f==='R'){
+const diff=Math.round((d-Date.now())/1000),a=Math.abs(diff)
+const u=a<60?[1,'second']:a<3600?[60,'minute']:a<86400?[3600,'hour']:a<2592000?[86400,'day']:a<31536000?[2592000,'month']:[31536000,'year']
+t=new Intl.RelativeTimeFormat(undefined,{numeric:'auto'}).format(Math.round(diff/u[0]),u[1])
+}else t=L({dateStyle:'long',timeStyle:'short'})
+return h('time',{class:'ts',datetime:d.toISOString(),title:d.toLocaleString(undefined,{dateStyle:'full',timeStyle:'medium'})},t)
+}
 function inline(text,ctx,depth){
 const out=[]
 let rest=text
@@ -106,6 +128,11 @@ else out.push(m[0])
 }
 else if(name==='bold')out.push(h('strong',null,inline(m[1],ctx,depth+1)))
 else if(name==='strike')out.push(h('s',null,inline(m[1],ctx,depth+1)))
+else if(name==='underline')out.push(h('u',null,inline(m[1],ctx,depth+1)))
+else if(name==='mark')out.push(h('mark',null,inline(m[1],ctx,depth+1)))
+else if(name==='sup')out.push(h('sup',null,m[1]??m[2]))
+else if(name==='sub')out.push(h('sub',null,m[1]))
+else if(name==='time')out.push(stamp(+m[1],m[2]||'f'))
 else if(name==='italic')out.push(h('em',null,inline(m[1]??m[2],ctx,depth+1)))
 else if(name==='spoiler'){
 const s=h('span',{class:'sp',tabindex:'0',role:'button','aria-label':'Spoiler, activate to reveal'},inline(m[1],ctx,depth+1))
@@ -154,6 +181,36 @@ const pre=h('pre',null,c)
 frag.append(pre)
 continue
 }
+if(/^>>>\s?/.test(ln)){
+flush()
+const buf=[ln.replace(/^>>>\s?/,'')]
+i++
+while(i<lines.length){buf.push(lines[i]);i++}
+frag.append(h('blockquote',null,inline(buf.join('\n'),ctx,0)))
+continue
+}
+if(/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(ln)&&!para.length){
+flush()
+frag.append(h('hr'))
+i++
+continue
+}
+if(/^-#\s+/.test(ln)){
+flush()
+frag.append(h('p',{class:'subtext'},inline(ln.replace(/^-#\s+/,''),ctx,0)))
+i++
+continue
+}
+if(/^\|.+\|\s*$/.test(ln)&&i+1<lines.length&&/^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lines[i+1])){
+flush()
+const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(x=>x.trim())
+const head=cells(ln),al=cells(lines[i+1]).map(x=>/^:-+:$/.test(x)?'center':/-:$/.test(x)?'right':'left')
+i+=2
+const rows=[]
+while(i<lines.length&&/^\|.+\|\s*$/.test(lines[i])&&rows.length<30){rows.push(cells(lines[i]));i++}
+frag.append(h('div',{class:'mtw'},h('table',{class:'mt'},h('thead',null,h('tr',null,head.map((c,k)=>h('th',{style:{textAlign:al[k]||'left'}},inline(c,ctx,1))))),h('tbody',null,rows.map(r=>h('tr',null,head.map((_,k)=>h('td',{style:{textAlign:al[k]||'left'}},inline(r[k]||'',ctx,1)))))))))
+continue
+}
 if(/^>\s?/.test(ln)){
 flush()
 const buf=[]
@@ -169,16 +226,18 @@ const items=[]
 while(i<lines.length){
 const m=lines[i].match(/^\s{0,3}([-*]|\d{1,3}\.)\s+(.*)$/)
 if(!m||/\d/.test(m[1])!==ordered)break
-items.push(h('li',null,inline(m[2],ctx,0)))
+const tk=m[2].match(/^\[([ xX])\]\s+(.*)$/)
+items.push(tk?h('li',{class:'task'},h('input',{type:'checkbox',disabled:true,checked:tk[1]!==' ','aria-label':tk[1]!==' '?'Done':'Not done'}),inline(tk[2],ctx,0)):h('li',null,inline(m[2],ctx,0)))
 i++
 }
-frag.append(h(ordered?'ol':'ul',null,items))
+const first=ordered?parseInt(li[1]):1
+frag.append(h(ordered?'ol':'ul',ordered&&first>1?{start:first}:null,items))
 continue
 }
 const hd=ln.match(/^(#{1,3})\s+(.+)$/)
 if(hd){
 flush()
-frag.append(h('p',null,h('strong',null,inline(hd[2],ctx,0))))
+frag.append(h('h'+(hd[1].length+1),{class:'mh'},inline(hd[2],ctx,0)))
 i++
 continue
 }

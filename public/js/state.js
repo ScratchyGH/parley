@@ -112,6 +112,7 @@ export async function loadServer(sid){
 const d=await GET('/api/servers/'+sid)
 S.sdata[sid]={...d,members_loaded:false}
 emit('server',sid)
+if(S.nav?.kind==='server'&&S.nav.sid===sid)applyServerTheme()
 return S.sdata[sid]
 }
 export async function loadConvs(){
@@ -210,6 +211,8 @@ const b=document.body
 for(const k of THEME_VARS)b.style.removeProperty(k)
 b.classList.remove('sthemed')
 b.style.removeProperty('color-scheme')
+const mainEl=document.getElementById('main')
+if(mainEl){mainEl.style.removeProperty('background-image');mainEl.style.removeProperty('background-size');mainEl.style.removeProperty('background-position');mainEl.style.removeProperty('background-repeat')}
 if(!t)return
 const set=(k,v)=>b.style.setProperty(k,v)
 const mix=(c,p,o)=>'color-mix(in srgb,'+c+' '+p+'%,'+o+')'
@@ -223,7 +226,8 @@ if(t.panel){set('--panel',t.panel);set('--surf2',mix(t.panel,88,toward))}
 if(t.text){set('--text',t.text);set('--strong',mix(t.text,80,toward==='#000'?'#000':'#fff'));set('--muted',mix(t.text,60,t.bg||'#000'));set('--neutral',mix(t.text,75,t.bg||'#000'))}
 if(t.accent){const al=lum(t.accent);set('--accent',t.accent);set('--hi',mix(t.accent,70,lightBg?'#000':'#fff'));set('--blue',mix(t.accent,70,lightBg?'#000':'#fff'));set('--on-accent',al!==null&&al>.4?'#111':'#fff')}
 if(bgL!==null)b.style.setProperty('color-scheme',lightBg?'light':'dark')
-if(t.image){set('--sbg-img','url("'+fileUrl(t.image)+'")');set('--sdim',(t.dim??55)+'%');b.classList.add('sthemed')}
+if(t.image){set('--sbg-img','url("'+fileUrl(t.image)+'")');set('--sdim',(t.dim??55)+'%');b.classList.add('sthemed')
+if(mainEl){const d=(t.dim??55)+'%';const sh='color-mix(in srgb,'+(t.bg||'var(--bg)')+' '+d+',transparent)';mainEl.style.backgroundImage='linear-gradient('+sh+','+sh+'),url("'+fileUrl(t.image)+'")';mainEl.style.backgroundSize='cover';mainEl.style.backgroundPosition='center';mainEl.style.backgroundRepeat='no-repeat'}}
 }
 export function applyServerTheme(){
 applyThemeObj(S.nav?.kind==='server'?S.sdata[S.nav.sid]?.server?.theme:null)

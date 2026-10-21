@@ -80,7 +80,7 @@ const pages=[]
 if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'])
 if(can(sid,P.MANAGE_CHANNELS))pages.push(['channels','Channels'])
 if(can(sid,P.MANAGE_ROLES))pages.push(['roles','Roles'])
-if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'],['template','Template'],['theme','Theme'])
+if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'],['plugins','Plugins'],['template','Template'],['theme','Theme'])
 pages.push(['members','Members'])
 if(can(sid,P.CREATE_INVITE))pages.push(['invites','Invites'])
 if(can(sid,P.BAN))pages.push(['bans','Bans'])
@@ -98,7 +98,7 @@ function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/s/'+sid+'/settings/'+k)}},l)),
 h('button',{on:{click:()=>go('/s/'+sid)}},'Back to server'))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,plugins,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
@@ -627,4 +627,39 @@ draw()
 }catch(x){err.textContent=x.message}
 }}},icon('plus','s'),'Choose image and add')),err,list)
 draw()
+}
+
+function plugins(pg,sid){
+const d=S.sdata[sid]
+const body=h('div')
+mount(pg,h('h3',null,'Plugins'),h('p',{class:'hint'},'Built-in helpers that run automatically. Messages are posted by a bot named Server plugins. Use {user}, {username} and {server} in message text.'),body)
+async function load(){
+try{
+const r=await GET(`/api/servers/${sid}/plugins`)
+mount(body,r.plugins.map(p=>card(p)))
+}catch(e){mount(body,h('div',{class:'err'},e.message))}
+}
+function card(p){
+const vals={...p.config}
+const ctrls=p.fields.map(([k,kind,label])=>{
+let el
+if(kind==='channel'){
+el=h('select',{class:'sel','aria-label':label,on:{change:()=>{vals[k]=el.value}}},h('option',{value:''},'Pick a channel'),d.channels.filter(c=>c.type==='text'||c.type==='announce').map(c=>h('option',{value:c.id,selected:vals[k]===c.id},'#'+c.name)))
+}else if(kind==='role'){
+el=h('select',{class:'sel','aria-label':label,on:{change:()=>{vals[k]=el.value}}},h('option',{value:''},'Pick a role'),d.roles.filter(r=>!r.is_everyone).map(r=>h('option',{value:r.id,selected:vals[k]===r.id},r.name)))
+}else{
+el=h('textarea',{class:'inp',rows:2,maxLength:500,'aria-label':label,on:{input:()=>{vals[k]=el.value}}},vals[k]||'')
+}
+return field(label,el)
+})
+let en=p.enabled
+const sw=toggle(en,v=>{en=v},'Turn on '+p.name)
+return h('div',{class:'card',style:{marginBottom:'12px'}},
+h('div',{class:'row',style:{justifyContent:'space-between'}},h('div',null,h('b',null,p.name),h('div',{class:'hint'},p.descr)),sw),
+ctrls,
+h('div',{class:'row'},h('button',{class:'btn pri',on:{click:async()=>{
+try{await PUT(`/api/servers/${sid}/plugins/${p.id}`,{enabled:en,config:vals});toast('Saved','ok');load()}catch(e){fail(e);load()}
+}}},'Save')))
+}
+load()
 }

@@ -1,5 +1,6 @@
-import{h,mount,icon,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast}from'./util.js'
+import{h,mount,icon,api,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast}from'./util.js'
 import{S}from'./state.js'
+import{guiPreview}from'./guipreview.js'
 import{studio}from'./studio.js'
 import{parsAdmin}from'./pars.js'
 import{programAdmin}from'./exp.js'
@@ -7,13 +8,13 @@ import{screeningAdmin}from'./screenui.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['db','Database']]:[])]
+const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={stats,users,reports,appeals,log,db,studio,pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
+const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,log,db,studio,pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),nav,body)
@@ -208,5 +209,32 @@ q.addEventListener('input',debounce(()=>{st.q=q.value.trim();st.offset=0;load()}
 mount(bar,q,h('button',{class:'btn sm',type:'button',on:{click:()=>{tables();load()}}},icon('refresh','s'),'Refresh'),h('button',{class:'btn sm',type:'button',on:{click:addRow}},icon('plus','s'),'Add row'),h('button',{class:'btn sm',type:'button',on:{click:sql}},icon('code','s'),'SQL'))
 mount(pg,h('h3',null,'Database'),h('p',{class:'hint'},'Direct access to the live database. Edits apply immediately and are written to the audit log. Select a cell to change it.'),list,bar,sqlBox,grid,pager)
 tables()
+load()
+}
+
+function backups(pg){
+const list=h('div',{class:'list'})
+async function load(){
+try{
+const r=await GET('/api/admin/backups')
+mount(list,r.backups.length?r.backups.map(b=>h('div',{class:'li'},
+h('div',{class:'grow'},h('b',null,fmtStamp(b.created_at)),h('small',null,fmtSize(b.size))),
+h('a',{class:'btn sm',href:'/api/admin/backups/'+b.name,download:'parley-backup-'+b.name},'Download'),
+h('button',{class:'btn sm',on:{click:async()=>{
+if(!await confirmBox('Restore from this backup','Rows that were deleted since this backup are added back. Rows that exist now are not changed. Nothing is removed.','Restore',true))return
+try{const x=await POST('/api/admin/backups/'+b.name+'/restore',{confirm:true});toast(x.added+' rows restored','ok')}catch(e){fail(e)}
+}}},'Restore'),
+h('button',{class:'btn sm dng',on:{click:async()=>{
+if(!await confirmBox('Delete backup','This backup file is removed permanently.','Delete',true))return
+try{await api('DELETE','/api/admin/backups/'+b.name);load()}catch(e){fail(e)}
+}}},'Delete'))):h('div',{class:'empty'},'No backups yet'))
+}catch(e){mount(list,h('div',{class:'err'},e.message))}
+}
+const btn=h('button',{class:'btn pri',on:{click:async()=>{
+btn.disabled=true
+try{await POST('/api/admin/backups',{});toast('Backup created','ok');load()}catch(e){fail(e)}
+btn.disabled=false
+}}},'Back up now')
+mount(pg,h('h3',null,'Backups'),h('p',{class:'hint'},'Parley saves a full copy of the database to storage once a day and keeps the last 7. Backups include account password hashes, so keep downloaded files private. Sessions, uploaded file contents and sign-in attempts are not included.'),h('div',{class:'row'},btn),list)
 load()
 }
