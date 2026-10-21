@@ -712,3 +712,7 @@ table.t tr:hover td{background:var(--hover)}
 .wn-main{min-width:0;overflow-x:hidden}
 .wn-sec li{min-width:0}.wn-sec li span{min-width:0;overflow-wrap:anywhere}
 .wn-badge{background:#050505;overflow:hidden}.wn-badge img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.wn{max-width:none;max-height:none;overflow:hidden;width:100%}
+.wn-rail button.on{box-shadow:none}
+.wn-latest{background:var(--surf2);color:var(--strong)}
+.wn-dlg .wn-main{max-width:none}
