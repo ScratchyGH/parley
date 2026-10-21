@@ -1,0 +1,14 @@
+alter table bot_projects add column rev integer not null default 0;
+alter table bot_projects add column forked_from text;
+alter table bot_projects add column fork_note text not null default '';
+alter table bot_projects add column hook_key text;
+alter table bot_projects add column rating_sum integer not null default 0;
+alter table bot_projects add column rating_n integer not null default 0;
+alter table bot_projects add column forks integer not null default 0;
+create table bot_versions(id text primary key,project_id text not null,rev integer not null,blocks text,summary text not null default '',author_id text not null,created_at integer not null);
+create index bot_versions_p on bot_versions(project_id,created_at desc);
+create table bot_members(project_id text not null,user_id text not null,role text not null,status text not null default 'invited',invited_by text,created_at integer not null,primary key(project_id,user_id)) without rowid;
+create index bot_members_u on bot_members(user_id,status);
+create table bot_branches(id text primary key,project_id text not null,name text not null,base_blocks text,blocks text,base_rev integer not null,author_id text not null,created_at integer not null,updated_at integer not null,unique(project_id,name));
+create table bot_ratings(project_id text not null,user_id text not null,stars integer not null,review text not null default '',created_at integer not null,primary key(project_id,user_id)) without rowid;
+create index bot_ratings_p on bot_ratings(project_id,created_at desc);
