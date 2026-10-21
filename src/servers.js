@@ -1,9 +1,12 @@
 import{ownsVanity}from'./pars.js'
+import{place}from'./store.js'
+import{signMsg}from'./sign.js'
+import{ICON,BANNER}from'./brand.js'
 import{fireHooks}from'./devhooks.js'
 import{runPlugins}from'./plugins.js'
 import{expCfg,expActive}from'./program.js'
 import{raidCheck}from'./perks.js'
-import{fail,now,newId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
+import{fail,now,newId,msgId,rnd,str,opt,int,color,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,ALL,DEFAULT,loadMember,visibleChannels,chanPerms,channelAccess}from'./perms.js'
 import{PUBLIC,STATUS,GTAG}from'./auth.js'
 import{explicitText,serverText}from'./safety.js'
@@ -63,6 +66,51 @@ if(!m.owner&&(p&~m.base)!==0)fail(403,'You cannot grant permissions you do not h
 return p
 }
 
+const unb=b=>Uint8Array.from(atob(b),x=>x.charCodeAt(0))
+const RULES=`**Welcome to Parley.** A few simple rules keep this place good:\n\n**1.** Be kind. No harassment, hate or personal attacks.\n**2.** No spam, scams or unsolicited advertising.\n**3.** Keep it safe. No illegal content, no explicit content outside age-restricted spaces.\n**4.** Do not share anyone's private information.\n**5.** Use the right channel and keep bug reports in #bug-reports.\n**6.** Staff decisions are final. If you disagree, message a moderator calmly.`
+const WELCOME=`**Welcome to the Parley Community!**\n\nParley is a free, open Discord alternative. Here is where to start:\n\n- Read the rules in the rules channel\n- Say hi in general\n- Share ideas in suggestions and bugs in bug-reports\n- Show off your Pars shop looks in show-your-style\n- Join the Community stage for live Q&A and updates\n\nThe best Discord alternative, built by the people who use it.`
+const LAYOUT=[
+['Start here',[['rules','rules','Read these first.'],['announcements','announce','Updates and news from the Parley team.'],['introductions','text','Say who you are and what you like.']]],
+['Community',[['general','text','Chat about anything.'],['feedback','text','Tell us what you think of Parley.'],['suggestions','text','Ideas for new features.'],['bug-reports','text','Found something broken? Tell us what happened and how to repeat it.'],['show-your-style','text','Frames, nameplates, bundles. Show your look.'],['off-topic','text','Everything else.']]],
+['Help and building',[['support','text','Questions about using Parley.'],['bots-and-apps','text','Bots, apps and the bot lab.']]],
+['Voice and stages',[['Lounge','voice',''],['Gaming','voice',''],['Study room','voice',''],['Community stage','stage','Live Q&A and announcements.']]]
+]
+async function brandCommunity(c,s,ownerId){
+const db=c.env.DB,t=now()
+const mark=await db.prepare("select 1 x from auto_joined where user_id='__community_v2'").first()
+if(mark)return
+for(const[id,kind,bytes,mime,name]of[['f_parley_icon','server_icon',unb(ICON),'image/webp','parley-icon.webp'],['f_parley_banner','server_banner',unb(BANNER),'image/webp','parley-banner.webp']]){
+const key=place(c.env,`u/${ownerId}/${id}`,bytes.byteLength)
+await c.env.FILES.put(key,bytes,{httpMetadata:{contentType:mime}})
+await db.prepare('insert or replace into files(id,owner_id,kind,r2_key,name,mime,size,verified,created_at) values(?,?,?,?,?,?,?,1,?)').bind(id,ownerId,kind,key,name,mime,bytes.byteLength,t).run()
+}
+await db.prepare("update servers set name='Parley Community',description=?,icon_id='f_parley_icon',banner_id='f_parley_banner',accent='#a78bfa',is_public=1,welcome=?,rules=? where id=?").bind('The official Parley server. The best Discord alternative. Chat, get help, share ideas and hang out.',WELCOME,RULES,s.id).run()
+const cats=(await db.prepare('select id,name from categories where server_id=?').bind(s.id).all()).results
+const chans=(await db.prepare('select id,name,category_id from channels where server_id=?').bind(s.id).all()).results
+const hasCh=n=>chans.find(x=>x.name.toLowerCase()===n.toLowerCase())
+let pos=cats.length,cpos=chans.length
+const made={}
+for(const[cn,list]of LAYOUT){
+let cat=cats.find(x=>x.name.toLowerCase()===cn.toLowerCase())
+if(!cat){cat={id:newId('ct'),name:cn};await db.prepare('insert into categories(id,server_id,name,position) values(?,?,?,?)').bind(cat.id,s.id,cn,pos++).run()}
+for(const[name,type,topic]of list){
+let ch=hasCh(name)
+if(!ch){ch={id:newId('ch'),name};await db.prepare('insert into channels(id,server_id,category_id,name,type,topic,position,readonly,created_at) values(?,?,?,?,?,?,?,?,?)').bind(ch.id,s.id,cat.id,name,type,topic,cpos++,type==='rules'||type==='announce'?1:0,t).run()}
+else if(topic)await db.prepare("update channels set topic=? where id=? and (topic is null or topic='')").bind(topic,ch.id).run()
+made[name]=ch.id
+}
+}
+const post=async(room,content,i)=>{
+const id=msgId(),ts=t+i
+await db.prepare('insert into messages(id,room,server_id,author_id,content,created_at,sig) values(?,?,?,?,?,?,?)').bind(id,room,s.id,ownerId,content,ts,await signMsg(c.env,{id,room,author_id:ownerId,created_at:ts,edited_at:null,content})).run()
+}
+const has=async room=>(await db.prepare('select count(*) n from messages where room=?').bind(room).first()).n>0
+if(made.rules&&!(await has(made.rules)))await post(made.rules,RULES,1)
+if(made.announcements&&!(await has(made.announcements)))await post(made.announcements,'**Parley Community is open.** Welcome! Stages, Legacy and Modern bundles, new avatar frames and the Parli-Bold font are all live. Check the shop and show off your look in show-your-style.',2)
+if(made.general&&!(await has(made.general)))await post(made.general,'Welcome to the Parley Community! Say hi, tell us what you are building or just hang out.',3)
+if(made['show-your-style']&&!(await has(made['show-your-style'])))await post(made['show-your-style'],'Post screenshots of your frame, nameplate, name style and message style combos here. Settings, then Appearance lets you mix any items you own.',4)
+await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v2',?,?)").bind(s.id,t).run()
+}
 async function ensureCommunity(c){
 const db=c.env.DB
 const owner=await db.prepare('select id from users where lower(username)=lower(?)').bind(c.env.OWNER_USERNAME||'ParleyOfficial').first()
@@ -80,6 +128,7 @@ db.prepare('insert into channels(id,server_id,category_id,name,type,position,rea
 ])
 s={id:sid}
 }
+try{await brandCommunity(c,s,owner.id)}catch(e){console.log('brand',e&&e.message)}
 if(!(await db.prepare('select 1 x from auto_joined where user_id=?').bind(c.user.id).first())){
 await db.batch([
 db.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(s.id,c.user.id,t),
