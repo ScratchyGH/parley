@@ -1,4 +1,5 @@
 import WebSocket from'ws'
+import{execFileSync}from'node:child_process'
 import{genCode}from'../src/totp.js'
 const BASE=process.env.BASE||'http://127.0.0.1:8787'
 const WSB=BASE.replace('http','ws')
@@ -475,6 +476,8 @@ eq((await t3.post('/api/auth/register',{username:gone.name,password:'correct hor
 
 r=await A.post('/api/servers',{name:'Sticker Hall'});eq(r.s,201,'create second server')
 const sid2=r.j.id,gen2=r.j.default_channel
+eq((await A.put(`/api/servers/${sid2}/vanity`,{slug:'zed-hall-'+run})).s,402,'vanity needs the Pars unlock')
+execFileSync('npx',['wrangler','d1','execute','DB','--local','-c','wrangler.local.toml','--command',`insert into par_owned(id,user_id,item_id,server_id,created_at) values('po_t${run}','${A.id}','vanity','${sid2}',1)`],{stdio:'pipe'})
 eq((await A.put(`/api/servers/${sid2}/vanity`,{slug:'zed-hall-'+run})).s,200,'set vanity')
 eq((await B.post('/api/invites/zed-hall-'+run+'/join')).s,200,'member joins via vanity')
 const ST=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')
@@ -536,6 +539,7 @@ r=await A.post('/api/bothub',{name:'Tunebox'+run,summary:'x',license:'WTFPL'});e
 r=await A.post('/api/bothub',{name:'Parley'});eq(r.s,400,'reserved bot name rejected')
 r=await A.post('/api/bothub',{name:'Tunebox '+run,summary:'Plays music in voice channels',readme:'# Tunebox\n\nHello',license:'MIT',tags:['music','fun'],source_url:'https://example.com/tunebox',visibility:'public'});eq(r.s,201,'create public bot project')
 const pj=r.j
+execFileSync('npx',['wrangler','d1','execute','DB','--local','-c','wrangler.local.toml','--command',`update bot_projects set screen_status='approved' where id='${pj.id}'`],{stdio:'pipe'})
 ok(/^pb_/.test(pj.token)&&pj.slug.startsWith('tunebox'),'project returns token and slug')
 eq((await A.post('/api/bothub',{name:'Bad Link',source_url:'http://x.test'})).s,400,'http links rejected')
 eq((await A.post('/api/bothub',{name:'Nope Tags',tags:['zzz']})).s,400,'unknown tag rejected')

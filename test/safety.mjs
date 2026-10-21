@@ -1,9 +1,11 @@
-import{explicitText,badHost,urlsIn,inspectLink,imageExplicit}from'../src/safety.js'
+import{explicitText,badHost,urlsIn,inspectLink,imageExplicit,wordHit}from'../src/safety.js'
 import{cleanLayout}from'../src/lab.js'
 let pass=0,failn=0
 const ok=(c,n)=>{if(c){pass++;console.log('  ok  '+n)}else{failn++;console.log('FAIL  '+n)}}
 for(const t of['Porn','Po-rn','p0rn','P.O.R.N','h3ntai','HENTAI paradise','h e n t a i','free pornhub','Rule34 art','xxx videos','Sex talk','nudes only'])ok(explicitText(t),'flags '+t)
 for(const t of['Gaming Hub','Essex Club','Scunthorpe cooking','unicorn corner','Class of 2025','cumbria','grape farm','Compass','Anime Hangout','up or no','Assassins','Cooking','Dev chat'])ok(!explicitText(t),'allows '+t)
+for(const t of['bаdword','BADWORD','b a d w o r d','b4dw0rd','baaadwooord','ｂａｄｗｏｒｄ','bαdwοrd','b.a.d.w.o.r.d','bådword'])ok(wordHit(t,'badword'),'word filter catches '+t)
+for(const t of['good morning','add word'])ok(!wordHit(t,'badword'),'word filter ignores '+t)
 ok(!explicitText(''),'empty ok')
 ok(!explicitText(null),'null ok')
 ok(badHost('www.pornhub.com'),'blocks www.pornhub.com')
