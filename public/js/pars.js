@@ -1,6 +1,7 @@
 import{h,mount,icon,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel,avatar}from'./util.js'
 import{S,on}from'./state.js'
 import{sv,svg}from'./svg.js'
+import{checkGifts}from'./giftreveal.js'
 
 let marks=new Set(),beat=null
 const note=()=>{marks.add(Math.floor(Date.now()/5000))}
@@ -20,7 +21,8 @@ for(const n of r.notes||[])toast(n)
 }catch{}
 },60000)
 setTimeout(()=>POST('/api/pars/beat',{i:0,v:true}).catch(()=>{}),1500)
-on('pars.gift',d=>toast((d.from||'Someone')+(d.item?' gifted you '+d.item:' sent you '+d.amount+' Pars')))
+setTimeout(checkGifts,3000)
+on('pars.gift',()=>checkGifts())
 }
 export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('circle',{cx:'12',cy:'12',r:'10',fill:'#f5c542'}),sv('circle',{cx:'12',cy:'12',r:'7',fill:'none',stroke:'#92400e','stroke-width':'1.6'}),sv('path',{d:'M10 16V8h3a2.2 2.2 0 0 1 0 4.4h-3',fill:'none',stroke:'#92400e','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round'}))
 const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['frame','Avatar frames'],['effect','Avatar effects'],['nameplate','Nameplates'],['namefx','Name styles'],['badge','Badges'],['title','Titles'],['bubble','Message styles']]
@@ -32,7 +34,7 @@ const owns=(d,id,sid)=>d.owned.some(o=>o.item_id===id&&(sid===undefined||o.serve
 const marker=(it,k)=>'bundle:'+it.id+':'+k
 const nameOf=(d,id)=>(d.items.find(i=>i.id===id)||{name:id}).name
 const left=ms=>{const s=Math.max(0,Math.floor(ms/1000)),dd=Math.floor(s/86400),hh=Math.floor(s%86400/3600),mm=Math.floor(s%3600/60),ss=s%60;return(dd?dd+'d ':'')+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0')}
-function swatch(it){
+export function swatch(it){
 if(it.kind==='nameplate')return h('div',{class:'np par-np '+it.id},S.me.display_name)
 if(it.kind==='frame')return h('div',{class:'par-av'},avatar({...S.me,frame:it.id,effect:null},'lg'))
 if(it.kind==='effect')return h('div',{class:'par-av'},avatar({...S.me,effect:it.id,frame:null},'lg'))

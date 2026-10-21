@@ -1,5 +1,12 @@
-export const VERSION='2026.10.28'
+export const VERSION='2026.10.29'
 export const RELEASES=[
+{v:'2026.10.29',date:'October 21, 2026',title:'Gift unwrapping and a bigger Parley Community',summary:'Gifts now play a 3D unwrapping animation, the Parley Community server is much bigger, and the cat ears and Angel Halo frame were redrawn.',sections:[
+['Gifts',[
+['Unwrapping animation','When someone gifts you an item, a bundle or Pars, a 3D present drops in, the lid shakes loose and falls, and your gift floats out. If you are offline, it plays the next time you open Parley.']]],
+['Parley Community',[
+['More to do','New welcome, FAQ, roadmap, changelog and links channels, shop and gifting channels, developer and self-hosting help, more voice rooms, an Office hours stage and team roles.']]],
+['Cosmetics',[
+['Redrawn','The cat ears effect and the Angel Halo frame have new artwork.']]]]},
 {v:'2026.10.28',date:'October 21, 2026',title:'Parley Community, stages and shop polish',summary:'Every account now joins the official Parley Community server, which has new Stage and Rules channels, and every bundle has Legacy and Modern versions.',sections:[
 ['Servers and channels',[
 ['Parley Community','A built-in official server, owned by the Parley owner account, with rules, announcements, general chat, a lounge and a stage. New and existing accounts are added once and can leave any time.'],
