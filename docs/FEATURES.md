@@ -273,3 +273,12 @@ Verified here means covered by `node test/features.mjs` (66 checks) against a lo
 ## Appearance persistence and cosmetics
 - The last signed-in account's theme, colors and fonts are cached in the browser and applied on the sign-in screen; signing in to another account applies that account's settings.
 - Pars shop: 8 more avatar effects and 6 more frames (migration `0026`). Terms version `2026-10-22`; everyone accepts again after the rewrite.
+
+## Server labs (migration 0028)
+Eleven features gated by the Experimental Servers Program (`src/xlabs.js`): starboard, levels, reaction roles, giveaways, counting, question of the day, confessions, birthdays, suggestions, sticky messages and event reminders. Configured under Server settings, Server labs; members use Community tools in the server menu. Cron work (giveaway draws, daily questions, birthdays, reminders) runs from the every-minute scheduled handler. Birthdays and the daily question use UTC. Confession authors are stored and visible to moderators.
+
+## Bundles and cosmetics (migration 0027)
+Bundle items grant several cosmetics at once; vanity links from bundles expire after a month (`par_owned.expires_at`).
+
+## Apps
+`.github/workflows/apps.yml` builds the Windows installer, Linux AppImage and Android APK and publishes them to the `apps` release together with update feeds. Desktop apps check that release for updates.
