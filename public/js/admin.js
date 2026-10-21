@@ -20,6 +20,21 @@ mount(pg,h('h3',null,'Admin'),nav,body)
 draw()
 }
 
+function healthBox(){
+const box=h('div',{style:{marginTop:'16px'}},h('h4',null,'Health'),h('div',{class:'hint'},'Checking…'))
+GET('/api/admin/health').then(d=>{
+const row=(l,ok,txt)=>h('div',{class:'li'},h('span',{style:{color:ok?'var(--ok)':'var(--err,#e5534b)',width:'18px'}},ok?'●':'●'),h('div',{class:'grow'},h('b',null,l),h('small',null,txt)))
+mount(box,h('h4',null,'Health'),h('div',{class:'list'},
+row('Database',d.db==='ok','Answering queries'),
+row('Scheduler',d.cron.ok,d.cron.last?'Last ran '+fmtStamp(d.cron.last):'Has not run yet. Check that the cron trigger is deployed.'),
+row('Nightly cleanup',d.sweep.ok,d.sweep.last?'Last ran '+fmtStamp(d.sweep.last):'Has not run yet'),
+row('Scheduled messages',!d.scheduled_overdue,d.scheduled_pending+' waiting'+(d.scheduled_overdue?'. Some are overdue.':'')),
+row('Browser errors',d.client_errors_1h<20,d.client_errors_1h+' in the last hour, '+d.client_errors_24h+' in 24 hours'),
+row('Event webhooks',!d.event_webhooks_disabled,d.event_webhooks+' configured'+(d.event_webhooks_disabled?', '+d.event_webhooks_disabled+' paused':''))),
+h('p',{class:'hint'},d.backups))
+}).catch(e=>mount(box,h('h4',null,'Health'),h('div',{class:'err'},e.message)))
+return box
+}
 async function stats(pg){
 mount(pg,h('h3',null,'Overview'),h('div',{class:'hint'},'Loading…'))
 try{
@@ -28,7 +43,7 @@ const cell=(l,v)=>h('div',{class:'card'},h('div',{class:'hint',style:{margin:0}}
 mount(pg,h('h3',null,'Overview'),
 h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:'8px'}},cell('Users',d.users),cell('Servers',d.servers),cell('Messages',d.messages),cell('Files',d.files),cell('Stored',fmtSize(d.storage_bytes)),cell('Active sessions',d.sessions),cell('Open reports',d.open_reports),cell('Open appeals',d.open_appeals)),
 h('div',{class:'perm',style:{marginTop:'16px'}},toggle(d.maintenance,async v=>{try{await POST('/api/admin/maintenance',{on:v})}catch(e){fail(e)}},'Maintenance mode'),h('div',null,h('div',{style:{color:'var(--strong)'}},'Maintenance mode'),h('div',{class:'hint',style:{margin:0}},'Blocks writes for everyone except admins.'))),
-h('p',{class:'hint'},d.note))
+h('p',{class:'hint'},d.note),healthBox())
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
 }
 

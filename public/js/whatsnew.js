@@ -2,26 +2,24 @@ import{h,POST,dialog}from'./util.js'
 import{S}from'./state.js'
 import{parIcon}from'./pars.js'
 
-export const VERSION='2026.10.22'
+export const VERSION='2026.10.23'
 const SECTIONS=[
 ['New',[
-'The Pars shop now lives on the main page, under Friends.',
-'Avatar effects: Angel halo, Crown, Aurora ring, Sparkle, Ember glow, Neon pulse, Frost and Void.',
-'Eight new animated nameplates: Sakura, Nebula, Circuit, Gilded, Glacier, Sunset, Neon and Holo.',
-'Scheduled messages: use the clock button in the message box. Delivery runs once a minute.',
-'Right-click a category to rename it or set a role\'s permissions on every channel in it.',
-'YouTube links show a thumbnail.',
-'Performance mode (Settings > Appearance) turns off animations and effects.',
-'Privacy policy and Terms in Settings > Privacy and safety, plus an opt-in switch for crash reports.',
-'Reports can now be marked as illegal content, which goes to the top of the moderator queue.'
+'Bot builder: Save and Test are at the top, with autosave, right-click menus, block descriptions, templates, import and export, and a checker that flags problems on the blocks.',
+'New blocks: On/off switch, Choose a path, Subflows, Notes and Webhook triggers.',
+'Work on a bot together: invite people as viewers, editors or maintainers, see their cursors live, restore earlier versions, and use branches with merging and conflict choices.',
+'Bot hub: rate bots, sort by rating or forks, and fork a bot with its license and credit kept.',
+'Settings > Appearance: theme presets, plus an interface font and a message font.',
+'Screen sharing: choose resolution, frame rate and bitrate, and share sound. Optional live captions in calls.',
+'Server settings > Webhooks: signed event webhooks for new messages and joins.',
+'Admins get a Health panel on the overview page.'
 ]],
 ['Changed',[
-'Pars moved out of Settings. The old Settings link now opens the shop.',
-'Photo and file uploads retry on their own after a network error.'
+'Calls retry the connection on their own if it drops for a few seconds.'
 ]]
 ]
 export function whatsNew(){
 if(!S.me||S.me.seen_version===VERSION)return
 const close=()=>{S.me.seen_version=VERSION;POST('/api/me/seen-version',{version:VERSION}).catch(()=>{})}
-dialog('What is new in Parley',h('div',{class:'bd wn'},h('div',{class:'row',style:{gap:'10px',alignItems:'center'}},parIcon(30),h('div',null,h('b',null,'Pars shop, effects and more'),h('div',{class:'hint',style:{margin:0}},'Look in the sidebar under Friends.'))),SECTIONS.map(([t,l])=>h('section',null,h('h4',null,t),h('ul',null,l.map(x=>h('li',null,x)))))),{onclose:close,footer:c=>[h('button',{class:'btn pri',on:{click:c}},'Got it')]})
+dialog('What is new in Parley',h('div',{class:'bd wn'},h('div',{class:'row',style:{gap:'10px',alignItems:'center'}},parIcon(30),h('div',null,h('b',null,''),h('div',{class:'hint',style:{margin:0}},'Look in the sidebar under Friends.'))),SECTIONS.map(([t,l])=>h('section',null,h('h4',null,t),h('ul',null,l.map(x=>h('li',null,x)))))),{onclose:close,footer:c=>[h('button',{class:'btn pri',on:{click:c}},'Got it')]})
 }

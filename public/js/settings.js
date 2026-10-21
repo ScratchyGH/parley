@@ -4,7 +4,7 @@ import{gifPicker,importGif}from'./gifs.js'
 import{historyBox}from'./imghist.js'
 import{accountsList,addAccountDialog}from'./accounts.js'
 import{adminView}from'./admin.js'
-import{S,P,can,emit,applySettings,setting,loadFriends,cacheUser}from'./state.js'
+import{S,P,can,emit,applySettings,setting,loadFriends,cacheUser,FONTS,PRESETS}from'./state.js'
 import{uploadImage}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
 import{passkeysSupported,registerPasskey}from'./webauthn.js'
@@ -240,12 +240,18 @@ h('div',{style:{position:'sticky',top:'0',width:'260px',flex:'none'}},h('label',
 drawSw();drawPrev()
 }
 
+function fontSel(key){
+return h('select',{class:'sel','aria-label':key==='font_ui'?'Interface font':'Message font',style:{width:'auto'},on:{change:async e=>{try{await saveSettings({[key]:e.target.value})}catch(x){fail(x)}}}},Object.entries(FONTS).map(([k,[l,st]])=>h('option',{value:k,selected:setting(key,'')===k,style:{fontFamily:st}},l)))
+}
 function appearance(pg){
 const themes=[['dimmed','Deep Fjord (default)'],['silver','Silver'],['light','Light'],['contrast','High contrast']]
 const dens=[['compact','Compact'],['comfortable','Comfortable'],['spacious','Spacious']]
 const fs=h('input',{type:'range',min:12,max:22,step:1,value:setting('font_size',15),'aria-label':'Message font size',on:{change:async e=>{try{await saveSettings({font_size:+e.target.value})}catch(x){fail(x)}}}})
 mount(pg,h('h3',null,'Appearance and accessibility'),
 field('Theme',h('div',{class:'tabs',style:{flexWrap:'wrap'}},themes.map(([k,l])=>h('button',{class:setting('theme','dimmed')===k?'on':'','aria-pressed':String(setting('theme','dimmed')===k),on:{click:async e=>{try{await saveSettings({theme:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
+field('Theme presets',h('div',{class:'bh-radios pre-row'},Object.entries(PRESETS).map(([k,[l,th,ac,bg]])=>h('button',{type:'button',class:'preset'+(setting('preset','')===k?' on':''),'aria-pressed':String(setting('preset','')===k),style:{'--pa':ac,'--pb':bg||'#f6f8fa'},on:{click:async()=>{try{await saveSettings({theme:th,ui_color:ac,ui_bg:bg,preset:k});appearance(pg)}catch(x){fail(x)}}}},h('i'),h('span',null,l))),h('button',{type:'button',class:'btn sm',on:{click:async()=>{try{await saveSettings({preset:'',ui_color:'',ui_bg:''});appearance(pg)}catch(x){fail(x)}}}},'Clear preset')),'One click sets the theme, accent and background. You can still fine-tune the colours below.'),
+field('Interface font',fontSel('font_ui')),
+field('Message font',fontSel('font_msg'),'Fonts come from your device or from Parley, so nothing is loaded from other sites.'),
 field('Message spacing',h('div',{class:'tabs'},dens.map(([k,l])=>h('button',{class:setting('density','comfortable')===k?'on':'','aria-pressed':String(setting('density','comfortable')===k),on:{click:async()=>{try{await saveSettings({density:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
 field('Font size',h('div',{class:'row'},fs,h('span',{class:'hint',style:{margin:0}},'12 to 22 px'))),
 field('Custom colours',h('div',{class:'row'},

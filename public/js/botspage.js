@@ -32,7 +32,7 @@ h('p',null,p.summary||'No summary yet.'),
 chips(p.tags)),
 h('div',{class:'bh-side'},
 h('div',{class:'bh-stat'},h('b',null,String(p.installs)),h('span',null,p.installs===1?'server':'servers')),
-h('span',{class:'bh-upd'},'Updated '+fmtRel(p.updated_at)),
+p.rating?h('span',{class:'bh-rate',title:p.ratings+' ratings'},'★ '+p.rating+' ('+p.ratings+')'):null,p.forks?h('span',{class:'bh-upd'},plural(p.forks,'fork')):null,h('span',{class:'bh-upd'},'Updated '+fmtRel(p.updated_at)),
 p.license&&p.license!=='ARR'?h('span',{class:'bh-lic'},p.license):null))
 }
 
@@ -59,7 +59,7 @@ const list=h('div',{class:'bh-list','aria-live':'polite'})
 const more=h('button',{class:'btn',hidden:true},'Show more')
 const count=h('div',{class:'hint',style:{margin:'0 0 8px'}})
 const q=h('input',{class:'inp',type:'search',placeholder:'Search bots',maxLength:60,'aria-label':'Search bots'})
-const sort=h('select',{class:'sel','aria-label':'Sort by',style:{width:'auto'}},[['installs','Most added'],['new','Newest'],['updated','Recently updated']].map(([v,l])=>h('option',{value:v},l)))
+const sort=h('select',{class:'sel','aria-label':'Sort by',style:{width:'auto'}},[['installs','Most added'],['rating','Top rated'],['forks','Most forked'],['new','Newest'],['updated','Recently updated']].map(([v,l])=>h('option',{value:v},l)))
 const lic=h('select',{class:'sel','aria-label':'License'},h('option',{value:''},'Any license'),LICENSES.map(l=>h('option',{value:l[0]},l[1])))
 const tagBox=h('div',{class:'bh-filter'})
 function drawTags(){
@@ -100,22 +100,61 @@ p?null:h('span',{class:'hint',style:{alignSelf:'center'}},'Create the bot to unl
 async function blocksPage(slug){
 let p
 try{p=(await GET('/api/bothub/'+encodeURIComponent(slug))).project}catch(e){return h('div',{class:'empty'},e.message)}
-if(!p.mine)return h('div',{class:'empty'},'Only the author can edit this bot.')
+if(!p.mine&&!p.role)return h('div',{class:'empty'},'Only the author and invited collaborators can open this bot’s blocks.')
 return h('div',null,botTabs(p,'c'),await blocksEditor(p))
 }
 async function mineView(){
 const box=h('div',{class:'bh-wrap one'})
 try{
 const d=await GET('/api/bothub/mine')
-if(!d.projects.length){mount(box,h('div',{class:'empty'},h('div',null,h('h2',{style:{color:'var(--strong)'}},'Build your first bot'),h('p',null,'Create a bot account, write its page, pick a license, then keep it private or list it for everyone.'),h('button',{class:'btn pri',on:{click:()=>go('/lab/new')}},icon('plus','s'),'New bot'))));return box}
-mount(box,h('div',{class:'bh-col'},d.projects.map(p=>h('div',{class:'bh-row mine',style:{'--tone':tone(p.id)}},botIcon(p),
-h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,p.name),pill(p.visibility),p.visibility==='public'?screenPill(p.screen):null),h('p',null,p.summary||'No summary yet.'),chips(p.tags)),
+const inv=(await GET('/api/bothub/invites').catch(()=>({invites:[]}))).invites
+if(!d.projects.length&&!inv.length){mount(box,h('div',{class:'empty'},h('div',null,h('h2',{style:{color:'var(--strong)'}},'Build your first bot'),h('p',null,'Create a bot account, write its page, pick a license, then keep it private or list it for everyone.'),h('button',{class:'btn pri',on:{click:()=>go('/lab/new')}},icon('plus','s'),'New bot'))));return box}
+mount(box,h('div',{class:'bh-col'},inv.map(i=>h('div',{class:'bh-row mine'},h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,i.name),h('span',null,'invited by @'+(i.invited_by||'someone')+' as '+i.role))),h('div',{class:'bh-side'},h('div',{class:'row'},h('button',{class:'btn sm',on:{click:async e=>{const row=e.currentTarget.closest('.bh-row');try{await POST('/api/bothub/invites/'+i.id+'/decline');row.remove()}catch(er){fail(er)}}}},'Decline'),h('button',{class:'btn sm pri',on:{click:async()=>{try{await POST('/api/bothub/invites/'+i.id+'/accept');toast('You joined '+i.name,'ok');go('/lab/'+i.slug+'/blocks')}catch(e){fail(e)}}}},'Accept'))))),d.projects.map(p=>h('div',{class:'bh-row mine',style:{'--tone':tone(p.id)}},botIcon(p),
+h('div',{class:'bh-main'},h('div',{class:'bh-t'},h('b',null,p.name),pill(p.visibility),p.role&&p.role!=='owner'?h('span',{class:'bh-pill'},p.role):null,p.visibility==='public'?screenPill(p.screen):null),h('p',null,p.summary||'No summary yet.'),chips(p.tags)),
 h('div',{class:'bh-side'},h('div',{class:'bh-stat'},h('b',null,String(p.installs)),h('span',null,p.installs===1?'server':'servers')),
-h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},'Blocks'),h('button',{class:'btn sm pri',on:{click:()=>go('/lab/'+p.slug+'/edit')}},'Edit')))))))
+h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/bots/'+p.slug)}},'View'),h('button',{class:'btn sm',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},'Blocks'),p.role==='owner'||p.role==='maintainer'?h('button',{class:'btn sm pri',on:{click:()=>go('/lab/'+p.slug+'/edit')}},'Edit'):null))))))
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
 return box
 }
 
+function stars(n,on){return h('span',{class:'bh-stars','aria-label':n+' out of 5'},[1,2,3,4,5].map(i=>h('span',{class:i<=Math.round(n)?'on':''},'★')))}
+async function ratingPanel(p){
+const box=h('section',{class:'bh-sec'},h('h3',null,'Ratings'))
+try{
+const d=await GET(`/api/bothub/${p.id}/ratings`)
+const mineR=d.mine
+const canRate=!p.mine&&!p.role
+let val=mineR?.stars||0
+const review=h('textarea',{class:'inp',rows:2,maxLength:500,placeholder:'Optional review',value:mineR?.review||''},mineR?.review||'')
+const picker=h('div',{class:'bh-pick',role:'radiogroup','aria-label':'Your rating'})
+const drawPick=()=>mount(picker,[1,2,3,4,5].map(i=>h('button',{type:'button',role:'radio','aria-checked':String(val===i),class:i<=val?'on':'','aria-label':i+' stars',on:{click:()=>{val=i;drawPick()}}},'★')))
+drawPick()
+mount(box,h('h3',null,'Ratings'),p.rating?h('div',{class:'row'},stars(p.rating),h('b',null,String(p.rating)),h('span',{class:'hint',style:{margin:0}},plural(p.ratings,'rating'))):h('div',{class:'hint'},'No ratings yet.'),
+canRate?h('div',{class:'mb'},h('b',null,mineR?'Update your rating':'Rate this bot'),picker,review,h('button',{class:'btn pri sm',on:{click:async()=>{try{const r=await POST(`/api/bothub/${p.id}/rating`,{stars:val,review:review.value});toast('Thanks for rating','ok');p.rating=r.rating;p.ratings=r.ratings;mount(box,...(await ratingPanel(p)).childNodes)}catch(e){fail(e)}}}},'Save rating')):null,
+d.ratings.filter(r=>r.review).map(r=>h('div',{class:'bh-rv'},h('div',{class:'row'},stars(r.stars),h('b',null,r.display_name),h('span',{class:'hint',style:{margin:0}},fmtRel(r.created_at))),h('p',null,r.review))))
+}catch(e){mount(box,h('h3',null,'Ratings'),h('div',{class:'hint'},e.message))}
+return box
+}
+async function forkDialog(p){
+const body=h('div',{class:'bd'},h('p',null,'A fork is your own private copy of this bot’s blocks. It keeps a link back to the original and its credit.'),h('div',{class:'hint'},'Loading…'))
+const lu=licenseUrl(p.license,p.license_url)
+const name=h('input',{class:'inp',maxLength:32,value:(p.name+' (fork)').slice(0,32),'aria-label':'Name of your fork'})
+const accept=h('input',{type:'checkbox','aria-label':'I have read the license'})
+const copyleft=['MPL-2.0','LGPL-3.0-only','GPL-2.0-only','GPL-3.0-only','AGPL-3.0-only','CC-BY-SA-4.0'].includes(p.license)
+mount(body,h('p',null,'A fork is your own private copy of this bot’s blocks. It credits the original author in its description.'),
+h('div',{class:'bh-kv'},h('span',null,'License'),h('b',null,licenseName(p.license))),
+lu?h('div',{class:'bh-kv'},h('span',null,'Terms'),h('a',{href:lu,target:'_blank',rel:'noopener noreferrer nofollow'},'Read license')):null,
+copyleft?h('p',{class:'hint'},'This license requires your fork to stay under the same license.'):null,
+p.license==='Custom'?h('label',{class:'bk-check'},accept,'I have read and accept the license terms'):null,
+field('Name',name))
+dialog('Fork '+p.name,body,{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async()=>{
+if(p.license==='Custom'&&!accept.checked){toast('Accept the license to continue','err');return}
+try{const r=await POST(`/api/bothub/${p.id}/fork`,{name:name.value.trim(),accept_license:accept.checked});close();showToken(r.token,name.value.trim());go('/lab/'+r.slug+'/blocks')}catch(e){fail(e)}
+}}},'Create fork')]})
+}
+function showToken(token,name){
+dialog('Bot token for '+name,h('div',{class:'bd'},h('p',null,'Copy this token now. It is only shown once. Open the bot’s editor to make a new one later.'),h('pre',{style:{whiteSpace:'pre-wrap',wordBreak:'break-all'}},token),h('button',{class:'btn',on:{click:()=>copyText(token)}},'Copy token')))
+}
 function snippet(slug){
 return `curl -X POST ${location.origin}/api/rooms/CHANNEL_ID/messages \\
   -H "Authorization: Bot YOUR_TOKEN" \\
@@ -131,16 +170,16 @@ const tabs=[['','About'],['releases','Releases ('+p.releases.length+')'],['build
 const content=h('div',{class:'bh-body'})
 if(tab==='releases')mount(content,p.releases.length?p.releases.map(r=>h('article',{class:'bh-rel'},h('div',{class:'row'},h('b',null,'v'+r.version),h('span',{class:'hint',style:{margin:0}},fmtDate(r.created_at))),r.changelog?h('div',{class:'mb'},render(r.changelog)):h('div',{class:'hint'},'No notes.'))):h('div',{class:'empty'},'No releases published yet.'))
 else if(tab==='build')mount(content,h('div',{class:'mb'},h('p',null,'Bots on Parley use the REST API with a bot token. They can read and send messages in channels they can see, upload files and use stickers. They do not hold a realtime connection, so poll the messages endpoint or use webhooks.'),h('pre',null,h('code',null,snippet(p.slug))),h('p',{class:'hint'},p.mine?'Your token is shown once on creation. Open the editor to generate a new one.':'The owner of this bot holds its token. Adding it to your server only gives the account membership.')))
-else mount(content,p.readme.trim()?h('div',{class:'mb bh-md'},render(p.readme)):h('div',{class:'hint'},'The author has not written a description yet.'))
+else{mount(content,p.fork_note?h('p',{class:'hint'},p.fork_note+'.'):null,p.readme.trim()?h('div',{class:'mb bh-md'},render(p.readme)):h('div',{class:'hint'},'The author has not written a description yet.'));if(p.visibility!=='private')content.append(await ratingPanel(p))}
 const lu=licenseUrl(p.license,p.license_url)
 const link=(l,u)=>u?h('a',{href:u,target:'_blank',rel:'noopener noreferrer nofollow'},l):null
 const spec=(k,v)=>v?h('div',{class:'bh-kv'},h('span',null,k),h('b',null,v)):null
 const head=h('header',{class:'bh-head',style:{'--tone':tone(p.id)}},
 botIcon(p,'xl'),
-h('div',{class:'bh-hm'},h('h1',null,p.name),h('p',null,p.summary),h('div',{class:'row',style:{flexWrap:'wrap',gap:'12px'}},h('span',{class:'bh-chip'},icon('plus','s'),plural(p.installs,'server')),h('span',{class:'bh-chip'},icon('clock','s'),'Updated '+fmtRel(p.updated_at)),p.mine?pill(p.visibility):null)),
+h('div',{class:'bh-hm'},h('h1',null,p.name),h('p',null,p.summary),h('div',{class:'row',style:{flexWrap:'wrap',gap:'12px'}},h('span',{class:'bh-chip'},icon('plus','s'),plural(p.installs,'server')),h('span',{class:'bh-chip'},icon('clock','s'),'Updated '+fmtRel(p.updated_at)),p.rating?h('span',{class:'bh-chip'},icon('star','s'),p.rating+' ('+plural(p.ratings,'rating')+')'):null,p.forks?h('span',{class:'bh-chip'},icon('copy','s'),plural(p.forks,'fork')):null,p.mine?pill(p.visibility):null)),
 h('div',{class:'bh-act'},
 p.visibility!=='private'||p.mine?h('button',{class:'btn pri',on:{click:()=>installDialog(p)}},icon('plus','s'),'Add to server'):null,
-p.mine?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/edit')}},icon('edit','s'),'Edit'):null,
+p.mine||p.role?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},icon('flask','s'),'Open blocks'):null,p.mine||p.role==='maintainer'?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/edit')}},icon('edit','s'),'Edit'):null,!p.mine&&!p.role&&p.license!=='ARR'?h('button',{class:'btn',on:{click:()=>forkDialog(p)}},icon('copy','s'),'Fork'):null,
 h('button',{class:'btn',title:'Copy link','aria-label':'Copy link',on:{click:()=>copyText(location.origin+'/bots/'+p.slug)}},icon('link','s'))))
 const nav=h('div',{class:'bh-tabs',role:'tablist'},tabs.map(([k,l])=>h('button',{role:'tab','aria-selected':String((tab||'')===k),class:(tab||'')===k?'on':'',on:{click:()=>go('/bots/'+p.slug+(k?'/'+k:''))}},l)))
 const side=h('aside',{class:'bh-spec'},h('h4',null,'Details'),
@@ -158,7 +197,7 @@ async function editor(slug){
 let p=null
 if(slug){
 try{p=(await GET('/api/bothub/'+encodeURIComponent(slug))).project}catch(e){return h('div',{class:'empty'},e.message)}
-if(!p.mine)return h('div',{class:'empty'},'Only the author can edit this bot.')
+if(!p.mine&&p.role!=='maintainer')return h('div',{class:'empty'},'Only the owner and maintainers can edit this listing.')
 }
 const d=p?{name:p.name,summary:p.summary,readme:p.readme,license:p.license,license_url:p.license_url,source_url:p.source_url,website_url:p.website_url,support_url:p.support_url,visibility:p.visibility,tags:[...p.tags],avatar_id:p.avatar_id,slug:p.slug}:{name:'',summary:'',readme:'',license:'MIT',license_url:'',source_url:'',website_url:'',support_url:'',visibility:'private',tags:[],avatar_id:null,slug:''}
 const err=h('div',{class:'err',role:'alert'})

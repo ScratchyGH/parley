@@ -9,7 +9,7 @@ const KEY='parley:voice'
 export function voicePrefs(){
 let p={}
 try{p=JSON.parse(localStorage.getItem(KEY)||'{}')}catch{}
-return{input:'',output:'',camera:'',echo:true,noise:true,agc:true,ptt:false,pttKey:'KeyV',...p}
+return{input:'',output:'',camera:'',echo:true,noise:true,agc:true,ptt:false,pttKey:'KeyV',scrRes:'720',scrFps:30,scrKbps:0,scrAudio:false,captions:false,...p}
 }
 export function saveVoicePrefs(p){
 try{localStorage.setItem(KEY,JSON.stringify(p))}catch{}
@@ -53,6 +53,7 @@ watchStream('me',V.mic)
 }
 wsSend(hub,{t:'voice.join',ch,m:V.muted,d:false})
 startTimers()
+if(voicePrefs().captions&&captionsSupported)startCaptions()
 emit('voice:update')
 }
 
@@ -66,7 +67,8 @@ function teardown(){
 for(const p of V.peers.values())closePeer(p)
 V.peers.clear()
 for(const s of[V.mic,V.cam,V.scr])s?.getTracks().forEach(t=>t.stop())
-V.mic=V.cam=V.scr=null
+V.mic=V.cam=V.scr=V.scrA=null
+stopCaptions()
 V.ch=V.hub=null
 V.joined=false
 if(V.since)tone([[620,.08],[400,.14]])
@@ -83,6 +85,8 @@ function closePeer(p){
 try{p.pc.close()}catch{}
 p.audioEl?.remove()
 p.audioEl=null
+p.scrAudioEl?.remove()
+p.scrAudioEl=null
 }
 function dropPeer(uid){
 const p=V.peers.get(uid)
@@ -104,11 +108,15 @@ try{p.making=true;await pc.setLocalDescription();sig(uid,{desc:pc.localDescripti
 }
 pc.onconnectionstatechange=()=>{
 if(pc.connectionState==='failed'){try{pc.restartIce()}catch{}}
+if(pc.connectionState==='disconnected')setTimeout(()=>{if(pc.connectionState==='disconnected'&&V.peers.get(uid)===p){try{pc.restartIce()}catch{}}},5000)
 emit('voice:streams')
 }
 pc.ontrack=e=>{
 const stream=e.streams[0]||new MediaStream([e.track])
-if(e.track.kind==='audio'){
+if(e.track.kind==='audio'&&p.kinds[stream.id]==='screenaudio'){
+if(!p.scrAudioEl){p.scrAudioEl=new Audio();p.scrAudioEl.autoplay=true;sink.append(p.scrAudioEl);const pr=voicePrefs();if(pr.output&&p.scrAudioEl.setSinkId)p.scrAudioEl.setSinkId(pr.output).catch(()=>{})}
+p.scrAudioEl.srcObject=stream;p.scrAudioEl.muted=V.deaf;p.scrAudioEl.volume=p.vol
+}else if(e.track.kind==='audio'){
 if(!p.audioEl){
 p.audioEl=new Audio()
 p.audioEl.autoplay=true
@@ -127,9 +135,11 @@ stream.onremovetrack=()=>{if(!stream.getVideoTracks().length){p.streams.delete(s
 emit('voice:streams')
 }
 }
+if(V.cam||V.scr)sendKinds(uid)
 if(V.mic)for(const t of V.mic.getAudioTracks())p.senders.mic=pc.addTrack(t,V.mic)
 if(V.cam)for(const t of V.cam.getVideoTracks())p.senders.cam=pc.addTrack(t,V.cam)
-if(V.scr)for(const t of V.scr.getVideoTracks())p.senders.scr=pc.addTrack(t,V.scr)
+if(V.scr)for(const t of V.scr.getVideoTracks()){p.senders.scr=pc.addTrack(t,V.scr);tuneSender(p.senders.scr)}
+if(V.scrA)for(const t of V.scrA.getAudioTracks())p.senders.scrA=pc.addTrack(t,V.scrA)
 if(V.cam||V.scr)setTimeout(()=>sendKinds(uid),300)
 return p
 }
@@ -137,6 +147,7 @@ function kindsMap(){
 const o={}
 if(V.cam)o[V.cam.id]='cam'
 if(V.scr)o[V.scr.id]='screen'
+if(V.scrA)o[V.scrA.id]='screenaudio'
 return o
 }
 function sendKinds(uid){sig(uid,{streams:kindsMap()})}
@@ -147,6 +158,7 @@ const p=V.peers.get(from)||mkPeer(from)
 const pc=p.pc
 try{
 if(data.streams){p.kinds=data.streams;emit('voice:streams');return}
+if(typeof data.cap==='string'){if(voicePrefs().captions)emit('voice:caption',{uid:from,text:data.cap.slice(0,200)});return}
 if(data.desc){
 const collision=data.desc.type==='offer'&&(p.making||pc.signalingState!=='stable')
 p.ignore=!p.polite&&collision
@@ -219,7 +231,7 @@ setMuted(!V.muted)
 }
 export function setDeaf(v){
 V.deaf=v
-for(const p of V.peers.values())if(p.audioEl)p.audioEl.muted=v
+for(const p of V.peers.values()){if(p.audioEl)p.audioEl.muted=v;if(p.scrAudioEl)p.scrAudioEl.muted=v}
 V.mic?.getAudioTracks().forEach(t=>t.enabled=!v&&!V.muted)
 setState()
 emit('voice:update')
@@ -248,15 +260,61 @@ setState()
 emit('voice:update')
 emit('voice:streams')
 }
+const RES={'480':[854,480],'720':[1280,720],'1080':[1920,1080],'1440':[2560,1440]}
+function scrConstraints(pr){
+const r=RES[pr.scrRes]
+const v={frameRate:{ideal:pr.scrFps,max:pr.scrFps}}
+if(r){v.width={ideal:r[0],max:r[0]};v.height={ideal:r[1],max:r[1]}}
+return v
+}
+function kbpsFor(pr){
+if(pr.scrKbps>0)return pr.scrKbps*1000
+const r=RES[pr.scrRes]
+const px=r?r[0]*r[1]:1920*1080
+return Math.round(Math.min(10e6,Math.max(600e3,px*pr.scrFps*0.06)))
+}
+async function tuneSender(sender){
+if(!sender||!sender.getParameters)return
+try{
+const pr=voicePrefs()
+const prm=sender.getParameters()
+if(!prm.encodings||!prm.encodings.length)prm.encodings=[{}]
+prm.encodings[0].maxBitrate=kbpsFor(pr)
+prm.encodings[0].maxFramerate=pr.scrFps
+if(pr.scrFps>=30)prm.degradationPreference='maintain-framerate'
+else prm.degradationPreference='maintain-resolution'
+await sender.setParameters(prm)
+}catch{}
+}
+export async function applyScreenQuality(){
+if(!V.scr)return
+const pr=voicePrefs()
+const vt=V.scr.getVideoTracks()[0]
+try{await vt.applyConstraints(scrConstraints(pr))}catch{}
+try{vt.contentHint=pr.scrFps>=30?'motion':'detail'}catch{}
+for(const p of V.peers.values())await tuneSender(p.senders.scr)
+}
 export async function toggleScreen(){
 if(!V.ch)return
 if(V.scr){stopScreen();return}
 if(!navigator.mediaDevices.getDisplayMedia){toast('Screen sharing is not supported in this browser','err');return}
-try{V.scr=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:30}},audio:false})}
-catch(e){if(e.name!=='NotAllowedError')toast('Could not start screen share: '+e.message,'err');return}
+const pr=voicePrefs()
+try{
+V.scr=await navigator.mediaDevices.getDisplayMedia({video:scrConstraints(pr),audio:pr.scrAudio?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false})
+}catch(e){
+if(e.name==='NotAllowedError')return
+try{V.scr=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false})}catch(e2){if(e2.name!=='NotAllowedError')toast('Could not start screen share: '+e2.message,'err');return}
+}
+const at=V.scr.getAudioTracks()
+if(pr.scrAudio&&!at.length)toast('No audio was shared. In the picker, choose a tab or the entire screen and tick the audio box.','err')
+V.scrA=at.length?new MediaStream(at):null
+try{V.scr.getVideoTracks()[0].contentHint=pr.scrFps>=30?'motion':'detail'}catch{}
 V.scr.getVideoTracks()[0].onended=()=>stopScreen()
-for(const p of V.peers.values())for(const t of V.scr.getVideoTracks())p.senders.scr=p.pc.addTrack(t,V.scr)
-for(const uid of V.peers.keys())setTimeout(()=>sendKinds(uid),300)
+for(const uid of V.peers.keys())sendKinds(uid)
+for(const p of V.peers.values()){
+for(const t of V.scr.getVideoTracks()){p.senders.scr=p.pc.addTrack(t,V.scr);tuneSender(p.senders.scr)}
+if(V.scrA)for(const t of V.scrA.getAudioTracks())p.senders.scrA=p.pc.addTrack(t,V.scrA)
+}
 setState()
 emit('voice:update')
 emit('voice:streams')
@@ -264,8 +322,11 @@ emit('voice:streams')
 function stopScreen(){
 if(!V.scr)return
 V.scr.getTracks().forEach(t=>t.stop())
-for(const p of V.peers.values()){if(p.senders.scr){try{p.pc.removeTrack(p.senders.scr)}catch{}p.senders.scr=null}}
-V.scr=null
+for(const p of V.peers.values()){
+for(const k of['scr','scrA'])if(p.senders[k]){try{p.pc.removeTrack(p.senders[k])}catch{}p.senders[k]=null}
+}
+V.scr=null;V.scrA=null
+for(const uid of V.peers.keys())sendKinds(uid)
 setState()
 emit('voice:update')
 emit('voice:streams')
@@ -286,11 +347,11 @@ watchStream('me',ns)
 }catch(e){fail(e)}
 }
 export function applyOutput(id){
-for(const p of V.peers.values())if(p.audioEl?.setSinkId)p.audioEl.setSinkId(id||'').catch(()=>{})
+for(const p of V.peers.values())for(const a of[p.audioEl,p.scrAudioEl])if(a?.setSinkId)a.setSinkId(id||'').catch(()=>{})
 }
 export function setPeerVolume(uid,v){
 const p=V.peers.get(uid)
-if(p){p.vol=v;if(p.audioEl)p.audioEl.volume=v}
+if(p){p.vol=v;if(p.audioEl)p.audioEl.volume=v;if(p.scrAudioEl)p.scrAudioEl.volume=v}
 }
 
 function watchStream(id,stream){
@@ -358,6 +419,29 @@ emit('voice:update')
 })
 addEventListener('beforeunload',()=>{if(V.ch&&V.hub)wsSend(V.hub,{t:'voice.leave'})})
 
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition
+export const captionsSupported=!!SR
+let rec=null,recOn=false
+export function startCaptions(){
+if(!SR||!V.ch||rec)return false
+recOn=true
+rec=new SR()
+rec.continuous=true;rec.interimResults=false;rec.lang=navigator.language||'en-US'
+rec.onresult=e=>{
+for(let i=e.resultIndex;i<e.results.length;i++){
+if(!e.results[i].isFinal)continue
+const text=e.results[i][0].transcript.trim().slice(0,200)
+if(!text||V.muted||V.deaf)continue
+emit('voice:caption',{uid:S.me.id,text})
+for(const uid of V.peers.keys())sig(uid,{cap:text})
+}
+}
+rec.onend=()=>{rec=null;if(recOn&&V.ch&&voicePrefs().captions)setTimeout(startCaptions,400)}
+rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){recOn=false;toast('Captions need microphone speech recognition, which this browser blocked','err')}}
+try{rec.start()}catch{rec=null;return false}
+return true
+}
+export function stopCaptions(){recOn=false;try{rec?.stop()}catch{}rec=null}
 export function voiceSettingsView(){
 const pr=voicePrefs()
 const wrap=h('div')
@@ -377,6 +461,15 @@ h('div',{class:'perm'},toggle(pr.echo,v=>save({echo:v}),'Echo cancellation'),h('
 h('div',{class:'perm'},toggle(pr.noise,v=>save({noise:v}),'Noise suppression'),h('span',null,'Noise suppression')),
 h('div',{class:'perm'},toggle(pr.agc,v=>save({agc:v}),'Automatic gain'),h('span',null,'Automatic gain control')),
 h('div',{class:'hint'},'Echo, noise and gain changes apply the next time you join a call.'),
+h('h4',{style:{margin:'16px 0 6px'}},'Screen sharing'),
+field('Resolution',h('select',{class:'sel','aria-label':'Screen share resolution',on:{change:e=>{save({scrRes:e.target.value});applyScreenQuality()}}},[['480','480p'],['720','720p (recommended)'],['1080','1080p'],['1440','1440p'],['native','Source size']].map(([v,l])=>h('option',{value:v,selected:String(pr.scrRes)===v},l)))),
+field('Frame rate',h('select',{class:'sel','aria-label':'Screen share frame rate',on:{change:e=>{save({scrFps:+e.target.value});applyScreenQuality()}}},[[5,'5 fps, slides'],[15,'15 fps'],[30,'30 fps'],[60,'60 fps, games']].map(([v,l])=>h('option',{value:v,selected:+pr.scrFps===v},l)))),
+field('Maximum bitrate',h('select',{class:'sel','aria-label':'Screen share bitrate',on:{change:e=>{save({scrKbps:+e.target.value});applyScreenQuality()}}},[[0,'Automatic'],[1500,'1.5 Mbps'],[3000,'3 Mbps'],[6000,'6 Mbps'],[10000,'10 Mbps']].map(([v,l])=>h('option',{value:v,selected:+pr.scrKbps===v},l))),'Calls connect people directly, so each viewer uses this much of your upload. Lower it if the picture stutters.'),
+h('div',{class:'perm'},toggle(pr.scrAudio,v=>save({scrAudio:v}),'Share audio with screen'),h('span',null,'Share sound with my screen')),
+h('div',{class:'hint'},'Sound sharing depends on your browser and system. Chrome and Edge can share a tab or the whole screen’s audio on Windows and ChromeOS. Changes to resolution, frame rate and bitrate apply to a share in progress.'),
+h('h4',{style:{margin:'16px 0 6px'}},'Captions'),
+captionsSupported?h('div',{class:'perm'},toggle(pr.captions,v=>{save({captions:v});if(v)startCaptions();else stopCaptions()},'Live captions'),h('span',null,'Show live captions in calls')):h('div',{class:'hint'},'Live captions are not supported in this browser.'),
+captionsSupported?h('div',{class:'hint'},'Your browser’s speech recognition turns your own speech into text and sends it to the others in the call. Some browsers send the audio to their speech service to do this.'):null,
 h('div',{class:'perm',style:{marginTop:'12px'}},toggle(pr.ptt,v=>save({ptt:v}),'Push to talk'),h('span',null,'Push to talk')),
 (()=>{
 const b=h('button',{class:'btn',on:{click:()=>{
@@ -450,12 +543,16 @@ const clock=h('span',{class:'vtime'})
 const tick=()=>{if(V.ch===chId&&V.since){const s=Math.floor((Date.now()-V.since)/1000);clock.textContent=(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s%3600/60)).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')}else clock.textContent=''}
 tick()
 if(joined)bar.prepend(clock)
-mount(container,h('div',{class:'vroom'},grid,bar))
+mount(container,h('div',{class:'vroom'},grid,capBar,bar))
 }
+const capBar=h('div',{class:'vcaps','aria-live':'polite',hidden:true})
+const caps=[]
+const offCap=on('voice:caption',({uid,text})=>{const u=uid===S.me.id?S.me:S.users.get(uid);caps.push({n:u?.display_name||'Member',t:text,at:Date.now()});while(caps.length>3)caps.shift();showCaps()})
+function showCaps(){const live=caps.filter(c=>Date.now()-c.at<7000);capBar.hidden=!live.length;mount(capBar,live.map(c=>h('div',null,h('b',null,c.n+': '),c.t)));setTimeout(()=>{if(caps.some(c=>Date.now()-c.at>=7000))showCaps()},7200)}
 draw()
 const iv=setInterval(()=>{const c=container.querySelector('.vtime');if(c&&V.since&&V.ch===chId){const s=Math.floor((Date.now()-V.since)/1000);c.textContent=(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s%3600/60)).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')}},1000)
 const offs=[on('voice:update',draw),on('voice:streams',draw),on('voice:speaking',draw)]
-return()=>{clearInterval(iv);offs.forEach(f=>f())}
+return()=>{clearInterval(iv);offs.forEach(f=>f());offCap()}
 }
 
 const rings=new Map()

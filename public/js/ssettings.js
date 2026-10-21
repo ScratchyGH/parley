@@ -569,8 +569,36 @@ const url=location.origin+r.path
 mount(out,h('div',{class:'card',style:{marginTop:'8px'}},h('p',{class:'hint',style:{margin:'0 0 6px'}},'Copy this URL now. It will not be shown again.'),h('code',{style:{wordBreak:'break-all',userSelect:'all'}},url),h('div',{style:{marginTop:'6px'}},h('button',{class:'btn sm',on:{click:()=>copyText(url)}},'Copy'))))
 draw()
 }catch(e){fail(e)}
-}}},'Create')),out,list)
+}}},'Create')),out,list,h('hr',{style:{margin:'20px 0'}}),evHooks(sid))
 draw()
+}
+function evHooks(sid){
+const box=h('div')
+const list=h('div',{class:'list'})
+const url=h('input',{class:'inp',type:'url',maxLength:300,placeholder:'https://example.com/parley','aria-label':'Endpoint address'})
+const LBL={'message.create':'New messages','member.join':'Members joining'}
+const checks=Object.entries(LBL).map(([k,l])=>({k,el:h('input',{type:'checkbox',checked:true,'aria-label':l}),l}))
+const out=h('div')
+async function draw(){
+try{
+const r=await GET(`/api/servers/${sid}/hooks`)
+mount(list,r.hooks.length?r.hooks.map(x=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',{style:{wordBreak:'break-all'}},x.url),h('small',null,x.events.map(e=>LBL[e]||e).join(', ')+(x.last_at?' · last delivery '+(x.last_status>=200&&x.last_status<300?'worked':'failed ('+(x.last_status||'no response')+')'):' · not used yet')+(x.enabled?'':' · paused after repeated failures'))),
+h('div',{class:'row'},h('button',{class:'btn sm',on:{click:async()=>{try{const t=await POST(`/api/servers/${sid}/hooks/${x.id}/test`,{});toast(t.ok?'Test delivered (HTTP '+t.status+')':'Test failed ('+(t.status||'no response')+')',t.ok?'ok':'err');draw()}catch(e){fail(e)}}}},'Send test'),
+h('button',{class:'btn sm',on:{click:async()=>{try{await PATCH(`/api/servers/${sid}/hooks/${x.id}`,{enabled:!x.enabled});draw()}catch(e){fail(e)}}}},x.enabled?'Pause':'Resume'),
+h('button',{class:'btn sm dng',on:{click:async()=>{if(!await confirmBox('Delete event webhook','Parley stops sending events to this address.','Delete',true))return;try{await DEL(`/api/servers/${sid}/hooks/${x.id}`);draw()}catch(e){fail(e)}}}},'Delete')))):h('div',{class:'hint'},'No event webhooks yet.'))
+}catch(e){mount(list,h('div',{class:'err'},e.message))}
+}
+mount(box,h('h3',null,'Event webhooks'),h('p',{class:'hint'},'Parley sends a signed POST request to your address when something happens in this server. Each request has x-parley-timestamp and x-parley-signature headers. The signature is sha256= followed by the HMAC-SHA256 of timestamp + "." + body, using the secret shown once at creation. Addresses must be public https:// hosts. After 10 failures in a row a webhook pauses itself.'),
+h('div',{class:'row',style:{flexWrap:'wrap'}},url,...checks.map(c=>h('label',{class:'bk-check'},c.el,c.l)),h('button',{class:'btn pri',on:{click:async()=>{
+try{
+const r=await POST(`/api/servers/${sid}/hooks`,{url:url.value.trim(),events:checks.filter(c=>c.el.checked).map(c=>c.k)})
+url.value=''
+mount(out,h('div',{class:'card',style:{marginTop:'8px'}},h('p',{class:'hint',style:{margin:'0 0 6px'}},'Copy this signing secret now. It will not be shown again.'),h('code',{style:{wordBreak:'break-all',userSelect:'all'}},r.secret),h('div',{style:{marginTop:'6px'}},h('button',{class:'btn sm',on:{click:()=>copyText(r.secret)}},'Copy'))))
+draw()
+}catch(e){fail(e)}
+}}},'Add')),out,list)
+draw()
+return box
 }
 
 function stickers(pg,sid){
