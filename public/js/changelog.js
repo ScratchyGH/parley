@@ -1,5 +1,24 @@
-export const VERSION='2026.10.26'
+export const VERSION='2026.10.27'
 export const RELEASES=[
+{v:'2026.10.27',date:'October 21, 2026',title:'Shop overhaul, gifting and new text effects',summary:'A rebuilt Pars shop with gifting, Legacy and Modern bundles and the limited Timeskipper bundle, full-screen Settings and shop, and more message formatting.',sections:[
+['Pars shop',[
+['Full-screen shop','The shop and Settings now slide in from the left and fill the screen. Use Close or Escape to go back.'],
+['Bundle carousel','Bundles scroll across the top of the shop and stop while you hover over one.'],
+['Legacy and Modern','Void, Eyes of God, Devils Demise and Royal Court come in two versions. Legacy is the classic set. Modern adds an effect, name style, badge, title and message style. Each version can be bought once.'],
+['Timeskipper bundle','Limited time, ends November 21. An animated frame, avatar effect and nameplate, a shifting name, an hourglass badge, a title, a message style and a free year of vanity link.'],
+['Gifts','Press the present button on any item or bundle, pick a friend and send it. Gifted bundles include the cosmetics but not the vanity link. Use Purchase for server to put vanity time or boosts on a server.'],
+['Titles and message styles','Two new categories. Titles appear next to your name and message styles give your messages a colored edge.'],
+['Fairer prices','Most items were repriced by how much they take to make. Bundles are cheaper than buying the parts.'],
+['Bundles are once only','You can no longer buy the same bundle version more than once.']
+]],
+['Messages',[
+['More formatting','Inserted text with ++text++, effects like [rainbow]text[/rainbow] (also glow, shake, wave, pulse, big, small, flip, caps, mono and blur), [color=#ff6600]text[/color], keys with [[Ctrl]], callouts with > [!NOTE], collapsible blocks with +++ Title and centered text with -> text <-.']
+]],
+['Fixes',[
+['Status dot and notification badge','The status dot is no longer covered by frames and the bell badge sits correctly.'],
+['Home mascot','The mascot on the home page is bigger.']
+]]
+]},
 {v:'2026.10.26',date:'October 21, 2026',title:'Bundles, new cosmetics and server labs',summary:'Cosmetic bundles, redesigned frames, new name styles and badges, a new Parley mascot and eleven experimental server features.',sections:[
 ['Pars shop',[
 ['Bundles','Void, Eyes Of God, Devils Demise, Bloxtime, Sakura Dream, Frostbite and Royal Court. Some pieces are only sold in a bundle.'],

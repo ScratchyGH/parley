@@ -66,6 +66,10 @@ const INLINE=[
 ['strike',/~~([\s\S]+?)~~/],
 ['underline',/__([^_\n]+?)__/],
 ['mark',/==([^=\n]+?)==/],
+['ins',/\+\+([^+\n]+?)\+\+/],
+['fx',/\[(rainbow|glow|shake|wave|pulse|big|small|flip|caps|mono|blur)\]([\s\S]+?)\[\/\1\]/],
+['color',/\[color=(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|red|orange|yellow|green|teal|blue|purple|pink|gray)\]([\s\S]+?)\[\/color\]/],
+['kbd',/\[\[([^\]\n]{1,20})\]\]/],
 ['sup',/\^\(([^)\n]{1,40})\)|\^([A-Za-z0-9]{1,12})/],
 ['sub',/(?<!~)~([^~\n\s][^~\n]{0,40}?)~(?!~)/],
 ['time',/<t:(\d{1,12})(?::([tTdDfFR]))?>/],
@@ -130,6 +134,14 @@ else if(name==='bold')out.push(h('strong',null,inline(m[1],ctx,depth+1)))
 else if(name==='strike')out.push(h('s',null,inline(m[1],ctx,depth+1)))
 else if(name==='underline')out.push(h('u',null,inline(m[1],ctx,depth+1)))
 else if(name==='mark')out.push(h('mark',null,inline(m[1],ctx,depth+1)))
+else if(name==='ins')out.push(h('ins',null,inline(m[1],ctx,depth+1)))
+else if(name==='fx')out.push(h('span',{class:'fx fx-'+m[1]},inline(m[2],ctx,depth+1)))
+else if(name==='color'){
+const el=h('span',{class:m[1][0]==='#'?'fx':'fx fc-'+m[1]},inline(m[2],ctx,depth+1))
+if(m[1][0]==='#')el.style.color=m[1]
+out.push(el)
+}
+else if(name==='kbd')out.push(h('kbd',null,m[1]))
 else if(name==='sup')out.push(h('sup',null,m[1]??m[2]))
 else if(name==='sub')out.push(h('sub',null,m[1]))
 else if(name==='time')out.push(stamp(+m[1],m[2]||'f'))
@@ -215,7 +227,29 @@ if(/^>\s?/.test(ln)){
 flush()
 const buf=[]
 while(i<lines.length&&/^>\s?/.test(lines[i])){buf.push(lines[i].replace(/^>\s?/,''));i++}
-frag.append(h('blockquote',null,inline(buf.join('\n'),ctx,0)))
+const co=buf[0].match(/^\[!(NOTE|TIP|WARNING|IMPORTANT|DANGER|SUCCESS)\]\s*(.*)$/i)
+if(co){
+const k=co[1].toLowerCase()
+const rest=[co[2],...buf.slice(1)].filter((x,j)=>j>0||x).join('\n')
+frag.append(h('div',{class:'callout co-'+k},h('b',{class:'co-t'},k[0].toUpperCase()+k.slice(1)),rest?h('div',null,inline(rest,ctx,0)):null))
+}else frag.append(h('blockquote',null,inline(buf.join('\n'),ctx,0)))
+continue
+}
+if(/^\+\+\+\s+\S/.test(ln)){
+const end=lines.findIndex((x,j)=>j>i&&/^\+\+\+\s*$/.test(x))
+if(end>i){
+flush()
+const dt=h('details',{class:'mdet'},h('summary',null,inline(ln.replace(/^\+\+\+\s+/,''),ctx,1)),h('div',null,inline(lines.slice(i+1,end).join('\n'),ctx,0)))
+frag.append(dt)
+i=end+1
+continue
+}
+}
+const ce=ln.match(/^->\s+(.+?)\s+<-$/)
+if(ce){
+flush()
+frag.append(h('p',{class:'mcenter'},inline(ce[1],ctx,0)))
+i++
 continue
 }
 const li=ln.match(/^\s{0,3}([-*]|\d{1,3}\.)\s+(.*)$/)

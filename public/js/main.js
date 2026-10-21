@@ -16,6 +16,7 @@ import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
+import{showOverlay,hideOverlay}from'./overlay.js'
 import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
 import{tosGate}from'./legal.js'
@@ -25,6 +26,7 @@ const root=document.getElementById('app')
 let cleanup=null
 let booted=false
 let routeGen=0
+let lastPath=null
 
 async function boot(){
 applyCachedLook()
@@ -88,6 +90,9 @@ const r=parse()
 cleanup?.();cleanup=null
 closeChat()
 closeDrawers()
+if(r.name!=='pars'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
+const closeOv=()=>go(lastPath||'/')
+const needBack=async()=>{if(lastPath===null){lastPath='/';await renderHome('overview')}}
 if(r.name==='invite'){
 history.replaceState(null,'','/')
 S.nav={kind:'home',page:'overview'}
@@ -104,20 +109,22 @@ document.title='Discover • Parley'
 return
 }
 if(r.name==='pars'){
+await needBack()
 S.nav={kind:'pars'}
 syncChrome()
 const pg=h('div',{class:'par-page'})
 parsPage(pg)
-layoutMain(topBar({lead:parIcon(18),title:'Pars shop',topic:'Earn Pars by using Parley. Spend them here.'}),h('div',{style:{flex:'1',minHeight:0,overflowY:'auto',padding:'16px'}},pg))
+showOverlay('pars','Pars shop',parIcon(20),pg,closeOv)
 document.title='Pars shop • Parley'
 return
 }
 if(r.name==='settings'&&r.page==='pars'){go('/pars',true);return}
 if(r.name==='settings'){
+await needBack()
 S.nav={kind:'settings'}
 syncChrome()
 const p=settingsPage(r,topBar,icon)
-layoutMain(...p.nodes)
+showOverlay('settings','Settings',icon('sliders'),p.nodes[1],closeOv)
 document.title=p.title
 return
 }

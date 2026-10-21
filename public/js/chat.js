@@ -269,7 +269,7 @@ function buildMsg(m,cont){
 const me=S.me
 const own=m.author.id===me.id
 const ctx={urls:[],onMention:n=>emit('ui:mention',n),who:whoIs}
-const el=h('div',{class:'m'+(cont?' cont':'')+(m.pending?' sending':'')+(m.failed?' failed':''),tabindex:'-1',role:'article','aria-label':`${m.author.display_name}, ${fmtStamp(m.created_at)}`,on:{
+const el=h('div',{class:'m'+(m.author.bubble?' '+m.author.bubble:'')+(cont?' cont':'')+(m.pending?' sending':'')+(m.failed?' failed':''),tabindex:'-1',role:'article','aria-label':`${m.author.display_name}, ${fmtStamp(m.created_at)}`,on:{
 contextmenu:e=>{if(e.target.closest('a,img,video,audio'))return;e.preventDefault();msgMenu(m,e.clientX,e.clientY)},
 click:e=>{if(matchMedia('(max-width:820px)').matches&&!e.target.closest('a,button,img,video,audio,.sp'))el.classList.toggle('tap')}
 }})
@@ -283,7 +283,8 @@ main.append(r.deleted?h('div',{class:'rp'},icon('reply','s'),'Original message w
 if(!cont){
 const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click:e=>openProfile(e,m.author)}},m.author.namefx?h('span',{class:'nf '+m.author.namefx},m.author.display_name):m.author.display_name)
 const bdg=m.author.badge?h('span',{class:'bdg-i '+m.author.badge,title:'Badge'}):null
-main.append(h('div',{class:'mh'},nm,bdg,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
+const ttl=m.author.title?h('span',{class:'ttl '+m.author.title}):null
+main.append(h('div',{class:'mh'},nm,bdg,ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
