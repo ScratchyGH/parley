@@ -401,11 +401,12 @@ draw()
 
 async function appsPage(pg){
 mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These wrappers open the same site in their own window, so you always get the latest version.'),h('div',{class:'hint'},'Checking for downloads'))
-let d={windows:null,android:null}
+let d={windows:null,linux:null,android:null}
 try{d=await GET('/api/app/downloads')}catch{}
 const dl=(label,sub,x,ext)=>h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,label),h('div',{class:'hint'},sub),x?h('a',{class:'btn pri',href:x.url,rel:'noopener',download:''},'Download '+ext+' ('+(x.size/1048576).toFixed(0)+' MB)'):h('div',{class:'hint'},'Not published yet. The build runs from the repository Actions tab (Build apps), and the file appears here once it finishes.'))
-mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These wrappers open the same site in their own window, so you always get the latest version.'),
+mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These apps open the same site in their own window, so the site is always current. The Windows and Linux apps also update themselves in the background; Android updates when you install a newer file.'),
 dl('Windows','Installer for Windows 10 and 11. Windows may warn that the app is unsigned.',d.windows,'.exe'),
+dl('Linux','AppImage for most 64-bit distributions. Make it executable (chmod +x) and run it. It updates itself.',d.linux,'.AppImage'),
 dl('Android','Debug-signed package for sideloading. Allow installs from your browser or file manager, then open the file.',d.android,'.apk'),
 h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'Install from your browser'),h('div',{class:'hint'},'Chrome, Edge and most Android browsers offer Install app in the address bar or menu. Safari: Share, then Add to Home Screen.')))
 }

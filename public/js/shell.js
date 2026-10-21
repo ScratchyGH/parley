@@ -1,6 +1,7 @@
 import{categoryMenu}from'./catmenu.js'
 import{parIcon}from'./pars.js'
 import{expTag}from'./exp.js'
+import{communityDialog}from'./xlabs.js'
 import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
 import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
 import{go}from'./nav.js'
@@ -92,6 +93,7 @@ const s=S.servers.find(x=>x.id===sid)
 const items=[]
 if(d){
 if(can(sid,P.CREATE_INVITE))items.push({icon:'useradd',label:'Invite people',fn:()=>inviteDialog(sid)})
+if(d.server.experimental)items.push({icon:'star',label:'Community tools',fn:()=>communityDialog(sid)})
 if(can(sid,P.MANAGE_SERVER|P.MANAGE_ROLES|P.MANAGE_CHANNELS|P.MODERATE|P.BAN|P.KICK)||d.me.owner)items.push({icon:'sliders',label:'Server settings',fn:()=>openServerSettings(sid)})
 if(can(sid,P.MANAGE_CHANNELS)){items.push({icon:'plus',label:'Create channel',fn:()=>channelDialog(sid)},{icon:'plus',label:'Create category',fn:()=>categoryDialog(sid)})}
 items.push('-')

@@ -1,6 +1,5 @@
 import{h,mount,POST,dialog}from'./util.js'
 import{S}from'./state.js'
-import{parIcon}from'./pars.js'
 import{VERSION,RELEASES}from'./changelog.js'
 export{VERSION}
 const TAG={New:'ok',Fixes:'warn'}
@@ -17,7 +16,7 @@ main.scrollTop=0
 }
 const i0=i=>i===0?h('span',{class:'wn-latest'},'Latest'):null
 draw()
-return h('div',{class:'wn'},h('div',{class:'wn-brand'},h('div',{class:'wn-badge'},parIcon(26)),h('div',null,h('b',null,'Parley Updated!'),h('small',null,'Release notes'))),rail,main)
+return h('div',{class:'wn'},h('div',{class:'wn-brand'},h('div',{class:'wn-badge'},h('img',{src:'/logo-192.png',alt:'',width:38,height:38})),h('div',null,h('b',null,'Parley Updated!'),h('small',null,'Release notes'))),rail,main)
 }
 export function updatesBoard(){
 dialog('Parley Updated!',viewer(0),{cls:'wn-dlg',bare:true,footer:c=>[h('button',{class:'btn pri',on:{click:c}},'Close')]})

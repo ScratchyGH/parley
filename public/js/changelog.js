@@ -1,5 +1,33 @@
-export const VERSION='2026.10.25'
+export const VERSION='2026.10.26'
 export const RELEASES=[
+{v:'2026.10.26',date:'October 21, 2026',title:'Bundles, new cosmetics and server labs',summary:'Cosmetic bundles, redesigned frames, new name styles and badges, a new Parley mascot and eleven experimental server features.',sections:[
+['Pars shop',[
+['Bundles','Void, Eyes Of God, Devils Demise, Bloxtime, Sakura Dream, Frostbite and Royal Court. Some pieces are only sold in a bundle.'],
+['Timed vanity links','Bundles that include a vanity link give you one month of it. The link stops working when the month ends.'],
+['Name styles and badges','Animated name colors and small badges next to your name, both new shop categories.'],
+['New nameplates','Void, Gods Descendent and Bloxtime.']
+]],
+['Appearance',[
+['Redrawn avatar frames','Every frame was redrawn as vector art that sits around your picture and scales with it, including the Angel Halo and Evil Embodiment frames.'],
+['Avatars fit effects','Frames and effects now line up with the avatar at every size, and pictures no longer have a colored circle behind them.'],
+['New Parley mascot','Redrawn mascot used for the app logo, notifications and the install icon.'],
+['What\'s new fixed','The update board uses the full dialog width again instead of a narrow column.']
+]],
+['Experimental server features',[
+['Starboard','Reposts messages that collect enough star reactions into a showcase channel.'],
+['Levels and leaderboard','XP for chatting, levels, a server leaderboard and roles awarded at chosen levels.'],
+['Reaction roles','Pick up or drop a role by reacting to a message.'],
+['Giveaways','Timed giveaways with random winners, early end and reroll.'],
+['Counting channel','Members count upward together; mistakes and double turns are rejected.'],
+['Question of the day','A queue of questions posted once a day at the hour you choose.'],
+['Anonymous confessions','Members post through a bot. Moderators can see the sender and block people.'],
+['Birthdays','Members add their birthday and get a shout-out on the day (UTC).'],
+['Suggestions','Members submit ideas with vote reactions and moderators approve or decline them.'],
+['Sticky messages','Keep a message at the bottom of a channel.'],
+['Event reminders','Pings people who RSVPed 15 minutes before an event starts.'],
+['Availability','These run only in servers that accepted the Experimental Servers Program. Owners and managers set them up under Server labs, and members use them from Community tools in the server menu.']
+]]
+]},
 {v:'2026.10.25',date:'October 21, 2026',title:'The complete update',summary:'Everything released today, in one place: richer messages, themes that persist, a rebuilt composer, bot workspaces, server plugins, backups, group call tools, signed webhooks, new Pars cosmetics and updated legal documents.',sections:[
 ['Messaging',[
 ['Richer message syntax','Headings, underline, highlight, superscript, subscript, task lists, tables, dividers, small text, multi-line quotes and timestamps that display in each reader\'s own timezone.'],

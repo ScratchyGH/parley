@@ -215,9 +215,11 @@ return el
 }
 export function avatar(u,size,status){
 const el=h('div',{class:'av '+(size||'')+(u?.frame?' '+u.frame:'')+(u?.effect?' ef '+u.effect:''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
+if(u?.frame)el.append(h('i',{class:'frm','aria-hidden':'true'}))
 if(u?.avatar_id||u?.icon_id){
 const img=h('img',{src:fileUrl(u.avatar_id||u.icon_id),alt:'',loading:'lazy',decoding:'async'})
-img.onerror=()=>{img.remove();el.prepend(initials(u.display_name||u.name))}
+img.onerror=()=>{img.remove();el.classList.remove('has-img');el.prepend(initials(u.display_name||u.name))}
+el.classList.add('has-img')
 el.append(img)
 }else el.append(initials(u?.display_name||u?.name))
 if(status)el.append(h('span',{class:'st '+status}))

@@ -23,12 +23,16 @@ setTimeout(()=>POST('/api/pars/beat',{i:0,v:true}).catch(()=>{}),1500)
 on('pars.gift',d=>toast((d.from||'Someone')+' sent you '+d.amount+' Pars'))
 }
 export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('circle',{cx:'12',cy:'12',r:'10',fill:'#f5c542'}),sv('circle',{cx:'12',cy:'12',r:'7',fill:'none',stroke:'#92400e','stroke-width':'1.6'}),sv('path',{d:'M10 16V8h3a2.2 2.2 0 0 1 0 4.4h-3',fill:'none',stroke:'#92400e','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round'}))
-const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['nameplate','Nameplates'],['frame','Avatar frames'],['effect','Avatar effects']]
+const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['nameplate','Nameplates'],['frame','Avatar frames'],['effect','Avatar effects'],['namefx','Name styles'],['badge','Badges']]
+const EQ=['nameplate','frame','effect','namefx','badge']
+const bundleData=it=>{try{return JSON.parse(it.data||'{}')}catch{return{}}}
 const owns=(d,id,sid)=>d.owned.some(o=>o.item_id===id&&(sid===undefined||o.server_id===sid))
 function swatch(it){
 if(it.kind==='nameplate')return h('div',{class:'np par-np '+it.id},S.me.display_name)
 if(it.kind==='frame')return h('div',{class:'par-av'},avatar({...S.me,frame:it.id,effect:null},'lg'))
 if(it.kind==='effect')return h('div',{class:'par-av'},avatar({...S.me,effect:it.id,frame:null},'lg'))
+if(it.kind==='namefx')return h('div',{class:'par-np'},h('b',null,h('span',{class:'nf '+it.id},S.me.display_name)))
+if(it.kind==='badge')return h('div',{class:'par-np'},h('b',null,S.me.display_name,h('span',{class:'bdg-i '+it.id})))
 return null
 }
 export function parsPage(pg){
@@ -42,6 +46,8 @@ S.me.pars=d.balance
 S.me.nameplate=d.nameplate
 S.me.frame=d.frame
 S.me.effect=d.effect
+S.me.namefx=d.namefx
+S.me.badge=d.badge
 draw(d)
 }catch(e){mount(box,h('div',{class:'hint'},e.message))}
 }
@@ -49,8 +55,9 @@ function draw(d){
 const hrs=(d.today_ms/3600000).toFixed(1)
 mount(box,
 h('div',{class:'par-hero'},parIcon(34),h('div',null,h('div',{class:'par-bal'},String(d.balance)),h('div',{class:'hint',style:{margin:0}},'Earn '+d.rate+' Pars for every hour you actively use Parley. Today: '+hrs+' of '+d.daily_cap_hours+' hours counted. '+d.notice))),
+bundles(d),
 ...KINDS.map(([k,l])=>{
-const list=d.items.filter(i=>i.kind===k)
+const list=d.items.filter(i=>i.kind===k&&!i.hidden)
 if(!list.length)return null
 return h('section',{class:'par-sec'},h('h3',null,l),h('div',{class:'par-grid'},list.map(it=>card(d,it))))
 }),
@@ -59,14 +66,31 @@ h('section',{class:'par-sec'},h('h3',null,'Your upgrades'),own(d)),
 h('section',{class:'par-sec'},h('h3',null,'History'),hist(d)))
 }
 function card(d,it){
-const have=['nameplate','frame','effect'].includes(it.kind)&&owns(d,it.id)
+const have=EQ.includes(it.kind)&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 return h('div',{class:'par-card'},swatch(it),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'row sp'},h('span',{class:'par-price'},parIcon(14),' '+it.price),have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:d.balance<it.price,title:d.balance<it.price?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy')))
+}
+function bundlePreview(d,it){
+const ids=bundleData(it).items||[]
+const by=k=>d.items.find(i=>ids.includes(i.id)&&i.kind===k)?.id||null
+const np=by('nameplate'),fr=by('frame'),ef=by('effect'),nf=by('namefx'),bd=by('badge')
+const name=nf?h('span',{class:'nf '+nf},S.me.display_name):S.me.display_name
+return h('div',{class:'pb-prev'},h('div',{class:'par-av'},avatar({...S.me,frame:fr,effect:ef},'lg')),h('b',{class:np?'np '+np:null,style:{padding:'4px 12px'}},name,bd?h('span',{class:'bdg-i '+bd}):null))
+}
+function bundles(d){
+const list=d.items.filter(i=>i.kind==='bundle'&&!i.hidden)
+if(!list.length)return null
+return h('section',{class:'par-sec'},h('h3',null,'Bundles'),h('div',{class:'par-grid'},list.map(it=>{
+const bd=bundleData(it),names=(bd.items||[]).map(id=>(d.items.find(i=>i.id===id)||{name:id}).name)
+if(bd.vanity_days)names.push('Vanity link for '+bd.vanity_days+' days')
+const all=(bd.items||[]).every(id=>owns(d,id))&&!bd.vanity_days
+return h('div',{class:'par-bundle'},bundlePreview(d,it),h('div',{class:'pb-info'},h('b',{style:{fontSize:'17px'}},it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pb-list'},names.map(n=>h('span',null,n)))),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(14),' '+it.price),h('button',{class:'btn pri',disabled:all||d.balance<it.price,title:all?'You already own everything in this bundle':d.balance<it.price?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},all?'Owned':'Buy bundle')))
+})))
 }
 function own(d){
 if(!d.owned.length)return h('div',{class:'hint'},'Nothing yet.')
 const name=id=>(d.items.find(i=>i.id===id)||{name:id}).name
-return h('div',null,h('div',{class:'hint'},'Account upload boost: +'+d.account_boost_mb+' MB.'),d.owned.map(o=>h('div',{class:'row sp',style:{padding:'6px 0',borderBottom:'1px solid var(--border)'}},h('span',null,name(o.item_id)+(o.server_name?' on '+o.server_name:'')+(o.gift_from?' (gift)':'')),h('span',{class:'hint',style:{margin:0}},fmtRel(o.created_at)))))
+return h('div',null,h('div',{class:'hint'},'Account upload boost: +'+d.account_boost_mb+' MB.'),d.owned.map(o=>h('div',{class:'row sp',style:{padding:'6px 0',borderBottom:'1px solid var(--border)'}},h('span',null,name(o.item_id)+(o.server_name?' on '+o.server_name:'')+(o.gift_from&&!String(o.gift_from).startsWith('bundle:')?' (gift)':'')+(o.expires_at?' until '+new Date(o.expires_at).toLocaleDateString():'')),h('span',{class:'hint',style:{margin:0}},fmtRel(o.created_at)))))
 }
 function hist(d){
 if(!d.tx.length)return h('div',{class:'hint'},'No activity yet.')
@@ -83,7 +107,8 @@ try{await POST('/api/pars/gift',{to:to.value,amount:Number(amt.value),note:nt.va
 return h('section',{class:'par-sec'},h('h3',null,'Gift Pars'),h('div',{class:'hint'},'Send Pars to another person. Gifts are final and limited per day. Pars have no cash value.'),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},to,amt,nt,go))
 }
 async function buy(d,it){
-let mode=it.kind==='vanity'?'server':it.kind==='boost'?'server':'self'
+const bv=it.kind==='bundle'&&bundleData(it).vanity_days
+let mode=it.kind==='vanity'||bv?'server':it.kind==='boost'?'server':'self'
 const servers=S.servers
 const sel=h('select',{class:'sel'},servers.map(s=>h('option',{value:s.id},s.name)))
 const who=h('input',{class:'inp',placeholder:'Username to gift to',maxLength:24})
@@ -91,12 +116,12 @@ const where=h('div',null)
 const modes=it.kind==='boost'?[['server','A server I am in'],['self','My account'],['user','Gift to someone']]:[]
 const drawW=()=>mount(where,modes.length?h('div',{class:'tabs',style:{marginBottom:'8px'}},modes.map(([k,l])=>h('button',{class:mode===k?'on':'',on:{click:()=>{mode=k;drawW()}}},l))):null,mode==='server'?field('Server',sel):null,mode==='user'?field('Person',who):null)
 drawW()
-const dlg=dialog('Confirm purchase',h('div',{class:'bd'},h('p',null,h('b',null,it.name),' for ',h('b',null,it.price+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-it.price)+'.'),h('p',{class:'hint'},it.kind==='vanity'?'Belongs to the server. Anyone with Manage Server can use it.':it.kind==='boost'?'Belongs to the target you pick: a server, your account, or the person you gift it to. It cannot be refunded.':'Belongs to your account.'),where),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async e=>{
+const dlg=dialog('Confirm purchase',h('div',{class:'bd'},h('p',null,h('b',null,it.name),' for ',h('b',null,it.price+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-it.price)+'.'),h('p',{class:'hint'},bv?'The vanity link is added to the server you pick for '+bv+' days. Items you already own are not charged again, but the bundle price stays the same.':it.kind==='vanity'?'Belongs to the server. Anyone with Manage Server can use it.':it.kind==='boost'?'Belongs to the target you pick: a server, your account, or the person you gift it to. It cannot be refunded.':'Belongs to your account.'),where),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async e=>{
 e.target.disabled=true
 try{
 const b={item:it.id,req:rid()}
 if(it.kind==='boost')b.target=mode
-if(mode==='server')b.server_id=sel.value
+if(mode==='server'||bv)b.server_id=sel.value
 if(mode==='user')b.user=who.value
 await POST('/api/pars/buy',b)
 toast('Purchased '+it.name)

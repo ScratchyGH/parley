@@ -1,3 +1,4 @@
+import{labsPage}from'./xlabs.js'
 import{programPage}from'./exp.js'
 import{h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers,applyThemeObj,applyServerTheme}from'./state.js'
@@ -88,6 +89,7 @@ if(can(sid,P.BAN))pages.push(['appeals','Ban appeals'])
 if(can(sid,P.MODERATE))pages.push(['cases','Mod cases'])
 if(can(sid,P.MODERATE))pages.push(['reports','Reports'])
 if(can(sid,P.MODERATE|P.MANAGE_SERVER|P.BAN|P.KICK))pages.push(['log','Audit log'])
+if(can(sid,P.MANAGE_SERVER)&&d0.server.experimental)pages.push(['labs','Server labs'])
 if(d0.me.owner)pages.push(['program','Experimental program'])
 if(d0.me.owner)pages.push(['danger','Ownership and deletion'])
 let cur=pages.some(x=>x[0]===page)?page:pages[0][0]
@@ -98,7 +100,7 @@ function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/s/'+sid+'/settings/'+k)}},l)),
 h('button',{on:{click:()=>go('/s/'+sid)}},'Back to server'))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,plugins,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage}[cur]
+const fn={overview,channels,roles,emoji,stickers,automod,hooks,plugins,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage,labs:labsPage}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
