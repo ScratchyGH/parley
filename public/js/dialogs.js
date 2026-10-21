@@ -276,13 +276,15 @@ popup(el,Math.min(x,innerWidth-400),Math.min(y,innerHeight-460),'')
 export function reportDialog({type,id}){
 const err=errBox()
 const reason=h('textarea',{class:'inp',rows:4,maxLength:1000,required:true,autofocus:true,placeholder:'What is wrong? Moderators will see this together with the reported content.'})
+const kind=h('select',{class:'sel'},h('option',{value:''},'Breaks the rules'),h('option',{value:'csam'},'Child sexual abuse material'),h('option',{value:'illegal'},'Other illegal content'),h('option',{value:'threat'},'Threat of violence'))
 const btn=h('button',{class:'btn pri',type:'submit'},'Submit report')
 const d=dialog('Report '+type,h('div',{class:'bd'},h('form',{on:{submit:submitter(btn,err,async()=>{
 if(reason.value.trim().length<5)throw new Error('Please describe the problem (at least 5 characters)')
-await POST('/api/reports',{type,id,reason:reason.value.trim()})
+if(kind.value)await POST('/api/content-reports',{category:kind.value,type,id,details:reason.value.trim()})
+else await POST('/api/reports',{type,id,reason:reason.value.trim()})
 d.close()
 toast('Report sent to the moderators','ok')
-})}},field('Reason',reason),err,h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'12px'}},btn))),{})
+})}},field('What kind of problem?',kind),field('Details',reason),h('div',{class:'hint'},'Illegal content reports go to the top of the moderator queue. Do not re-share the content.'),err,h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'12px'}},btn))),{})
 }
 
 export function shortcutsDialog(){

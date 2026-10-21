@@ -66,11 +66,29 @@ try{await POST(`/api/admin/users/${u.id}/suspend`,{suspended:true,reason:why.val
 }}},'Suspend')]})
 }
 
+async function contentReports(){
+const box=h('div')
+try{
+const d=await GET('/api/admin/content-reports')
+const bh=await GET('/api/admin/blocked-hashes')
+const hv=h('input',{class:'inp',placeholder:'SHA-256 to block (64 hex characters)',maxLength:64})
+mount(box,h('h3',null,'Illegal content reports'),h('p',{class:'hint'},'Acting removes the message and attachments, blocks the file hashes from being uploaded again, and can suspend the author with a device ban. Parley does not file reports with authorities for you: for child sexual abuse material, report it to the NCMEC CyberTipline (US) or your local hotline yourself.'),
+h('div',{class:'list'},d.reports.length?d.reports.map(r=>{
+const note=h('input',{class:'inp',placeholder:'Note for the record',maxLength:300})
+const sus=h('input',{type:'checkbox',checked:r.category==='csam'})
+const go=async a=>{try{await POST('/api/admin/content-reports/'+r.id,{action:a,note:note.value,suspend:sus.checked});contentReports().then(n=>mount(box,...n.childNodes))}catch(e){fail(e)}}
+return h('div',{class:'li',style:{alignItems:'flex-start',flexDirection:'column',gap:'6px'}},h('b',null,(r.category==='csam'?'Child safety':r.category==='threat'?'Threat':'Illegal content')+' · '+r.target_type+' · by @'+r.reporter),r.excerpt?h('div',{class:'hint',style:{margin:0}},'Text: '+r.excerpt):null,h('div',null,r.details),h('small',null,r.target_id+' · '+fmtStamp(r.created_at)),note,h('label',{class:'perm'},sus,h('span',null,'Suspend the author and ban their devices')),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn sm dng',on:{click:()=>go('act')}},'Remove and act'),h('button',{class:'btn sm',on:{click:()=>go('dismiss')}},'Dismiss')))
+}):h('div',{class:'hint'},'No open reports')),
+h('h4',null,'Blocked file hashes ('+bh.hashes.length+')'),h('div',{class:'row',style:{gap:'8px'}},hv,h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/blocked-hashes',{hash:hv.value,reason:'manual'});toast('Added','ok');hv.value=''}catch(e){fail(e)}}}},'Block')),
+h('p',{class:'hint'},'Uploads are checked against this list when the upload carries a SHA-256 checksum or storage returns one. This is an exact-match list, not image matching.'))
+}catch(e){mount(box,h('div',{class:'err'},e.message))}
+return box
+}
 async function reports(pg){
 mount(pg,h('h3',null,'Reports'),h('div',{class:'hint'},'Loading…'))
 try{
 const d=await GET('/api/admin/reports')
-mount(pg,h('h3',null,'Open reports'),h('div',{class:'list'},d.reports.length?d.reports.map(r=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${r.target_type} · reported by @${r.reporter}`),h('div',null,r.reason),h('small',null,`${r.target_id}${r.server_id?' in '+r.server_id:''} · ${fmtStamp(r.created_at)}`)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id,{});reports(pg)}catch(e){fail(e)}}}},'Resolve'),(()=>{const uid=r.target_type==='user'?r.target_id:r.msg_author;return uid&&uid!==S.me.id?h('button',{class:'btn sm dng',on:{click:()=>suspendDialog({id:uid,username:r.target_type==='user'?'user':'message author'},()=>reports(pg))}},'Suspend…'):null})())):h('div',{class:'hint'},'No open reports')))
+mount(pg,await contentReports(),h('h3',null,'Open reports'),h('div',{class:'list'},d.reports.length?d.reports.map(r=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${r.target_type} · reported by @${r.reporter}`),h('div',null,r.reason),h('small',null,`${r.target_id}${r.server_id?' in '+r.server_id:''} · ${fmtStamp(r.created_at)}`)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id,{});reports(pg)}catch(e){fail(e)}}}},'Resolve'),(()=>{const uid=r.target_type==='user'?r.target_id:r.msg_author;return uid&&uid!==S.me.id?h('button',{class:'btn sm dng',on:{click:()=>suspendDialog({id:uid,username:r.target_type==='user'?'user':'message author'},()=>reports(pg))}},'Suspend…'):null})())):h('div',{class:'hint'},'No open reports')))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
 }
 async function appeals(pg){

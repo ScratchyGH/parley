@@ -214,7 +214,7 @@ else if(grad)el.style.backgroundImage=bg
 return el
 }
 export function avatar(u,size,status){
-const el=h('div',{class:'av '+(size||'')+(u?.frame?' '+u.frame:''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
+const el=h('div',{class:'av '+(size||'')+(u?.frame?' '+u.frame:'')+(u?.effect?' ef '+u.effect:''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
 if(u?.avatar_id||u?.icon_id){
 const img=h('img',{src:fileUrl(u.avatar_id||u.icon_id),alt:'',loading:'lazy',decoding:'async'})
 img.onerror=()=>{img.remove();el.prepend(initials(u.display_name||u.name))}

@@ -1,3 +1,5 @@
+import{categoryMenu}from'./catmenu.js'
+import{parIcon}from'./pars.js'
 import{expTag}from'./exp.js'
 import{h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
 import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
@@ -202,7 +204,7 @@ const list=byCat[cat.id]||[]
 if(!list.length&&!can(sid,P.MANAGE_CHANNELS))continue
 const key=sid+':'+cat.id
 const open=!collapsed.has(key)
-kids.push(dg(h('div',{class:'cat',style:{padding:0}},h('button',{class:'catbtn','aria-expanded':String(open),on:{click:()=>{if(open)collapsed.add(key);else collapsed.delete(key);renderCtx()}}},icon(open?'down':'right','s'),h('span',null,cat.name)),
+kids.push(dg(h('div',{class:'cat',style:{padding:0},on:{contextmenu:e=>{if(can(sid,P.MANAGE_CHANNELS))ctxMenu(e,categoryMenu(sid,cat))}}},h('button',{class:'catbtn','aria-expanded':String(open),on:{click:()=>{if(open)collapsed.add(key);else collapsed.delete(key);renderCtx()}}},icon(open?'down':'right','s'),h('span',null,cat.name)),
 can(sid,P.MANAGE_CHANNELS)?h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'Create channel in '+cat.name,'aria-label':'Create channel in '+cat.name,on:{click:()=>channelDialog(sid,cat.id)}},icon('plus','s')):null),sid,'cat',cat.id))
 if(open)for(const c of list)kids.push(dg(chanItem(sid,c),sid,'ch',c.id))
 else for(const c of list)if(unreadOf(c.id)||V.ch===c.id||S.nav.room===c.id)kids.push(dg(chanItem(sid,c),sid,'ch',c.id))
@@ -238,6 +240,7 @@ const kids=[
 h('button',{class:'qs',on:{click:()=>quickSwitcher()}},icon('search','s'),h('span',{class:'qt'},'Find a conversation'),h('span',{class:'kbd'},'Ctrl K')),
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page==='overview'?' on':''),on:{click:()=>{go('/');closeDrawers()}}},icon('chat'),h('span',{class:'nm'},'Home')),
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page!=='overview'?' on':''),on:{click:()=>{go('/friends');closeDrawers()}}},icon('users'),h('span',{class:'nm'},'Friends'),inc?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},inc):null),
+h('button',{class:'ci'+(S.nav.kind==='pars'?' on':''),on:{click:()=>{go('/pars');closeDrawers()}}},parIcon(18),h('span',{class:'nm'},'Pars shop'),S.me?.pars?h('span',{class:'par-chip'},String(S.me.pars)):null),
 h('button',{class:'ci',on:{click:()=>emit('ui:panel',{kind:'saved'})}},icon('bookmark'),h('span',{class:'nm'},'Saved messages')),
 h('div',{class:'cat'},h('span',null,'Direct messages'),h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'New message','aria-label':'New message',on:{click:()=>newDmDialog()}},icon('plus','s')))
 ]
@@ -298,7 +301,7 @@ if(bid){sbtn.classList.add('hasb');coverBg(sbtn,bid,'linear-gradient(180deg,tran
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{
-head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='settings'?'Settings':'Home'))
+head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='settings'?'Settings':k==='pars'?'Pars shop':'Home'))
 body=homeBody()
 }
 mount(el.ctx,head,body,userPanel())

@@ -1,4 +1,4 @@
-import{h,mount,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel}from'./util.js'
+import{h,mount,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel,avatar}from'./util.js'
 import{S,on}from'./state.js'
 import{sv,svg}from'./svg.js'
 
@@ -23,17 +23,17 @@ setTimeout(()=>POST('/api/pars/beat',{i:0,v:true}).catch(()=>{}),1500)
 on('pars.gift',d=>toast((d.from||'Someone')+' sent you '+d.amount+' Pars'))
 }
 export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('circle',{cx:'12',cy:'12',r:'10',fill:'#f5c542'}),sv('circle',{cx:'12',cy:'12',r:'7',fill:'none',stroke:'#92400e','stroke-width':'1.6'}),sv('path',{d:'M10 16V8h3a2.2 2.2 0 0 1 0 4.4h-3',fill:'none',stroke:'#92400e','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round'}))
-const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['nameplate','Nameplates'],['frame','Avatar frames']]
+const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['nameplate','Nameplates'],['frame','Avatar frames'],['effect','Avatar effects']]
 const owns=(d,id,sid)=>d.owned.some(o=>o.item_id===id&&(sid===undefined||o.server_id===sid))
 function swatch(it){
-const c=String(it.data||'').split(',')
-if(it.kind==='nameplate')return h('div',{class:'par-np',style:{background:`linear-gradient(90deg,${c[0]},${c[1]||c[0]})`}},S.me.display_name)
-if(it.kind==='frame')return h('div',{class:'par-fr',style:{boxShadow:`0 0 0 3px ${c[0]}`}})
+if(it.kind==='nameplate')return h('div',{class:'np par-np '+it.id},S.me.display_name)
+if(it.kind==='frame')return h('div',{class:'par-av'},avatar({...S.me,frame:it.id,effect:null},'lg'))
+if(it.kind==='effect')return h('div',{class:'par-av'},avatar({...S.me,effect:it.id,frame:null},'lg'))
 return null
 }
 export function parsPage(pg){
 const box=h('div',null,h('div',{class:'hint'},'Loading'))
-mount(pg,h('h2',null,'Pars'),box)
+mount(pg,h('h2',{class:'par-title'},'Pars shop'),box)
 load()
 async function load(){
 try{
@@ -41,6 +41,7 @@ const d=await GET('/api/pars')
 S.me.pars=d.balance
 S.me.nameplate=d.nameplate
 S.me.frame=d.frame
+S.me.effect=d.effect
 draw(d)
 }catch(e){mount(box,h('div',{class:'hint'},e.message))}
 }
@@ -58,7 +59,7 @@ h('section',{class:'par-sec'},h('h3',null,'Your upgrades'),own(d)),
 h('section',{class:'par-sec'},h('h3',null,'History'),hist(d)))
 }
 function card(d,it){
-const have=(it.kind==='nameplate'||it.kind==='frame')&&owns(d,it.id)
+const have=['nameplate','frame','effect'].includes(it.kind)&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 return h('div',{class:'par-card'},swatch(it),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'row sp'},h('span',{class:'par-price'},parIcon(14),' '+it.price),have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:d.balance<it.price,title:d.balance<it.price?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy')))
 }

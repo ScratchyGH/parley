@@ -37,8 +37,15 @@ const sha=f.size<=67108864?await sha256Fast(f):await sha256Blob(f,x=>stage('Chec
 if(aborted)throw Object.assign(new Error('Upload cancelled'),{cancelled:true})
 stage('Uploading')
 if(f.size<=SIMPLE_MAX){
+let d
+for(let t=0;;t++){
 inner=upload(f,{kind:'attachment',room:params.room},x=>onProgress&&onProgress(x),{'x-sha256':sha})
-const d=await inner
+try{d=await inner;break}catch(e){
+if(aborted||e.cancelled||(e.status&&e.status<500)||t>=2)throw e
+stage('Retrying ('+(t+2)+' of 3)')
+await new Promise(r=>setTimeout(r,1200*(t+1)))
+}
+}
 return{...d,sha256:sha,optimized:f!==file,file:f}
 }
 const init=await POST('/api/upload/init',{kind:'attachment',room:params.room,name:f.name,size:f.size,sha256:sha})

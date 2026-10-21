@@ -1,3 +1,4 @@
+import{privacyDialog,termsDialog}from'./legal.js'
 import{h,mount,icon,GET,POST,PATCH,DEL,avatar,heroBox,toast,fail,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel}from'./util.js'
 import{gifPicker,importGif}from'./gifs.js'
 import{historyBox}from'./imghist.js'
@@ -18,7 +19,7 @@ import{parsPage}from'./pars.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
-['account','My account'],['profile','Profile'],['pars','Pars'],['appearance','Appearance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
+['account','My account'],['profile','Profile'],['appearance','Appearance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
 ]
 
 async function saveSettings(patch){
@@ -252,6 +253,7 @@ h('input',{type:'color','aria-label':'Accent colour',value:setting('ui_color',''
 h('input',{type:'color','aria-label':'Background colour',value:setting('ui_bg','')||'#212829',on:{change:async e=>{try{await saveSettings({ui_bg:e.target.value})}catch(x){fail(x)}}}}),h('span',{class:'hint',style:{margin:0}},'Background'),
 h('button',{class:'btn sm',on:{click:async()=>{try{await saveSettings({ui_color:'',ui_bg:''});appearance(pg)}catch(x){fail(x)}}}},'Reset')),'Applies to the dark themes only. Stored with your account.'),
 sw('reduced_motion',matchMedia('(prefers-reduced-motion: reduce)').matches,'Reduce motion','Turns off transitions and animations. Follows your system setting until you change it.'),
+sw('performance',false,'Performance mode','Turns off animations and avatar and nameplate effects, and pauses background work while the tab is hidden. Good for older computers and phones.'),
 sw('link_previews',true,'Link previews','Fetch a title and description for the first link in a message. Requests go through Parley, not directly from your browser.'),
 sw('send_ctrl_enter',false,'Send with Ctrl+Enter','Enter inserts a new line instead of sending.'))
 }
@@ -274,6 +276,8 @@ async function privacy(pg){
 if(!S.fr.blocked.length)await loadFriends().catch(()=>{})
 const sel=(key,opts,def)=>h('select',{class:'sel',style:{width:'auto'},on:{change:async e=>{try{await saveSettings({[key]:e.target.value})}catch(x){fail(x)}}}},opts.map(([v,l])=>h('option',{value:v,selected:setting(key,def)===v},l)))
 mount(pg,h('h3',null,'Privacy and safety'),
+h('div',{class:'row',style:{gap:'8px',marginBottom:'8px'}},h('button',{class:'btn sm',on:{click:privacyDialog}},'Privacy policy'),h('button',{class:'btn sm',on:{click:termsDialog}},'Terms of service')),
+sw('diagnostics',false,'Send crash reports','Off by default. When on, errors in the app are reported to the people running this site. No message text is included.'),
 row('Who can message you','Controls new direct messages from people who are not friends.',sel('dm_policy',[['everyone','Everyone (as a message request)'],['friends','Friends only'],['none','Nobody']],'everyone')),
 row('Adult content (18+)','Lets you join and see servers marked 18+ Only. This is a statement you make about yourself; Parley does not check ID.',toggle(!!S.me.adult_ok,async v=>{
 try{

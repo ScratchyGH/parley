@@ -193,7 +193,8 @@ root.style.setProperty('--sel','color-mix(in srgb,'+s.ui_bg+' 82%,#fff)')
 root.style.setProperty('--border','color-mix(in srgb,'+s.ui_bg+' 70%,#fff)')
 }else for(const k of['--bg','--side','--panel','--surf2','--sel','--border'])root.style.removeProperty(k)
 const rm=s.reduced_motion===undefined?matchMedia('(prefers-reduced-motion: reduce)').matches:s.reduced_motion
-root.classList.toggle('rm',!!rm)
+root.classList.toggle('rm',!!rm||!!s.performance)
+root.classList.toggle('perf',!!s.performance)
 const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
 }

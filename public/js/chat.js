@@ -1,3 +1,4 @@
+import{scheduleDialog}from'./schedule.js'
 import{h,mount,clear,icon,gtag,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey}from'./util.js'
 import{render,plain}from'./md.js'
 import{emojiPicker}from'./emoji.js'
@@ -316,6 +317,16 @@ el.append(bar)
 return el
 }
 
+function ytId(u){
+try{
+const x=new URL(u)
+const h=x.hostname.replace(/^www\./,'').replace(/^m\./,'')
+let id=''
+if(h==='youtu.be')id=x.pathname.slice(1)
+else if(h==='youtube.com'||h==='music.youtube.com')id=x.pathname==='/watch'?x.searchParams.get('v')||'':(x.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)||[])[1]||''
+return/^[A-Za-z0-9_-]{11}$/.test(id)?id:''
+}catch{return''}
+}
 function unfurlSlot(url){
 const slot=h('div',{class:'unf-slot'})
 const go=async()=>{
@@ -325,7 +336,8 @@ d=null
 unfurlCache.set(url,null)
 try{d=await GET('/api/unfurl?url='+encodeURIComponent(url));unfurlCache.set(url,d)}catch{}
 }
-if(d&&(d.title||d.description))slot.append(h('div',{class:'unf'},h('span',null,d.site||''),h('b',null,h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow'},d.title||url)),d.description?h('span',null,d.description.slice(0,200)):null))
+const yt=ytId(url)
+if(d&&(d.title||d.description))slot.append(h('div',{class:'unf'},yt?h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow',class:'unf-th'},h('img',{src:'/api/yt-thumb/'+yt,alt:'Video thumbnail',loading:'lazy',width:320,height:180}),h('span',{class:'unf-play','aria-hidden':'true'})):null,h('span',null,d.site||''),h('b',null,h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow'},d.title||url)),d.description?h('span',null,d.description.slice(0,200)):null))
 }
 if(unfurlCache.has(url)){const d=unfurlCache.get(url);if(d)go();return slot}
 unfurlObs||=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){unfurlObs.unobserve(e.target);e.target.__go()}},{rootMargin:'100px'})
@@ -472,6 +484,7 @@ tb('list','Code block',()=>wrapSel('```\n','\n```')),tb('quote','Quote',()=>inse
 h('div',{class:'crow'},
 perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'Attach files','aria-label':'Attach files',on:{click:()=>C.fileIn.click()}},icon('clip')):null,
 C.fileIn,C.ta,
+h('button',{type:'button',class:'ib',title:'Schedule message','aria-label':'Schedule message',on:{click:()=>scheduleDialog(C.room,C.ta.value,()=>{C.ta.value='';autoGrow()})}},icon('clock')),
 h('button',{type:'button',class:'ib',title:'Create poll','aria-label':'Create poll',on:{click:()=>pollDialog(C.room)}},icon('list')),
 h('button',{type:'button',class:'ib',title:'Stickers','aria-label':'Stickers',on:{click:()=>stickerDialog(C.room)}},icon('image')),
 perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'GIF','aria-label':'Send a GIF',on:{click:()=>openGif('')}},icon('gif')):null,

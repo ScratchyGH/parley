@@ -15,7 +15,8 @@ import{openSettings,settingsPage}from'./settings.js'
 import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
 import{startP2P}from'./p2p/index.js'
-import{startPars}from'./pars.js'
+import{startPars,parsPage,parIcon}from'./pars.js'
+import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
 import{checkOffer}from'./exp.js'
 
@@ -64,6 +65,7 @@ await Promise.all([loadServers(),loadConvs(),loadFriends(),loadUnread().catch(()
 setRouteHandler(route)
 await route()
 startPars()
+startDiag()
 setTimeout(whatsNew,1200)
 }
 
@@ -98,6 +100,16 @@ layoutMain(...p.nodes)
 document.title='Discover • Parley'
 return
 }
+if(r.name==='pars'){
+S.nav={kind:'pars'}
+syncChrome()
+const pg=h('div',{class:'par-page'})
+parsPage(pg)
+layoutMain(topBar({lead:parIcon(18),title:'Pars shop',topic:'Earn Pars by using Parley. Spend them here.'}),h('div',{style:{flex:'1',minHeight:0,overflowY:'auto',padding:'16px'}},pg))
+document.title='Pars shop • Parley'
+return
+}
+if(r.name==='settings'&&r.page==='pars'){go('/pars',true);return}
 if(r.name==='settings'){
 S.nav={kind:'settings'}
 syncChrome()
