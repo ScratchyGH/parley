@@ -1317,3 +1317,33 @@ h1,h2,h3,.dlg>header>span,.tour .tt{font-family:"Parli-Bold",var(--disp);font-we
 .m.cont.bb_spook{background-position:left top -40px,0 0,0 0}
 .m[class*="bb_"] .mh{gap:8px;flex-wrap:wrap}
 .m[class*="bb_"] .mh .np,.m[class*="bb_"] .mh [class*="bd_"]{margin:0}
+.par-page{max-width:1040px}
+.par-hero{position:relative;overflow:hidden;gap:18px;padding:22px 24px;border-radius:22px;border:1px solid color-mix(in srgb,var(--hi) 22%,var(--border));background:radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,#f5c542 18%,var(--surf2)),var(--surf2) 62%)}
+.par-hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,#f5c542 22%,transparent),transparent 70%);pointer-events:none}
+.par-hero .par-bal{font:700 40px "Parli-Bold",var(--disp);letter-spacing:.5px}
+.par-bar{height:8px;max-width:360px;background:color-mix(in srgb,var(--text) 12%,transparent)}
+.par-bar i{background:linear-gradient(90deg,#f5c542,#fde68a);box-shadow:0 0 10px rgba(245,197,66,.5)}
+.sh-nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:16px 0 0;padding:10px 2px;top:-18px;backdrop-filter:blur(10px);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-overflow-scrolling:touch}
+.sh-nav::-webkit-scrollbar{display:none}
+.sh-nav button{flex:0 0 auto;padding:8px 16px;font-size:13.5px;background:transparent;border-color:transparent;transition:background .15s,color .15s}
+.sh-nav button:hover{background:var(--surf2);border-color:transparent}
+.sh-nav button.on{background:var(--hi);color:var(--on-accent,#fff);border-color:transparent}
+.par-sec{margin-top:30px}
+.par-sec>h3{font:700 24px "Parli-Bold",var(--disp);margin:0 0 14px}
+.par-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.par-card{padding:14px;gap:8px;border-radius:18px;background:var(--surf2);border:1px solid var(--border);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+.par-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.28)}
+.par-card .pc-top{position:relative;min-height:132px;border-radius:14px;background:radial-gradient(90% 90% at 50% 30%,color-mix(in srgb,var(--text) 9%,var(--surf)),var(--surf));padding:10px;margin-bottom:4px}
+.par-card>b{font-size:15px;color:var(--strong)}
+.par-card .hint{font-size:13px;line-height:1.45}
+.par-card .pc-act{padding-top:8px;border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+.par-card .par-price{padding:4px 10px;border-radius:999px;background:color-mix(in srgb,#f5c542 16%,transparent);color:#f5c542;font-size:13px}
+.par-card .pc-flag{position:absolute;top:8px;left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--text) 14%,transparent);color:var(--strong)}
+.par-card.eq{border-color:var(--hi);box-shadow:0 0 0 1px var(--hi)}
+.par-card.eq .pc-flag{background:var(--hi);color:var(--on-accent,#fff)}
+.par-card .pc-act .btn{margin-left:auto}
+.ts{border-radius:24px;padding:22px}
+.bcard{border-radius:20px}
+.par-hist,.par-sec .row.sp{font-size:14px}
+@media (max-width:640px){.par-hero{padding:16px}.par-hero .par-bal{font-size:32px}.par-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.par-card{padding:10px}.par-card .pc-top{min-height:110px}.sh-nav{top:-10px}}
+@media (prefers-reduced-motion:reduce){.par-card{transition:none}.par-card:hover{transform:none}}
