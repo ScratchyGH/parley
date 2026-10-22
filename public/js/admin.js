@@ -249,8 +249,8 @@ w.append(
 h('p',null,'The full UI revamp goes live for everyone at '+new Date(REVAMP_AT).toLocaleString([], {dateStyle:'full',timeStyle:'long'})+' (midnight New Year, New York). Every open tab and app restarts with a short countdown.'),
 st,
 h('div',{class:'row'},
-h('button',{class:'btn pri',on:{click:()=>{previewToggle(true);upd()}}},'Preview revamp'),
+h('button',{class:'btn pri',on:{click:()=>{previewToggle(true);upd()}}},'Preview revamp (no restart)'),
 h('button',{class:'btn',on:{click:()=>{previewToggle(false);upd()}}},'Exit preview'),
-h('button',{class:'btn',on:{click:()=>previewRestart()}},'Preview restart sequence')))
+h('button',{class:'btn',on:{click:()=>previewRestart()}},'Preview countdown and restart')))
 return w
 }
