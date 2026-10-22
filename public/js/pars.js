@@ -24,7 +24,7 @@ setTimeout(()=>POST('/api/pars/beat',{i:0,v:true}).catch(()=>{}),1500)
 setTimeout(checkGifts,3000)
 on('pars.gift',()=>checkGifts())
 }
-export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('circle',{cx:'12',cy:'12',r:'10',fill:'#f5c542'}),sv('circle',{cx:'12',cy:'12',r:'7',fill:'none',stroke:'#92400e','stroke-width':'1.6'}),sv('path',{d:'M10 16V8h3a2.2 2.2 0 0 1 0 4.4h-3',fill:'none',stroke:'#92400e','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round'}))
+export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('defs',{},sv('linearGradient',{id:'pig',x1:'0',y1:'0',x2:'1',y2:'1'},sv('stop',{offset:'0',style:'stop-color:#fde68a'}),sv('stop',{offset:'.55',style:'stop-color:#f5b82e'}),sv('stop',{offset:'1',style:'stop-color:#c97a0a'}))),sv('circle',{cx:'12',cy:'12',r:'11',fill:'url(#pig)'}),sv('circle',{cx:'12',cy:'12',r:'8.6',fill:'none',stroke:'#fff7d6','stroke-opacity':'.55','stroke-width':'.9'}),sv('path',{d:'M9.4 17.2V6.9h3.3a3.1 3.1 0 0 1 0 6.2H9.4',fill:'none',stroke:'#7c3f06','stroke-width':'2.3','stroke-linecap':'round','stroke-linejoin':'round'}))
 const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['frame','Avatar frames'],['effect','Avatar effects'],['nameplate','Nameplates'],['namefx','Name styles'],['badge','Badges'],['title','Titles'],['bubble','Message styles']]
 const EQ=['nameplate','frame','effect','namefx','badge','title','bubble']
 const COS=new Set(EQ)
