@@ -11,6 +11,8 @@ import{pollDialog,threadDialog,forwardDialog,stickerDialog}from'./dialogs2.js'
 import{gifPicker,importGif}from'./gifs.js'
 import{slash}from'./slash.js'
 import{warnDialog}from'./modcases.js'
+import{tw}from'./tweaks.js'
+import{go}from'./nav.js'
 
 let C=null
 const drafts=new Map()
@@ -268,7 +270,7 @@ function openProfile(e,u){emit('ui:profile',{id:u.id,x:e.clientX,y:e.clientY,el:
 function buildMsg(m,cont){
 const me=S.me
 const own=m.author.id===me.id
-const ctx={urls:[],onMention:n=>emit('ui:mention',n),who:whoIs}
+const ctx={urls:[],onMention:n=>emit('ui:mention',n),who:whoIs,chan:chanLink}
 const el=h('div',{class:'m'+(m.author.bubble?' '+m.author.bubble:'')+(cont?' cont':'')+(m.pending?' sending':'')+(m.failed?' failed':''),tabindex:'-1',role:'article','aria-label':`${m.author.display_name}, ${fmtStamp(m.created_at)}`,on:{
 contextmenu:e=>{if(e.target.closest('a,img,video,audio'))return;e.preventDefault();msgMenu(m,e.clientX,e.clientY)},
 click:e=>{if(matchMedia('(max-width:820px)').matches&&!e.target.closest('a,button,img,video,audio,.sp'))el.classList.toggle('tap')}
@@ -282,9 +284,10 @@ main.append(r.deleted?h('div',{class:'rp'},icon('reply','s'),'Original message w
 }
 if(!cont){
 const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click:e=>openProfile(e,m.author)}},m.author.namefx?h('span',{class:'nf '+m.author.namefx},m.author.display_name):m.author.display_name)
+const un=tw('show_username')&&m.author.username?h('span',{class:'hint tw-un'},'@'+m.author.username):null
 const bdg=m.author.badge?h('span',{class:'bdg-i '+m.author.badge,title:'Badge'}):null
 const ttl=m.author.title?h('span',{class:'ttl '+m.author.title}):null
-main.append(h('div',{class:'mh'},nm,bdg,ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
+main.append(h('div',{class:'mh'},nm,un,bdg,ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
@@ -365,7 +368,7 @@ const items=[]
 if(perms&P.SEND)items.push({icon:'reply',label:'Reply',fn:()=>setReply(m)})
 if(perms&P.REACT)items.push({icon:'smile',label:'Add reaction',fn:()=>emojiPicker(anchor||C.scroller,em=>react(m,em,true),info?.sid)})
 if(info&&!C.room.startsWith('th_')&&info.ch.type!=='forum'&&(perms&P.SEND)&&!m.thread)items.push({icon:'chat',label:'Start thread',fn:()=>threadDialog(info.sid,C.room,m)})
-if(m.content&&!m.poll)items.push({icon:'forward',label:'Forward message',fn:()=>forwardDialog(m)})
+if((m.content||m.attachments?.length)&&!m.poll)items.push({icon:'forward',label:'Forward message',fn:()=>forwardDialog(m)})
 if(own&&perms&P.SEND)items.push({icon:'edit',label:'Edit message',fn:()=>startEdit(m)})
 const canPin=isDm(C.room)||(perms&P.MANAGE_MESSAGES)
 if(canPin)items.push({icon:'pin',label:m.pinned?'Unpin message':'Pin message',fn:async()=>{try{if(m.pinned)await DEL(`/api/rooms/${C.room}/pins/${m.id}`);else await PUT(`/api/rooms/${C.room}/pins/${m.id}`)}catch(e){fail(e)}}})
@@ -373,6 +376,7 @@ items.push('-')
 if(m.content)items.push({icon:'copy',label:'Copy text',fn:()=>copyText(m.content)})
 const path=isDm(C.room)?`/dm/${C.room}`:`/s/${info?.sid}/${C.room}`
 items.push({icon:'link',label:'Copy link',fn:()=>copyText(`${location.origin}${path}?m=${m.id}`)})
+if(tw('dev_ids')){items.push({icon:'copy',label:'Copy message ID',fn:()=>copyText(m.id)},{icon:'copy',label:'Copy user ID',fn:()=>copyText(m.author.id)},{icon:'copy',label:'Copy channel ID',fn:()=>copyText(C.room)})}
 items.push({icon:'bookmark',label:'Save message',fn:async()=>{try{await PUT('/api/saved/'+m.id);toast('Saved','ok')}catch(e){fail(e)}}})
 if(!own&&info&&can(info.sid,P.MODERATE)&&m.author.id!==S.me.id)items.push({icon:'flag',label:'Warn author',fn:()=>warnDialog(info.sid,m.author,m.id)})
 if(!own)items.push({icon:'flag',label:'Report message',fn:()=>emit('ui:report',{type:'message',id:m.id})})
@@ -520,7 +524,7 @@ if(matchMedia('(pointer:fine)').matches)setTimeout(()=>C?.ta.focus(),0)
 
 let lastTyping=0
 function typingPing(){
-if(!C.ta.value.trim()||Date.now()-lastTyping<3000)return
+if(tw('silent_typing')||!C.ta.value.trim()||Date.now()-lastTyping<3000)return
 lastTyping=Date.now()
 const hub=hubOf(C.room)
 if(hub)wsSend(hub,{t:'typing',ch:C.room})
@@ -562,6 +566,13 @@ if(isDm(C.room))return conv(C.room)?.members||[]
 const sid=chanInfo(C.room)?.sid
 return sid?(S.sdata[sid]?.memberList||[]):[]
 }
+function chanLink(id){
+for(const sid of Object.keys(S.sdata)){
+const c=S.sdata[sid]?.channels?.find(x=>x.id===id)
+if(c)return{label:'#'+c.name,go:()=>go(`/s/${sid}/${id}`)}
+}
+return null
+}
 function whoIs(t){
 if(t==='everyone')return{label:'@everyone'}
 if(t[0]==='u'){const u=S.users.get(t)||(t===S.me.id?S.me:null);return u?{label:'@'+(u.nickname||u.display_name)}:{label:'@unknown'}}
@@ -572,7 +583,8 @@ function encodeMentions(text){
 const users=new Map(pool().map(u=>[u.username.toLowerCase(),u.id]))
 users.set(S.me.username.toLowerCase(),S.me.id)
 const roles=new Map(rolesHere().map(r=>[r.name.toLowerCase(),r.id]))
-return text.split(/(```[\s\S]*?```|`[^`\n]*`)/).map((p,i)=>i%2?p:p.replace(/(^|[^\w@<])@([a-zA-Z0-9_.-]{1,40})/g,(all,pre,n)=>{
+const chans=new Map((S.sdata[chanInfo(C.room)?.sid]?.channels||[]).map(c=>[c.name.toLowerCase(),c.id]))
+return text.split(/(```[\s\S]*?```|`[^`\n]*`)/).map((p,i)=>i%2?p:p.replace(/(^|[^\w#<&])#([a-zA-Z0-9_-]{1,60})(?![\w-])/g,(all,pre,n)=>chans.has(n.toLowerCase())?pre+'<#'+chans.get(n.toLowerCase())+'>':all).replace(/(^|[^\w@<])@([a-zA-Z0-9_.-]{1,40})/g,(all,pre,n)=>{
 const k=n.toLowerCase()
 if(k==='everyone')return pre+'<@everyone>'
 if(users.has(k))return pre+'<@'+users.get(k)+'>'
@@ -581,6 +593,7 @@ return all
 })).join('')
 }
 function decodeMentions(text){
+text=text.replace(/<#(ch_[a-z0-9]{16})>/g,(all,id)=>{const w=chanLink(id);return w?w.label:all})
 return text.replace(/<@(everyone|u_[a-z0-9]{16}|&r_[a-z0-9]{16})>/g,(all,t)=>{
 const w=whoIs(t)
 return w.label==='@unknown'||w.label==='@deleted-role'?all:w.label
@@ -590,6 +603,17 @@ function closeAc(){if(C?.ac){C.ac.remove();C.ac=null}}
 async function mentionCheck(){
 const t=C.ta
 const before=t.value.slice(0,t.selectionStart)
+const cm=before.match(/(?:^|\s)#([a-zA-Z0-9_-]{0,40})$/)
+if(cm&&!isDm(C.room)){
+const sid=chanInfo(C.room)?.sid
+const q=cm[1].toLowerCase()
+C.mentions=(S.sdata[sid]?.channels||[]).filter(c=>c.name.toLowerCase().includes(q)).sort((a,b)=>(a.name.toLowerCase().startsWith(q)?0:1)-(b.name.toLowerCase().startsWith(q)?0:1)||a.position-b.position).slice(0,8).map(c=>({chan:true,id:c.id,username:c.name,display_name:c.topic||c.type}))
+C.mentionIdx=0
+if(!C.mentions.length){closeAc();return}
+if(!C.ac){C.ac=h('div',{class:'ac',role:'listbox'});C.compWrap.append(C.ac)}
+drawAc()
+return
+}
 const m=before.match(/(?:^|\s)@([a-zA-Z0-9_.-]{0,24})$/)
 if(!m){closeAc();return}
 const q=m[1].toLowerCase()
@@ -608,14 +632,15 @@ if(!C.ac){C.ac=h('div',{class:'ac',role:'listbox'});C.compWrap.append(C.ac)}
 drawAc()
 }
 function drawAc(){
-mount(C.ac,C.mentions.map((u,i)=>h('button',{type:'button',role:'option',class:i===C.mentionIdx?'on':'','aria-selected':String(i===C.mentionIdx),on:{mousedown:e=>{e.preventDefault();pickMention(u)}}},u.special?icon('users','s'):avatar(u,'sm'),h('b',null,'@'+u.username),h('span',{class:'hint',style:{margin:'0'}},u.special?u.display_name:u.display_name))))
+mount(C.ac,C.mentions.map((u,i)=>h('button',{type:'button',role:'option',class:i===C.mentionIdx?'on':'','aria-selected':String(i===C.mentionIdx),on:{mousedown:e=>{e.preventDefault();pickMention(u)}}},u.chan?icon('hash','s'):u.special?icon('users','s'):avatar(u,'sm'),h('b',null,(u.chan?'#':'@')+u.username),h('span',{class:'hint',style:{margin:'0'}},u.special?u.display_name:u.display_name))))
 }
 function pickMention(u){
 const t=C.ta
 const pos=t.selectionStart
-const before=t.value.slice(0,pos).replace(/@[a-zA-Z0-9_.-]{0,24}$/,'')
-t.value=before+'@'+u.username+' '+t.value.slice(pos)
-const np=(before+'@'+u.username+' ').length
+const sig=u.chan?'#':'@'
+const before=t.value.slice(0,pos).replace(u.chan?/#[a-zA-Z0-9_-]{0,40}$/:/@[a-zA-Z0-9_.-]{0,24}$/,'')
+t.value=before+sig+u.username+' '+t.value.slice(pos)
+const np=(before+sig+u.username+' ').length
 t.setSelectionRange(np,np)
 closeAc()
 t.focus()

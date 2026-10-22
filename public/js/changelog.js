@@ -1,5 +1,13 @@
-export const VERSION='2026.10.30'
+export const VERSION='2026.10.31'
 export const RELEASES=[
+{v:'2026.10.31',date:'October 22, 2026',title:'Channel links, forwarding, onboarding and tweaks',summary:'Type # to link a channel, forward messages with files and a note, welcome new members with onboarding, and tune the app in the new Tweaks page.',sections:[
+['Chat',[
+['Channel links','Type # in a message to pick a channel. It shows as a clickable link for anyone who can see that channel.'],
+['Forward with files','Forwarding now shows a preview, lets you add a message and can include up to 6 attachments.']]],
+['Servers',[
+['Onboarding','Server managers can turn on a short welcome for new members in Server settings, Onboarding: a greeting, the rules, roles members pick themselves and channels to start in.']]],
+['Settings',[
+['Tweaks','A new Settings page with Vencord-style options: show usernames, precise timestamps, silent typing, clear tracking from links, anonymise file names, hide effects and badges, developer mode, Quick CSS, and backup and restore.']]]]},
 {v:'2026.10.30',date:'October 22, 2026',title:'Bigger bot editor and a sortable server list',summary:'34 new bot blocks, a pan and zoom canvas with hover help, drag to reorder your servers, and Parli-Bold as a whole-site font.',sections:[
 ['Bot blocks',[
 ['34 new blocks','New triggers for replies, @everyone, invites, shouting, long messages, banned words, emoji spam and mention spam. New checks for channel, owner, new members, weekday, word lists and two-part conditions. New moderation blocks to warn, kick, ban, delete recent messages, set slow mode, change nicknames, end time outs and notify a member. New data blocks to save and load text, read counters, take a word, join text, read the clock and look up member or server info.'],

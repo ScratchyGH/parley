@@ -1,6 +1,7 @@
 import{POST,DEL,upload}from'./util.js'
 import{sha256Fast,sha256Blob}from'./p2p/sha.js'
 import{optimize}from'./codec.js'
+import{tw,anonName}from'./tweaks.js'
 const SIMPLE_MAX=48*1048576
 const LANES=4
 const sleep=ms=>new Promise(r=>setTimeout(r,ms))
@@ -31,6 +32,7 @@ const p=(async()=>{
 const stage=s=>onProgress&&onProgress(null,s)
 stage('Optimizing')
 let f=await optimize(file)
+if(tw('anon_files'))f=new File([f],anonName(f.name),{type:f.type})
 if(aborted)throw Object.assign(new Error('Upload cancelled'),{cancelled:true})
 stage('Checking')
 const sha=f.size<=67108864?await sha256Fast(f):await sha256Blob(f,x=>stage('Checking '+Math.round(x*100)+'%'))

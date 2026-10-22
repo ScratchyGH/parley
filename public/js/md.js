@@ -1,4 +1,5 @@
 import{h}from'./util.js'
+import{clearUrl}from'./tweaks.js'
 
 const KW={
 js:'async await break case catch class const continue debugger default delete do else export extends finally for from function if import in instanceof let new of return static super switch this throw try typeof var void while with yield true false null undefined interface type enum implements public private protected readonly as',
@@ -76,6 +77,7 @@ const INLINE=[
 ['italic',/(?<![\w*])\*([^*\n]+?)\*(?!\*)|(?<!\w)_([^_\n]+?)_(?!\w)/],
 ['url',/https?:\/\/[^\s<>()]{1,2000}[^\s<>().,;:!?'"*_]/],
 ['mention',/<@(everyone|u_[a-z0-9]{16}|&r_[a-z0-9]{16})>/],
+['chan',/<#(ch_[a-z0-9]{16})>/],
 ['cemoji',/<:([a-zA-Z0-9_]{2,32}):(f_[a-z0-9]{16})>/]
 ]
 
@@ -111,7 +113,7 @@ let rest=text
 while(rest){
 let best=null
 for(const[name,r]of INLINE){
-if(depth>=3&&name!=='code'&&name!=='url'&&name!=='mention')continue
+if(depth>=3&&name!=='code'&&name!=='url'&&name!=='mention'&&name!=='chan')continue
 const m=r.exec(rest)
 if(m&&(!best||m.index<best.m.index))best={name,m}
 }
@@ -126,7 +128,8 @@ if(href)out.push(h('a',{href,target:'_blank',rel:'noopener noreferrer nofollow',
 else out.push(m[0])
 }
 else if(name==='url'){
-const href=safeHref(m[0])
+const href0=safeHref(m[0])
+const href=href0&&clearUrl(href0)
 if(href){ctx?.urls?.push(href);out.push(h('a',{href,target:'_blank',rel:'noopener noreferrer nofollow'},m[0]))}
 else out.push(m[0])
 }
@@ -159,6 +162,12 @@ const w=ctx&&ctx.who?ctx.who(t):null
 const el=h('span',{class:'mn'+(t==='everyone'?' all':'')+(t[0]==='&'?' role':''),tabindex:'0'},w?w.label:(t==='everyone'?'@everyone':'@unknown'))
 if(w&&w.color)el.style.color=w.color
 if(t[0]==='u'&&ctx&&ctx.onMention)el.addEventListener('click',()=>ctx.onMention(t))
+out.push(el)
+}
+else if(name==='chan'){
+const w=ctx&&ctx.chan?ctx.chan(m[1]):null
+const el=h('span',{class:'mn chan',tabindex:'0',role:w&&w.go?'link':null},w?w.label:'#unknown-channel')
+if(w&&w.go){el.addEventListener('click',w.go);el.addEventListener('keydown',e=>{if(e.key==='Enter')w.go()})}
 out.push(el)
 }
 else if(name==='cemoji')out.push(h('img',{class:'cemoji',src:'/api/files/'+m[2],alt:':'+m[1]+':',title:':'+m[1]+':',loading:'lazy'}))
@@ -283,5 +292,5 @@ return frag
 }
 
 export function plain(text,max=140){
-return String(text||'').replace(/<:([a-zA-Z0-9_]{2,32}):f_[a-z0-9]{16}>/g,':$1:').replace(/<@&?[a-z0-9_]+>/g,'@mention').replace(/```[\s\S]*?```/g,' [code] ').replace(/\|\|([\s\S]+?)\|\|/g,'[spoiler]').replace(/[*_~`>]/g,'').replace(/\s+/g,' ').trim().slice(0,max)
+return String(text||'').replace(/<:([a-zA-Z0-9_]{2,32}):f_[a-z0-9]{16}>/g,':$1:').replace(/<#ch_[a-z0-9]+>/g,'#channel').replace(/<@&?[a-z0-9_]+>/g,'@mention').replace(/```[\s\S]*?```/g,' [code] ').replace(/\|\|([\s\S]+?)\|\|/g,'[spoiler]').replace(/[*_~`>]/g,'').replace(/\s+/g,' ').trim().slice(0,max)
 }

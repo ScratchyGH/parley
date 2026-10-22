@@ -8,6 +8,7 @@ import{buildShell,renderRail,renderCtx,setPanel,currentPanel,chatTop,topBar,layo
 import{openChat,closeChat,chatEvent,currentRoom,resyncChat,refreshComposer,chatAtBottom}from'./chat.js'
 import{V,voiceEvent,joinVoice,toggleMute,toggleDeaf,mountVoiceRoom,ringToast,stopRing,voiceSettingsView}from'./voice.js'
 import{friendsPage,discoverPage,welcomePage,forumPage}from'./pages.js'
+import{maybeOnboard}from'./onboard.js'
 import{homePage}from'./home.js'
 import{botsPage,labPage}from'./botspage.js'
 import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,channelDialog,categoryDialog,groupSettingsDialog}from'./dialogs.js'
@@ -170,6 +171,7 @@ if(r.m)history.replaceState(null,'',`/s/${sid}/${th.id}`)
 document.title=`${th.name} • ${d.server.name}`
 return
 }
+maybeOnboard(sid)
 let ch=r.ch&&d.channels.find(c=>c.id===r.ch)
 if(!ch&&r.ch){toast('That channel is not available','err')}
 if(!ch){

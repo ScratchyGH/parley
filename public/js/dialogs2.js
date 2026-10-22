@@ -1,4 +1,5 @@
 import{h,mount,icon,GET,POST,PUT,DEL,toast,fail,dialog,field,toggle,fmtStamp,rid,confirmBox,fileUrl}from'./util.js'
+import{plain}from'./md.js'
 import{pickImage,uploadImage}from'./dialogs.js'
 import{S,P,can,noteThread,convTitle}from'./state.js'
 import{go}from'./nav.js'
@@ -44,7 +45,10 @@ go(`/s/${sid}/${r.thread.id}`)
 
 export function forwardDialog(m){
 const q=h('input',{class:'inp',type:'search',placeholder:'Search channels and conversations','aria-label':'Search',autofocus:true})
-const list=h('div',{class:'list',style:{maxHeight:'320px',overflow:'auto'}})
+const note=h('input',{class:'inp',maxLength:500,placeholder:'Add a message (optional)','aria-label':'Message to add',style:{marginTop:'8px'}})
+const hasFiles=!!m.attachments?.length
+const att=h('input',{type:'checkbox',checked:true,id:'fwd-att'})
+const list=h('div',{class:'list',style:{maxHeight:'320px',overflow:'auto',marginTop:'8px'}})
 const dests=[]
 for(const c of S.convs)dests.push({id:c.id,label:convTitle(c),sub:'Direct message',ic:'chat'})
 for(const s of S.servers){
@@ -55,17 +59,20 @@ for(const c of d.channels)if((c.type==='text'||c.type==='announce')&&(c.perms&P.
 const draw=()=>{
 const t=q.value.trim().toLowerCase()
 const items=dests.filter(x=>!t||x.label.toLowerCase().includes(t)||x.sub.toLowerCase().includes(t)).slice(0,40)
-mount(list,items.length?items.map(x=>h('button',{class:'ci',on:{click:async()=>{
+mount(list,items.length?items.map(x=>h('button',{class:'ci',on:{click:async e=>{
+const b=e.currentTarget
+b.disabled=true
 try{
-await POST(`/api/rooms/${x.id}/messages`,{forward_of:m.id,nonce:rid()})
+await POST(`/api/rooms/${x.id}/messages`,{forward_of:m.id,note:note.value.trim(),attachments:hasFiles&&att.checked,nonce:rid()})
 d.close()
 toast('Forwarded to '+x.label,'ok')
-}catch(e){fail(e)}
+}catch(e){b.disabled=false;fail(e)}
 }}},icon(x.ic,'s'),h('b',null,x.label),h('span',{class:'hint',style:{margin:'0 0 0 auto'}},x.sub))):h('div',{class:'hint'},'Nothing matches'))
 }
 q.addEventListener('input',draw)
 draw()
-const d=dialog('Forward message',h('div',{class:'bd'},q,list,h('p',{class:'hint'},'The message text is quoted with the original author. Attachments are not forwarded.')),{})
+const prev=h('div',{class:'mb',style:{borderLeft:'3px solid var(--border)',padding:'4px 10px',margin:'0 0 8px',maxHeight:'90px',overflow:'hidden'}},h('b',null,m.author.display_name),h('div',null,plain(m.content||'',160)||(hasFiles?m.attachments.length+' attachment'+(m.attachments.length>1?'s':''):'')))
+const d=dialog('Forward message',h('div',{class:'bd'},prev,q,note,hasFiles?h('label',{class:'row',for:'fwd-att',style:{gap:'8px',marginTop:'8px'}},att,'Include attachments (up to 6 files, 10 MB each)'):null,list),{})
 }
 
 export async function eventsDialog(sid){

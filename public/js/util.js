@@ -1,3 +1,4 @@
+import{pref}from'./prefs.js'
 export const h=(tag,props,...kids)=>{
 const el=document.createElement(tag)
 if(props)for(const[k,v]of Object.entries(props)){
@@ -161,7 +162,7 @@ return (n/1073741824).toFixed(2)+' GB'
 const pad=n=>String(n).padStart(2,'0')
 export function fmtTime(t){
 const d=new Date(t)
-return pad(d.getHours())+':'+pad(d.getMinutes())
+return pad(d.getHours())+':'+pad(d.getMinutes())+(pref('tw_precise_time')?':'+pad(d.getSeconds()):'')
 }
 export function fmtDate(t){
 return new Date(t).toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'})

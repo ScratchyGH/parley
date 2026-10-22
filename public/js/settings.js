@@ -12,6 +12,7 @@ import{go}from'./nav.js'
 import{voiceSettingsView}from'./voice.js'
 import{requestDesktop,testDesktop}from'./notify.js'
 import{pref,setPref}from'./prefs.js'
+import{tweaksPage}from'./tweaks.js'
 import{p2pStats,clearP2PCache,startP2P,stopP2P}from'./p2p/index.js'
 import{nativeSupport}from'./codec.js'
 import{labsPage}from'./labs.js'
@@ -19,7 +20,7 @@ import{parsPage,loadoutBox}from'./pars.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
-['account','My account'],['profile','Profile'],['appearance','Appearance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
+['account','My account'],['profile','Profile'],['appearance','Appearance'],['tweaks','Tweaks'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
 ]
 
 async function saveSettings(patch){
@@ -52,7 +53,7 @@ try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 drawNav()
-const fn={apps:appsPage,pars:parsPage,account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
+const fn={apps:appsPage,pars:parsPage,tweaks:tweaksPage,account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
 mount(pg)
 fn(pg,{close:()=>go('/')})
 GET('/api/lab/status').then(x=>{if(x.labs){labs=true;drawNav()}}).catch(()=>{})

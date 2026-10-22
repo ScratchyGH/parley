@@ -3,6 +3,7 @@ import{programPage}from'./exp.js'
 import{VC,h,mount,menuAt,icon,GET,POST,PATCH,PUT,DEL,avatar,toast,fail,dialog,confirmBox,field,toggle,fmtStamp,debounce,copyText,saveBlob}from'./util.js'
 import{S,P,PERM_INFO,emit,can,cacheUser,loadServers,loadServer,loadMembers,applyThemeObj,applyServerTheme}from'./state.js'
 import{go}from'./nav.js'
+import{onboardEditor}from'./onboard.js'
 import{casesPage,warnDialog,templateShare,caseFilter}from'./modcases.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
@@ -78,7 +79,7 @@ export function openServerSettings(sid,page){go('/s/'+sid+'/settings'+(page?'/'+
 export function serverSettingsPage(sid,page,topBar,icon_){
 const d0=S.sdata[sid]
 const pages=[]
-if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'])
+if(can(sid,P.MANAGE_SERVER))pages.push(['overview','Overview'],['onboarding','Onboarding'])
 if(can(sid,P.MANAGE_CHANNELS))pages.push(['channels','Channels'])
 if(can(sid,P.MANAGE_ROLES))pages.push(['roles','Roles'])
 if(can(sid,P.MANAGE_SERVER))pages.push(['emoji','Emoji'],['stickers','Stickers'],['automod','AutoMod and safety'],['hooks','Webhooks'],['plugins','Plugins'],['template','Template'],['theme','Theme'])
@@ -100,7 +101,7 @@ function draw(){
 mount(nav,pages.map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/s/'+sid+'/settings/'+k)}},l)),
 h('button',{on:{click:()=>go('/s/'+sid)}},'Back to server'))
 mount(pg)
-const fn={overview,channels,roles,emoji,stickers,automod,hooks,plugins,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage,labs:labsPage}[cur]
+const fn={overview,onboarding:onboardEditor,channels,roles,emoji,stickers,automod,hooks,plugins,template,theme,members,invites,bans,appeals,reports,log,danger,cases:casesPage,program:programPage,labs:labsPage}[cur]
 fn(pg,sid,dlg,draw)
 }
 draw()
