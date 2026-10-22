@@ -49,7 +49,7 @@ return null
 export function parsPage(pg){
 const box=h('div',null,h('div',{class:'hint'},'Loading'))
 mount(pg,box)
-let tick=null
+let tick=[]
 load()
 async function load(){
 try{
@@ -61,19 +61,19 @@ draw(d)
 }
 const sec=(id,title,sub,...kids)=>h('section',{class:'par-sec',id:'sh-'+id},h('h3',null,title,sub?h('small',null,sub):null),...kids)
 function draw(d){
-clearInterval(tick)
+tick.forEach(clearInterval);tick=[]
 const hrs=(d.today_ms/3600000).toFixed(1)
 const pct=Math.min(100,Math.round(d.today_ms/(d.daily_cap_hours*36000)))
 const items=d.items.filter(i=>!i.hidden)
 const bn=items.filter(i=>i.kind==='bundle')
-const ts=bn.find(i=>i.id==='bn_time'&&bundleData(i).ends_at>Date.now())
-const reg=bn.filter(i=>i!==ts&&!(bundleData(i).ends_at&&bundleData(i).ends_at<=Date.now()))
+const tss=bn.filter(i=>bundleData(i).limited&&bundleData(i).ends_at>Date.now()).sort((a,b)=>bundleData(a).ends_at-bundleData(b).ends_at)
+const reg=bn.filter(i=>!tss.includes(i)&&!(bundleData(i).ends_at&&bundleData(i).ends_at<=Date.now()))
 const cats=KINDS.filter(([k])=>items.some(i=>i.kind===k))
 const go=id=>document.getElementById('sh-'+id)?.scrollIntoView({behavior:'smooth',block:'start'})
 mount(box,
 h('div',{class:'par-hero'},parIcon(40),h('div',{style:{flex:'1',minWidth:0}},h('div',{class:'par-bal'},String(d.balance)),h('div',{class:'hint',style:{margin:'4px 0 0'}},'Earn '+d.rate+' Pars for every hour you actively use Parley. Today: '+hrs+' of '+d.daily_cap_hours+' hours counted.'),h('div',{class:'par-bar'},h('i',{style:{width:pct+'%'}})),h('div',{class:'hint',style:{margin:'6px 0 0'}},d.notice))),
-h('nav',{class:'sh-nav','aria-label':'Shop sections'},[ts?['ts','Timeskipper']:null,reg.length?['bn','Bundles']:null,...cats.map(([k,l])=>[k,l]),['gift','Gift Pars'],['own','Your items']].filter(Boolean).map(([id,l])=>h('button',{on:{click:()=>go(id)}},l))),
-ts?tsSection(d,ts):null,
+h('nav',{class:'sh-nav','aria-label':'Shop sections'},[...tss.map(i=>['ts-'+i.id,i.name]),reg.length?['bn','Bundles']:null,...cats.map(([k,l])=>[k,l]),['gift','Gift Pars'],['own','Your items']].filter(Boolean).map(([id,l])=>h('button',{on:{click:()=>go(id)}},l))),
+...tss.map(i=>tsSection(d,i)),
 reg.length?sec('bn','Bundles','Hover to pause',carousel(d,reg)):null,
 ...cats.map(([k,l])=>sec(k,l,null,h('div',{class:'par-grid'},items.filter(i=>i.kind===k).map(it=>card(d,it))))),
 sec('gift','Gift Pars',null,giftBox(d)),
@@ -124,13 +124,15 @@ const track=h('div',{class:'car-track',style:{'--dur':Math.max(30,list.length*14
 return h('div',{class:'car'},track)
 }
 function tsSection(d,it){
-const v=variantsOf(it).main,end=bundleData(it).ends_at
+const bd=bundleData(it),v=variantsOf(it).main,end=bd.ends_at,start=bd.starts_at||0
+const soon=start>Date.now()
 const have=owns(d,marker(it,'main'))
 const cant=d.balance<v.price
 const clock=h('span',{class:'ts-time'})
-const upd=()=>{const ms=end-Date.now();clock.textContent=ms>0?left(ms)+' left':'Ended'}
-upd();tick=setInterval(()=>{if(!clock.isConnected){clearInterval(tick);return}upd()},1000)
-return h('section',{class:'par-sec',id:'sh-ts'},h('div',{class:'ts'},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},'Limited time'),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
+const upd=()=>{const n=Date.now();if(n<start){clock.textContent='Starts in '+left(start-n)}else{const ms=end-n;clock.textContent=ms>0?left(ms)+' left':'Ended'}}
+upd();const t=setInterval(()=>{if(!clock.isConnected){clearInterval(t);return}upd()},1000);tick.push(t)
+const tag=soon?'Admin preview · starts '+new Date(start).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'Limited time'
+return h('section',{class:'par-sec',id:'sh-ts-'+it.id},h('div',{class:'ts'+(bd.season?' sx-'+bd.season:'')},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},tag),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
 }
 function own(d){
 const rows=d.owned.filter(o=>!String(o.item_id).startsWith('bundle:'))
@@ -275,4 +277,15 @@ mount(box,h('div',{class:'lo-grid'},prev,h('div',{class:'lo-sels'},...sels)),h('
 }
 load()
 return box
+}
+export async function seasonAdmin(pg){
+const d=await GET('/api/pars')
+const list=d.items.filter(i=>i.kind==='bundle'&&bundleData(i).season).sort((a,b)=>bundleData(a).starts_at-bundleData(b).starts_at)
+const fmt=t=>new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})
+const card=it=>{
+const bd=bundleData(it),v=variantsOf(it).main
+const st=bd.status==='live'?'Live now':'Starts '+fmt(bd.starts_at)
+return h('div',{class:'sa-card'},h('div',{class:'ts sx-'+bd.season,style:{gridTemplateColumns:'1fr',padding:'16px'}},preview(d,it,v),h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}},h('span',{class:'ts-tag'},st),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},fmt(bd.starts_at)+' to '+fmt(bd.ends_at)+' (UTC)'),contents(d,v),h('div',{class:'row',style:{gap:'8px',alignItems:'center'}},h('span',{class:'par-price'},parIcon(16),' '+v.price),h('button',{class:'btn sm',on:{click:()=>buy(d,it,'main')}},'Test buy')))))
+}
+return h('section',{class:'lab'},h('h3',null,'Seasonal bundles'),h('p',{class:'hint'},'Everyone else only sees a bundle while its window is live. You can preview and buy any of them at any time.'),h('div',{class:'sa-grid'},list.map(card)))
 }

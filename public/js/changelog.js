@@ -1,5 +1,6 @@
-export const VERSION='2026.10.31'
+export const VERSION='2026.10.32'
 export const RELEASES=[
+{v:'2026.10.32',date:'October 22, 2026',title:'Seasonal bundles, iPhone support and a cleaner look',summary:'Spooked Out is here with animated eyes around your avatar, Christmas and more seasons arrive on schedule, and divider lines are gone.',sections:[['Seasonal bundles',[['Spooked Out','Live October 1 to November 3. Watching eyes ring your avatar, with bats, ghosts, a nameplate, name style, badges, title and message style, all animated.'],['More seasons','Yuletide (Dec 10 to 28), Midnight Countdown, Lovestruck, Wildflower Bloom, Sunburst and Harvest Moon appear when their dates arrive.']]],['Interface',[['Cleaner look','Separator lines between panels, rows and menus were removed.'],['iPhone and iPad','Add Parley to your Home Screen from Safari for an app-style install.'],['Apps','The download links in Settings now work reliably.']]],['Community',[['Parley Community','Professional guidelines, a custom theme and onboarding with roles.']]]]},
 {v:'2026.10.31',date:'October 22, 2026',title:'Channel links, forwarding, onboarding and tweaks',summary:'Type # to link a channel, forward messages with files and a note, welcome new members with onboarding, and tune the app in the new Tweaks page.',sections:[
 ['Chat',[
 ['Channel links','Type # in a message to pick a channel. It shows as a clickable link for anyone who can see that channel.'],

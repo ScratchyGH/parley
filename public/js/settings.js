@@ -402,13 +402,16 @@ draw()
 }
 
 async function appsPage(pg){
+const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)
+const standalone=navigator.standalone===true||matchMedia('(display-mode: standalone)').matches
 mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These wrappers open the same site in their own window, so you always get the latest version.'),h('div',{class:'hint'},'Checking for downloads'))
 let d={windows:null,linux:null,android:null}
 try{d=await GET('/api/app/downloads')}catch{}
-const dl=(label,sub,x,ext)=>h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,label),h('div',{class:'hint'},sub),x?h('a',{class:'btn pri',href:x.url,rel:'noopener',download:''},'Download '+ext+' ('+(x.size/1048576).toFixed(0)+' MB)'):h('div',{class:'hint'},'Not published yet. The build runs from the repository Actions tab (Build apps), and the file appears here once it finishes.'))
+const dl=(label,sub,x,ext)=>h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,label),h('div',{class:'hint'},sub),x?h('a',{class:'btn pri',href:x.url,rel:'noopener',download:''},'Download '+ext+(x.size?' ('+(x.size/1048576).toFixed(0)+' MB)':'')):h('div',{class:'hint'},'Not available right now. Try again in a few minutes.'))
 mount(pg,h('h2',null,'Apps'),h('p',{class:'hint'},'Parley runs in your browser. These apps open the same site in their own window, so the site is always current. The Windows and Linux apps also update themselves in the background; Android updates when you install a newer file.'),
 dl('Windows','Installer for Windows 10 and 11. Windows may warn that the app is unsigned.',d.windows,'.exe'),
 dl('Linux','AppImage for most 64-bit distributions. Make it executable (chmod +x) and run it. It updates itself.',d.linux,'.AppImage'),
 dl('Android','Debug-signed package for sideloading. Allow installs from your browser or file manager, then open the file.',d.android,'.apk'),
+h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'iPhone and iPad'),h('div',{class:'hint'},ios?(standalone?'You are using the installed app. Push notifications work from here.':'Tap Share in Safari, then Add to Home Screen. Open Parley from the new icon to get the full-screen app. iOS 16.4 or later is needed for push notifications, and they only work from the installed app.'):'Open Parley in Safari on your iPhone or iPad, tap Share, then Add to Home Screen. It runs full screen like an app, and iOS 16.4 or later supports push notifications from it.')),
 h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'Install from your browser'),h('div',{class:'hint'},'Chrome, Edge and most Android browsers offer Install app in the address bar or menu. Safari: Share, then Add to Home Screen.')))
 }
