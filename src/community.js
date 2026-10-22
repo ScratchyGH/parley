@@ -24,7 +24,7 @@ const STYLE=`Post screenshots of your frame, nameplate, name style and message s
 const POSTS={welcome:[WELCOME,1],faq:[FAQ,1],links:[LINKS,1],roadmap:[ROADMAP,1],changelog:[CHANGELOG,1],events:[EVENTS,0],'pars-shop':[SHOP,1],support:[SUPPORT,1],introductions:[INTRO,1],general:[GENERAL,0],'show-your-style':[STYLE,1]}
 export async function extendCommunity(c,s,ownerId){
 const db=c.env.DB,t=now()
-if(await db.prepare("select 1 x from auto_joined where user_id='__community_v3'").first())return
+if(await db.prepare("select 1 x from auto_joined where server_id=? and user_id in('__community_v3','__community_v3:'||?)").bind(s.id,s.id).first())return
 const cats=(await db.prepare('select id,name from categories where server_id=?').bind(s.id).all()).results
 const chans=(await db.prepare('select id,name,type from channels where server_id=?').bind(s.id).all()).results
 let ci=0,pos=0
@@ -64,5 +64,5 @@ const id=msgId(),ts=t+i++
 await db.prepare('insert into messages(id,room,server_id,author_id,content,created_at,sig) values(?,?,?,?,?,?,?)').bind(id,rid,s.id,ownerId,content,ts,await signMsg(c.env,{id,room:rid,author_id:ownerId,created_at:ts,edited_at:null,content})).run()
 if(pin)await db.prepare('update messages set pinned=1 where id=?').bind(id).run().catch(()=>{})
 }
-await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v3',?,?)").bind(s.id,t).run()
+await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v3:'||?,?,?)").bind(s.id,s.id,t).run()
 }

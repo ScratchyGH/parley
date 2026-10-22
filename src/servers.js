@@ -100,7 +100,7 @@ const LAYOUT=[
 ]
 async function brandCommunity(c,s,ownerId){
 const db=c.env.DB,t=now()
-const mark=await db.prepare("select 1 x from auto_joined where user_id='__community_v2'").first()
+const mark=await db.prepare("select 1 x from auto_joined where server_id=? and user_id in('__community_v2','__community_v2:'||?)").bind(s.id,s.id).first()
 if(mark)return
 for(const[id,kind,bytes,mime,name]of[['f_parley_icon','server_icon',unb(ICON),'image/webp','parley-icon.webp'],['f_parley_banner','server_banner',unb(BANNER),'image/webp','parley-banner.webp']]){
 const key=place(c.env,`u/${ownerId}/${id}`,bytes.byteLength)
@@ -132,7 +132,7 @@ if(made.rules&&!(await has(made.rules)))await post(made.rules,RULES,1)
 if(made.announcements&&!(await has(made.announcements)))await post(made.announcements,'**Parley Community is open.** Welcome! Stages, Legacy and Modern bundles, new avatar frames and the Parli-Bold font are all live. Check the shop and show off your look in show-your-style.',2)
 if(made.general&&!(await has(made.general)))await post(made.general,'Welcome to the Parley Community! Say hi, tell us what you are building or just hang out.',3)
 if(made['show-your-style']&&!(await has(made['show-your-style'])))await post(made['show-your-style'],'Post screenshots of your frame, nameplate, name style and message style combos here. Settings, then Appearance lets you mix any items you own.',4)
-await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v2',?,?)").bind(s.id,t).run()
+await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v2:'||?,?,?)").bind(s.id,s.id,t).run()
 }
 const GUIDE=`# Parley Community Guidelines
 
@@ -177,7 +177,7 @@ Staff may remove content and apply a warning, time out, removal or ban, dependin
 Participation in this server is also subject to the Parley Terms of Service.`
 async function polishCommunity(c,s,ownerId){
 const db=c.env.DB,t=now()
-if(await db.prepare("select 1 x from auto_joined where user_id='__community_v4'").first())return
+if(await db.prepare("select 1 x from auto_joined where server_id=? and user_id in('__community_v4','__community_v4:'||?)").bind(s.id,s.id).first())return
 const theme=JSON.stringify({bg:'#0e1520',side:'#0a1019',panel:'#141d2b',text:'#d6deea',accent:'#3b82f6',dim:55})
 await db.prepare("update servers set description=?,welcome=?,rules=?,accent='#3b82f6',theme=? where id=?").bind('Official community for Parley. Product announcements, support and feedback.',`**Welcome to the Parley Community.**\n\nThis is the official space for Parley product news, support and feedback.\n\n- Review the Community Guidelines in the rules channel\n- Introduce yourself in introductions\n- Get help in support and share feedback in feedback and suggestions\n- Follow announcements for releases and maintenance notices`,GUIDE,theme,s.id).run()
 const chans=(await db.prepare('select id,name from channels where server_id=?').bind(s.id).all()).results
@@ -198,7 +198,7 @@ roles.push({id:r.id,label:name,desc})
 }
 const onb={on:1,since:t,title:'Welcome to the Parley Community',text:'Review the guidelines, then choose the roles that describe you. You can change them later.',roles,channels:['rules','announcements','introductions','support','feedback'].map(n=>by(n)?.id).filter(Boolean)}
 await db.prepare('update servers set onboarding=? where id=?').bind(JSON.stringify(onb),s.id).run()
-await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v4',?,?)").bind(s.id,t).run()
+await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v4:'||?,?,?)").bind(s.id,s.id,t).run()
 }
 async function ensureCommunity(c){
 const db=c.env.DB
