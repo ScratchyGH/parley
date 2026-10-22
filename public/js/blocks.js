@@ -32,8 +32,8 @@ addrole:{title:'Give a role',tone:'mod',out:['next'],fields:[['role','Role name'
 removerole:{title:'Take a role',tone:'mod',out:['next'],fields:[['role','Role name','text']],init:{role:''}},
 stop:{title:'Stop here',tone:'logic',out:[],fields:[],init:{}},
 setcount:{title:'Set a saved counter',tone:'data',out:['next'],fields:[['name','Counter','text'],['value','Value','text'],['scope','For','select',[['server','whole server'],['user','each member']]]],init:{name:'count',value:'0',scope:'server'}},
-math:{title:'Do maths',tone:'data',out:['next'],fields:[['name','Save as','text'],['a','First number','text'],['op','Operation','select',[['+','add'],['-','subtract'],['*','multiply'],['/','divide'],['%','remainder'],['max','larger of'],['min','smaller of']]],['b','Second number','text']],init:{name:'result',a:'1',op:'+',b:'1'}},
-text:{title:'Change text',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['fn','Do','select',[['upper','UPPERCASE'],['lower','lowercase'],['title','Title Case'],['trim','Trim spaces'],['length','Count characters'],['reverse','Reverse'],['first','First word'],['last','Last word'],['replace','Remove text'],['words','Count words']]],['arg','Text to remove','text']],init:{name:'result',input:'{text}',fn:'upper',arg:''}},
+math:{title:'Do maths',tone:'data',out:['next'],fields:[['name','Save as','text'],['a','First number','text'],['op','Operation','select',[['+','add'],['-','subtract'],['*','multiply'],['/','divide'],['%','remainder'],['max','larger of'],['min','smaller of'],['pow','a to the power of b'],['floor','round down (first number)'],['ceil','round up (first number)'],['round','round (first number)'],['abs','absolute value (first number)']]],['b','Second number','text']],init:{name:'result',a:'1',op:'+',b:'1'}},
+text:{title:'Change text',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['fn','Do','select',[['upper','UPPERCASE'],['lower','lowercase'],['title','Title Case'],['trim','Trim spaces'],['length','Count characters'],['reverse','Reverse'],['first','First word'],['last','Last word'],['replace','Remove text'],['words','Count words'],['capital','Capitalise first letter'],['nospaces','Remove all spaces'],['digits','Keep only digits'],['letters','Keep only letters'],['left','First N characters'],['right','Last N characters'],['repeat','Repeat N times'],['slug','Make a-url-slug']]],['arg','Text to remove, or the number N (for replace use old|new)','text']],init:{name:'result',input:'{text}',fn:'upper',arg:''}},
 randnum:{title:'Random number',tone:'data',out:['next'],fields:[['name','Save as','text'],['min','Lowest','text'],['max','Highest','text']],init:{name:'roll',min:'1',max:'6'}},
 map:{title:'Look up a value',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Look up','text'],['table','One key=value per line','area'],['fallback','If not found','text']],init:{name:'result',input:'{arg1}',table:'a=Apple\nb=Banana',fallback:'Unknown'}}
 }
@@ -45,8 +45,55 @@ call:{title:'Run a subflow',tone:'sub',out:['next'],fields:[['name','Subflow nam
 hook:{title:'When a webhook arrives',tone:'trig',out:['next'],fields:[['name','Hook name','text']],init:{name:'alert'}},
 note:{title:'Note',tone:'note',out:[],fields:[['text','Note','area']],init:{text:''}}
 })
+
+const SCOPE=[['server','whole server'],['user','each member']]
+Object.assign(DEFS,{
+reply:{title:'When a message is a reply',tone:'trig',out:['next'],fields:[],init:{}},
+everyone:{title:'When a message pings everyone',tone:'trig',out:['next'],fields:[],init:{}},
+usermention:{title:'When a message mentions someone',tone:'trig',out:['next'],fields:[],init:{}},
+invite:{title:'When a message has an invite link',tone:'trig',out:['next'],fields:[],init:{}},
+caps:{title:'When a message is mostly capitals',tone:'trig',out:['next'],fields:[['percent','Percent capitals','text'],['min','Minimum letters','text']],init:{percent:'70',min:'8'}},
+longmsg:{title:'When a message is long',tone:'trig',out:['next'],fields:[['chars','At least this many characters','text']],init:{chars:'500'}},
+badword:{title:'When a message has a banned word',tone:'trig',out:['next'],fields:[['words','One word or phrase per line','area']],init:{words:''}},
+emojispam:{title:'When a message has lots of emoji',tone:'trig',out:['next'],fields:[['count','At least this many','text']],init:{count:'6'}},
+mentionspam:{title:'When a message mentions many people',tone:'trig',out:['next'],fields:[['count','At least this many','text']],init:{count:'5'}},
+channelis:{title:'Is this channel?',tone:'logic',out:['yes','no'],fields:[['channel','Channel name','text']],init:{channel:'general'}},
+isowner:{title:'Is the server owner?',tone:'logic',out:['yes','no'],fields:[],init:{}},
+newmember:{title:'Is a new member?',tone:'logic',out:['yes','no'],fields:[['days','Joined less than this many days ago','text']],init:{days:'7'}},
+weekday:{title:'Day of the week (UTC)',tone:'logic',out:['yes','no'],fields:[['day','Day','select',[['weekdays','Monday to Friday'],['weekend','Saturday and Sunday'],['mon','Monday'],['tue','Tuesday'],['wed','Wednesday'],['thu','Thursday'],['fri','Friday'],['sat','Saturday'],['sun','Sunday']]]],init:{day:'weekdays'}},
+wordlist:{title:'Has any of these words?',tone:'logic',out:['yes','no'],fields:[['input','Look in','text'],['words','One word per line','area']],init:{input:'{text}',words:''}},
+if2:{title:'If two checks',tone:'logic',out:['yes','no'],fields:[['left','First value','text'],['op','Check','select',OPS],['right','Compare to','text'],['join','Combine with','select',[['and','and'],['or','or']]],['left2','Second value','text'],['op2','Check','select',OPS],['right2','Compare to','text']],init:{left:'{text}',op:'contains',right:'',join:'and',left2:'{text}',op2:'contains',right2:''}},
+notice:{title:'Privately notify the member',tone:'mod',out:['next'],fields:[['text','Notice','text']],init:{text:'Please follow the rules.'}},
+unpin:{title:'Unpin the message',tone:'mod',out:['next'],fields:[],init:{}},
+slowmode:{title:'Set slow mode',tone:'mod',out:['next'],fields:[['seconds','Seconds between messages (0 turns it off)','text']],init:{seconds:'10'}},
+setnick:{title:'Change their nickname',tone:'mod',out:['next'],fields:[['nick','New nickname (empty clears it)','text']],init:{nick:''}},
+untimeout:{title:'End their time out',tone:'mod',out:['next'],fields:[],init:{}},
+kick:{title:'Kick the member',tone:'mod',out:['next'],fields:[['reason','Reason','text']],init:{reason:'Removed by bot'}},
+ban:{title:'Ban the member',tone:'mod',out:['next'],fields:[['reason','Reason','text']],init:{reason:'Banned by bot'}},
+purge:{title:'Delete their recent messages',tone:'mod',out:['next'],fields:[['count','How many (up to 10)','text']],init:{count:'5'}},
+warn:{title:'Warn the member',tone:'mod',out:['next'],fields:[['reason','Reason','text'],['name','Save their warning count as','text']],init:{reason:'Warning from bot',name:'warns'}},
+log:{title:'Send to a log channel',tone:'act',out:['next'],fields:[['channel','Channel name','text'],['text','Message','area']],init:{channel:'mod-log',text:'{username} triggered a rule in #{channel}: {text}'}},
+wait:{title:'Wait a moment',tone:'act',out:['next'],fields:[['seconds','Seconds (1 to 5)','text']],init:{seconds:'2'}},
+save:{title:'Save text for later',tone:'data',out:['next'],fields:[['key','Name','text'],['value','Text','text'],['scope','For','select',SCOPE]],init:{key:'note',value:'',scope:'server'}},
+load:{title:'Load saved text',tone:'data',out:['next'],fields:[['name','Save as','text'],['key','Saved name','text'],['scope','For','select',SCOPE],['fallback','If nothing is saved','text']],init:{name:'note',key:'note',scope:'server',fallback:''}},
+getcount:{title:'Read a saved counter',tone:'data',out:['next'],fields:[['name','Save as','text'],['counter','Counter','text'],['scope','For','select',SCOPE]],init:{name:'value',counter:'count',scope:'server'}},
+word:{title:'Take a word from text',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['n','Word number','text']],init:{name:'word',input:'{text}',n:'1'}},
+combine:{title:'Join two texts',tone:'data',out:['next'],fields:[['name','Save as','text'],['a','First text','text'],['sep','Put between','text'],['b','Second text','text']],init:{name:'joined',a:'',sep:' ',b:''}},
+clock:{title:'Get the date or time',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['unix','unix seconds'],['date','date'],['time','time'],['hour','hour'],['minute','minute'],['day','day of month'],['month','month number'],['monthname','month name'],['year','year'],['weekday','weekday name']]]],init:{name:'now',what:'unix'}},
+userinfo:{title:'Get member info',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['joined_days','days since joining'],['nickname','nickname'],['roles','role names'],['role_count','number of roles']]]],init:{name:'info',what:'joined_days'}},
+serverinfo:{title:'Get server info',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['members','member count'],['channels','channel count'],['roles','role count'],['name','server name']]]],init:{name:'info',what:'members'}}
+})
+const DESC={
+msg:'Starts when a message matches the text you set.',cmd:'Starts when someone types a command like !ping.',mention:'Starts when someone mentions the bot.',join:'Starts when a new member joins the server.',link:'Starts when a message contains a web link.',image:'Starts when a message has a file or image attached.',hook:'Starts when an outside service sends a webhook to your bot.',
+reply:'Starts when a message is a reply to another message.',everyone:'Starts when a message uses @everyone or @here.',usermention:'Starts when a message mentions any member.',invite:'Starts when a message contains a server invite link.',caps:'Starts when most letters in a message are capitals (shouting).',longmsg:'Starts when a message is longer than your limit.',badword:'Starts when a message contains any word on your list.',emojispam:'Starts when a message has too many emoji.',mentionspam:'Starts when a message mentions too many people.',
+if:'Compares two values and follows yes or no.',if2:'Runs two checks and combines them with and or or.',gate:'A manual on/off switch that lets you pause part of a bot.',switch:'Picks one of up to four paths based on a value.',chance:'Follows yes a set percent of the time.',ismod:'Checks if the member can moderate.',isowner:'Checks if the member owns the server.',hasrole:'Checks if the member has a role.',newmember:'Checks if the member joined recently. Good for anti-raid rules.',channelis:'Checks which channel the message is in.',weekday:'Checks the day of the week.',time:'Checks the hour of the day.',wordlist:'Checks if text contains any word on your list.',cooldown:'Lets a block run only once every few seconds.',once:'Runs only the first time each member triggers it.',stop:'Ends this run immediately.',
+sub:'Marks the start of a reusable group of blocks.',call:'Runs a subflow you made.',note:'A comment for your team. It does nothing.',
+say:'Sends a message in the same channel.',sayto:'Sends a message in another channel.',log:'Posts a message to a log channel such as mod-log.',react:'Adds an emoji reaction to the message.',wait:'Pauses for a few seconds before the next block.',
+delete:'Deletes the message that started this run.',purge:'Deletes the member’s most recent messages in this channel.',pin:'Pins the message.',unpin:'Removes the pin from the message.',warn:'Records a warning case and counts the member’s warnings.',timeout:'Mutes the member for a number of minutes.',untimeout:'Ends the member’s time out early.',kick:'Removes the member. They can rejoin with an invite.',ban:'Removes the member and blocks them from rejoining.',slowmode:'Sets how often people can post in this channel.',setnick:'Changes the member’s nickname in this server.',notice:'Shows the member a private popup only they can see.',addrole:'Gives the member a role.',removerole:'Takes a role from the member.',
+pick:'Picks a random line and saves it as a variable.',set:'Saves a value as a variable you can use in text.',count:'Adds to a counter that is remembered between runs.',setcount:'Sets a remembered counter to a number.',getcount:'Reads a remembered counter into a variable without changing it.',save:'Remembers a piece of text between runs.',load:'Brings back text you saved earlier.',math:'Adds, subtracts, rounds and more.',text:'Changes text: upper case, trim, replace and more.',word:'Takes the Nth word from some text.',combine:'Joins two pieces of text together.',randnum:'Picks a random number in a range.',map:'Looks up a value in a table of key=value lines.',clock:'Saves the current date or time as a variable.',userinfo:'Looks up details about the member.',serverinfo:'Looks up details about the server.'
+}
 const OUTL={next:'then',yes:'yes',no:'no',c1:'path 1',c2:'path 2',c3:'path 3',c4:'path 4',else:'otherwise'}
-const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook']],['Logic',['if','gate','switch','chance','ismod','hasrole','time','cooldown','once','stop']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','react']],['Moderation',['delete','pin','timeout','addrole','removerole']],['Data',['pick','set','count','setcount','math','text','randnum','map']]]
+const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','clock','userinfo','serverinfo']]]
 const T=(nodes,edges)=>({nodes,edges})
 const N=(id,type,x,y,p)=>({id,type,x,y,p:{...DEFS[type].init,...p}})
 const E=(f,o,t)=>({f,o,t})
@@ -75,6 +122,73 @@ const canvas=h('div',{class:'bk-canvas'})
 const wires=sv('svg',{class:'bk-wires'})
 const cursors=h('div',{class:'bk-cursors'})
 const stage=h('div',{class:'bk-stage'},wires,canvas,cursors)
+const V={x:24,y:24,k:1}
+const viewEl=h('div',{class:'bk-view'})
+const zlab=h('span',{class:'bk-zl','aria-live':'polite'},'100%')
+function applyView(){
+stage.style.transform=`translate(${V.x}px,${V.y}px) scale(${V.k})`
+viewEl.style.setProperty('--k',V.k);viewEl.style.setProperty('--px',V.x+'px');viewEl.style.setProperty('--py',V.y+'px')
+zlab.textContent=Math.round(V.k*100)+'%'
+}
+function zoomAt(f,cx,cy){
+const nk=Math.max(.3,Math.min(2,V.k*f));if(nk===V.k)return
+const r=viewEl.getBoundingClientRect(),px=(cx??r.left+r.width/2)-r.left,py=(cy??r.top+r.height/2)-r.top
+V.x=px-(px-V.x)*(nk/V.k);V.y=py-(py-V.y)*(nk/V.k);V.k=nk;applyView()
+}
+function fit(){
+const r=viewEl.getBoundingClientRect()
+if(!g.nodes.length||!r.width){V.x=24;V.y=24;V.k=1;applyView();return}
+let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9
+for(const n of g.nodes){const e=els.get(n.id);x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+250);y1=Math.max(y1,n.y+(e?e.offsetHeight:200))}
+const k=Math.max(.3,Math.min(1,(r.width-60)/(x1-x0),(r.height-60)/(y1-y0)))
+V.k=k;V.x=(r.width-(x1-x0)*k)/2-x0*k;V.y=Math.max(16,(r.height-(y1-y0)*k)/2-y0*k);applyView()
+}
+const ptrs=new Map()
+let pan=null,pinch=0
+viewEl.addEventListener('pointerdown',e=>{
+if(e.target.closest('.bk-n,.bk-zoom'))return
+if(e.button!==0&&e.button!==1)return
+if(sel.size&&e.target===viewEl){sel.clear();for(const x of els.values())x.classList.remove('sel')}
+ptrs.set(e.pointerId,[e.clientX,e.clientY])
+try{viewEl.setPointerCapture(e.pointerId)}catch{}
+if(ptrs.size===1)pan={x:e.clientX,y:e.clientY,ox:V.x,oy:V.y}
+else{pan=null;const[a,b]=[...ptrs.values()];pinch=Math.hypot(a[0]-b[0],a[1]-b[1])}
+viewEl.classList.add('pan')
+})
+viewEl.addEventListener('pointermove',e=>{
+if(!ptrs.has(e.pointerId))return
+ptrs.set(e.pointerId,[e.clientX,e.clientY])
+if(ptrs.size>=2){const[a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoomAt(d/pinch,(a[0]+b[0])/2,(a[1]+b[1])/2);pinch=d;return}
+if(pan){V.x=pan.ox+e.clientX-pan.x;V.y=pan.oy+e.clientY-pan.y;applyView()}
+})
+const endp=e=>{
+ptrs.delete(e.pointerId)
+if(ptrs.size<2)pinch=0
+if(ptrs.size===1){const[a]=[...ptrs.values()];pan={x:a[0],y:a[1],ox:V.x,oy:V.y}}
+else if(!ptrs.size){pan=null;viewEl.classList.remove('pan')}
+}
+viewEl.addEventListener('pointerup',endp)
+viewEl.addEventListener('pointercancel',endp)
+viewEl.addEventListener('wheel',e=>{
+if(e.target.closest('textarea,select'))return
+e.preventDefault()
+zoomAt(Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)),e.clientX,e.clientY)
+},{passive:false})
+const zbtn=(t,label,fn)=>h('button',{type:'button',class:'btn sm','aria-label':label,title:label,on:{click:fn}},t)
+viewEl.append(stage,h('div',{class:'bk-zoom'},zbtn('−','Zoom out',()=>zoomAt(1/1.25)),zlab,zbtn('+','Zoom in',()=>zoomAt(1.25)),zbtn('Fit','Fit all blocks on screen',fit),zbtn('100%','Reset zoom',()=>{V.k=1;V.x=24;V.y=24;applyView()})))
+const tip=h('div',{class:'bk-tip',role:'tooltip',hidden:true})
+function tipFor(el,text,side){
+if(!text)return
+const show=()=>{
+tip.textContent=text;tip.hidden=false
+const r=el.getBoundingClientRect()
+if(side==='right'){tip.style.left=Math.min(innerWidth-280,r.right+10)+'px';tip.style.top=Math.max(8,Math.min(innerHeight-tip.offsetHeight-8,r.top))+'px'}
+else{tip.style.left=Math.max(8,Math.min(innerWidth-280,r.left))+'px';tip.style.top=(r.bottom+8+tip.offsetHeight>innerHeight?Math.max(8,r.top-tip.offsetHeight-8):r.bottom+8)+'px'}
+}
+const hide=()=>{tip.hidden=true}
+el.addEventListener('mouseenter',show);el.addEventListener('focus',show)
+el.addEventListener('mouseleave',hide);el.addEventListener('blur',hide);el.addEventListener('pointerdown',hide)
+}
 const status=h('span',{class:'hint',role:'status'})
 const peers=h('div',{class:'bk-peers'})
 let auto=true
@@ -95,7 +209,7 @@ if(!el)return null
 const port=el.querySelector(`[data-out="${o}"]`)
 if(!port)return null
 const a=port.getBoundingClientRect(),b=canvas.getBoundingClientRect()
-return[a.left-b.left+a.width/2,a.top-b.top+a.height/2]
+return[(a.left-b.left+a.width/2)/V.k,(a.top-b.top+a.height/2)/V.k]
 }
 function inPoint(id){
 const el=els.get(id)
@@ -103,7 +217,7 @@ if(!el)return null
 const port=el.querySelector('.bk-in')
 if(!port)return null
 const a=port.getBoundingClientRect(),b=canvas.getBoundingClientRect()
-return[a.left-b.left+a.width/2,a.top-b.top+a.height/2]
+return[(a.left-b.left+a.width/2)/V.k,(a.top-b.top+a.height/2)/V.k]
 }
 function wire(){
 while(wires.firstChild)wires.firstChild.remove()
@@ -134,7 +248,7 @@ const uid=()=>'n'+Math.random().toString(36).slice(2,8)
 function dup(ids){
 const map=new Map(),made=[]
 for(const n of g.nodes)if(ids.has(n.id)){const c=JSON.parse(JSON.stringify(n));c.id=uid();c.x+=30;c.y+=30;map.set(n.id,c.id);made.push(c)}
-if(g.nodes.length+made.length>100){toast('A bot can have up to 100 blocks','err');return}
+if(g.nodes.length+made.length>200){toast('A bot can have up to 200 blocks','err');return}
 g.nodes.push(...made)
 for(const e of [...g.edges])if(map.has(e.f)&&map.has(e.t))g.edges.push({f:map.get(e.f),o:e.o,t:map.get(e.t)})
 sel.clear();for(const c of made)sel.add(c.id)
@@ -154,7 +268,7 @@ g.edges=g.edges.filter(e=>!(e.f===pending.id&&e.o===pending.o))
 if(pending.id!==n.id)g.edges.push({f:pending.id,o:pending.o,t:n.id})
 pending=null;mark();draw()
 }}}),
-head,n.d?h('div',{class:'bk-d'},n.d):null,
+(tipFor(head,DESC[n.type]),head),n.d?h('div',{class:'bk-d'},n.d):null,
 w.length?h('div',{class:'bk-w'},w.map(x=>h('div',{class:x.level},x.msg))):null,
 h('div',{class:'bk-b'},d.fields.map(f=>fieldEl(n,f))),
 d.out.length?h('div',{class:'bk-o'},d.out.map(o=>h('button',{type:'button','data-out':o,disabled:!canEdit,class:'bk-out'+(pending&&pending.id===n.id&&pending.o===o?' on':'')+(g.edges.some(e=>e.f===n.id&&e.o===o)?' used':''),title:'Click, then click the input dot of another block. Click again on a connected output to remove it.','aria-label':'Output '+(OUTL[o]||o),on:{click:()=>{
@@ -189,7 +303,7 @@ head.setPointerCapture(e.pointerId)
 head.addEventListener('pointermove',e=>{
 if(!drag)return
 for(const[x,[ox,oy]]of orig){
-x.x=Math.max(0,Math.round(ox+e.clientX-sx));x.y=Math.max(0,Math.round(oy+e.clientY-sy))
+x.x=Math.max(-2000,Math.min(5000,Math.round(ox+(e.clientX-sx)/V.k)));x.y=Math.max(-2000,Math.min(5000,Math.round(oy+(e.clientY-sy)/V.k)))
 const t=els.get(x.id);if(t){t.style.left=x.x+'px';t.style.top=x.y+'px'}
 }
 requestAnimationFrame(wire)
@@ -207,14 +321,15 @@ mount(canvas,g.nodes.map(nodeEl),h('div',{class:'bk-empty',hidden:g.nodes.length
 requestAnimationFrame(wire)
 }
 function add(type,x,y){
-if(g.nodes.length>=100){toast('A bot can have up to 100 blocks','err');return}
+if(g.nodes.length>=200){toast('A bot can have up to 200 blocks','err');return}
 const col=g.nodes.length
-g.nodes.push({id:uid(),type,x:x??40+(col%4)*300,y:y??40+Math.floor(col/4)*260,p:{...DEFS[type].init}})
+const vr=viewEl.getBoundingClientRect()
+g.nodes.push({id:uid(),type,x:x??Math.round((vr.width/2-V.x)/V.k-125+(col%6)*24),y:y??Math.round((vr.height/3-V.y)/V.k+(col%6)*24),p:{...DEFS[type].init}})
 mark();draw()
 }
 stage.addEventListener('contextmenu',e=>{
 if(e.target.closest('.bk-n')||!canEdit)return
-const r=canvas.getBoundingClientRect(),x=Math.max(0,Math.round(e.clientX-r.left)),y=Math.max(0,Math.round(e.clientY-r.top))
+const r=canvas.getBoundingClientRect(),x=Math.round((e.clientX-r.left)/V.k),y=Math.round((e.clientY-r.top)/V.k)
 ctxMenu(e,[...GROUPS.flatMap(([t,ids])=>[{head:t},...ids.map(id=>({label:DEFS[id].title,fn:()=>add(id,x,y)}))]),'-',{label:'Select all blocks',fn:()=>{g.nodes.forEach(n=>sel.add(n.id));draw()}},{label:'Clear selection',fn:()=>{sel.clear();draw()}}])
 })
 stage.addEventListener('pointerdown',e=>{if(e.target===stage||e.target===canvas||e.target===wires){if(sel.size){sel.clear();for(const x of els.values())x.classList.remove('sel')}}})
@@ -225,7 +340,21 @@ if((e.ctrlKey||e.metaKey)&&e.key==='d'&&sel.size){e.preventDefault();dup(new Set
 })
 stage.tabIndex=0
 
-const palette=h('div',{class:'bk-pal'},canEdit?GROUPS.map(([t,ids])=>h('div',null,h('h5',null,t),ids.map(id=>h('button',{type:'button',class:'btn sm bk-add '+DEFS[id].tone,on:{click:()=>add(id)}},icon('plus','s'),DEFS[id].title)))):h('p',{class:'hint'},'You can view and test this bot. Ask the owner for the editor role to change it.'),
+const palGroups=GROUPS.map(([t,ids])=>{
+const d=h('details',{class:'bk-grp'},h('summary',null,t+' ('+ids.length+')'),...ids.map(id=>{
+const b=h('button',{type:'button',class:'btn sm bk-add '+DEFS[id].tone,on:{click:()=>add(id)}},icon('plus','s'),DEFS[id].title)
+b._k=(DEFS[id].title+' '+(DESC[id]||'')).toLowerCase()
+tipFor(b,DESC[id],'right')
+return b
+}))
+d.open=true
+return d
+})
+const search=h('input',{class:'inp',type:'search',placeholder:'Search '+Object.keys(DEFS).length+' blocks',maxLength:40,'aria-label':'Search blocks',on:{input:e=>{
+const q=e.target.value.trim().toLowerCase()
+for(const d of palGroups){let any=false;for(const b of d.querySelectorAll('button')){const m=!q||b._k.includes(q);b.hidden=!m;if(m)any=true}d.hidden=!any;if(q&&any)d.open=true}
+}}})
+const palette=h('div',{class:'bk-pal'},canEdit?[search,...palGroups]:h('p',{class:'hint'},'You can view and test this bot. Ask the owner for the editor role to change it.'),
 canEdit?h('div',null,h('h5',null,'Examples'),STARTERS.map(([n,gr])=>h('button',{type:'button',class:'btn sm',on:{click:async()=>{
 if(g.nodes.length&&!await confirmBox('Replace your blocks?','The example replaces what is on the canvas.','Replace',true))return
 g=JSON.parse(JSON.stringify(gr));pending=null;ran=new Set();mark();draw()
@@ -460,7 +589,7 @@ stage.addEventListener('pointermove',e=>{
 if(!ws||ws.readyState!==1||Date.now()-lastCur<80)return
 lastCur=Date.now()
 const r=canvas.getBoundingClientRect()
-ws.send(JSON.stringify({t:'bw.cursor',x:e.clientX-r.left,y:e.clientY-r.top,b:branch?branch.id:''}))
+ws.send(JSON.stringify({t:'bw.cursor',x:(e.clientX-r.left)/V.k,y:(e.clientY-r.top)/V.k,b:branch?branch.id:''}))
 })
 connect()
 const bl=h('span',{class:'pill'},'Main')
@@ -486,13 +615,15 @@ probe,
 h('button',{class:'btn',on:{click:()=>test('join')}},'Test a join'),
 h('button',{class:'btn',title:'Run the first webhook block with this text',on:{click:()=>{const n=g.nodes.find(x=>x.type==='hook');test('hook',n?.p.name||'alert')}}},'Test a webhook'),
 bl,canEdit?autoBox:null,more,peers,h('div',{class:'grow'}),status)
+applyView()
 draw()
 validate()
+setTimeout(()=>{if(g.nodes.length)fit()},120)
 const guard=e=>{if(!document.body.contains(stage)){removeEventListener('beforeunload',guard);closed=true;try{ws?.close()}catch{};return}if(dirty)e.preventDefault()}
 addEventListener('beforeunload',guard)
 addEventListener('resize',()=>requestAnimationFrame(wire))
 setTimeout(()=>requestAnimationFrame(wire),150)
 return h('div',{class:'bk-wrap'},h('div',{class:'bk-top'},h('h2',null,p.name+' blocks'),h('p',{class:'hint'},'Build how your bot reacts to messages. Connect blocks left to right. It runs inside servers where the bot is added from the Bot hub. It sees only messages sent in text channels where it can read and post.')),
 bar,issues,
-h('div',{class:'bk-main'},palette,h('div',{class:'bk-view'},stage)),out)
+h('div',{class:'bk-main'},palette,viewEl,tip),out)
 }

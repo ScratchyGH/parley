@@ -1,5 +1,13 @@
-export const VERSION='2026.10.29'
+export const VERSION='2026.10.30'
 export const RELEASES=[
+{v:'2026.10.30',date:'October 22, 2026',title:'Bigger bot editor and a sortable server list',summary:'34 new bot blocks, a pan and zoom canvas with hover help, drag to reorder your servers, and Parli-Bold as a whole-site font.',sections:[
+['Bot blocks',[
+['34 new blocks','New triggers for replies, @everyone, invites, shouting, long messages, banned words, emoji spam and mention spam. New checks for channel, owner, new members, weekday, word lists and two-part conditions. New moderation blocks to warn, kick, ban, delete recent messages, set slow mode, change nicknames, end time outs and notify a member. New data blocks to save and load text, read counters, take a word, join text, read the clock and look up member or server info.'],
+['Canvas','Drag the empty canvas to move around and use the wheel, pinch or the buttons to zoom. Hover any block or palette entry for a short description. Search the palette. Bots can now have 200 blocks.']]],
+['Servers',[
+['Reorder','Drag servers in the left bar to reorder them, or right-click one and choose Move up or Move down. Your order is saved to your account.']]],
+['Appearance',[
+['Parli-Bold everywhere','Pick Parli-Bold as your interface or message font in Settings, Appearance.']]]]},
 {v:'2026.10.29',date:'October 21, 2026',title:'Gift unwrapping and a bigger Parley Community',summary:'Gifts now play a 3D unwrapping animation, the Parley Community server is much bigger, and the cat ears and Angel Halo frame were redrawn.',sections:[
 ['Gifts',[
 ['Unwrapping animation','When someone gifts you an item, a bundle or Pars, a 3D present drops in, the lid shakes loose and falls, and your gift floats out. If you are offline, it plays the next time you open Parley.']]],

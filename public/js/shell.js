@@ -3,7 +3,7 @@ import{parIcon}from'./pars.js'
 import{expTag}from'./exp.js'
 import{communityDialog}from'./xlabs.js'
 import{VC,h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
-import{applyServerTheme,S,P,on,emit,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
+import{applyServerTheme,S,P,on,emit,setting,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{sendAll}from'./net.js'
 import{V,leaveVoice}from'./voice.js'
@@ -73,11 +73,18 @@ kids.push(h('div',{class:'wwrap'},homeOn?h('span',{class:'pip',style:{height:'20
 h('button',{class:'wbtn'+(homeOn?' on':''),title:'Home and direct messages','aria-label':'Home and direct messages','aria-current':homeOn?'page':null,on:{click:()=>go('/')}},icon('chat')),
 dm?h('span',{class:'bdg'},dm.mentions||'•'):null))
 kids.push(h('div',{class:'sep'}))
-for(const s of S.servers){
+const ord=setting('server_order',[])
+const list=[...S.servers].sort((a,b)=>{const i=ord.indexOf(a.id),j=ord.indexOf(b.id);return(i<0?1e9:i)-(j<0?1e9:j)})
+for(const s of list){
 const on_=S.nav.kind==='server'&&S.nav.sid===s.id
 const u=serverUnread(s.id)
-const b=h('button',{class:'wbtn'+(on_?' on':''),title:s.name,'aria-label':s.name+(u?', unread':''),'aria-current':on_?'page':null,style:s.accent?{borderColor:on_?s.accent:'transparent'}:{},on:{click:()=>go('/s/'+s.id),contextmenu:e=>ctxMenu(e,serverMenu(s.id))}},s.icon_id?h('img',{src:'/api/files/'+s.icon_id,alt:'',loading:'lazy'}):initialsOf(s.name))
-kids.push(h('div',{class:'wwrap'},on_?h('span',{class:'pip',style:{height:'20px',marginTop:'-10px'}}):u?h('span',{class:'pip'}):null,b,badge(u)))
+const b=h('button',{class:'wbtn'+(on_?' on':''),title:s.name,'aria-label':s.name+(u?', unread':''),'aria-current':on_?'page':null,style:s.accent?{borderColor:on_?s.accent:'transparent'}:{},on:{click:()=>go('/s/'+s.id),contextmenu:e=>ctxMenu(e,serverMenu(s.id,list))}},s.icon_id?h('img',{src:'/api/files/'+s.icon_id,alt:'',loading:'lazy'}):initialsOf(s.name))
+const w=h('div',{class:'wwrap',draggable:'true','data-sid':s.id},on_?h('span',{class:'pip',style:{height:'20px',marginTop:'-10px'}}):u?h('span',{class:'pip'}):null,b,badge(u))
+w.addEventListener('dragstart',e=>{dragId=s.id;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',s.id)}catch{}w.classList.add('dragging')})
+w.addEventListener('dragend',()=>{dragId=null;w.classList.remove('dragging');el.rail.querySelectorAll('.dropb,.dropa').forEach(x=>x.classList.remove('dropb','dropa'))})
+w.addEventListener('dragover',e=>{if(!dragId||dragId===s.id)return;e.preventDefault();const r=w.getBoundingClientRect(),before=e.clientY<r.top+r.height/2;el.rail.querySelectorAll('.dropb,.dropa').forEach(x=>x.classList.remove('dropb','dropa'));w.classList.add(before?'dropb':'dropa')})
+w.addEventListener('drop',e=>{if(!dragId||dragId===s.id)return;e.preventDefault();const r=w.getBoundingClientRect();moveServer(list,dragId,s.id,e.clientY<r.top+r.height/2)})
+kids.push(w)
 }
 kids.push(h('button',{class:'wbtn',title:'Create or join a server','aria-label':'Create or join a server',on:{click:()=>createServerDialog()}},icon('plus')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='discover'?' on':''),title:'Discover servers','aria-label':'Discover servers',on:{click:()=>go('/discover')}},icon('compass')))
@@ -87,7 +94,19 @@ mount(el.rail,kids)
 }
 const initialsOf=n=>String(n).trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()
 
-function serverMenu(sid){
+let dragId=null
+async function moveServer(list,id,target,before){
+const ids=list.map(x=>x.id).filter(x=>x!==id)
+let i=ids.indexOf(target);if(i<0)i=ids.length;if(!before)i++
+ids.splice(i,0,id)
+try{const d=await PATCH('/api/me',{settings:{server_order:ids}});S.me=d.user;renderRail()}catch(e){fail(e)}
+}
+function shift(list,id,dir){
+const ids=list.map(x=>x.id),i=ids.indexOf(id),j=i+dir
+if(j<0||j>=ids.length)return
+const t=ids[j];moveServer(list,id,t,dir<0)
+}
+function serverMenu(sid,list){
 const d=S.sdata[sid]
 const s=S.servers.find(x=>x.id===sid)
 const items=[]
@@ -98,6 +117,7 @@ if(can(sid,P.MANAGE_SERVER|P.MANAGE_ROLES|P.MANAGE_CHANNELS|P.MODERATE|P.BAN|P.K
 if(can(sid,P.MANAGE_CHANNELS)){items.push({icon:'plus',label:'Create channel',fn:()=>channelDialog(sid)},{icon:'plus',label:'Create category',fn:()=>categoryDialog(sid)})}
 items.push('-')
 }
+if(list&&list.length>1){const i=list.findIndex(x=>x.id===sid);if(i>0)items.push({label:'Move up',fn:()=>shift(list,sid,-1)});if(i<list.length-1)items.push({label:'Move down',fn:()=>shift(list,sid,1)});items.push('-')}
 items.push({icon:'check',label:'Mark as read',fn:()=>markRead(Object.keys(S.unread).filter(r=>S.unread[r].sid===sid))})
 items.push(...muteItems(sid))
 items.push({icon:'calendar',label:'Events',fn:()=>eventsDialog(sid)},{icon:'list',label:'Server info and rules',fn:()=>emit('ui:serverinfo',sid)},'-',{icon:'copy',label:'Copy server ID',fn:()=>copyText(sid)})
