@@ -1,0 +1,2 @@
+update par_items set name='Midnight sparks effect',descr='Gold fireworks bursting around your avatar with glitter falling past. Only in the New Years 2026 bundle.' where id='ef_ny26';
+update par_items set descr='Limited time, New Years Eve only. A midnight clock frame with a 2026 plaque, a fireworks effect, a pinstriped nameplate, a champagne name, two badges, a title and a message style.' where id='bn_ny26';
