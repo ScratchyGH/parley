@@ -420,16 +420,16 @@ await loadServers();delete S.sdata[sid];dlg.close();go('/')
 }
 
 const PRESETS=[['Midnight',{bg:'#0d1117',text:'#c9d1d9',accent:'#388bfd'}],['Forest',{bg:'#142018',text:'#cfe3d4',accent:'#3fa25a'}],['Sunset',{bg:'#2a1a1f',text:'#f0d9d2',accent:'#e0734a'}],['Grape',{bg:'#1d1630',text:'#ddd3f2',accent:'#9a6ee8'}],['Paper',{bg:'#f4f0e6',text:'#2b2a26',accent:'#a4472b'}]]
+const themeDraft={}
 function theme(pg,sid){
 const s=S.sdata[sid].server
-const t0=s.theme||{}
-let t={...t0}
+const t=themeDraft[sid]||(themeDraft[sid]={...(s.theme||{})})
 const err=errBox()
 const preview=()=>applyThemeObj(t)
 const col=(k,label,def)=>h('label',{class:'row',style:{gap:'8px'}},h('input',{type:'color','aria-label':label,value:t[k]||def,on:{input:e=>{t[k]=e.target.value;preview()}}}),h('span',null,label),t[k]?h('button',{type:'button',class:'btn sm',on:{click:e=>{e.preventDefault();delete t[k];preview();theme(pg,sid)}}},'Clear'):null)
 const dim=h('input',{type:'range',min:0,max:90,value:t.dim??55,'aria-label':'Background dim',on:{input:e=>{t.dim=+e.target.value;preview()}}})
 mount(pg,h('h3',null,'Theme'),h('p',{class:'hint'},'Colours and a background image that apply only inside this server. Members see them whenever they open it, and their own theme comes back when they leave.'),
-h('div',{class:'row',style:{flexWrap:'wrap'}},PRESETS.map(([n,v])=>h('button',{type:'button',class:'btn sm',on:{click:()=>{t={...t,...v};preview();theme(pg,sid)}}},n))),
+h('div',{class:'row',style:{flexWrap:'wrap'}},PRESETS.map(([n,v])=>h('button',{type:'button',class:'btn sm',on:{click:()=>{Object.assign(t,v);preview();theme(pg,sid)}}},n))),
 col('bg','Background','#212829'),col('side','Sidebar','#1a2021'),col('panel','Panels','#293133'),col('text','Text','#bccacc'),col('accent','Accent','#521525'),
 field('Background image',h('div',{class:'row'},h('button',{type:'button',class:'btn sm',on:{click:async()=>{
 const f=await pickCropped({aspect:16/9,width:1920,title:'Crop background image'});if(!f)return
@@ -439,9 +439,9 @@ t.image?field('Image darkening',dim):null,
 err,
 h('div',{class:'row',style:{marginTop:'16px'}},h('button',{class:'btn pri',on:{click:async()=>{
 err.textContent=''
-try{await PATCH('/api/servers/'+sid,{theme:t});await loadServer(sid);applyServerTheme();toast('Theme saved','ok')}catch(e){err.textContent=e.message}
+try{await PATCH('/api/servers/'+sid,{theme:t});await loadServer(sid);delete themeDraft[sid];applyServerTheme();toast('Theme saved','ok')}catch(e){err.textContent=e.message}
 }}},'Save theme'),h('button',{class:'btn',on:{click:async()=>{
-try{await PATCH('/api/servers/'+sid,{theme:null});await loadServer(sid);t={};applyServerTheme();theme(pg,sid);toast('Theme reset','ok')}catch(e){fail(e)}
+try{await PATCH('/api/servers/'+sid,{theme:null});await loadServer(sid);delete themeDraft[sid];applyServerTheme();theme(pg,sid);toast('Theme reset','ok')}catch(e){fail(e)}
 }}},'Reset to default')))
 }
 

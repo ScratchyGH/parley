@@ -10,6 +10,7 @@ import{V,leaveVoice}from'./voice.js'
 import{membersPanel,pinsPanel,searchPanel,savedPanel,inboxPanel,threadsPanel}from'./panels.js'
 import{createServerDialog,inviteDialog,channelDialog,categoryDialog,newDmDialog,quickSwitcher,openDm}from'./dialogs.js'
 import{openSettings}from'./settings.js'
+import{startTour}from'./tour.js'
 import{openServerSettings,channelSettings,leaveServer}from'./ssettings.js'
 import{accountsDialog}from'./accounts.js'
 import{eventsDialog}from'./dialogs2.js'
@@ -294,6 +295,7 @@ menuAt(anchor,[
 {label:(cur==='invisible'?'✓ ':'')+'Invisible',fn:()=>set('invisible')},
 '-',{icon:'user',label:'Edit profile',fn:()=>openSettings('profile')},
 S.me.admin?{icon:'shield',label:'Admin panel',fn:()=>openSettings('admin')}:null,
+{icon:'compass',label:'Guide through Parley',fn:()=>startTour(true)},
 {icon:'swap',label:'Switch account',fn:()=>accountsDialog()}
 ])
 }
