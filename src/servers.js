@@ -25,7 +25,7 @@ if(!m)fail(404,'Server not found')
 return m
 }
 
-const ONB0={on:0,since:0,title:'',text:'',roles:[],channels:[]}
+const ONB0={on:0,since:0,title:'',text:'',roles:[],channels:[],accent:'',hero:1,finish:'',skip:0,pages:[]}
 export function onbOf(v){
 try{const o=JSON.parse(v||'');if(o&&typeof o==='object')return{...ONB0,...o}}catch{}
 return{...ONB0}
@@ -42,7 +42,9 @@ roles.push({id:r.id,label:clean(opt(x.label,32,'Role label')||''),desc:clean(opt
 const own=new Set((await c.env.DB.prepare('select id from channels where server_id=?').bind(sid).all()).results.map(x=>x.id))
 const channels=(Array.isArray(b.channels)?b.channels:[]).map(String).filter(x=>own.has(x)).slice(0,8)
 const on=b.on?1:0
-return{on,since:on&&!prev.on?now():prev.since||0,title:clean(opt(b.title,60,'Title')||''),text:clean(opt(b.text,600,'Welcome text')||''),roles,channels}
+const accent=/^#[0-9a-f]{6}$/i.test(String(b.accent||''))?String(b.accent).toLowerCase():''
+const pages=(Array.isArray(b.pages)?b.pages:[]).slice(0,3).map(x=>({title:clean(opt(x&&x.title,60,'Page title')||''),text:clean(opt(x&&x.text,800,'Page text')||'')})).filter(x=>x.title||x.text)
+return{on,since:on&&!prev.on?now():prev.since||0,title:clean(opt(b.title,60,'Title')||''),text:clean(opt(b.text,600,'Welcome text')||''),roles,channels,accent,hero:b.hero===0||b.hero===false?0:1,finish:clean(opt(b.finish,24,'Finish label')||''),skip:b.skip?1:0,pages}
 }
 const must=(m,bit,msg='You do not have permission to do that')=>{if(!(m.base&bit))fail(403,msg)}
 export async function target(c,sid,uid,m){

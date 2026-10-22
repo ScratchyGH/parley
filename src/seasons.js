@@ -12,7 +12,6 @@ ember:{name:'Ember Night',from:[11,4],to:[11,9]},
 aurora:{name:'Northern Lights',from:[1,8],to:[1,31]},
 clover:{name:'Lucky Clover',from:[2,16],to:[3,14]},
 rain:{name:'Rainfall',from:[4,13],to:[6,14]},
-ocean:{name:'Ocean Tide',from:[7,16],to:[8,31]},
 time:{name:'Timeskipper',from:[9,1],to:[9,30]},
 ny26:{name:'New Years 2026',from:[12,31],to:[1,1]}
 }
