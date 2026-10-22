@@ -1,4 +1,4 @@
-import{now,msgId,limit}from'./util.js'
+import{now,msgId,limit,newId}from'./util.js'
 import{resolveRoom,loadMember,P}from'./perms.js'
 import{signMsg}from'./sign.js'
 import{hydrate,publishMsg}from'./messages.js'
@@ -43,6 +43,24 @@ await c.env.DB.prepare('insert into bot_vars(bot_id,server_id,k,v) values(?,?,?,
 return getVar(c,botId,sid,k)
 }
 
+
+const caseSt=(c,sid,botId,uid,type,reason)=>c.env.DB.prepare('insert into mod_cases(id,server_id,num,user_id,mod_id,type,reason,evidence,status,created_at,updated_at) values(?,?,(select coalesce(max(num),0)+1 from mod_cases where server_id=?),?,?,?,?,?,?,?,?)').bind(newId('mc'),sid,sid,uid,botId,type,String(reason||'').slice(0,500),'','open',now(),now())
+async function removeFrom(c,sid,botId,uid,kind,reason){
+const bm=await loadMember(c.env,sid,botId),tm=await loadMember(c.env,sid,uid)
+const need=kind==='ban'?P.BAN:P.KICK
+if(!bm||!tm||uid===botId||!(bm.admin||(bm.base&need))||tm.owner||tm.admin||tm.top>=bm.top)return
+const st=[
+c.env.DB.prepare('delete from member_roles where server_id=? and user_id=?').bind(sid,uid),
+c.env.DB.prepare('delete from members where server_id=? and user_id=?').bind(sid,uid),
+c.env.DB.prepare('delete from read_state where user_id=? and room in (select id from channels where server_id=?)').bind(uid,sid),
+caseSt(c,sid,botId,uid,kind,reason)]
+if(kind==='ban')st.push(c.env.DB.prepare('insert or replace into bans(server_id,user_id,reason,by_id,created_at) values(?,?,?,?,?)').bind(sid,uid,reason,botId,now()))
+await c.env.DB.batch(st)
+c.pub('s_'+sid,{t:'member.leave',uid})
+c.pubClose('s_'+sid,{close:[uid],purge:true})
+c.pub('u_'+uid,{t:'server.removed',id:sid,reason:kind==='ban'?'banned':'kicked'})
+}
+
 export function makeIo(c,botId,sid,room,user,message){
 const uid=user.id
 return{
@@ -59,6 +77,68 @@ const k=vkey('cd_'+id,scope,uid),last=await getVar(c,botId,sid,k),t=Date.now()
 if(last&&t-last<sec*1000)return false
 await putVar(c,botId,sid,k,t)
 return true
+},
+isOwner:async()=>{const m=await loadMember(c.env,sid,uid);return!!m&&!!m.owner},
+joinedDays:async()=>{const r=await c.env.DB.prepare('select joined_at from members where server_id=? and user_id=?').bind(sid,uid).first();return r?Math.floor((now()-r.joined_at)/86400000):null},
+notice:async t=>{c.pub('u_'+uid,{t:'notice',text:t})},
+unpin:async()=>{
+if(!message)return
+const brr=await resolveRoom(c.env,room,botId)
+if(!(brr.perms&P.MANAGE_MESSAGES))return
+await c.env.DB.prepare('update messages set pinned=0 where id=?').bind(message.id).run()
+const row=await c.env.DB.prepare('select * from messages where id=?').bind(message.id).first()
+const[m]=await hydrate(c.env,[row],botId)
+await publishMsg(c,brr,{t:'msg.update',m})
+},
+slowmode:async sec=>{
+const bm=await loadMember(c.env,sid,botId)
+if(!bm||!(bm.admin||(bm.base&P.MANAGE_CHANNELS)))return
+await c.env.DB.prepare('update channels set slowmode=? where id=? and server_id=?').bind(Math.max(0,Math.min(21600,sec)),room,sid).run()
+c.pub('s_'+sid,{t:'server.update'})
+},
+setNick:async nick=>{
+const bm=await loadMember(c.env,sid,botId),tm=await loadMember(c.env,sid,uid)
+if(!bm||!tm||!(bm.admin||(bm.base&P.MODERATE))||tm.owner||tm.admin||tm.top>=bm.top)return
+await c.env.DB.prepare('update members set nickname=? where server_id=? and user_id=?').bind(nick||null,sid,uid).run()
+c.pub('s_'+sid,{t:'member.update',uid})
+},
+untimeout:async()=>{
+const bm=await loadMember(c.env,sid,botId)
+if(!bm||!(bm.admin||(bm.base&P.MODERATE)))return
+await c.env.DB.prepare('update members set timeout_until=0 where server_id=? and user_id=?').bind(sid,uid).run()
+c.pub('s_'+sid,{t:'member.update',uid})
+},
+kick:r=>removeFrom(c,sid,botId,uid,'kick',r),
+ban:r=>removeFrom(c,sid,botId,uid,'ban',r),
+purge:async n=>{
+const brr=await resolveRoom(c.env,room,botId)
+if(!(brr.perms&P.MANAGE_MESSAGES))return
+const rows=(await c.env.DB.prepare('select id from messages where room=? and author_id=? and deleted_at is null order by created_at desc limit ?').bind(room,uid,Math.max(1,Math.min(10,n))).all()).results
+for(const r of rows){
+await c.env.DB.prepare("update messages set deleted_at=?,content='',pinned=0 where id=? and deleted_at is null").bind(now(),r.id).run()
+await publishMsg(c,brr,{t:'msg.delete',room,id:r.id})
+}
+},
+warn:async reason=>{
+await c.env.DB.batch([caseSt(c,sid,botId,uid,'warn',reason)])
+c.pub('u_'+uid,{t:'notice',text:'You received a warning: '+reason})
+return addVar(c,botId,sid,vkey('warns','user',uid),1)
+},
+save:(k,v,scope)=>putVar(c,botId,sid,vkey('tx_'+k,scope,uid),v),
+load:async(k,scope)=>{const r=await c.env.DB.prepare('select v from bot_vars where bot_id=? and server_id=? and k=?').bind(botId,sid,vkey('tx_'+k,scope,uid)).first();return r?r.v:null},
+getCount:(k,scope)=>getVar(c,botId,sid,vkey(k,scope,uid)),
+memberInfo:async what=>{
+const m=await c.env.DB.prepare('select nickname,joined_at from members where server_id=? and user_id=?').bind(sid,uid).first()
+if(!m)return''
+if(what==='nickname')return m.nickname||user.display_name||''
+if(what==='joined_days')return Math.floor((now()-m.joined_at)/86400000)
+const rs=(await c.env.DB.prepare('select r.name from member_roles mr join roles r on r.id=mr.role_id where mr.server_id=? and mr.user_id=? and r.is_everyone=0 order by r.position desc limit 25').bind(sid,uid).all()).results
+return what==='role_count'?rs.length:rs.map(x=>x.name).join(', ')
+},
+serverInfo:async what=>{
+if(what==='name')return(await c.env.DB.prepare('select name from servers where id=?').bind(sid).first())?.name||''
+const t=what==='members'?'members':what==='channels'?'channels':'roles'
+return(await c.env.DB.prepare(`select count(*) n from ${t} where server_id=?`).bind(sid).first()).n
 },
 isMod:async()=>{const m=await loadMember(c.env,sid,uid);return!!m&&(m.admin||(m.base&(P.MODERATE|P.MANAGE_MESSAGES))!==0)},
 hasRole:async name=>!!await c.env.DB.prepare('select 1 x from member_roles mr join roles r on r.id=mr.role_id where mr.server_id=? and mr.user_id=? and lower(r.name)=lower(?)').bind(sid,uid,name).first(),
@@ -107,7 +187,7 @@ let graph
 try{graph=JSON.parse(row.blocks)}catch{continue}
 try{limit('blk:'+row.bot_id+':'+rr.room,30,60000)}catch{continue}
 const user=message.author||{id:message.author_id,username:'',display_name:''}
-const ctx={user,channel:rr.ch.name,server:rr.m.server.name,text:message.content||'',mentioned:(message.content||'').includes('<@'+row.bot_id+'>'),attachments:(message.attachments||[]).length,at:Date.now()}
+const ctx={user,channel:rr.ch.name,server:rr.m.server.name,text:message.content||'',mentioned:(message.content||'').includes('<@'+row.bot_id+'>'),attachments:(message.attachments||[]).length,replied:!!(message.reply||message.reply_to),at:Date.now()}
 try{await execute(graph,ctx,makeIo(c,row.bot_id,rr.serverId,rr.room,user,message))}catch{}
 }
 }
@@ -138,6 +218,9 @@ react:async e=>{sent.push({react:e})},
 count:async(k,by,s)=>{const key=s+':'+k;mem.set(key,(mem.get(key)||0)+by);return mem.get(key)},
 setCount:async(k,v,s)=>{mem.set(s+':'+k,v);return v},
 cooldown:async()=>true,
+isOwner:async()=>false,joinedDays:async()=>30,notice:async t=>{sent.push({note:'Privately notifies the member: '+t})},unpin:async()=>{sent.push({note:'Unpins the message'})},slowmode:async s=>{sent.push({note:'Sets slow mode to '+s+' seconds'})},setNick:async n=>{sent.push({note:n?'Sets the nickname to '+n:'Clears the nickname'})},untimeout:async()=>{sent.push({note:'Ends the time out'})},kick:async r=>{sent.push({note:'Kicks the member: '+r})},ban:async r=>{sent.push({note:'Bans the member: '+r})},purge:async n=>{sent.push({note:'Deletes up to '+n+' recent messages from the member'})},
+warn:async r=>{const k='user:warns';mem.set(k,(mem.get(k)||0)+1);sent.push({note:'Warns the member: '+r});return mem.get(k)},
+save:async(k,v,s)=>{mem.set('tx:'+s+':'+k,v)},load:async(k,s)=>mem.has('tx:'+s+':'+k)?mem.get('tx:'+s+':'+k):null,getCount:async(k,s)=>mem.get(s+':'+k)||0,memberInfo:async w=>w==='joined_days'?30:w==='role_count'?1:w==='roles'?'Member':'Tester',serverInfo:async w=>w==='name'?'Your server':w==='members'?42:w==='channels'?8:5,
 isMod:async()=>false,
 hasRole:async()=>false,
 del:async()=>{sent.push({note:'Deletes the message'})},
@@ -145,7 +228,7 @@ pin:async()=>{sent.push({note:'Pins the message'})},
 timeout:async m=>{sent.push({note:'Times the member out for '+m+' minutes'})},
 role:async(n,a)=>{sent.push({note:(a?'Gives':'Takes')+' the role '+n})}
 }
-const log=await execute(graph,{user,channel:'general',server:'Your server',text:event==='join'?'':text,event:event||undefined,hook:event==='hook'?hook:undefined,mentioned:/<@bot>/.test(text),attachments:/\[image\]/.test(text)?1:0,at:Date.now()},io)
+const log=await execute(graph,{user,channel:'general',server:'Your server',text:event==='join'?'':text,event:event||undefined,hook:event==='hook'?hook:undefined,mentioned:/<@bot>/.test(text),attachments:/\[image\]/.test(text)?1:0,replied:/\[reply\]/.test(text),dry:true,at:Date.now()},io)
 return{log,sent}
 }
 

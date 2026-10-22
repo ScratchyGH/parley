@@ -14,7 +14,7 @@ const walk=id=>{if(reach.has(id))return;reach.add(id);const n=by.get(id);if(n?.t
 for(const n of g.nodes)if(TYPES[n.type].trigger)walk(n.id)
 const set=new Set()
 for(const n of g.nodes){
-if(n.p.name&&['pick','set','count','setcount','math','text','randnum','map'].includes(n.type))set.add(n.p.name.toLowerCase())
+if(n.p.name&&['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo'].includes(n.type))set.add(n.p.name.toLowerCase())
 }
 const cmds=new Map()
 for(const n of g.nodes){
@@ -22,13 +22,13 @@ const T=TYPES[n.type]
 if(!T.trigger&&!T.entry&&!reach.has(n.id))out.push({id:n.id,level:'warn',msg:'This block is not connected to any trigger, so it never runs.'})
 if(T.trigger&&!(next.get(n.id)||[]).length)out.push({id:n.id,level:'warn',msg:'This trigger has nothing after it yet.'})
 if((n.type==='say'||n.type==='sayto')&&!n.p.text.trim())out.push({id:n.id,level:'warn',msg:'The message is empty, so nothing will be sent.'})
-if(n.type==='say'||n.type==='sayto'||n.type==='if'||n.type==='switch'){
+if(['say','sayto','if','if2','switch','log','notice','save','combine','warn'].includes(n.type)){
 for(const v of Object.values(n.p))for(const m of String(v).matchAll(/\{([a-z0-9_]{1,24})\}/gi)){const k=m[1].toLowerCase();if(!BUILTIN.has(k)&&!set.has(k))out.push({id:n.id,level:'warn',msg:'{'+m[1]+'} is not set by any block, so it will be empty.'})}
 }
 if(n.type==='call'&&!subs.has(n.p.name.toLowerCase()))out.push({id:n.id,level:'error',msg:'No subflow is named "'+n.p.name+'".'})
 if(n.type==='sub'&&!g.nodes.some(x=>x.type==='call'&&x.p.name.toLowerCase()===n.p.name.toLowerCase()))out.push({id:n.id,level:'warn',msg:'Nothing calls this subflow.'})
 if(n.type==='cmd'){const k=n.p.prefix+n.p.name.toLowerCase();if(cmds.has(k))out.push({id:n.id,level:'warn',msg:'Another block already listens for '+k+'.'});cmds.set(k,n.id)}
-if(n.type==='delete'||n.type==='timeout'||n.type==='addrole'||n.type==='removerole')out.push({id:n.id,level:'info',msg:'Needs the matching permission for the bot in each server.'})
+if(['delete','timeout','addrole','removerole','unpin','slowmode','setnick','untimeout','kick','ban','purge'].includes(n.type))out.push({id:n.id,level:'info',msg:'Needs the matching permission for the bot in each server, and a role above the member.'})
 }
 const color=new Map()
 let cyc=null

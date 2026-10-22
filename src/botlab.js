@@ -237,7 +237,7 @@ return{blocks:g,rev:p.rev||0}
 r.add('PUT','/api/bothub/:id/blocks',async c=>{
 const p=await mine(c,c.p.id,'editor')
 limit('bothubb:'+c.user.id,600,3600000)
-const b=await body(c.req,60000)
+const b=await body(c.req,120000)
 const g=cleanGraph(b.blocks)
 if(b.base_rev!==undefined&&Number(b.base_rev)!==(p.rev||0)){
 let cur=null

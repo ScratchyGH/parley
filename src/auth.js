@@ -58,6 +58,7 @@ const out={}
 for(const[k,v]of Object.entries(o)){
 if(k in SETTINGS_KEYS){if(!SETTINGS_KEYS[k].includes(v))fail(400,k+' is invalid');out[k]=v}
 else if(['reduced_motion','show_presence','sound','desktop','dnd','quiet_on','send_ctrl_enter','link_previews','performance','diagnostics'].includes(k)){if(typeof v!=='boolean')fail(400,k+' is invalid');out[k]=v}
+else if(k==='server_order'){if(!Array.isArray(v)||v.length>300||v.some(x=>typeof x!=='string'||x.length>40))fail(400,'server_order is invalid');out.server_order=v}
 else if(k==='font_size'){if(!Number.isInteger(v)||v<12||v>22)fail(400,'font_size is invalid');out.font_size=v}
 else if(k==='ui_color'||k==='ui_bg'){if(typeof v!=='string'||(v!==''&&!/^#[0-9a-fA-F]{6}$/.test(v)))fail(400,k+' is invalid');out[k]=v.toLowerCase()}
 else if(k==='quiet_start'||k==='quiet_end'){if(typeof v!=='string'||!/^\d\d:\d\d$/.test(v))fail(400,k+' is invalid');out[k]=v}

@@ -1,9 +1,11 @@
 import{fail}from'./util.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
-const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words']
-const MATH=['+','-','*','/','%','max','min']
+const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words','capital','nospaces','digits','letters','left','right','repeat','slug']
+const MATH=['+','-','*','/','%','max','min','pow','floor','ceil','round','abs']
 const YN=['yes','no']
 const NX=['next']
+const SC=['server','user']
+const DAYS=['sun','mon','tue','wed','thu','fri','sat','weekdays','weekend']
 const CASES=['c1','c2','c3','c4','else']
 export const TYPES={
 msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0']},def:{mode:'contains',text:'',ci:'1'}},
@@ -41,9 +43,43 @@ switch:{out:CASES,spec:{input:200,v1:60,v2:60,v3:60,v4:60},def:{input:'{arg1}',v
 sub:{out:NX,entry:true,spec:{name:24},def:{name:'shared'}},
 call:{out:NX,spec:{name:24},def:{name:'shared'}},
 note:{out:[],entry:true,spec:{text:300},def:{text:''}},
-hook:{out:NX,trigger:true,spec:{name:24},def:{name:'alert'}}
+hook:{out:NX,trigger:true,spec:{name:24},def:{name:'alert'}},
+reply:{out:NX,trigger:true,spec:{},def:{}},
+everyone:{out:NX,trigger:true,spec:{},def:{}},
+usermention:{out:NX,trigger:true,spec:{},def:{}},
+invite:{out:NX,trigger:true,spec:{},def:{}},
+caps:{out:NX,trigger:true,spec:{percent:3,min:3},def:{percent:'70',min:'8'}},
+longmsg:{out:NX,trigger:true,spec:{chars:4},def:{chars:'500'}},
+badword:{out:NX,trigger:true,spec:{words:1500},def:{words:''}},
+emojispam:{out:NX,trigger:true,spec:{count:2},def:{count:'6'}},
+mentionspam:{out:NX,trigger:true,spec:{count:2},def:{count:'5'}},
+channelis:{out:YN,spec:{channel:40},def:{channel:'general'}},
+isowner:{out:YN,spec:{},def:{}},
+newmember:{out:YN,spec:{days:3},def:{days:'7'}},
+weekday:{out:YN,spec:{day:DAYS},def:{day:'weekdays'}},
+wordlist:{out:YN,spec:{input:200,words:1500},def:{input:'{text}',words:''}},
+if2:{out:YN,spec:{left:200,op:OPS,right:200,join:['and','or'],left2:200,op2:OPS,right2:200},def:{left:'{text}',op:'contains',right:'',join:'and',left2:'{text}',op2:'contains',right2:''}},
+notice:{out:NX,spec:{text:300},def:{text:''}},
+unpin:{out:NX,spec:{},def:{}},
+slowmode:{out:NX,spec:{seconds:5},def:{seconds:'10'}},
+setnick:{out:NX,spec:{nick:32},def:{nick:''}},
+untimeout:{out:NX,spec:{},def:{}},
+kick:{out:NX,spec:{reason:200},def:{reason:'Removed by bot'}},
+ban:{out:NX,spec:{reason:200},def:{reason:'Banned by bot'}},
+purge:{out:NX,spec:{count:2},def:{count:'5'}},
+warn:{out:NX,spec:{name:24,reason:200},def:{name:'warns',reason:'Warning from bot'}},
+log:{out:NX,spec:{channel:40,text:1500},def:{channel:'mod-log',text:''}},
+wait:{out:NX,spec:{seconds:1},def:{seconds:'2'}},
+save:{out:NX,spec:{key:24,value:300,scope:SC},def:{key:'note',value:'',scope:'server'}},
+load:{out:NX,spec:{name:24,key:24,scope:SC,fallback:200},def:{name:'note',key:'note',scope:'server',fallback:''}},
+getcount:{out:NX,spec:{name:24,counter:24,scope:SC},def:{name:'value',counter:'count',scope:'server'}},
+word:{out:NX,spec:{name:24,input:300,n:2},def:{name:'word',input:'{text}',n:'1'}},
+combine:{out:NX,spec:{name:24,a:200,sep:20,b:200},def:{name:'joined',a:'',sep:' ',b:''}},
+clock:{out:NX,spec:{name:24,what:['unix','date','time','hour','minute','day','month','monthname','year','weekday']},def:{name:'now',what:'unix'}},
+userinfo:{out:NX,spec:{name:24,what:['nickname','joined_days','roles','role_count']},def:{name:'info',what:'joined_days'}},
+serverinfo:{out:NX,spec:{name:24,what:['members','channels','roles','name']},def:{name:'info',what:'members'}}
 }
-export const MAX_NODES=100
+export const MAX_NODES=200
 const NAMEF=['name']
 const bad=m=>fail(400,m)
 const num=(v,lo,hi,label)=>{const x=Number(v);if(!Number.isFinite(x))bad(label+' must be a number');return String(Math.max(lo,Math.min(hi,Math.round(x))))}
@@ -74,6 +110,17 @@ if(n.type==='time'){p.from=num(p.from,0,23,'Hour');p.to=num(p.to,0,23,'Hour')}
 if(n.type==='cooldown')p.seconds=num(p.seconds,1,86400,'Seconds')
 if(n.type==='timeout')p.minutes=num(p.minutes,1,60,'Minutes')
 if(n.type==='randnum'){p.min=num(p.min,-1000000,1000000,'Minimum');p.max=num(p.max,-1000000,1000000,'Maximum')}
+if(n.type==='caps'){p.percent=num(p.percent,1,100,'Percent');p.min=num(p.min,1,200,'Minimum letters')}
+if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
+if(n.type==='emojispam'||n.type==='mentionspam')p.count=num(p.count,1,50,'Count')
+if(n.type==='newmember')p.days=num(p.days,1,365,'Days')
+if(n.type==='slowmode')p.seconds=num(p.seconds,0,21600,'Seconds')
+if(n.type==='purge')p.count=num(p.count,1,10,'Messages')
+if(n.type==='wait')p.seconds=num(p.seconds,1,5,'Seconds')
+if(n.type==='word')p.n=num(p.n,1,50,'Word number')
+if((n.type==='save'||n.type==='load')&&!/^[a-z0-9_]{1,24}$/i.test(p.key))bad('Keys use letters, numbers and underscores')
+if(n.type==='getcount'&&!/^[a-z0-9_]{1,24}$/i.test(p.counter))bad('Counter names use letters, numbers and underscores')
+if((n.type==='log'||n.type==='channelis')&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
 if(n.type==='sayto'&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
 if(T.spec.name!==undefined&&p.name&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Variable names use letters, numbers and underscores')
 const dd=typeof n.d==='string'?n.d.trim().slice(0,200):''
@@ -118,6 +165,15 @@ if(n.type==='join')return ctx.event==='join'
 if(n.type==='hook')return ctx.event==='hook'&&String(ctx.hook||'').toLowerCase()===n.p.name.toLowerCase()
 if(ctx.event)return false
 if(n.type==='mention')return!!ctx.mentioned
+if(n.type==='reply')return!!ctx.replied
+if(n.type==='everyone')return/@everyone|@here/i.test(t)
+if(n.type==='usermention')return/<@[a-z0-9_]+>/i.test(t)
+if(n.type==='invite')return/(discord\.(gg|com\/invite)|\/invite\/[a-z0-9]+)/i.test(t)
+if(n.type==='caps'){const L=t.replace(/[^a-z]/gi,'');if(L.length<Number(n.p.min))return false;return L.replace(/[^A-Z]/g,'').length*100/L.length>=Number(n.p.percent)}
+if(n.type==='longmsg')return t.length>=Number(n.p.chars)
+if(n.type==='badword'){const w=n.p.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean),l=t.toLowerCase();return w.some(x=>l.includes(x))}
+if(n.type==='emojispam')return(t.match(/\p{Extended_Pictographic}/gu)||[]).length>=Number(n.p.count)
+if(n.type==='mentionspam')return(t.match(/<@[a-z0-9_]+>/gi)||[]).length>=Number(n.p.count)
 if(n.type==='link')return/https?:\/\//i.test(t)
 if(n.type==='image')return(ctx.attachments||0)>0
 if(n.type==='msg'){
@@ -136,7 +192,9 @@ return false
 const titleCase=s=>s.toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase())
 function calc(a,op,b){
 const x=Number(a),y=Number(b)
+if(['floor','ceil','round','abs'].includes(op)){if(!Number.isFinite(x))return'';return String(op==='floor'?Math.floor(x):op==='ceil'?Math.ceil(x):op==='round'?Math.round(x):Math.abs(x))}
 if(!Number.isFinite(x)||!Number.isFinite(y))return''
+if(op==='pow'){const r=Math.pow(x,Math.max(-20,Math.min(20,y)));return Number.isFinite(r)&&Math.abs(r)<1e15?String(Math.round(r*1e6)/1e6):''}
 const r=op==='+'?x+y:op==='-'?x-y:op==='*'?x*y:op==='/'?(y===0?NaN:x/y):op==='%'?(y===0?NaN:x%y):op==='max'?Math.max(x,y):Math.min(x,y)
 return Number.isFinite(r)?String(Math.round(r*1e6)/1e6):''
 }
@@ -151,6 +209,14 @@ case'words':return String(s.trim()?s.trim().split(/\s+/).length:0)
 case'reverse':return[...s].reverse().join('')
 case'first':return s.trim().split(/\s+/)[0]||''
 case'last':return s.trim().split(/\s+/).pop()||''
+case'capital':return s.charAt(0).toUpperCase()+s.slice(1)
+case'nospaces':return s.replace(/\s+/g,'')
+case'digits':return s.replace(/\D/g,'')
+case'letters':return s.replace(/[^\p{L}]/gu,'')
+case'left':return[...s].slice(0,Math.max(0,Math.min(500,Number(arg)||0))).join('')
+case'right':{const a=[...s],n=Math.max(0,Math.min(500,Number(arg)||0));return n?a.slice(-n).join(''):''}
+case'repeat':return s.repeat(Math.max(0,Math.min(20,Number(arg)||0))).slice(0,500)
+case'slug':return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')
 case'replace':{const i=arg.indexOf('|');if(i<0)return s;return s.split(arg.slice(0,i)).join(arg.slice(i+1))}
 }
 return s
@@ -169,7 +235,7 @@ const by=new Map(graph.nodes.map(n=>[n.id,n]))
 const next=(id,o)=>graph.edges.find(e=>e.f===id&&e.o===o)?.t
 const vars=baseVars(ctx,rnd)
 const log=[]
-let steps=0,sends=0,acts=0
+let steps=0,sends=0,acts=0,heavy=0,waited=0
 const setv=(name,v)=>{vars[name.toLowerCase()]=clip(v,500);return vars[name.toLowerCase()]}
 async function chain(start,depth){
 let cur=start
@@ -189,6 +255,12 @@ case'cooldown':branch=await io.cooldown(n.id,Number(P.seconds),P.scope);break
 case'once':branch=(await io.count('once_'+n.id,1,'user'))===1;break
 case'stop':log.push({id:n.id,did:'stop'});return
 case'gate':branch=P.on==='1';break
+case'channelis':branch=ctx.channel.toLowerCase()===R(P.channel).replace(/^#/,'').toLowerCase();break
+case'isowner':branch=await io.isOwner();break
+case'newmember':{const d=await io.joinedDays();branch=d!==null&&d<Number(P.days);break}
+case'weekday':{const d=new Date(ctx.at||Date.now()).getUTCDay();branch=P.day==='weekdays'?d>=1&&d<=5:P.day==='weekend'?d===0||d===6:DAYS.indexOf(P.day)===d;break}
+case'wordlist':{const l=R(P.input).toLowerCase();branch=P.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean).some(x=>l.includes(x));break}
+case'if2':{const a=test(P.op,R(P.left),R(P.right)),b=test(P.op2,R(P.left2),R(P.right2));branch=P.join==='or'?a||b:a&&b;break}
 case'switch':{const v=R(P.input).trim().toLowerCase();route='else';for(const k of['1','2','3','4']){const c=P['v'+k].trim().toLowerCase();if(c&&c===v){route='c'+k;break}}break}
 case'call':{if(depth<4){const sb=graph.nodes.find(x=>x.type==='sub'&&x.p.name.toLowerCase()===P.name.toLowerCase());if(sb){log.push({id:n.id,did:'call',name:P.name});await chain(next(sb.id,'next'),depth+1)}}break}
 case'say':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.send(t,P.reply==='1');log.push({id:n.id,did:'say',text:t})}break}
@@ -198,6 +270,24 @@ case'delete':if(acts<8){acts++;await io.del();log.push({id:n.id,did:'delete'})}b
 case'pin':if(acts<8){acts++;await io.pin();log.push({id:n.id,did:'pin'})}break
 case'timeout':if(acts<8){acts++;await io.timeout(Number(P.minutes));log.push({id:n.id,did:'timeout',minutes:P.minutes})}break
 case'addrole':case'removerole':if(P.role&&acts<8){acts++;await io.role(R(P.role),n.type==='addrole');log.push({id:n.id,did:n.type,role:P.role})}break
+case'notice':{const t=R(P.text).trim().slice(0,300);if(t&&acts<8){acts++;await io.notice(t);log.push({id:n.id,did:'notice',text:t})}break}
+case'unpin':if(acts<8){acts++;await io.unpin();log.push({id:n.id,did:'unpin'})}break
+case'slowmode':if(acts<8){acts++;await io.slowmode(Number(P.seconds));log.push({id:n.id,did:'slowmode',seconds:P.seconds})}break
+case'setnick':if(acts<8){acts++;await io.setNick(R(P.nick).trim().slice(0,32));log.push({id:n.id,did:'setnick'})}break
+case'untimeout':if(acts<8){acts++;await io.untimeout();log.push({id:n.id,did:'untimeout'})}break
+case'kick':case'ban':if(acts<8&&heavy<1){acts++;heavy++;await io[n.type](R(P.reason).slice(0,200));log.push({id:n.id,did:n.type})}break
+case'purge':if(acts<8){acts++;await io.purge(Number(P.count));log.push({id:n.id,did:'purge',count:P.count})}break
+case'warn':if(acts<8){acts++;const w=await io.warn(R(P.reason).slice(0,200));log.push({id:n.id,did:'warn',value:setv(P.name||'warns',String(w))})}break
+case'log':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P.channel).replace(/^#/,''),t);log.push({id:n.id,did:'log',text:t})}break}
+case'wait':{const ms=Math.min(5000,Number(P.seconds)*1000),left=8000-waited;if(!ctx.dry&&left>0){const w=Math.min(ms,left);waited+=w;await new Promise(r=>setTimeout(r,w))}log.push({id:n.id,did:'wait'});break}
+case'save':if(P.key){await io.save(P.key.toLowerCase(),R(P.value).slice(0,300),P.scope);log.push({id:n.id,did:'save'})}break
+case'load':if(P.name){const v=await io.load(P.key.toLowerCase(),P.scope);log.push({id:n.id,did:'load',value:setv(P.name,v===null?R(P.fallback):String(v))})}break
+case'getcount':if(P.name)log.push({id:n.id,did:'getcount',value:setv(P.name,String(await io.getCount(P.counter.toLowerCase(),P.scope)))});break
+case'word':if(P.name){const w=R(P.input).trim().split(/\s+/).filter(Boolean);log.push({id:n.id,did:'word',value:setv(P.name,w[Number(P.n)-1]||'')})}break
+case'combine':if(P.name)log.push({id:n.id,did:'combine',value:setv(P.name,R(P.a)+R(P.sep)+R(P.b))});break
+case'clock':if(P.name){const d=new Date(ctx.at||Date.now()),M=['January','February','March','April','May','June','July','August','September','October','November','December'];const v={unix:String(Math.floor(d.getTime()/1000)),date:vars.date,time:vars.time,hour:String(d.getUTCHours()),minute:String(d.getUTCMinutes()),day:String(d.getUTCDate()),month:String(d.getUTCMonth()+1),monthname:M[d.getUTCMonth()],year:String(d.getUTCFullYear()),weekday:vars.weekday}[P.what]||'';log.push({id:n.id,did:'clock',value:setv(P.name,v)})}break
+case'userinfo':if(P.name)log.push({id:n.id,did:'userinfo',value:setv(P.name,String(await io.memberInfo(P.what)))});break
+case'serverinfo':if(P.name)log.push({id:n.id,did:'serverinfo',value:setv(P.name,String(await io.serverInfo(P.what)))});break
 case'pick':{const o=P.options.split('\n').map(x=>x.trim()).filter(Boolean);if(o.length&&P.name)log.push({id:n.id,did:'pick',value:setv(P.name,R(o[Math.floor(rnd()*o.length)]))});break}
 case'set':if(P.name)log.push({id:n.id,did:'set',value:setv(P.name,R(P.value))});break
 case'count':if(P.name)log.push({id:n.id,did:'count',value:setv(P.name,String(await io.count(P.name.toLowerCase(),Number(P.by)||0,P.scope)))});break
