@@ -22,6 +22,7 @@ import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
 import{tosGate}from'./legal.js'
 import{checkOffer}from'./exp.js'
+import{startRevamp}from'./revamp.js'
 
 const root=document.getElementById('app')
 let cleanup=null
@@ -72,6 +73,7 @@ setRouteHandler(route)
 await route()
 startPars()
 startDiag()
+startRevamp()
 setTimeout(whatsNew,1200)
 }
 

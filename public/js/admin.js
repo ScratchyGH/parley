@@ -3,18 +3,19 @@ import{S}from'./state.js'
 import{guiPreview}from'./guipreview.js'
 import{studio}from'./studio.js'
 import{parsAdmin,seasonAdmin}from'./pars.js'
+import{REVAMP_AT,previewRestart,previewToggle,previewActive}from'./revamp.js'
 import{programAdmin}from'./exp.js'
 import{screeningAdmin}from'./screenui.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
+const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,log,db,studio,seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
+const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),nav,body)
@@ -237,4 +238,19 @@ btn.disabled=false
 }}},'Back up now')
 mount(pg,h('h3',null,'Backups'),h('p',{class:'hint'},'Parley saves a full copy of the database to storage once a day and keeps the last 7. Backups include account password hashes, so keep downloaded files private. Sessions, uploaded file contents and sign-in attempts are not included.'),h('div',{class:'row'},btn),list)
 load()
+}
+
+function rvAdmin(){
+const w=h('div',{class:'sa-grid'})
+const st=h('div',{class:'muted'})
+const upd=()=>{st.textContent='Revamp preview is '+(previewActive()?'on for this device.':'off.')}
+upd()
+w.append(
+h('p',null,'The full UI revamp goes live for everyone at '+new Date(REVAMP_AT).toLocaleString([], {dateStyle:'full',timeStyle:'long'})+' (midnight New Year, New York). Every open tab and app restarts with a short countdown.'),
+st,
+h('div',{class:'row'},
+h('button',{class:'btn pri',on:{click:()=>{previewToggle(true);upd()}}},'Preview revamp'),
+h('button',{class:'btn',on:{click:()=>{previewToggle(false);upd()}}},'Exit preview'),
+h('button',{class:'btn',on:{click:()=>previewRestart()}},'Preview restart sequence')))
+return w
 }
