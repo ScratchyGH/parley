@@ -347,7 +347,8 @@ b._k=(DEFS[id].title+' '+(DESC[id]||'')).toLowerCase()
 tipFor(b,DESC[id],'right')
 return b
 }))
-d.open=true
+d.open=t==='Triggers'
+d.addEventListener('toggle',()=>{if(d.open&&!search.value)for(const o of palGroups)if(o!==d)o.open=false})
 return d
 })
 const search=h('input',{class:'inp',type:'search',placeholder:'Search '+Object.keys(DEFS).length+' blocks',maxLength:40,'aria-label':'Search blocks',on:{input:e=>{
