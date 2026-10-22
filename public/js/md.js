@@ -1,4 +1,4 @@
-import{h}from'./util.js'
+import{h,tzo}from'./util.js'
 import{clearUrl}from'./tweaks.js'
 
 const KW={
@@ -93,7 +93,7 @@ return x.href
 function stamp(sec,f){
 const d=new Date(sec*1000)
 if(isNaN(d))return document.createTextNode('invalid time')
-const L=(o)=>d.toLocaleString(undefined,o)
+const L=(o)=>d.toLocaleString(undefined,Object.assign({},o,tzo()))
 let t
 if(f==='t')t=L({hour:'numeric',minute:'2-digit'})
 else if(f==='T')t=L({hour:'numeric',minute:'2-digit',second:'2-digit'})
@@ -105,7 +105,7 @@ const diff=Math.round((d-Date.now())/1000),a=Math.abs(diff)
 const u=a<60?[1,'second']:a<3600?[60,'minute']:a<86400?[3600,'hour']:a<2592000?[86400,'day']:a<31536000?[2592000,'month']:[31536000,'year']
 t=new Intl.RelativeTimeFormat(undefined,{numeric:'auto'}).format(Math.round(diff/u[0]),u[1])
 }else t=L({dateStyle:'long',timeStyle:'short'})
-return h('time',{class:'ts',datetime:d.toISOString(),title:d.toLocaleString(undefined,{dateStyle:'full',timeStyle:'medium'})},t)
+return h('time',{class:'ts',datetime:d.toISOString(),title:d.toLocaleString(undefined,Object.assign({dateStyle:'full',timeStyle:'medium'},tzo()))},t)
 }
 function inline(text,ctx,depth){
 const out=[]

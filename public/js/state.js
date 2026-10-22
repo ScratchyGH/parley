@@ -1,4 +1,4 @@
-import{GET,fileUrl}from'./util.js'
+import{GET,fileUrl,setTZ}from'./util.js'
 
 export const P={VIEW:1,SEND:2,MANAGE_MESSAGES:4,MANAGE_CHANNELS:8,MANAGE_ROLES:16,CREATE_INVITE:32,KICK:64,BAN:128,MANAGE_SERVER:256,MODERATE:512,CONNECT:1024,MANAGE_VOICE:2048,ATTACH:4096,REACT:8192,MENTION_ALL:16384,ADMIN:32768}
 export const PERM_INFO=[
@@ -180,6 +180,7 @@ const s=over||S.me?.settings||{}
 const root=document.documentElement
 root.dataset.theme=s.theme||'dimmed'
 root.dataset.density=s.density||'comfortable'
+setTZ(s.tz)
 root.style.setProperty('--fs',(s.font_size||15)+'px')
 if(s.font_ui&&FONTS[s.font_ui])root.style.setProperty('--font',FONTS[s.font_ui][1]);else root.style.removeProperty('--font')
 if(s.font_ui==='parli')root.style.setProperty('--disp',FONTS.parli[1]);else root.style.removeProperty('--disp')

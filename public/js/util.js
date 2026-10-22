@@ -160,21 +160,24 @@ if(n<1073741824)return (n/1048576).toFixed(1)+' MB'
 return (n/1073741824).toFixed(2)+' GB'
 }
 const pad=n=>String(n).padStart(2,'0')
+let TZ=''
+export const setTZ=v=>{TZ=v||''}
+export const tzo=()=>TZ?{timeZone:TZ}:{}
 export function fmtTime(t){
-const d=new Date(t)
-return pad(d.getHours())+':'+pad(d.getMinutes())+(pref('tw_precise_time')?':'+pad(d.getSeconds()):'')
+const o={hour:'2-digit',minute:'2-digit',hourCycle:'h23',...tzo()}
+if(pref('tw_precise_time'))o.second='2-digit'
+try{return new Date(t).toLocaleTimeString('en-GB',o)}catch{return new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}
 }
 export function fmtDate(t){
-return new Date(t).toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+return new Date(t).toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric',...tzo()})
 }
 export function fmtStamp(t){
-const d=new Date(t),n=new Date()
-const day=x=>x.getFullYear()*400+x.getMonth()*32+x.getDate()
-const y=new Date(n);y.setDate(n.getDate()-1)
+const d=new Date(t)
+const key=x=>x.toLocaleDateString('en-CA',tzo())
 const hm=fmtTime(t)
-if(day(d)===day(n))return 'Today at '+hm
-if(day(d)===day(y))return 'Yesterday at '+hm
-return d.toLocaleDateString()+' '+hm
+if(key(d)===key(new Date()))return 'Today at '+hm
+if(key(d)===key(new Date(Date.now()-864e5)))return 'Yesterday at '+hm
+return d.toLocaleDateString(undefined,tzo())+' '+hm
 }
 export function fmtRel(t){
 const s=Math.max(0,Math.floor((Date.now()-t)/1000))

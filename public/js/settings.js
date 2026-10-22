@@ -244,6 +244,21 @@ drawSw();drawPrev()
 function fontSel(key){
 return h('select',{class:'sel','aria-label':key==='font_ui'?'Interface font':'Message font',style:{width:'auto'},on:{change:async e=>{try{await saveSettings({[key]:e.target.value})}catch(x){fail(x)}}}},Object.entries(FONTS).map(([k,[l,st]])=>h('option',{value:k,selected:setting(key,'')===k,style:{fontFamily:st}},l)))
 }
+const TZS=[['America/New_York','Eastern (EST/EDT, ET)'],['America/Chicago','Central (CST/CDT, CT)'],['America/Denver','Mountain (MST/MDT, MT)'],['America/Phoenix','Arizona (MST, no DST)'],['America/Los_Angeles','Pacific (PST/PDT, PT)'],['America/Anchorage','Alaska (AKST/AKDT)'],['Pacific/Honolulu','Hawaii (HST)'],['America/Halifax','Atlantic (AST/ADT)'],['America/St_Johns','Newfoundland (NST/NDT)'],['America/Sao_Paulo','Brasilia (BRT)'],['UTC','UTC'],['Europe/London','Greenwich and UK (GMT/BST, GCT)'],['Europe/Paris','Europe Central (CET/CEST, ECT)'],['Europe/Athens','Europe Eastern (EET/EEST)'],['Europe/Moscow','Moscow (MSK)'],['Asia/Dubai','Gulf (GST, GCT)'],['Asia/Kolkata','India (IST)'],['Asia/Shanghai','North China (CST, NCT)'],['Asia/Tokyo','Japan (JST)'],['Asia/Seoul','Korea (KST)'],['Australia/Sydney','Australia Eastern (AEST/AEDT)'],['Pacific/Auckland','New Zealand (NZST/NZDT)']]
+function tzField(){
+const dev=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone}catch{return ''}})()
+const cur=setting('tz','')
+const now=h('span',{class:'hint',style:{margin:0}})
+const tick=()=>{try{now.textContent='Now: '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short',...(cur?{timeZone:cur}:{})})}catch{}}
+tick()
+let all=[]
+try{all=Intl.supportedValuesOf('timeZone').filter(z=>!TZS.some(x=>x[0]===z))}catch{}
+const sel=h('select',{class:'sel','aria-label':'Time zone',style:{width:'auto',maxWidth:'100%'},on:{change:async e=>{try{await saveSettings({tz:e.target.value});tick()}catch(x){fail(x)}}}},
+h('option',{value:'',selected:!cur},'Automatic ('+(dev||'device time')+')'),
+h('optgroup',{label:'Common'},TZS.map(([k,l])=>h('option',{value:k,selected:cur===k},l))),
+all.length?h('optgroup',{label:'All time zones'},all.map(k=>h('option',{value:k,selected:cur===k},k.replace(/_/g,' ')))):null)
+return field('Time zone',h('div',{class:'row',style:{flexWrap:'wrap'}},sel,now),'Automatic follows your device. Pick one to show message times in that zone everywhere.')
+}
 function appearance(pg){
 const themes=[['dimmed','Deep Fjord (default)'],['silver','Silver'],['light','Light'],['contrast','High contrast']]
 const dens=[['compact','Compact'],['comfortable','Comfortable'],['spacious','Spacious']]
@@ -255,6 +270,7 @@ field('Theme presets',h('div',{class:'bh-radios pre-row'},Object.entries(PRESETS
 field('Interface font',fontSel('font_ui')),
 field('Message font',fontSel('font_msg'),'Fonts come from your device or from Parley, so nothing is loaded from other sites.'),
 field('Message spacing',h('div',{class:'tabs'},dens.map(([k,l])=>h('button',{class:setting('density','comfortable')===k?'on':'','aria-pressed':String(setting('density','comfortable')===k),on:{click:async()=>{try{await saveSettings({density:k});appearance(pg)}catch(x){fail(x)}}}},l)))),
+tzField(),
 field('Font size',h('div',{class:'row'},fs,h('span',{class:'hint',style:{margin:0}},'12 to 22 px'))),
 field('Custom colours',h('div',{class:'row'},
 h('input',{type:'color','aria-label':'Accent colour',value:setting('ui_color','')||'#521525',on:{change:async e=>{try{await saveSettings({ui_color:e.target.value})}catch(x){fail(x)}}}}),h('span',{class:'hint',style:{margin:0}},'Accent'),
