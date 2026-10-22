@@ -131,7 +131,7 @@ const cant=d.balance<v.price
 const clock=h('span',{class:'ts-time'})
 const upd=()=>{const n=Date.now();if(n<start){clock.textContent='Starts in '+left(start-n)}else{const ms=end-n;clock.textContent=ms>0?left(ms)+' left':'Ended'}}
 upd();const t=setInterval(()=>{if(!clock.isConnected){clearInterval(t);return}upd()},1000);tick.push(t)
-const tag=soon?'Admin preview · starts '+new Date(start).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'Limited time'
+const tag=soon?'Admin preview · starts '+new Date(start).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}):'Limited time'
 return h('section',{class:'par-sec',id:'sh-ts-'+it.id},h('div',{class:'ts'+(bd.season?' sx-'+bd.season:'')},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},tag),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
 }
 function own(d){
@@ -282,10 +282,19 @@ export async function seasonAdmin(pg){
 const d=await GET('/api/pars')
 const list=d.items.filter(i=>i.kind==='bundle'&&bundleData(i).season).sort((a,b)=>bundleData(a).starts_at-bundleData(b).starts_at)
 const fmt=t=>new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})
+const prev=v=>{
+const ids=v.items||[]
+const by=k=>d.items.find(i=>ids.includes(i.id)&&i.kind===k)?.id||null
+const np=by('nameplate'),nf=by('namefx'),bd=by('badge'),ti=by('title'),bb=by('bubble')
+const name=nf?h('span',{class:'nf '+nf},S.me.display_name):S.me.display_name
+const kids=[h('div',{class:'par-av'},avatar({...S.me,frame:by('frame'),effect:by('effect')},'lg')),h('b',{class:np?'np '+np:null,style:{padding:'4px 12px'}},name,bd?h('span',{class:'bdg-i '+bd}):null,ti?h('span',{class:'ttl '+ti}):null)]
+if(bb)kids.push(h('div',{class:'par-msg '+bb},'Your messages look like this.'))
+return h('div',{class:'pb-prev'},...kids)
+}
 const card=it=>{
 const bd=bundleData(it),v=variantsOf(it).main
-const st=bd.status==='live'?'Live now':'Starts '+fmt(bd.starts_at)
-return h('div',{class:'sa-card'},h('div',{class:'ts sx-'+bd.season,style:{gridTemplateColumns:'1fr',padding:'16px'}},preview(d,it,v),h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}},h('span',{class:'ts-tag'},st),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},fmt(bd.starts_at)+' to '+fmt(bd.ends_at)+' (UTC)'),contents(d,v),h('div',{class:'row',style:{gap:'8px',alignItems:'center'}},h('span',{class:'par-price'},parIcon(16),' '+v.price),h('button',{class:'btn sm',on:{click:()=>buy(d,it,'main')}},'Test buy')))))
+const btn=h('button',{class:'btn sm',on:{click:async()=>{btn.disabled=true;try{await POST('/api/pars/buy',{item:it.id,variant:'main',req:rid()});toast('Purchased '+it.name)}catch(e){fail(e)}finally{btn.disabled=false}}}},'Test buy')
+return h('div',{class:'sa-card'},h('div',{class:'ts sx-'+bd.season,style:{gridTemplateColumns:'1fr',padding:'16px'}},prev(v),h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}},h('span',{class:'ts-tag'},bd.status==='live'?'Live now':'Starts '+fmt(bd.starts_at)),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},fmt(bd.starts_at)+' to '+fmt(bd.ends_at)+' (UTC)'),h('div',{class:'pb-list'},(v.items||[]).map(id=>h('span',null,nameOf(d,id)))),h('div',{class:'row',style:{gap:'8px',alignItems:'center'}},h('span',{class:'par-price'},parIcon(16),' '+v.price),btn))))
 }
 return h('section',{class:'lab'},h('h3',null,'Seasonal bundles'),h('p',{class:'hint'},'Everyone else only sees a bundle while its window is live. You can preview and buy any of them at any time.'),h('div',{class:'sa-grid'},list.map(card)))
 }
