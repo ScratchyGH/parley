@@ -1,3 +1,4 @@
+import{seasonWindow}from'./seasons.js'
 import{fail,now,newId,str,body,clamp,limit,json}from'./util.js'
 import{loadMember,P}from'./perms.js'
 
@@ -38,7 +39,7 @@ const vs=d.variants||{main:{items:d.items,vanity_days:d.vanity_days,price:it.pri
 const key=v&&vs[v]?v:Object.keys(vs).length===1?Object.keys(vs)[0]:null
 if(!key)fail(400,'Choose Legacy or Modern')
 const x=vs[key]
-return{key,items:Array.isArray(x.items)?x.items:[],vanity_days:Number(x.vanity_days)||0,price:Number(x.price)||it.price,gift_price:Number(x.gift_price)||Number(x.price)||it.price,server_price:Number(x.server_price)||0,ends_at:Number(d.ends_at)||0}
+return{key,items:Array.isArray(x.items)?x.items:[],vanity_days:Number(x.vanity_days)||0,price:Number(x.price)||it.price,gift_price:Number(x.gift_price)||Number(x.price)||it.price,server_price:Number(x.server_price)||0,ends_at:Number(d.ends_at)||0,season:d.season||''}
 }
 async function findUser(env,name){
 const n=String(name||'').trim().replace(/^@/,'')
@@ -47,7 +48,21 @@ const u=await env.DB.prepare('select id,username,display_name,is_bot,created_at 
 if(!u||u.is_bot)fail(404,'User not found')
 return u
 }
-const shapeItem=i=>({hidden:!i.enabled,id:i.id,kind:i.kind,name:i.name,descr:i.descr,price:i.price,scope:i.scope,mb:i.mb,data:i.data})
+const shapeItem=i=>{
+let data=i.data
+if(i.kind==='bundle'){
+try{
+const d=JSON.parse(i.data||'{}')
+if(d.season){const w=seasonWindow(d.season);if(w){d.starts_at=w.start;d.ends_at=w.end;d.status=w.status;d.limited=true;data=JSON.stringify(d)}}
+}catch{}
+}
+return{hidden:!i.enabled,id:i.id,kind:i.kind,name:i.name,descr:i.descr,price:i.price,scope:i.scope,mb:i.mb,data}
+}
+const visible=(i,admin)=>{
+if(i.kind!=='bundle'||admin)return true
+try{const d=JSON.parse(i.data||'{}');if(d.season){const w=seasonWindow(d.season);return!!(w&&w.live)}}catch{}
+return true
+}
 export default function(r){
 r.add('GET','/api/pars/gifts',async c=>({gifts:(await c.env.DB.prepare('select id,from_name,kind,item_id,label,amount,created_at from gift_inbox where user_id=? and seen=0 order by created_at limit 12').bind(c.user.id).all()).results}))
 r.add('POST','/api/pars/gifts/seen',async c=>{
@@ -66,7 +81,7 @@ c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge,title,bubble f
 c.env.DB.prepare('select total_ms,day,day_ms from par_beats where user_id=?').bind(c.user.id).first()
 ])
 const today=beat&&beat.day===dayOf(now())?beat.day_ms:0
-return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
+return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.filter(i=>visible(i,c.user.admin)).map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
 })
 r.add('GET','/api/pars/history',async c=>{
 const before=clamp(c.url.searchParams.get('before'),now()+1,0,now()+1)
@@ -133,7 +148,8 @@ owner=to.id;from=c.user.id
 }
 if(it.kind==='bundle'){
 bun=bundleOf(it,b.variant)
-if(bun.ends_at&&now()>bun.ends_at)fail(409,'This bundle is no longer available')
+if(bun.season){const w=seasonWindow(bun.season);if(!c.user.admin&&!(w&&w.live))fail(409,w&&w.status==='upcoming'?'This bundle is not available yet':'This bundle is no longer available')}
+else if(bun.ends_at&&now()>bun.ends_at)fail(409,'This bundle is no longer available')
 price=viaServer?bun.server_price:gifting?bun.gift_price:bun.price
 if(viaServer){
 if(!bun.vanity_days)fail(400,'This bundle has nothing for a server')

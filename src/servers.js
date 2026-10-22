@@ -132,6 +132,72 @@ if(made.general&&!(await has(made.general)))await post(made.general,'Welcome to 
 if(made['show-your-style']&&!(await has(made['show-your-style'])))await post(made['show-your-style'],'Post screenshots of your frame, nameplate, name style and message style combos here. Settings, then Appearance lets you mix any items you own.',4)
 await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v2',?,?)").bind(s.id,t).run()
 }
+const GUIDE=`# Parley Community Guidelines
+
+*Effective October 2026. These guidelines apply to every channel, thread, voice room and stage in this server.*
+
+## 1. Conduct
+**1.1 Respect.** Treat members and staff professionally. Challenge ideas, not people.
+**1.2 No harassment.** Insults, intimidation, stalking, threats and repeated unwanted contact are not permitted.
+**1.3 No hate.** Content that demeans people for their race, ethnicity, nationality, religion, gender, sexual orientation, disability or age is not permitted.
+**1.4 No impersonation.** Do not present yourself as Parley staff, a moderator or another member.
+
+## 2. Safety and legality
+**2.1** No illegal activity, including fraud, piracy and the distribution of malware.
+**2.2** Sexual content involving minors is prohibited and is reported to the authorities.
+**2.3** No pornography, graphic violence or shock content. This server is not age-restricted.
+**2.4** If someone is in crisis, encourage them to contact local emergency services or a crisis line.
+
+## 3. Privacy and security
+**3.1** Do not share personal information about yourself or anyone else, such as addresses, phone numbers, identity documents or payment details.
+**3.2** Never ask for or post passwords, tokens or recovery codes. Parley staff will never ask you for them.
+**3.3** Do not post phishing, tracking or otherwise malicious links.
+
+## 4. Content and channels
+**4.1** Post in the channel that matches the topic. Staff may move or remove off-topic messages.
+**4.2** No spam: repeated messages, mass mentions, unsolicited direct messages or server invites.
+**4.3** No advertising, recruiting or self-promotion without approval from staff. Projects built on Parley may be shared in bots-and-apps.
+**4.4** Use English in shared channels so that all messages can be moderated.
+
+## 5. Support and feedback
+**5.1** Bug reports should include the steps to reproduce, what you expected, what happened, and your device and browser.
+**5.2** Search before posting a suggestion. One post per idea.
+**5.3** Account or billing disputes are handled privately with staff, not in public channels.
+
+## 6. Voice and stages
+**6.1** Do not record or stream other people without their consent.
+**6.2** No disruptive audio, soundboard abuse or voice changers used to harass others.
+**6.3** Speakers on a stage follow the host's instructions.
+
+## 7. Enforcement
+Staff may remove content and apply a warning, time out, removal or ban, depending on severity and history. Serious violations may result in immediate removal. Report a violation with Report message and do not retaliate or call people out publicly. To appeal a decision, contact a moderator privately or submit a ban appeal.
+
+Participation in this server is also subject to the Parley Terms of Service.`
+async function polishCommunity(c,s,ownerId){
+const db=c.env.DB,t=now()
+if(await db.prepare("select 1 x from auto_joined where user_id='__community_v4'").first())return
+const theme=JSON.stringify({bg:'#0e1520',side:'#0a1019',panel:'#141d2b',text:'#d6deea',accent:'#3b82f6',dim:55})
+await db.prepare("update servers set description=?,welcome=?,rules=?,accent='#3b82f6',theme=? where id=?").bind('Official community for Parley. Product announcements, support and feedback.',`**Welcome to the Parley Community.**\n\nThis is the official space for Parley product news, support and feedback.\n\n- Review the Community Guidelines in the rules channel\n- Introduce yourself in introductions\n- Get help in support and share feedback in feedback and suggestions\n- Follow announcements for releases and maintenance notices`,GUIDE,theme,s.id).run()
+const chans=(await db.prepare('select id,name from channels where server_id=?').bind(s.id).all()).results
+const by=n=>chans.find(x=>x.name.toLowerCase()===n)
+const rc=by('rules')
+if(rc){
+await db.prepare('delete from messages where room=? and author_id=?').bind(rc.id,ownerId).run()
+const id=msgId()
+await db.prepare('insert into messages(id,room,server_id,author_id,content,created_at,sig) values(?,?,?,?,?,?,?)').bind(id,rc.id,s.id,ownerId,GUIDE,t,await signMsg(c.env,{id,room:rc.id,author_id:ownerId,created_at:t,edited_at:null,content:GUIDE})).run()
+}
+const top=await db.prepare('select max(position) p from roles where server_id=?').bind(s.id).first()
+let pos=(top?.p||0)+1
+const roles=[]
+for(const[name,color,desc]of[['Developer','#38bdf8','Building bots, apps or plugins for Parley'],['Designer','#a78bfa','Themes, cosmetics and visual design'],['Creator','#f59e0b','Streaming, video and community content'],['Community','#34d399','Here to chat and follow along']]){
+let r=await db.prepare('select id from roles where server_id=? and name=?').bind(s.id,name).first()
+if(!r){r={id:newId('r')};await db.prepare('insert into roles(id,server_id,name,color,position,perms,is_everyone) values(?,?,?,?,?,0,0)').bind(r.id,s.id,name,color,pos++).run()}
+roles.push({id:r.id,label:name,desc})
+}
+const onb={on:1,since:t,title:'Welcome to the Parley Community',text:'Review the guidelines, then choose the roles that describe you. You can change them later.',roles,channels:['rules','announcements','introductions','support','feedback'].map(n=>by(n)?.id).filter(Boolean)}
+await db.prepare('update servers set onboarding=? where id=?').bind(JSON.stringify(onb),s.id).run()
+await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v4',?,?)").bind(s.id,t).run()
+}
 async function ensureCommunity(c){
 const db=c.env.DB
 const owner=await db.prepare('select id from users where lower(username)=lower(?)').bind(c.env.OWNER_USERNAME||'ParleyOfficial').first()
@@ -151,6 +217,7 @@ s={id:sid}
 }
 try{await brandCommunity(c,s,owner.id)}catch(e){console.log('brand',e&&e.message)}
 try{await extendCommunity(c,s,owner.id)}catch(e){console.log('extend',e&&e.message)}
+try{await polishCommunity(c,s,owner.id)}catch(e){console.log('polish',e&&e.message)}
 if(!(await db.prepare('select 1 x from auto_joined where user_id=?').bind(c.user.id).first())){
 await db.batch([
 db.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(s.id,c.user.id,t),
