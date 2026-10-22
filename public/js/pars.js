@@ -60,6 +60,7 @@ draw(d)
 }catch(e){mount(box,h('div',{class:'hint'},e.message))}
 }
 const sec=(id,title,sub,...kids)=>h('section',{class:'par-sec',id:'sh-'+id},h('h3',null,title,sub?h('small',null,sub):null),...kids)
+const navBtns=[]
 function draw(d){
 tick.forEach(clearInterval);tick=[]
 const hrs=(d.today_ms/3600000).toFixed(1)
@@ -71,14 +72,15 @@ const reg=bn.filter(i=>!tss.includes(i)&&!(bundleData(i).ends_at&&bundleData(i).
 const cats=KINDS.filter(([k])=>items.some(i=>i.kind===k))
 const go=id=>document.getElementById('sh-'+id)?.scrollIntoView({behavior:'smooth',block:'start'})
 mount(box,
-h('div',{class:'par-hero'},parIcon(40),h('div',{style:{flex:'1',minWidth:0}},h('div',{class:'par-bal'},String(d.balance)),h('div',{class:'hint',style:{margin:'4px 0 0'}},'Earn '+d.rate+' Pars for every hour you actively use Parley. Today: '+hrs+' of '+d.daily_cap_hours+' hours counted.'),h('div',{class:'par-bar'},h('i',{style:{width:pct+'%'}})),h('div',{class:'hint',style:{margin:'6px 0 0'}},d.notice))),
-h('nav',{class:'sh-nav','aria-label':'Shop sections'},[...tss.map(i=>['ts-'+i.id,i.name]),reg.length?['bn','Bundles']:null,...cats.map(([k,l])=>[k,l]),['gift','Gift Pars'],['own','Your items']].filter(Boolean).map(([id,l])=>h('button',{on:{click:()=>go(id)}},l))),
+h('div',{class:'par-hero'},parIcon(40),h('div',{style:{flex:'1',minWidth:0}},h('div',{class:'par-bal'},String(d.balance)),h('div',{class:'hint',style:{margin:'4px 0 0'}},'Earn '+d.rate+' Pars for every hour you actively use Parley. Today: '+hrs+' of '+d.daily_cap_hours+' hours counted.'),h('div',{class:'par-bar',role:'progressbar','aria-valuenow':String(pct),'aria-valuemin':'0','aria-valuemax':'100','aria-label':'Daily Pars progress'},h('i',{style:{width:pct+'%'}})),h('div',{class:'hint',style:{margin:'6px 0 0'}},d.notice))),
+h('nav',{class:'sh-nav','aria-label':'Shop sections'},[...tss.map(i=>['ts-'+i.id,i.name]),reg.length?['bn','Bundles']:null,...cats.map(([k,l])=>[k,l]),['gift','Gift Pars'],['own','Your items']].filter(Boolean).map(([id,l])=>{const b=h('button',{'data-sec':id,on:{click:()=>go(id)}},l);navBtns.push(b);return b})),
 ...tss.map(i=>tsSection(d,i)),
 reg.length?sec('bn','Bundles','Hover to pause',carousel(d,reg)):null,
 ...cats.map(([k,l])=>sec(k,l,null,h('div',{class:'par-grid'},items.filter(i=>i.kind===k).map(it=>card(d,it))))),
 sec('gift','Gift Pars',null,giftBox(d)),
 sec('own','Your items',null,own(d)),
 sec('hist','History',null,hist(d)))
+if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const id=e.target.id.replace(/^sh-/,'');navBtns.forEach(b=>b.classList.toggle('on',b.dataset.sec===id))}},{rootMargin:'-20% 0px -70% 0px'});box.querySelectorAll('.par-sec').forEach(x=>io.observe(x))}
 }
 function giftBtn(d,it,vk){
 return h('button',{class:'gift-b',title:'Send as a gift',on:{click:()=>giftDialog(d,it,vk)}},icon('gift'))
@@ -87,7 +89,7 @@ function card(d,it){
 const have=COS.has(it.kind)&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 const cant=d.balance<it.price
-return h('div',{class:'par-card'},h('div',{class:'pc-top'},swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
+return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
 }
 function preview(d,it,v){
 const ids=v.items||[]

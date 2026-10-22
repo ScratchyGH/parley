@@ -52,7 +52,7 @@ const dpr=Math.min(devicePixelRatio||1,2)
 const fit=()=>{cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;c.setTransform(dpr,0,0,dpr,0,0)}
 fit()
 const P=[]
-const cols=['#fcd34d','#f472b6','#a78bfa','#38bdf8','#34d399','#fff','#fb923c']
+const cols=['#d9d8d0','#b9b8ae','#a3a198','#e7e6df','#8f8d84','#fff','#c9c8c1']
 const burst=(x,y)=>{
 const col=[cols[Math.floor(rnd(0,cols.length))],cols[Math.floor(rnd(0,cols.length))]]
 const n=90
