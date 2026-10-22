@@ -294,7 +294,7 @@ return h('div',{class:'pb-prev'},...kids)
 const card=it=>{
 const bd=bundleData(it),v=variantsOf(it).main
 const btn=h('button',{class:'btn sm',on:{click:async()=>{btn.disabled=true;try{await POST('/api/pars/buy',{item:it.id,variant:'main',req:rid()});toast('Purchased '+it.name)}catch(e){fail(e)}finally{btn.disabled=false}}}},'Test buy')
-return h('div',{class:'sa-card'},h('div',{class:'ts sx-'+bd.season,style:{gridTemplateColumns:'1fr',padding:'16px'}},prev(v),h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}},h('span',{class:'ts-tag'},bd.status==='live'?'Live now':'Starts '+fmt(bd.starts_at)),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},fmt(bd.starts_at)+' to '+fmt(bd.ends_at)+' (UTC)'),h('div',{class:'pb-list'},(v.items||[]).map(id=>h('span',null,nameOf(d,id)))),h('div',{class:'row',style:{gap:'8px',alignItems:'center'}},h('span',{class:'par-price'},parIcon(16),' '+v.price),btn))))
+return h('div',{class:'sa-card'},h('div',{class:'ts sx-'+bd.season,style:{gridTemplateColumns:'1fr',padding:'16px'}},prev(v),h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}},h('span',{class:'ts-tag'},bd.status==='live'?'Live now':'Starts '+fmt(bd.starts_at)),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},fmt(bd.starts_at)+' to '+fmt(bd.ends_at-1)+' (UTC)'),h('div',{class:'pb-list'},(v.items||[]).map(id=>h('span',null,nameOf(d,id)))),h('div',{class:'row',style:{gap:'8px',alignItems:'center'}},h('span',{class:'par-price'},parIcon(16),' '+v.price),btn))))
 }
 return h('section',{class:'lab'},h('h3',null,'Seasonal bundles'),h('p',{class:'hint'},'Everyone else only sees a bundle while its window is live. You can preview and buy any of them at any time.'),h('div',{class:'sa-grid'},list.map(card)))
 }
