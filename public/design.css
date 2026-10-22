@@ -1347,3 +1347,8 @@ h1,h2,h3,.dlg>header>span,.tour .tt{font-family:"Parli-Bold",var(--disp);font-we
 .par-hist,.par-sec .row.sp{font-size:14px}
 @media (max-width:640px){.par-hero{padding:16px}.par-hero .par-bal{font-size:32px}.par-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.par-card{padding:10px}.par-card .pc-top{min-height:110px}.sh-nav{top:-10px}}
 @media (prefers-reduced-motion:reduce){.par-card{transition:none}.par-card:hover{transform:none}}
+.bcard .pb-prev .par-av,.ts .pb-prev .par-av,.par-bundle .pb-prev .par-av{zoom:1.45;padding:8px 0}
+.bcard .pb-prev{min-height:210px;gap:14px}
+.ts .pb-prev{min-width:260px}
+.par-bundle .pb-prev{min-width:200px}
+.pb-prev .par-av{margin-bottom:22px}
