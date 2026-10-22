@@ -9,7 +9,7 @@ import{signMsg}from'./sign.js'
 import{runBlocks}from'./blocks.js'
 import{place}from'./store.js'
 import{pushTo}from'./push.js'
-import{urlsIn,inspectLink,imageExplicit,filterOn}from'./safety.js'
+import{urlsIn,inspectLink,imageExplicit,filterOn,firstTrue}from'./safety.js'
 
 const MAX_LEN=10000
 const floorId=t=>t.toString(36).padStart(9,'0')
@@ -268,15 +268,14 @@ return{ok:true}
 })
 
 async function scanMsg(c,rr,id,content){
-let bad=false
-for(const u of urlsIn(content)){if(await inspectLink(c.env,u)){bad=true;break}}
-const files=(await c.env.DB.prepare("select id,r2_key,size,mime from files where message_id=? and mime like 'image/%'").bind(id).all()).results
-if(!bad)for(const f of files.slice(0,4)){
-try{
+const files=(await c.env.DB.prepare("select id,r2_key,size,mime from files where message_id=? and mime like 'image/%' and size>=1500").bind(id).all()).results
+const bad=await firstTrue([
+...urlsIn(content).map(u=>()=>inspectLink(c.env,u)),
+...files.slice(0,4).map(f=>async()=>{
 const o=await c.env.FILES.get(f.r2_key,{size:f.size})
-if(o&&await imageExplicit(c.env,new Uint8Array(await o.arrayBuffer()))){bad=true;break}
-}catch{}
-}
+return !!o&&await imageExplicit(c.env,new Uint8Array(await o.arrayBuffer()))
+})
+])
 if(!bad)return
 const m=await c.env.DB.prepare('select author_id from messages where id=? and deleted_at is null').bind(id).first()
 if(!m)return

@@ -5,7 +5,15 @@ nye:{name:'Midnight Countdown',from:[12,29],to:[1,7]},
 love:{name:'Lovestruck',from:[2,1],to:[2,15]},
 bloom:{name:'Wildflower Bloom',from:[3,15],to:[4,12]},
 summer:{name:'Sunburst',from:[6,15],to:[7,15]},
-harvest:{name:'Harvest Moon',from:[11,10],to:[11,30]}
+harvest:{name:'Harvest Moon',from:[11,10],to:[11,30]},
+hanuk:{name:'Festival of Lights',from:[12,10],to:[12,28]},
+snow:{name:'Snowfall',from:[12,1],to:[12,9]},
+ember:{name:'Ember Night',from:[11,4],to:[11,9]},
+aurora:{name:'Northern Lights',from:[1,8],to:[1,31]},
+clover:{name:'Lucky Clover',from:[2,16],to:[3,14]},
+rain:{name:'Rainfall',from:[4,13],to:[6,14]},
+ocean:{name:'Ocean Tide',from:[7,16],to:[8,31]},
+arcade:{name:'Neon Arcade',from:[9,1],to:[9,30]}
 }
 export function seasonWindow(key,t=Date.now()){
 const s=SEASONS[key]

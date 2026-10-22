@@ -30,12 +30,32 @@ if(!['http:','https:'].includes(u.protocol)||u.username||u.password)return false
 const h=u.hostname.toLowerCase()
 return!(h==='localhost'||h.endsWith('.local')||h.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(h)||h.includes(':')||!h.includes('.'))
 }
+const VERDICTS=new Map()
+async function digest(bytes){
+const d=new Uint8Array(await crypto.subtle.digest('SHA-1',bytes))
+let k='';for(let i=0;i<10;i++)k+=d[i].toString(16).padStart(2,'0')
+return k+bytes.length
+}
+function remember(k,v){
+if(VERDICTS.size>2000)VERDICTS.delete(VERDICTS.keys().next().value)
+VERDICTS.set(k,v)
+return v
+}
 export async function imageExplicit(env,bytes){
-if(!env.AI||!bytes||!bytes.length||bytes.length>4*1024*1024)return false
+if(!env.AI||!bytes||bytes.length<1500||bytes.length>3*1024*1024)return false
+const k=await digest(bytes)
+if(VERDICTS.has(k))return VERDICTS.get(k)
 try{
-const out=await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf',{image:[...bytes],prompt:'Does this image contain pornography, sexually explicit acts, or exposed genitals or nipples? Answer only YES or NO.',max_tokens:4})
-return/^\s*yes/i.test(String(out&&(out.description||out.response)||''))
+const out=await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf',{image:Array.from(bytes),prompt:'Is this image pornographic or sexually explicit (nudity, genitals, nipples, sex acts)? YES or NO.',max_tokens:2})
+return remember(k,/^\s*yes/i.test(String(out&&(out.description||out.response)||'')))
 }catch{return false}
+}
+export function firstTrue(tasks){
+if(!tasks.length)return Promise.resolve(false)
+return new Promise(res=>{
+let left=tasks.length
+for(const t of tasks)Promise.resolve().then(t).then(v=>{if(v)res(true);else if(--left===0)res(false)},()=>{if(--left===0)res(false)})
+})
 }
 export async function inspectLink(env,href){
 let u
@@ -44,7 +64,7 @@ for(let hop=0;hop<5;hop++){
 if(!okTarget(u))return false
 if(badHost(u.hostname))return true
 const ctl=new AbortController()
-const timer=setTimeout(()=>ctl.abort(),4000)
+const timer=setTimeout(()=>ctl.abort(),2500)
 try{
 const res=await fetch(u.href,{signal:ctl.signal,redirect:'manual',headers:{'user-agent':'ParleyLinkCheck/1.0','accept':'text/html,image/*'}})
 if(res.status>=300&&res.status<400){

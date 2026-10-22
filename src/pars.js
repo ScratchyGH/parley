@@ -1,4 +1,5 @@
 import{seasonWindow}from'./seasons.js'
+export const VANITY={1:3,3:6,7:10,14:16,30:25,90:55,180:90,365:140,730:220,1095:290,1825:400,3650:600,0:900}
 import{fail,now,newId,str,body,clamp,limit,json}from'./util.js'
 import{loadMember,P}from'./perms.js'
 
@@ -81,7 +82,7 @@ c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge,title,bubble f
 c.env.DB.prepare('select total_ms,day,day_ms from par_beats where user_id=?').bind(c.user.id).first()
 ])
 const today=beat&&beat.day===dayOf(now())?beat.day_ms:0
-return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.filter(i=>visible(i,c.user.admin)).map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
+return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.filter(i=>visible(i,c.user.admin)).map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,vanity_tiers:VANITY,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
 })
 r.add('GET','/api/pars/history',async c=>{
 const before=clamp(c.url.searchParams.get('before'),now()+1,0,now()+1)
@@ -137,7 +138,8 @@ const dup=await c.env.DB.prepare("select 1 x from par_tx where user_id=? and kin
 if(dup)return{ok:true,duplicate:true,balance:await bal(c.env,c.user.id)}
 const gifting=!!String(b.to||'').trim()&&(COSMETIC.includes(it.kind)||it.kind==='bundle')
 const viaServer=b.target==='server'&&it.kind==='bundle'
-let owner=c.user.id,sid=null,from=null,note=it.name,bun=null,todo=[],price=it.price,marker=null,to=null
+let owner=c.user.id,sid=null,from=null,note=it.name,bun=null,todo=[],price=it.price,marker=null,to=null,vdays=0
+if(it.kind==='vanity'){vdays=Number(b.days||0);if(!(vdays in VANITY))fail(400,'Choose how long the vanity link lasts');price=VANITY[vdays];note+=vdays?' ('+(vdays>=365?vdays/365+' year'+(vdays>365?'s':''):vdays+' day'+(vdays>1?'s':''))+')':' (forever)'}
 if(gifting){
 const cfg=await parsCfg(c.env)
 const me=await c.env.DB.prepare('select created_at from users where id=?').bind(c.user.id).first()
@@ -205,6 +207,11 @@ const add=bun.vanity_days*86400000
 if(cur&&cur.expires_at>now())st.push(c.env.DB.prepare('update par_owned set expires_at=? where id=?').bind(cur.expires_at+add,cur.id))
 else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at,expires_at) values(?,?,?,?,?,?,?)').bind(newId('po'),c.user.id,'vanity',sid,'bundle:'+it.id,now(),now()+add))
 }
+}else if(it.kind==='vanity'&&vdays){
+const cur=await c.env.DB.prepare("select id,expires_at from par_owned where server_id=? and item_id='vanity' and expires_at is not null order by expires_at desc limit 1").bind(sid).first()
+const add=vdays*86400000
+if(cur&&cur.expires_at>now())st.push(c.env.DB.prepare('update par_owned set expires_at=? where id=?').bind(cur.expires_at+add,cur.id))
+else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at,expires_at) values(?,?,?,?,?,?,?)').bind(newId('po'),c.user.id,'vanity',sid,null,now(),now()+add))
 }else st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),owner,it.id,sid,from,now()))
 await c.env.DB.batch(st)
 }catch(e){
