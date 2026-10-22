@@ -61,6 +61,7 @@ else if(['reduced_motion','show_presence','sound','desktop','dnd','quiet_on','se
 else if(k==='server_order'){if(!Array.isArray(v)||v.length>300||v.some(x=>typeof x!=='string'||x.length>40))fail(400,'server_order is invalid');out.server_order=v}
 else if(k==='font_size'){if(!Number.isInteger(v)||v<12||v>22)fail(400,'font_size is invalid');out.font_size=v}
 else if(k==='ui_color'||k==='ui_bg'){if(typeof v!=='string'||(v!==''&&!/^#[0-9a-fA-F]{6}$/.test(v)))fail(400,k+' is invalid');out[k]=v.toLowerCase()}
+else if(k==='tz'){if(typeof v!=='string'||v.length>64)fail(400,'tz is invalid');if(v){try{new Intl.DateTimeFormat('en',{timeZone:v})}catch{fail(400,'tz is invalid')}}out.tz=v}
 else if(k==='quiet_start'||k==='quiet_end'){if(typeof v!=='string'||!/^\d\d:\d\d$/.test(v))fail(400,k+' is invalid');out[k]=v}
 else if(k==='mute'){
 if(!v||typeof v!=='object'||Object.keys(v).length>500)fail(400,'mute is invalid')
