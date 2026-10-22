@@ -31,6 +31,7 @@ const h=u.hostname.toLowerCase()
 return!(h==='localhost'||h.endsWith('.local')||h.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(h)||h.includes(':')||!h.includes('.'))
 }
 const VERDICTS=new Map()
+const FLIGHT=new Map()
 async function digest(bytes){
 const d=new Uint8Array(await crypto.subtle.digest('SHA-1',bytes))
 let k='';for(let i=0;i<10;i++)k+=d[i].toString(16).padStart(2,'0')
@@ -45,10 +46,15 @@ export async function imageExplicit(env,bytes){
 if(!env.AI||!bytes||bytes.length<1500||bytes.length>3*1024*1024)return false
 const k=await digest(bytes)
 if(VERDICTS.has(k))return VERDICTS.get(k)
+if(FLIGHT.has(k))return FLIGHT.get(k)
+const p=(async()=>{
 try{
-const out=await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf',{image:Array.from(bytes),prompt:'Is this image pornographic or sexually explicit (nudity, genitals, nipples, sex acts)? YES or NO.',max_tokens:2})
+const out=await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf',{image:Array.from(bytes),prompt:'Explicit nudity or sex? YES or NO.',max_tokens:1})
 return remember(k,/^\s*yes/i.test(String(out&&(out.description||out.response)||'')))
-}catch{return false}
+}catch{return false}finally{FLIGHT.delete(k)}
+})()
+FLIGHT.set(k,p)
+return p
 }
 export function firstTrue(tasks){
 if(!tasks.length)return Promise.resolve(false)
@@ -64,7 +70,7 @@ for(let hop=0;hop<5;hop++){
 if(!okTarget(u))return false
 if(badHost(u.hostname))return true
 const ctl=new AbortController()
-const timer=setTimeout(()=>ctl.abort(),2500)
+const timer=setTimeout(()=>ctl.abort(),1500)
 try{
 const res=await fetch(u.href,{signal:ctl.signal,redirect:'manual',headers:{'user-agent':'ParleyLinkCheck/1.0','accept':'text/html,image/*'}})
 if(res.status>=300&&res.status<400){
@@ -75,6 +81,7 @@ continue
 }
 const ct=res.headers.get('content-type')||''
 if(ct.startsWith('image/')){
+if(+res.headers.get('content-length')>3*1024*1024)return false
 const buf=new Uint8Array(await res.arrayBuffer())
 return await imageExplicit(env,buf)
 }
@@ -82,7 +89,7 @@ if(!ct.includes('text/html'))return false
 const reader=res.body.getReader()
 let html='',n=0
 const dec=new TextDecoder()
-while(n<120000){const{done,value}=await reader.read();if(done)break;n+=value.length;html+=dec.decode(value,{stream:true});if(html.includes('</head>'))break}
+while(n<40000){const{done,value}=await reader.read();if(done)break;n+=value.length;html+=dec.decode(value,{stream:true});if(html.includes('</head>'))break}
 reader.cancel().catch(()=>{})
 const head=html.slice(0,html.indexOf('</head>')>0?html.indexOf('</head>'):html.length)
 if(/rta-5042-1996-1400-1577-rta/i.test(head))return true
