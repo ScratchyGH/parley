@@ -24,6 +24,26 @@ const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Server not found')
 return m
 }
+
+const ONB0={on:0,since:0,title:'',text:'',roles:[],channels:[]}
+export function onbOf(v){
+try{const o=JSON.parse(v||'');if(o&&typeof o==='object')return{...ONB0,...o}}catch{}
+return{...ONB0}
+}
+async function cleanOnb(c,sid,b,prev){
+if(!b||typeof b!=='object'||Array.isArray(b))fail(400,'Invalid onboarding')
+const roles=[]
+for(const x of Array.isArray(b.roles)?b.roles.slice(0,10):[]){
+const r=await c.env.DB.prepare('select id,perms,is_everyone from roles where id=? and server_id=?').bind(String(x&&x.id),sid).first()
+if(!r||r.is_everyone)fail(400,'Pick roles that exist in this server')
+if(r.perms&~DEFAULT)fail(400,'Only roles without moderation or management permissions can be self-assigned')
+roles.push({id:r.id,label:clean(opt(x.label,32,'Role label')||''),desc:clean(opt(x.desc,80,'Role description')||'')})
+}
+const own=new Set((await c.env.DB.prepare('select id from channels where server_id=?').bind(sid).all()).results.map(x=>x.id))
+const channels=(Array.isArray(b.channels)?b.channels:[]).map(String).filter(x=>own.has(x)).slice(0,8)
+const on=b.on?1:0
+return{on,since:on&&!prev.on?now():prev.since||0,title:clean(opt(b.title,60,'Title')||''),text:clean(opt(b.text,600,'Welcome text')||''),roles,channels}
+}
 const must=(m,bit,msg='You do not have permission to do that')=>{if(!(m.base&bit))fail(403,msg)}
 export async function target(c,sid,uid,m){
 const t=await loadMember(c.env,sid,uid)
@@ -176,8 +196,15 @@ const count=await c.env.DB.prepare('select count(*) n from members where server_
 const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
 const s=m.server
 const expc=await expCfg(c.env)
+const onb=onbOf(s.onboarding)
+let onboarded=true
+if(onb.on){
+const mm=await c.env.DB.prepare('select joined_at from members where server_id=? and user_id=?').bind(s.id,c.user.id).first()
+const dn=await c.env.DB.prepare('select 1 x from onboard_done where server_id=? and user_id=?').bind(s.id,c.user.id).first()
+onboarded=!!dn||m.owner||!mm||mm.joined_at<onb.since
+}
 return{
-server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,tag:s.tag||null,tag_emoji:s.tag_emoji||null,tag_icon_id:s.tag_icon_id||null,theme:themeOf(s.theme),vanity:s.vanity||null,block_ext_emoji:!!s.block_ext_emoji,retention_days:s.retention_days||0,experimental:expActive(s,expc),welcome:s.welcome,rules:s.rules,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
+server:{id:s.id,owner_id:s.owner_id,name:s.name,description:s.description,icon_id:s.icon_id,banner_id:s.banner_id,is_public:s.is_public,category:s.category,accent:s.accent,tag:s.tag||null,tag_emoji:s.tag_emoji||null,tag_icon_id:s.tag_icon_id||null,theme:themeOf(s.theme),vanity:s.vanity||null,block_ext_emoji:!!s.block_ext_emoji,retention_days:s.retention_days||0,experimental:expActive(s,expc),welcome:s.welcome,rules:s.rules,onboarding:onb,onboarded,age_restricted:s.age_restricted,scan_explicit:s.scan_explicit,verification:s.verification,created_at:s.created_at},
 me:{perms:m.base,role_ids:m.roleIds,owner:m.owner,nickname:m.nickname,timeout_until:m.timeout_until,top:m.owner?9999:m.top},
 categories:cats,
 channels:vis.map(({ch,perms})=>({id:ch.id,category_id:ch.category_id,name:ch.name,type:ch.type,topic:ch.topic,position:ch.position,readonly:ch.readonly,locked:ch.locked,slowmode:ch.slowmode,last_msg:ch.last_msg,perms})),
@@ -229,6 +256,7 @@ if('block_ext_emoji'in b)add('block_ext_emoji',b.block_ext_emoji?1:0)
 if('retention_days'in b){if(![0,30,90,365].includes(b.retention_days))fail(400,'Choose off, 30, 90 or 365 days');add('retention_days',b.retention_days)}
 if('welcome'in b)add('welcome',clean(opt(b.welcome,1000,'Welcome message')))
 if('rules'in b)add('rules',clean(opt(b.rules,3000,'Rules')))
+if('onboarding'in b)add('onboarding',JSON.stringify(await cleanOnb(c,m.server.id,b.onboarding,onbOf(m.server.onboarding))))
 if('verification'in b)add('verification',int(b.verification,0,2,'Verification level'))
 if('age_restricted'in b||'scan_explicit'in b){
 const age='age_restricted'in b?(b.age_restricted?1:0):m.server.age_restricted
@@ -729,6 +757,29 @@ if(!res.meta.changes)fail(404,'This invite is invalid or has expired')
 await joinServer(c,inv.server_id)
 }
 return{server_id:inv.server_id}
+})
+
+r.add('POST','/api/servers/:sid/onboarding',async c=>{
+const m=await mem(c,c.p.sid)
+const onb=onbOf(m.server.onboarding)
+const b=await body(c.req)
+const pick=new Set((Array.isArray(b.roles)?b.roles:[]).map(String))
+const allowed=new Set(onb.roles.map(x=>x.id))
+for(const x of pick)if(!allowed.has(x))fail(400,'That role is not available')
+const ok=new Set((await c.env.DB.prepare(`select id from roles where server_id=? and id in (${placeholders([...allowed,''])})`).bind(m.server.id,...allowed,'').all()).results.map(x=>x.id))
+const st=[]
+for(const id of allowed){
+if(!ok.has(id))continue
+if(pick.has(id))st.push(c.env.DB.prepare('insert or ignore into member_roles(server_id,user_id,role_id) values(?,?,?)').bind(m.server.id,c.user.id,id))
+else st.push(c.env.DB.prepare('delete from member_roles where server_id=? and user_id=? and role_id=?').bind(m.server.id,c.user.id,id))
+}
+st.push(c.env.DB.prepare('insert or ignore into onboard_done(server_id,user_id,created_at) values(?,?,?)').bind(m.server.id,c.user.id,now()))
+await c.env.DB.batch(st)
+if(onb.roles.length){
+c.pubClose('s_'+m.server.id,{close:[c.user.id]})
+c.pub('s_'+m.server.id,{t:'member.update',uid:c.user.id})
+}
+return{ok:true}
 })
 
 r.add('POST','/api/servers/:sid/join',async c=>{

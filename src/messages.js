@@ -7,6 +7,7 @@ import{P,resolveRoom,loadMember,chanPerms,visibleChannels}from'./perms.js'
 import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
 import{runBlocks}from'./blocks.js'
+import{place}from'./store.js'
 import{pushTo}from'./push.js'
 import{urlsIn,inspectLink,imageExplicit,filterOn}from'./safety.js'
 
@@ -109,18 +110,23 @@ if(!(rr.perms&P.SEND))fail(403,rr.kind==='dm'?'You cannot message this person':'
 limit('msg:'+c.user.id,20,10000)
 const b=await body(c.req,40000)
 let content=typeof b.content==='string'?b.content.replace(/\r\n/g,'\n'):''
+let fwdFiles=[]
 if(b.forward_of){
 const src=await c.env.DB.prepare('select m.*,u.display_name from messages m join users u on u.id=m.author_id where m.id=? and m.deleted_at is null').bind(String(b.forward_of)).first()
 if(!src)fail(404,'Original message not found')
 await resolveRoom(c.env,src.room,c.user.id)
-content=src.content.split('\n').map(l=>'> '+l).join('\n')+`\n*Forwarded from ${src.display_name}*`
+const from=await c.env.DB.prepare('select id from channels where id=?').bind(src.room).first()
+const note=typeof b.note==='string'?b.note.trim().slice(0,1000):''
+const quote=src.content?src.content.split('\n').map(l=>'> '+l).join('\n')+'\n':''
+content=(note?note+'\n\n':'')+quote+`*Forwarded from ${src.display_name}${from?' in <#'+from.id+'>':''}*`
+if(b.attachments&&(rr.perms&P.ATTACH))fwdFiles=(await c.env.DB.prepare("select * from files where message_id=? and kind='attachment' order by created_at limit 6").bind(src.id).all()).results
 }
 content=content.trim()
 if(content.length>MAX_LEN)fail(413,`Messages can be up to ${MAX_LEN} characters`)
 const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))].slice(0,10):[]
 let stk=null
 if(b.sticker_id){stk=await stickerFor(c.env,String(b.sticker_id),c.user.id);if(!stk)fail(400,'Sticker not available')}
-if(!content&&!attIds.length&&!stk)fail(400,'Message is empty')
+if(!content&&!attIds.length&&!stk&&!fwdFiles.length)fail(400,'Message is empty')
 const nonce=typeof b.nonce==='string'&&b.nonce.length<=40?b.nonce:null
 if(nonce){
 const ex=await c.env.DB.prepare('select * from messages where author_id=? and nonce=?').bind(c.user.id,nonce).first()
@@ -152,6 +158,16 @@ if(attIds.length){
 files=(await c.env.DB.prepare(`select id from files where id in (${placeholders(attIds)}) and owner_id=? and kind='attachment' and room=? and message_id is null`).bind(...attIds,c.user.id,rr.room).all()).results
 if(files.length!==attIds.length)fail(400,'One or more attachments are invalid or already used')
 }
+const fwdCopies=[]
+for(const f of fwdFiles){
+if(f.size>10485760)continue
+const o=await c.env.FILES.get(f.r2_key,{size:f.size})
+if(!o)continue
+const nid=newId('f')
+const key=place(c.env,`u/${c.user.id}/${nid}`,f.size)
+await c.env.FILES.put(key,await o.arrayBuffer(),{httpMetadata:{contentType:f.mime}})
+fwdCopies.push({id:nid,key,f})
+}
 const id=msgId()
 const t=now()
 const users=[...new Set([...content.matchAll(/<@(u_[a-z0-9]{16})>/g)].map(x=>x[1]))].filter(x=>x!==c.user.id).slice(0,10)
@@ -169,6 +185,7 @@ stmts.push(c.env.DB.prepare('update conv_members set hidden=0 where conv_id=? an
 stmts.push(c.env.DB.prepare('update conv_members set accepted=1 where conv_id=? and user_id=? and accepted=0').bind(rr.room,c.user.id))
 }
 for(const f of files)stmts.push(c.env.DB.prepare('update files set message_id=? where id=?').bind(id,f.id))
+for(const x of fwdCopies)stmts.push(c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,message_id,r2_key,name,mime,size,sha256,verified,created_at) values(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(x.id,c.user.id,'attachment',rr.room,rr.serverId||null,id,x.key,x.f.name,x.f.mime,x.f.size,x.f.sha256||null,x.f.verified||0,t))
 if(stk)stmts.push(c.env.DB.prepare('update messages set sticker_id=? where id=?').bind(stk.id,id))
 const notify=[]
 if(rr.kind==='channel'){
@@ -203,7 +220,7 @@ if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,con
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})
 if(c.env.VAPID_PRIVATE_JWK){
-const preview=content.replace(/<@&?[a-z0-9_]+>/g,'@mention').slice(0,120)
+const preview=content.replace(/<#ch_[a-z0-9]+>/g,'#channel').replace(/<@&?[a-z0-9_]+>/g,'@mention').slice(0,120)
 if(rr.kind==='channel'&&notify.length)c.ec.waitUntil(pushTo(c.env,notify,{title:c.user.display_name+' mentioned you in #'+rr.ch.name,body:preview,room:rr.room,sid:rr.serverId,mid:id}))
 else if(rr.kind==='dm'){
 const others=(await c.env.DB.prepare('select user_id from conv_members where conv_id=? and user_id!=?').bind(rr.room,c.user.id).all()).results.map(x=>x.user_id)
