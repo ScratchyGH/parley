@@ -946,3 +946,21 @@ ins{text-decoration:none;border-bottom:2px solid #4ade80}
 .bk-grp[hidden],.bk-add[hidden]{display:none}
 .bk-pal .inp[type=search]{position:sticky;top:0;z-index:2;flex:none}
 .bk-main{min-height:min(70vh,760px)}
+.bk-wrap{height:calc(100dvh - 76px);overflow:hidden;gap:8px;padding:10px 16px}
+.bk-main{flex:1;min-height:0}
+.bk-top p{display:none}
+.bk-top h2{font-size:18px}
+.bk-bar{gap:6px}
+.bk-bar .btn,.bk-bar .inp,.bk-bar select{font-size:13px;line-height:1.2;padding:6px 12px;min-height:0;height:auto}
+.bk-bar .inp{min-width:140px;max-width:260px}
+.bk-bar .pill{font-size:12px}
+.bk-pal{width:240px;padding-right:6px}
+.bk-pal .btn,.bk-add{display:block;width:100%;font-size:13px;line-height:1.2;padding:7px 10px;min-height:0;height:auto;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-add svg{vertical-align:-2px;margin-right:6px}
+.bk-grp{border-bottom:1px solid var(--border)}
+.bk-grp summary{padding:9px 2px;font-size:13px}
+.bk-grp[open] summary{color:var(--strong)}
+.bk-out-log{flex:none;max-height:90px;overflow:auto}
+.bk-issues{flex:none;max-height:80px}
+.bk-zoom .btn{font-size:13px;padding:5px 8px}
+@media(max-width:720px){.bk-wrap{height:auto;overflow:visible}.bk-main{min-height:70vh}.bk-pal{width:auto;max-height:200px}}
