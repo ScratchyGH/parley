@@ -77,7 +77,9 @@ word:{out:NX,spec:{name:24,input:300,n:2},def:{name:'word',input:'{text}',n:'1'}
 combine:{out:NX,spec:{name:24,a:200,sep:20,b:200},def:{name:'joined',a:'',sep:' ',b:''}},
 clock:{out:NX,spec:{name:24,what:['unix','date','time','hour','minute','day','month','monthname','year','weekday']},def:{name:'now',what:'unix'}},
 userinfo:{out:NX,spec:{name:24,what:['nickname','joined_days','roles','role_count']},def:{name:'info',what:'joined_days'}},
-serverinfo:{out:NX,spec:{name:24,what:['members','channels','roles','name']},def:{name:'info',what:'members'}}
+serverinfo:{out:NX,spec:{name:24,what:['members','channels','roles','name']},def:{name:'info',what:'members'}},
+api:{out:NX,spec:{kind:['joke','catfact','catpic','dogpic','advice','quote','fact','trivia','weather','define','wiki','crypto','pokemon','time'],input:60,name:24,fallback:100},def:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
+http:{out:NX,spec:{url:300,path:100,name:24,fallback:100},def:{url:'https://',path:'',name:'data',fallback:'No data.'}}
 }
 export const MAX_NODES=200
 const NAMEF=['name']
@@ -109,6 +111,7 @@ if(n.type==='setcount')p.value=num(p.value,-1000000,1000000,'Value')
 if(n.type==='time'){p.from=num(p.from,0,23,'Hour');p.to=num(p.to,0,23,'Hour')}
 if(n.type==='cooldown')p.seconds=num(p.seconds,1,86400,'Seconds')
 if(n.type==='timeout')p.minutes=num(p.minutes,1,60,'Minutes')
+if(n.type==='http'&&!/^https:\/\//i.test(p.url))bad('The URL must start with https://')
 if(n.type==='randnum'){p.min=num(p.min,-1000000,1000000,'Minimum');p.max=num(p.max,-1000000,1000000,'Maximum')}
 if(n.type==='caps'){p.percent=num(p.percent,1,100,'Percent');p.min=num(p.min,1,200,'Minimum letters')}
 if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
@@ -235,7 +238,7 @@ const by=new Map(graph.nodes.map(n=>[n.id,n]))
 const next=(id,o)=>graph.edges.find(e=>e.f===id&&e.o===o)?.t
 const vars=baseVars(ctx,rnd)
 const log=[]
-let steps=0,sends=0,acts=0,heavy=0,waited=0
+let steps=0,sends=0,acts=0,heavy=0,waited=0,calls=0
 const setv=(name,v)=>{vars[name.toLowerCase()]=clip(v,500);return vars[name.toLowerCase()]}
 async function chain(start,depth){
 let cur=start
@@ -288,6 +291,7 @@ case'combine':if(P.name)log.push({id:n.id,did:'combine',value:setv(P.name,R(P.a)
 case'clock':if(P.name){const d=new Date(ctx.at||Date.now()),M=['January','February','March','April','May','June','July','August','September','October','November','December'];const v={unix:String(Math.floor(d.getTime()/1000)),date:vars.date,time:vars.time,hour:String(d.getUTCHours()),minute:String(d.getUTCMinutes()),day:String(d.getUTCDate()),month:String(d.getUTCMonth()+1),monthname:M[d.getUTCMonth()],year:String(d.getUTCFullYear()),weekday:vars.weekday}[P.what]||'';log.push({id:n.id,did:'clock',value:setv(P.name,v)})}break
 case'userinfo':if(P.name)log.push({id:n.id,did:'userinfo',value:setv(P.name,String(await io.memberInfo(P.what)))});break
 case'serverinfo':if(P.name)log.push({id:n.id,did:'serverinfo',value:setv(P.name,String(await io.serverInfo(P.what)))});break
+case'api':case'http':if(P.name&&calls<3){calls++;const r=n.type==='api'?await io.api(P.kind,R(P.input)):await io.http(R(P.url),R(P.path));const v=r&&r.text?r.text:R(P.fallback);log.push({id:n.id,did:n.type,value:setv(P.name,v)});if(r&&r.extra)for(const[k,x]of Object.entries(r.extra))setv(P.name+'_'+k,x)}break
 case'pick':{const o=P.options.split('\n').map(x=>x.trim()).filter(Boolean);if(o.length&&P.name)log.push({id:n.id,did:'pick',value:setv(P.name,R(o[Math.floor(rnd()*o.length)]))});break}
 case'set':if(P.name)log.push({id:n.id,did:'set',value:setv(P.name,R(P.value))});break
 case'count':if(P.name)log.push({id:n.id,did:'count',value:setv(P.name,String(await io.count(P.name.toLowerCase(),Number(P.by)||0,P.scope)))});break

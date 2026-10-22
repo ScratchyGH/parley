@@ -3,6 +3,7 @@ import{resolveRoom,loadMember,P}from'./perms.js'
 import{signMsg}from'./sign.js'
 import{hydrate,publishMsg}from'./messages.js'
 import{execute}from'./blockrun.js'
+import{runApi,runHttp}from'./apiblock.js'
 import{messageExplicit,filterOn}from'./safety.js'
 
 async function say(c,room,sid,botId,text,replyTo){
@@ -135,6 +136,8 @@ if(what==='joined_days')return Math.floor((now()-m.joined_at)/86400000)
 const rs=(await c.env.DB.prepare('select r.name from member_roles mr join roles r on r.id=mr.role_id where mr.server_id=? and mr.user_id=? and r.is_everyone=0 order by r.position desc limit 25').bind(sid,uid).all()).results
 return what==='role_count'?rs.length:rs.map(x=>x.name).join(', ')
 },
+api:(k,i)=>runApi('b:'+botId,k,i),
+http:(u,pt)=>runHttp('b:'+botId,u,pt),
 serverInfo:async what=>{
 if(what==='name')return(await c.env.DB.prepare('select name from servers where id=?').bind(sid).first())?.name||''
 const t=what==='members'?'members':what==='channels'?'channels':'roles'
@@ -221,6 +224,7 @@ cooldown:async()=>true,
 isOwner:async()=>false,joinedDays:async()=>30,notice:async t=>{sent.push({note:'Privately notifies the member: '+t})},unpin:async()=>{sent.push({note:'Unpins the message'})},slowmode:async s=>{sent.push({note:'Sets slow mode to '+s+' seconds'})},setNick:async n=>{sent.push({note:n?'Sets the nickname to '+n:'Clears the nickname'})},untimeout:async()=>{sent.push({note:'Ends the time out'})},kick:async r=>{sent.push({note:'Kicks the member: '+r})},ban:async r=>{sent.push({note:'Bans the member: '+r})},purge:async n=>{sent.push({note:'Deletes up to '+n+' recent messages from the member'})},
 warn:async r=>{const k='user:warns';mem.set(k,(mem.get(k)||0)+1);sent.push({note:'Warns the member: '+r});return mem.get(k)},
 save:async(k,v,s)=>{mem.set('tx:'+s+':'+k,v)},load:async(k,s)=>mem.has('tx:'+s+':'+k)?mem.get('tx:'+s+':'+k):null,getCount:async(k,s)=>mem.get(s+':'+k)||0,memberInfo:async w=>w==='joined_days'?30:w==='role_count'?1:w==='roles'?'Member':'Tester',serverInfo:async w=>w==='name'?'Your server':w==='members'?42:w==='channels'?8:5,
+api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),
 isMod:async()=>false,
 hasRole:async()=>false,
 del:async()=>{sent.push({note:'Deletes the message'})},
