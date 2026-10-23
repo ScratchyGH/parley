@@ -77,8 +77,8 @@ signinRoutes(router)
 labRoutes(router)
 
 router.add('GET','/api/health',async c=>{
-await c.env.DB.prepare('select 1').first()
-return{ok:true,time:now()}
+if(!c.url.searchParams.has('lite'))await c.env.DB.prepare('select 1').first()
+return{ok:true,time:now(),build:(c.env.CF_VERSION_METADATA&&c.env.CF_VERSION_METADATA.id)||null}
 },{auth:false})
 
 router.add('GET','/api/rtc/ice',async c=>{
