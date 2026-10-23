@@ -54,3 +54,4 @@
 .n3-hint{position:absolute;left:50%;top:92px;transform:translateX(-50%);z-index:4;font-size:12px;letter-spacing:.06em;color:#9fe8c0;background:rgba(1,10,5,.7);border:1px solid #2f8a58;border-radius:4px;padding:8px 14px;transition:opacity 1s;text-align:center;max-width:90%}
 .n3-hint.out{opacity:0}
 @media(max-width:700px){.n3-btn{min-width:62px;padding:9px 6px;font-size:11px}.n3-map{transform:scale(.8);transform-origin:right bottom}.n3-pw{min-width:150px}.n3-bar{width:140px}.n3-time b{font-size:26px}}
+.n3.n3-oncam .n3-hint{display:none}
