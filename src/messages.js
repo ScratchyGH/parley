@@ -268,7 +268,7 @@ return{ok:true}
 })
 
 async function scanMsg(c,rr,id,content){
-const files=(await c.env.DB.prepare("select id,r2_key,size,mime from files where message_id=? and mime like 'image/%' and size>=1500").bind(id).all()).results
+const files=(await c.env.DB.prepare("select id,r2_key,size,mime from files where message_id=? and mime like 'image/%' and size>=1500 and scanned=0").bind(id).all()).results
 const bad=await firstTrue([
 ...urlsIn(content).map(u=>()=>inspectLink(c.env,u)),
 ...files.slice(0,4).map(f=>async()=>{

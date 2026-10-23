@@ -3,6 +3,7 @@ import{boostMb}from'./pars.js'
 import{fail,now,newId,limit,str,clamp,body,hex,json}from'./util.js'
 import{resolveRoom,loadMember,P,need}from'./perms.js'
 import{place}from'./store.js'
+import{imageExplicit,filterOn,explicitText}from'./safety.js'
 
 const IMG={png:'image/png',apng:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',jxl:'image/jxl',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',tif:'image/tiff',tiff:'image/tiff',ico:'image/x-icon'}
 const INLINE_MEDIA={mp3:'audio/mpeg',weba:'audio/webm',mid:'audio/midi',midi:'audio/midi',aif:'audio/aiff',aiff:'audio/aiff',m4b:'audio/mp4',ogg:'audio/ogg',oga:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',flac:'audio/flac',mp4:'video/mp4',m4v:'video/mp4',ogv:'video/ogg','3gp':'video/3gpp',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',opus:'audio/ogg',aac:'audio/aac',pdf:'application/pdf'}
@@ -49,11 +50,12 @@ const maxMb=parseInt(c.env.MAX_UPLOAD_MB)||100
 const bigMb=parseInt(c.env.MAX_FILE_MB)||1024
 let lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:kind==='sticker'?2:10)
 if(!len||len<1)fail(411,'File size required')
-let room=null,serverId=null
+let room=null,serverId=null,scan=false
 if(kind==='attachment'){
 const rr=await resolveRoom(c.env,roomQ,c.user.id)
 need(rr.perms,P.ATTACH,'You cannot attach files here')
 room=rr.room
+scan=rr.kind==='channel'&&filterOn(rr.m.server)
 lim+=await boostMb(c.env,c.user.id,rr.serverId||null)
 }else if(kind==='server_icon'||kind==='server_banner'||kind==='server_bg'||kind==='emoji'||(kind==='sticker'&&serverQ)){
 serverId=serverQ
@@ -75,7 +77,7 @@ else if(kind!=='attachment')fail(415,'Only images are allowed here')
 else if(INLINE_MEDIA[e])mime=INLINE_MEDIA[e]
 else if(TEXT.includes(e))mime='text/plain; charset=utf-8'
 else if(DOWNLOAD[e])mime=DOWNLOAD[e]
-return{name,mime,room,serverId,typed:!!(IMG[e]||INLINE_MEDIA[e])}
+return{name,mime,room,serverId,scan,typed:!!(IMG[e]||INLINE_MEDIA[e])}
 }
 const TEXT=['txt','md','json','csv','tsv','log','js','mjs','cjs','ts','jsx','tsx','vue','svelte','py','java','c','cpp','h','hpp','rs','go','css','scss','yml','yaml','toml','ini','cfg','conf','sql','kt','lua','rb','php','cs','swift','dart','scala','hs','ex','exs','clj','r','jl','nix','tex','bib','diff','patch','srt','vtt','ass','lrc','ipynb','graphql','proto','gradle','dockerfile','properties','mcfunction']
 const okSha=v=>typeof v==='string'&&/^[0-9a-f]{64}$/.test(v)
@@ -92,15 +94,19 @@ if(want&&!okSha(want))fail(400,'Invalid checksum')
 const buf=await c.req.arrayBuffer()
 if(buf.byteLength!==len)fail(400,'Body size does not match Content-Length')
 if(p.typed&&!sniff(buf,p.mime))fail(415,'File content does not match its type')
+const look=p.scan&&p.mime.startsWith('image/')&&len>=1500&&len<=3145728
+if(look&&explicitText(p.name))fail(422,'This image was blocked by the explicit content filter')
+const scanP=look?imageExplicit(c.env,new Uint8Array(buf)):Promise.resolve(false)
 const id=newId('f')
 const key=place(c.env,`u/${c.user.id}/${id}`,len)
 const opts={httpMetadata:{contentType:p.mime}}
 if(want)opts.sha256=want
 let obj
 try{obj=await c.env.FILES.put(key,buf,opts)}catch(x){fail(400,'Checksum mismatch or storage error')}
+if(await scanP){await c.env.FILES.delete(key);fail(422,'This image was blocked by the explicit content filter')}
 const sum=want||(obj&&obj.checksums&&obj.checksums.sha256?hex(obj.checksums.sha256):null)
 if(await hashBlocked(c.env,sum)){await c.env.FILES.delete(key);fail(422,'This file is not allowed on Parley')}
-await c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,r2_key,name,mime,size,sha256,verified,created_at) values(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.user.id,kind,p.room,p.serverId,key,p.name,p.mime,buf.byteLength,sum,want?1:0,now()).run()
+await c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,r2_key,name,mime,size,sha256,verified,created_at,scanned) values(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.user.id,kind,p.room,p.serverId,key,p.name,p.mime,buf.byteLength,sum,want?1:0,now(),look?1:0).run()
 return json({id,name:p.name,mime:p.mime,size:buf.byteLength,kind,sha256:sum},201)
 })
 
