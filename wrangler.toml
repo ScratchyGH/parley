@@ -55,3 +55,6 @@ ADMIN_USERNAMES = ""
 
 [ai]
 binding = "AI"
+
+[version_metadata]
+binding = "CF_VERSION_METADATA"
