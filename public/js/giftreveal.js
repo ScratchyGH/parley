@@ -48,14 +48,23 @@ root.append(h('div',{class:'gx-glow'}),title,stage,ok)
 document.body.append(root)
 if(reduce()){root.classList.add('gx-still');root.insertBefore(it,ok);return}
 const three=stage.querySelector('.gx-3d')
+let gl=false
+if(hw){
+const view=h('div',{class:'gx-view'})
+stage.insertBefore(view,stage.firstChild)
+gl=true
+import('/g3d/gift3d.js').then(m=>{
+const stop=m.carve(view,{onOpen:()=>root.classList.add('gx-pop','gx-rise')})
+const w=setInterval(()=>{if(!root.isConnected){clearInterval(w);stop()}},400)
+}).catch(()=>{gl=false;view.remove();start()})
+}
 let t0=performance.now()
 const st={lid:{x:0,y:0,z:0,vx:0,vy:0,rx:0,ry:0,rz:0,vrx:0,vry:0,vrz:0},box:{y:0,vy:0,rz:0,vrz:0},free:false,gone:false,item:0}
 const floor=150
 const setLid=()=>{const l=st.lid;L.style.transform=`translate3d(${l.x}px,${-92+l.y}px,${l.z}px) rotateX(${l.rx}deg) rotateY(${l.ry}deg) rotateZ(${l.rz}deg)`}
 const setBox=()=>{three.style.setProperty('--by',st.box.y+'px');three.style.setProperty('--bz',st.box.rz+'deg')}
 setLid()
-let last=performance.now(),phase='drop',pt=0
-root.classList.add('gx-drop')
+let last=0,phase='drop',pt=0
 const frame=now=>{
 if(!root.isConnected){done();return}
 const dt=Math.min(.033,(now-last)/1000);last=now;pt+=dt
@@ -79,7 +88,8 @@ setLid();setBox()
 if(phase!=='end'||pt<9999)requestAnimationFrame(frame)
 else done()
 }
-requestAnimationFrame(frame)
+const start=()=>{last=performance.now();root.classList.add('gx-drop');requestAnimationFrame(frame)}
+if(!gl)start()
 })
 }
 async function run(){
