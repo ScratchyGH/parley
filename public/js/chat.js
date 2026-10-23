@@ -673,7 +673,7 @@ function addFiles(fs){
 if(!C||!C.chips)return
 if(!(roomPerms(C.room)&P.ATTACH)){toast('You cannot attach files here','err');return}
 for(const file of fs){
-if(C.files.length>=10){toast('You can attach up to 10 files per message','err');break}
+if(C.files.length>=24){toast('You can attach up to 24 files per message','err');break}
 const f={file,name:file.name,prog:0}
 C.files.push(f)
 const room=C.room
@@ -765,6 +765,7 @@ if(!C||C.room!==room)return
 removeMsg(tmp.id)
 insertMsg(d.message)
 startSlow()
+transcribeAll(d.message)
 }catch(e){
 if(!C||C.room!==room)return
 tmp.pending=false
@@ -772,6 +773,11 @@ tmp.failed=true
 patchMsg(tmp)
 toast(e.message,'err')
 }
+}
+function transcribeAll(m){
+const q=(m.files||[]).filter(f=>/^voice-clip/i.test(f.name)&&!f.transcript).map(f=>f.id)
+const run=async()=>{while(q.length){const id=q.shift();try{await POST(`/api/files/${id}/transcribe`,{})}catch{}}}
+for(let i=0;i<Math.min(4,q.length);i++)run()
 }
 async function jumpPresentSilent(){C.list=[];C.gen++;C.moreAfter=false;await loadInitial()}
 function retry(m){
