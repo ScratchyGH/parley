@@ -328,7 +328,11 @@ body=serverBody(S.nav.sid)
 head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='settings'?'Settings':k==='pars'?'Pars shop':'Home'))
 body=homeBody()
 }
+const key=k+':'+(S.nav.sid||'')
+const old=el.ctx.children[1],oldTop=old&&el.ctx._k===key?old.scrollTop:0
 mount(el.ctx,head,body,userPanel())
+el.ctx._k=key
+if(oldTop)body.scrollTop=oldTop
 }
 
 export function setPanel(p){

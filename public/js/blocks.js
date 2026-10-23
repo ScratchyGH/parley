@@ -5,6 +5,7 @@ const SVG='http://www.w3.org/2000/svg'
 const sv=(tag,a)=>{const e=document.createElementNS(SVG,tag);for(const[k,v]of Object.entries(a||{}))e.setAttribute(k,v);return e}
 const MODES=[['any','any message'],['contains','contains'],['equals','is exactly'],['starts','starts with']]
 const OPS=[['contains','contains'],['notcontains','does not contain'],['equals','is'],['neq','is not'],['starts','starts with'],['ends','ends with'],['oneof','is one of (comma list)'],['gt','is more than'],['lt','is less than'],['empty','is empty'],['notempty','is not empty']]
+const ZONES=[['UTC','UTC (Coordinated Universal Time)'],['America/New_York','Eastern Time (New York)'],['America/Chicago','Central Time (Chicago)'],['America/Denver','Mountain Time (Denver)'],['America/Los_Angeles','Pacific Time (Los Angeles)'],['America/Anchorage','Alaska Time'],['Pacific/Honolulu','Hawaii Time'],['America/Toronto','Toronto'],['America/Mexico_City','Mexico City'],['America/Sao_Paulo','Brazil (São Paulo)'],['Europe/London','London'],['Europe/Paris','Central Europe (Paris)'],['Europe/Berlin','Berlin'],['Europe/Moscow','Moscow'],['Africa/Cairo','Cairo'],['Africa/Lagos','West Africa (Lagos)'],['Asia/Dubai','Gulf (Dubai)'],['Asia/Kolkata','India (Kolkata)'],['Asia/Bangkok','Bangkok'],['Asia/Shanghai','China (Shanghai)'],['Asia/Tokyo','Japan (Tokyo)'],['Asia/Seoul','Korea (Seoul)'],['Australia/Sydney','Sydney'],['Pacific/Auckland','New Zealand (Auckland)']]
 export const DEFS={
 msg:{title:'When a message is sent',tone:'trig',out:['next'],fields:[['mode','Message','select',MODES],['text','Text','text'],['ci','Ignore capital letters','check']],init:{mode:'contains',text:'hello',ci:'1'}},
 cmd:{title:'When a command is typed',tone:'trig',out:['next'],fields:[['prefix','Starts with','text'],['name','Command','text']],init:{prefix:'!',name:'ping'}},
@@ -21,7 +22,7 @@ link:{title:'When a message has a link',tone:'trig',out:['next'],fields:[],init:
 image:{title:'When a message has an attachment',tone:'trig',out:['next'],fields:[],init:{}},
 ismod:{title:'Is a moderator?',tone:'logic',out:['yes','no'],fields:[],init:{}},
 hasrole:{title:'Has a role?',tone:'logic',out:['yes','no'],fields:[['role','Role name','text']],init:{role:''}},
-time:{title:'Time of day (UTC hours)',tone:'logic',out:['yes','no'],fields:[['from','From hour','text'],['to','To hour','text']],init:{from:'0',to:'23'}},
+time:{title:'Time of day',tone:'logic',out:['yes','no'],fields:[['from','From (like 9:00 PM or 21:30)','text'],['to','Until (like 5:00 AM)','text'],['tz','Time zone','select',ZONES]],init:{from:'9:00 AM',to:'5:00 PM',tz:'UTC'}},
 cooldown:{title:'Cooldown',tone:'logic',out:['yes','no'],fields:[['seconds','Seconds','text'],['scope','For','select',[['server','whole server'],['user','each member']]]],init:{seconds:'30',scope:'user'}},
 once:{title:'First time only',tone:'logic',out:['yes','no'],fields:[],init:{}},
 sayto:{title:'Send to a channel',tone:'act',out:['next'],fields:[['channel','Channel name','text'],['text','Message','area']],init:{channel:'general',text:'Hello!'}},
@@ -44,7 +45,9 @@ sub:{title:'Subflow starts here',tone:'sub',out:['next'],fields:[['name','Subflo
 call:{title:'Run a subflow',tone:'sub',out:['next'],fields:[['name','Subflow name','text']],init:{name:'shared'}},
 hook:{title:'When a webhook arrives',tone:'trig',out:['next'],fields:[['name','Hook name','text']],init:{name:'alert'}},
 note:{title:'Note',tone:'note',out:[],fields:[['text','Note','area']],init:{text:''}},
-api:{title:'Get from a ready-made API',tone:'api',out:['next'],fields:[['kind','Service','select',[['joke','Random joke'],['catfact','Cat fact'],['catpic','Cat picture'],['dogpic','Dog picture'],['advice','Random advice'],['quote','Inspiring quote'],['fact','Random fact'],['trivia','Trivia question'],['weather','Weather for a city'],['define','Define a word'],['wiki','Wikipedia summary'],['crypto','Crypto price in USD'],['pokemon','Pokémon info'],['time','Time in a time zone']]],['input','Input (city, word, topic, coin, Pokémon or zone)','text'],['name','Save as','text'],['fallback','If it fails','text']],init:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
+api:{title:'Get from a ready-made API',tone:'api',out:['next'],fields:[['kind','Service','select',[['joke','Random joke'],['catfact','Cat fact'],['catpic','Cat picture'],['dogpic','Dog picture'],['advice','Random advice'],['quote','Inspiring quote'],['fact','Random fact'],['trivia','Trivia question'],['weather','Weather for a city'],['define','Define a word'],['wiki','Wikipedia summary'],['crypto','Crypto price in USD'],['pokemon','Pokémon info'],['time','Time in a time zone'],['xkcd','Latest xkcd comic'],['country','Country facts'],['github','GitHub user'],['npm','npm package'],['mcserver','Minecraft server status'],['mcuser','Minecraft player'],['exchange','Exchange rate'],['dadjoke','Dad joke'],['chuck','Chuck Norris joke'],['kanye','Kanye quote'],['fox','Fox picture'],['meal','Random meal'],['cocktail','Random cocktail']]],['input','Input (city, word, topic, coin, user, server address, package, USD EUR...)','text'],['name','Save as','text'],['fallback','If it fails','text']],init:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
+jsonget:{title:'Read a value from JSON',tone:'api',out:['next'],fields:[['input','JSON text','text'],['path','Value to take (like data.0.name)','text'],['name','Save as','text']],init:{name:'value',input:'{data}',path:''}},
+item:{title:'Pick from a list',tone:'data',out:['next'],fields:[['input','List (separated by commas or new lines)','text'],['op','Get','select',[['nth','item number'],['random','random item'],['last','last item'],['count','how many items']]],['n','Item number','text'],['name','Save as','text']],init:{name:'item',input:'{args}',op:'nth',n:'1'}},
 http:{title:'Fetch from a web address',tone:'api',out:['next'],fields:[['url','HTTPS address that returns JSON','text'],['path','Value to take (like data.0.name)','text'],['name','Save as','text'],['fallback','If it fails','text']],init:{url:'https://',path:'',name:'data',fallback:'No data.'}}
 })
 
@@ -62,7 +65,7 @@ mentionspam:{title:'When a message mentions many people',tone:'trig',out:['next'
 channelis:{title:'Is this channel?',tone:'logic',out:['yes','no'],fields:[['channel','Channel name','text']],init:{channel:'general'}},
 isowner:{title:'Is the server owner?',tone:'logic',out:['yes','no'],fields:[],init:{}},
 newmember:{title:'Is a new member?',tone:'logic',out:['yes','no'],fields:[['days','Joined less than this many days ago','text']],init:{days:'7'}},
-weekday:{title:'Day of the week (UTC)',tone:'logic',out:['yes','no'],fields:[['day','Day','select',[['weekdays','Monday to Friday'],['weekend','Saturday and Sunday'],['mon','Monday'],['tue','Tuesday'],['wed','Wednesday'],['thu','Thursday'],['fri','Friday'],['sat','Saturday'],['sun','Sunday']]]],init:{day:'weekdays'}},
+weekday:{title:'Day of the week',tone:'logic',out:['yes','no'],fields:[['day','Day','select',[['weekdays','Monday to Friday'],['weekend','Saturday and Sunday'],['mon','Monday'],['tue','Tuesday'],['wed','Wednesday'],['thu','Thursday'],['fri','Friday'],['sat','Saturday'],['sun','Sunday']]],['tz','Time zone','select',ZONES]],init:{day:'weekdays',tz:'UTC'}},
 wordlist:{title:'Has any of these words?',tone:'logic',out:['yes','no'],fields:[['input','Look in','text'],['words','One word per line','area']],init:{input:'{text}',words:''}},
 if2:{title:'If two checks',tone:'logic',out:['yes','no'],fields:[['left','First value','text'],['op','Check','select',OPS],['right','Compare to','text'],['join','Combine with','select',[['and','and'],['or','or']]],['left2','Second value','text'],['op2','Check','select',OPS],['right2','Compare to','text']],init:{left:'{text}',op:'contains',right:'',join:'and',left2:'{text}',op2:'contains',right2:''}},
 notice:{title:'Privately notify the member',tone:'mod',out:['next'],fields:[['text','Notice','text']],init:{text:'Please follow the rules.'}},
@@ -81,7 +84,7 @@ load:{title:'Load saved text',tone:'data',out:['next'],fields:[['name','Save as'
 getcount:{title:'Read a saved counter',tone:'data',out:['next'],fields:[['name','Save as','text'],['counter','Counter','text'],['scope','For','select',SCOPE]],init:{name:'value',counter:'count',scope:'server'}},
 word:{title:'Take a word from text',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['n','Word number','text']],init:{name:'word',input:'{text}',n:'1'}},
 combine:{title:'Join two texts',tone:'data',out:['next'],fields:[['name','Save as','text'],['a','First text','text'],['sep','Put between','text'],['b','Second text','text']],init:{name:'joined',a:'',sep:' ',b:''}},
-clock:{title:'Get the date or time',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['unix','unix seconds'],['date','date'],['time','time'],['hour','hour'],['minute','minute'],['day','day of month'],['month','month number'],['monthname','month name'],['year','year'],['weekday','weekday name']]]],init:{name:'now',what:'unix'}},
+clock:{title:'Get the date or time',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['unix','unix seconds'],['date','date'],['time','time'],['hour','hour'],['minute','minute'],['day','day of month'],['month','month number'],['monthname','month name'],['year','year'],['weekday','weekday name']]],['tz','Time zone','select',ZONES]],init:{name:'now',what:'unix',tz:'UTC'}},
 userinfo:{title:'Get member info',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['joined_days','days since joining'],['nickname','nickname'],['roles','role names'],['role_count','number of roles']]]],init:{name:'info',what:'joined_days'}},
 serverinfo:{title:'Get server info',tone:'data',out:['next'],fields:[['name','Save as','text'],['what','Get','select',[['members','member count'],['channels','channel count'],['roles','role count'],['name','server name']]]],init:{name:'info',what:'members'}}
 })
@@ -94,10 +97,12 @@ say:'Sends a message in the same channel.',sayto:'Sends a message in another cha
 delete:'Deletes the message that started this run.',purge:'Deletes the member’s most recent messages in this channel.',pin:'Pins the message.',unpin:'Removes the pin from the message.',warn:'Records a warning case and counts the member’s warnings.',timeout:'Mutes the member for a number of minutes.',untimeout:'Ends the member’s time out early.',kick:'Removes the member. They can rejoin with an invite.',ban:'Removes the member and blocks them from rejoining.',slowmode:'Sets how often people can post in this channel.',setnick:'Changes the member’s nickname in this server.',notice:'Shows the member a private popup only they can see.',addrole:'Gives the member a role.',removerole:'Takes a role from the member.',
 pick:'Picks a random line and saves it as a variable.',set:'Saves a value as a variable you can use in text.',count:'Adds to a counter that is remembered between runs.',setcount:'Sets a remembered counter to a number.',getcount:'Reads a remembered counter into a variable without changing it.',save:'Remembers a piece of text between runs.',load:'Brings back text you saved earlier.',math:'Adds, subtracts, rounds and more.',text:'Changes text: upper case, trim, replace and more.',word:'Takes the Nth word from some text.',combine:'Joins two pieces of text together.',randnum:'Picks a random number in a range.',map:'Looks up a value in a table of key=value lines.',clock:'Saves the current date or time as a variable.',userinfo:'Looks up details about the member.',serverinfo:'Looks up details about the server.'
 }
-DESC.api='Calls a free public service and saves the answer. Weather takes a city, define takes a word, wiki takes a topic, crypto takes a coin id like bitcoin, pokemon takes a name and time takes a zone like America/New_York. Some also save extras like {name_temp} or {name_answer}.'
+DESC.item='Splits a list and saves one item, a random item, the last item or the count.'
+DESC.jsonget='Reads one value out of JSON text, for example from a variable another block saved.'
+DESC.api='Calls a free public service and saves the answer. Weather takes a city, define takes a word, wiki takes a topic, crypto takes a coin id like bitcoin, pokemon takes a name and time takes a zone like America/New_York. Some also save extras like {name_temp} or {name_answer}. Also: xkcd, country, github, npm, mcserver (Minecraft server address), mcuser, exchange (USD EUR), dadjoke, chuck, kanye, fox, meal and cocktail.'
 DESC.http='Reads one value from any public HTTPS address that returns JSON. Enter a path like data.0.name to pick the value. Up to 3 calls per run.'
-const OUTL={next:'then',yes:'yes',no:'no',c1:'path 1',c2:'path 2',c3:'path 3',c4:'path 4',else:'otherwise'}
-const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['APIs',['api','http']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','clock','userinfo','serverinfo']]]
+const OUTL={next:'then',yes:'yes',no:'no',c1:'path 1',c2:'path 2',c3:'path 3',c4:'path 4',else:'otherwise',x1:'then 2',x2:'then 3',x3:'then 4'}
+const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['APIs',['api','http','jsonget']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','item','clock','userinfo','serverinfo']]]
 const T=(nodes,edges)=>({nodes,edges})
 const N=(id,type,x,y,p)=>({id,type,x,y,p:{...DEFS[type].init,...p}})
 const E=(f,o,t)=>({f,o,t})
@@ -263,6 +268,9 @@ mark();draw()
 function describe(n){
 const d=dialog('Describe this block',h('div',{class:'bd'},field('Description',h('textarea',{class:'inp',rows:3,maxLength:200,id:'bkd',autofocus:true},n.d||''),'Shown under the block title so teammates know what it does.')),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:()=>{const v=d.el.querySelector('#bkd').value.trim().slice(0,200);if(v)n.d=v;else delete n.d;mark();draw();close()}}},'Save')]})
 }
+function xrow(n,r,i){
+return h('div',{class:'bk-xr'},h('input',{class:'inp',value:r[0],maxLength:24,placeholder:'name','aria-label':'Extra input name',disabled:!canEdit,on:{input:e=>{r[0]=e.target.value.replace(/[^a-z0-9_]/gi,'').slice(0,24);mark()}}}),h('input',{class:'inp',value:r[1],maxLength:200,placeholder:'value, like {username}','aria-label':'Extra input value',disabled:!canEdit,on:{input:e=>{r[1]=e.target.value;mark()}}}),canEdit?h('button',{type:'button',class:'ib',title:'Remove extra input','aria-label':'Remove extra input',on:{click:()=>{n.xi.splice(i,1);if(!n.xi.length)delete n.xi;mark();draw()}}},icon('x','s')):null)
+}
 function nodeEl(n){
 const d=DEFS[n.type]
 const w=warnFor(n.id)
@@ -274,10 +282,10 @@ g.edges=g.edges.filter(e=>!(e.f===pending.id&&e.o===pending.o))
 if(pending.id!==n.id)g.edges.push({f:pending.id,o:pending.o,t:n.id})
 pending=null;mark();draw()
 }}}),
-(tipFor(head,DESC[n.type]),head),n.d?h('div',{class:'bk-d'},n.d):null,
+head,n.d?h('div',{class:'bk-d'},n.d):null,
 w.length?h('div',{class:'bk-w'},w.map(x=>h('div',{class:x.level},x.msg))):null,
-h('div',{class:'bk-b'},d.fields.map(f=>fieldEl(n,f))),
-d.out.length?h('div',{class:'bk-o'},d.out.map(o=>h('button',{type:'button','data-out':o,disabled:!canEdit,class:'bk-out'+(pending&&pending.id===n.id&&pending.o===o?' on':'')+(g.edges.some(e=>e.f===n.id&&e.o===o)?' used':''),title:'Click, then click the input dot of another block. Click again on a connected output to remove it.','aria-label':'Output '+(OUTL[o]||o),on:{click:()=>{
+h('div',{class:'bk-b'},d.fields.map(f=>fieldEl(n,f)),n.xi&&n.xi.length?h('div',{class:'bk-xh'},'Extra inputs (use them like {name})'):null,(n.xi||[]).map((r,i)=>xrow(n,r,i))),
+d.out.length?h('div',{class:'bk-o'},[...d.out,...Array.from({length:n.xo||0},(_,i)=>'x'+(i+1))].map(o=>h('button',{type:'button','data-out':o,disabled:!canEdit,class:'bk-out'+(pending&&pending.id===n.id&&pending.o===o?' on':'')+(g.edges.some(e=>e.f===n.id&&e.o===o)?' used':''),title:'Click, then click the input dot of another block. Click again on a connected output to remove it.','aria-label':'Output '+(OUTL[o]||o),on:{click:()=>{
 const had=g.edges.some(e=>e.f===n.id&&e.o===o)
 if(had&&!pending){g.edges=g.edges.filter(e=>!(e.f===n.id&&e.o===o));mark();draw();return}
 pending=pending&&pending.id===n.id&&pending.o===o?null:{id:n.id,o};draw()
@@ -289,6 +297,10 @@ const ids=new Set(sel)
 ctxMenu(e,[
 {label:ids.size>1?`Duplicate ${ids.size} blocks`:'Duplicate',icon:'copy',fn:()=>dup(ids)},
 {label:'Describe…',fn:()=>describe(n)},
+n.type!=='note'?{label:'Add extra input',fn:()=>{n.xi=n.xi||[];if(n.xi.length>=4){toast('A block can have up to 4 extra inputs','err');return}n.xi.push(['input'+(n.xi.length+1),''])
+mark();draw()}}:null,
+d.out.length&&(n.xo||0)<3?{label:'Add extra output',fn:()=>{n.xo=(n.xo||0)+1;mark();draw()}}:null,
+(n.xo||0)>0?{label:'Remove last extra output',fn:()=>{g.edges=g.edges.filter(x=>!(x.f===n.id&&x.o==='x'+n.xo));n.xo--;if(!n.xo)delete n.xo;mark();draw()}}:null,
 d.out.length&&g.edges.some(x=>x.f===n.id)?{label:'Disconnect outputs',fn:()=>{g.edges=g.edges.filter(x=>x.f!==n.id);mark();draw()}}:null,
 g.edges.some(x=>x.t===n.id)?{label:'Disconnect inputs',fn:()=>{g.edges=g.edges.filter(x=>x.t!==n.id);mark();draw()}}:null,
 '-',
