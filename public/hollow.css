@@ -71,3 +71,7 @@
 .rm .tp,.perf .tp,.rm .tp-reel,.perf .tp-reel{animation:none!important}
 @media(prefers-reduced-motion:reduce){.tp,.tp-reel{animation:none!important}}
 @media(max-width:560px){.hq-list{grid-template-columns:1fr}.hw-hero-r{width:100%}}
+.hw-rush{border-color:#4a2a12;background:linear-gradient(180deg,#1a0e06,#0d0704);margin-bottom:16px}
+.hw-rush .hw-play-t h3{color:#ffb347}
+.hw-rush .hw-rec::before{background:#ff7a1a}
+.hw-rushg{background:#0c0913}
