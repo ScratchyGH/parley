@@ -25,7 +25,7 @@
 .n3.n3-oncam .n3-cam{display:block}
 .n3-cam:before{content:"";position:absolute;inset:10px;border:2px solid rgba(125,255,176,.55);border-radius:6px}
 .n3-cam:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
-.n3-cname{position:absolute;left:28px;top:70px;font:700 20px ui-monospace,Consolas,monospace;text-shadow:0 0 8px rgba(60,255,150,.7)}
+.n3-cname{position:absolute;left:28px;top:92px;font:700 20px ui-monospace,Consolas,monospace;text-shadow:0 0 8px rgba(60,255,150,.7)}
 .n3-map{position:absolute;right:26px;bottom:76px;width:232px;height:176px;background:rgba(1,10,5,.8);border:1.5px solid #2f8a58;border-radius:4px;pointer-events:auto}
 .n3-map button{position:absolute;width:40px;height:24px;font:700 12px ui-monospace,Consolas,monospace;color:#7dffb0;background:#06210f;border:1.5px solid #2f8a58;border-radius:3px;cursor:pointer;padding:0}
 .n3-map button.on{background:#3dff9a;color:#021008}
