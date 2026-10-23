@@ -52,11 +52,10 @@ const dpr=Math.min(devicePixelRatio||1,2)
 const fit=()=>{cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;c.setTransform(dpr,0,0,dpr,0,0)}
 fit()
 const P=[]
-const cols=['#d9d8d0','#b9b8ae','#a3a198','#e7e6df','#8f8d84','#fff','#c9c8c1']
 const burst=(x,y)=>{
-const col=[cols[Math.floor(rnd(0,cols.length))],cols[Math.floor(rnd(0,cols.length))]]
-const n=90
-for(let i=0;i<n;i++){const a=i/n*Math.PI*2,s=rnd(60,300);P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,d:rnd(.5,.9),c:col[i%2],r:rnd(1.2,2.6)})}
+const h0=rnd(0,360),h1=(h0+rnd(40,160))%360,two=Math.random()<.6
+const n=110,sp=rnd(120,320)
+for(let i=0;i<n;i++){const a=i/n*Math.PI*2,s=sp*rnd(.55,1);const hh=two&&i%2?h1:h0;P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,d:rnd(.7,1.2),c:i%11===0?'hsl(0,0%,100%)':`hsl(${hh},100%,${rnd(55,68)}%)`,r:rnd(1.4,2.8)})}
 }
 let last=performance.now(),next=0,stop=false,acc=0
 const loop=now=>{
@@ -153,9 +152,11 @@ requestAnimationFrame(tick)
 }
 tick()
 }
-export function previewRestart(){
+export async function previewRestart(){
 set(false)
 apply(false)
+try{const m=await import('./nav.js');m.go('/')}catch{}
+await new Promise(r=>setTimeout(r,700))
 const s=performance.now()
 sequence(()=>performance.now()-s-3000,()=>{set(true);location.reload()})
 }
