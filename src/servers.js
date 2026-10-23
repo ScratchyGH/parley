@@ -200,12 +200,15 @@ const onb={on:1,since:t,title:'Welcome to the Parley Community',text:'Review the
 await db.prepare('update servers set onboarding=? where id=?').bind(JSON.stringify(onb),s.id).run()
 await db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values('__community_v4:'||?,?,?)").bind(s.id,s.id,t).run()
 }
+let COMM=null
 async function ensureCommunity(c){
 const db=c.env.DB
+const t=now()
+let s=COMM?{id:COMM}:null
+if(!s){
 const owner=await db.prepare('select id from users where lower(username)=lower(?)').bind(c.env.OWNER_USERNAME||'ParleyOfficial').first()
 if(!owner)return
-let s=await db.prepare("select id from servers where owner_id=? and lower(name) in ('parley community','parley official server') order by created_at limit 1").bind(owner.id).first()
-const t=now()
+s=await db.prepare("select id from servers where owner_id=? and lower(name) in ('parley community','parley official server') order by created_at limit 1").bind(owner.id).first()
 if(!s){
 const sid=newId('sv'),ev=newId('r'),c1=newId('ct'),c2=newId('ct'),c3=newId('ct')
 await db.batch([
@@ -217,9 +220,12 @@ db.prepare('insert into channels(id,server_id,category_id,name,type,position,rea
 ])
 s={id:sid}
 }
-try{await brandCommunity(c,s,owner.id)}catch(e){console.log('brand',e&&e.message)}
-try{await extendCommunity(c,s,owner.id)}catch(e){console.log('extend',e&&e.message)}
-try{await polishCommunity(c,s,owner.id)}catch(e){console.log('polish',e&&e.message)}
+let ok=true
+try{await brandCommunity(c,s,owner.id)}catch(e){ok=false;console.log('brand',e&&e.message)}
+try{await extendCommunity(c,s,owner.id)}catch(e){ok=false;console.log('extend',e&&e.message)}
+try{await polishCommunity(c,s,owner.id)}catch(e){ok=false;console.log('polish',e&&e.message)}
+if(ok)COMM=s.id
+}
 if(!(await db.prepare('select 1 x from auto_joined where user_id=?').bind(c.user.id).first())){
 await db.batch([
 db.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(s.id,c.user.id,t),

@@ -17,7 +17,7 @@ return JSON.parse(s)
 }catch{return null}finally{clearTimeout(t)}
 }
 export const PRESETS=[
-['joke','Random joke'],['catfact','Cat fact'],['catpic','Cat picture'],['dogpic','Dog picture'],['advice','Random advice'],['quote','Inspiring quote'],['fact','Random fact'],['trivia','Trivia question'],['weather','Weather for a city'],['define','Define a word'],['wiki','Wikipedia summary'],['crypto','Crypto price in USD'],['pokemon','Pokémon info'],['time','Time in a time zone']
+['joke','Random joke'],['catfact','Cat fact'],['catpic','Cat picture'],['dogpic','Dog picture'],['advice','Random advice'],['quote','Inspiring quote'],['fact','Random fact'],['trivia','Trivia question'],['weather','Weather for a city'],['define','Define a word'],['wiki','Wikipedia summary'],['crypto','Crypto price in USD'],['pokemon','Pokémon info'],['time','Time in a time zone'],['xkcd','Latest xkcd comic'],['country','Country facts'],['github','GitHub user'],['npm','npm package'],['mcserver','Minecraft server status'],['mcuser','Minecraft player'],['exchange','Exchange rate'],['dadjoke','Dad joke'],['chuck','Chuck Norris joke'],['kanye','Kanye quote'],['fox','Fox picture'],['meal','Random meal'],['cocktail','Random cocktail']
 ]
 const RUN={
 joke:async()=>{const d=await getJson('https://official-joke-api.appspot.com/random_joke');return d&&d.setup?{text:cap(d.setup+' '+d.punchline),extra:{setup:cap(d.setup),punchline:cap(d.punchline)}}:null},
@@ -60,6 +60,19 @@ const n=String(i||'pikachu').trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slic
 const d=await getJson('https://pokeapi.co/api/v2/pokemon/'+n)
 return d&&d.name?{text:cap(`${d.name}: ${d.types.map(t=>t.type.name).join('/')}, height ${d.height/10} m, weight ${d.weight/10} kg`),extra:{pokemon:d.name,type:d.types.map(t=>t.type.name).join('/')}}:null
 },
+xkcd:async()=>{const d=await getJson('https://xkcd.com/info.0.json');return d&&d.img?{text:cap(d.safe_title+' '+d.img),extra:{title:cap(d.safe_title),image:d.img,alt:cap(d.alt)}}:null},
+country:async i=>{if(!i)return null;const d=await getJson('https://restcountries.com/v3.1/name/'+enc(i)+'?fields=name,capital,population,region');const c=d&&d[0];return c?{text:cap(`${c.name.common}: capital ${(c.capital||['none'])[0]}, ${c.region}, population ${c.population}`),extra:{capital:cap((c.capital||[''])[0],60),population:String(c.population),region:cap(c.region,40)}}:null},
+github:async i=>{const u=String(i||'').trim().replace(/[^A-Za-z0-9-]/g,'').slice(0,39);if(!u)return null;const d=await getJson('https://api.github.com/users/'+u);return d&&d.login?{text:cap(`${d.login}: ${d.public_repos} repos, ${d.followers} followers${d.bio?', '+d.bio:''}`),extra:{repos:String(d.public_repos),followers:String(d.followers),url:d.html_url}}:null},
+npm:async i=>{const n=String(i||'').trim().toLowerCase().replace(/[^a-z0-9@/._-]/g,'').slice(0,80);if(!n)return null;const d=await getJson('https://registry.npmjs.org/'+n.replace('/','%2F')+'/latest');return d&&d.version?{text:cap(`${d.name} ${d.version}: ${d.description||''}`),extra:{version:String(d.version)}}:null},
+mcserver:async i=>{const h=String(i||'').trim().toLowerCase().replace(/[^a-z0-9.:-]/g,'').slice(0,80);if(!h)return null;const d=await getJson('https://api.mcsrvstat.us/3/'+h);if(!d)return null;return d.online?{text:cap(`${h} is online: ${d.players?d.players.online:0}/${d.players?d.players.max:0} players, ${d.version||'unknown version'}`),extra:{online:'yes',players:String(d.players?d.players.online:0),max:String(d.players?d.players.max:0),motd:cap(d.motd&&d.motd.clean?d.motd.clean.join(' '):'',100)}}:{text:h+' is offline',extra:{online:'no',players:'0'}}},
+mcuser:async i=>{const u=String(i||'').trim().replace(/[^A-Za-z0-9_]/g,'').slice(0,16);if(!u)return null;const d=await getJson('https://playerdb.co/api/player/minecraft/'+u);const p=d&&d.data&&d.data.player;return p?{text:cap(`${p.username} (${p.id})`),extra:{username:p.username,uuid:p.id,avatar:p.avatar}}:null},
+exchange:async i=>{const m=String(i||'USD EUR').toUpperCase().match(/([A-Z]{3})\W+([A-Z]{3})/);if(!m)return null;const d=await getJson('https://open.er-api.com/v6/latest/'+m[1]);const r=d&&d.rates&&d.rates[m[2]];return r?{text:`1 ${m[1]} = ${r} ${m[2]}`,extra:{rate:String(r)}}:null},
+dadjoke:async()=>{const d=await getJson('https://icanhazdadjoke.com/');return d&&d.joke?{text:cap(d.joke)}:null},
+chuck:async()=>{const d=await getJson('https://api.chucknorris.io/jokes/random');return d&&d.value?{text:cap(d.value)}:null},
+kanye:async()=>{const d=await getJson('https://api.kanye.rest/');return d&&d.quote?{text:cap(d.quote)}:null},
+fox:async()=>{const d=await getJson('https://randomfox.ca/floof/');return d&&d.image?{text:d.image}:null},
+meal:async()=>{const d=await getJson('https://www.themealdb.com/api/json/v1/1/random.php');const m=d&&d.meals&&d.meals[0];return m?{text:cap(`${m.strMeal} (${m.strCategory}, ${m.strArea})`),extra:{name:cap(m.strMeal,80),image:m.strMealThumb}}:null},
+cocktail:async()=>{const d=await getJson('https://www.thecocktaildb.com/api/json/v1/1/random.php');const m=d&&d.drinks&&d.drinks[0];return m?{text:cap(`${m.strDrink} (${m.strCategory})`),extra:{name:cap(m.strDrink,80),image:m.strDrinkThumb}}:null},
 time:async i=>{
 const z=String(i||'UTC').trim().replace(/[^A-Za-z0-9_\/+-]/g,'').slice(0,40)||'UTC'
 try{return{text:new Intl.DateTimeFormat('en-US',{timeZone:z,dateStyle:'medium',timeStyle:'short'}).format(new Date())}}catch{return null}
@@ -75,7 +88,7 @@ if(!allow(key))return null
 const f=RUN[kind]
 return f?f(cap(input,60)):null
 }
-const pathGet=(d,p)=>{
+export const pathGet=(d,p)=>{
 let v=d
 for(const k of String(p).split('.').map(x=>x.trim()).filter(Boolean)){
 if(v==null||typeof v!=='object')return undefined

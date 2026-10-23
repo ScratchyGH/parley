@@ -1,4 +1,5 @@
 import{fail}from'./util.js'
+import{pathGet}from'./apiblock.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
 const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words','capital','nospaces','digits','letters','left','right','repeat','slug']
 const MATH=['+','-','*','/','%','max','min','pow','floor','ceil','round','abs']
@@ -7,6 +8,24 @@ const NX=['next']
 const SC=['server','user']
 const DAYS=['sun','mon','tue','wed','thu','fri','sat','weekdays','weekend']
 const CASES=['c1','c2','c3','c4','else']
+const ZONES=['UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Anchorage','Pacific/Honolulu','America/Toronto','America/Mexico_City','America/Sao_Paulo','Europe/London','Europe/Paris','Europe/Berlin','Europe/Moscow','Africa/Cairo','Africa/Lagos','Asia/Dubai','Asia/Kolkata','Asia/Bangkok','Asia/Shanghai','Asia/Tokyo','Asia/Seoul','Australia/Sydney','Pacific/Auckland']
+const WD={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}
+export function parseClock(s,end){
+const m=String(s).trim().toLowerCase().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/)
+if(!m)return null
+let h=Number(m[1]),mi=m[2]===undefined?null:Number(m[2])
+if(m[3]){if(h<1||h>12)return null;h=h%12+(m[3]==='pm'?12:0)}else if(h>23)return null
+if(mi!==null&&mi>59)return null
+return h*60+(mi===null?(end?59:0):mi)
+}
+const FMT=new Map()
+function wall(at,tz){
+let f=FMT.get(tz)
+if(!f){try{f=new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',weekday:'short',hour:'numeric',minute:'numeric'})}catch{f=new Intl.DateTimeFormat('en-US',{timeZone:'UTC',hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',weekday:'short',hour:'numeric',minute:'numeric'})}FMT.set(tz,f)}
+const o={}
+for(const x of f.formatToParts(new Date(at)))o[x.type]=x.value
+return{h:Number(o.hour)%24,mi:Number(o.minute),d:Number(o.day),mo:Number(o.month),y:Number(o.year),wd:WD[o.weekday]??0}
+}
 export const TYPES={
 msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0']},def:{mode:'contains',text:'',ci:'1'}},
 cmd:{out:NX,trigger:true,spec:{prefix:3,name:32},def:{prefix:'!',name:'ping'}},
@@ -18,7 +37,7 @@ if:{out:YN,spec:{left:200,op:OPS,right:200},def:{left:'{text}',op:'contains',rig
 chance:{out:YN,spec:{percent:3},def:{percent:'50'}},
 ismod:{out:YN,spec:{},def:{}},
 hasrole:{out:YN,spec:{role:40},def:{role:''}},
-time:{out:YN,spec:{from:2,to:2},def:{from:'0',to:'23'}},
+time:{out:YN,spec:{from:12,to:12,tz:40},def:{from:'9:00 AM',to:'5:00 PM',tz:'UTC'}},
 cooldown:{out:YN,spec:{seconds:5,scope:['user','server']},def:{seconds:'30',scope:'user'}},
 once:{out:YN,spec:{},def:{}},
 say:{out:NX,spec:{text:1500,reply:['0','1']},def:{text:'',reply:'0'}},
@@ -56,7 +75,7 @@ mentionspam:{out:NX,trigger:true,spec:{count:2},def:{count:'5'}},
 channelis:{out:YN,spec:{channel:40},def:{channel:'general'}},
 isowner:{out:YN,spec:{},def:{}},
 newmember:{out:YN,spec:{days:3},def:{days:'7'}},
-weekday:{out:YN,spec:{day:DAYS},def:{day:'weekdays'}},
+weekday:{out:YN,spec:{day:DAYS,tz:40},def:{day:'weekdays',tz:'UTC'}},
 wordlist:{out:YN,spec:{input:200,words:1500},def:{input:'{text}',words:''}},
 if2:{out:YN,spec:{left:200,op:OPS,right:200,join:['and','or'],left2:200,op2:OPS,right2:200},def:{left:'{text}',op:'contains',right:'',join:'and',left2:'{text}',op2:'contains',right2:''}},
 notice:{out:NX,spec:{text:300},def:{text:''}},
@@ -75,10 +94,12 @@ load:{out:NX,spec:{name:24,key:24,scope:SC,fallback:200},def:{name:'note',key:'n
 getcount:{out:NX,spec:{name:24,counter:24,scope:SC},def:{name:'value',counter:'count',scope:'server'}},
 word:{out:NX,spec:{name:24,input:300,n:2},def:{name:'word',input:'{text}',n:'1'}},
 combine:{out:NX,spec:{name:24,a:200,sep:20,b:200},def:{name:'joined',a:'',sep:' ',b:''}},
-clock:{out:NX,spec:{name:24,what:['unix','date','time','hour','minute','day','month','monthname','year','weekday']},def:{name:'now',what:'unix'}},
+clock:{out:NX,spec:{name:24,what:['unix','date','time','hour','minute','day','month','monthname','year','weekday'],tz:40},def:{name:'now',what:'unix',tz:'UTC'}},
 userinfo:{out:NX,spec:{name:24,what:['nickname','joined_days','roles','role_count']},def:{name:'info',what:'joined_days'}},
 serverinfo:{out:NX,spec:{name:24,what:['members','channels','roles','name']},def:{name:'info',what:'members'}},
-api:{out:NX,spec:{kind:['joke','catfact','catpic','dogpic','advice','quote','fact','trivia','weather','define','wiki','crypto','pokemon','time'],input:60,name:24,fallback:100},def:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
+api:{out:NX,spec:{kind:['joke','catfact','catpic','dogpic','advice','quote','fact','trivia','weather','define','wiki','crypto','pokemon','time','xkcd','country','github','npm','mcserver','mcuser','exchange','dadjoke','chuck','kanye','fox','meal','cocktail'],input:60,name:24,fallback:100},def:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
+jsonget:{out:NX,spec:{name:24,input:500,path:100},def:{name:'value',input:'{data}',path:''}},
+item:{out:NX,spec:{name:24,input:500,op:['nth','random','count','last'],n:3},def:{name:'item',input:'{args}',op:'nth',n:'1'}},
 http:{out:NX,spec:{url:300,path:100,name:24,fallback:100},def:{url:'https://',path:'',name:'data',fallback:'No data.'}}
 }
 export const MAX_NODES=200
@@ -108,10 +129,12 @@ if(n.type==='cmd'&&!/^[a-z0-9_]{1,32}$/i.test(p.name))bad('Command names use let
 if(n.type==='chance')p.percent=num(p.percent,0,100,'Percent')
 if(n.type==='count')p.by=num(p.by,-1000,1000,'Add')
 if(n.type==='setcount')p.value=num(p.value,-1000000,1000000,'Value')
-if(n.type==='time'){p.from=num(p.from,0,23,'Hour');p.to=num(p.to,0,23,'Hour')}
+if(n.type==='time'&&(parseClock(p.from)===null||parseClock(p.to)===null))bad('Use times like 9:00 PM or 21:30')
+if(T.spec.tz!==undefined){try{new Intl.DateTimeFormat('en-US',{timeZone:p.tz})}catch{p.tz='UTC'}}
 if(n.type==='cooldown')p.seconds=num(p.seconds,1,86400,'Seconds')
 if(n.type==='timeout')p.minutes=num(p.minutes,1,60,'Minutes')
 if(n.type==='http'&&!/^https:\/\//i.test(p.url))bad('The URL must start with https://')
+if(n.type==='item')p.n=num(p.n,1,100,'Item number')
 if(n.type==='randnum'){p.min=num(p.min,-1000000,1000000,'Minimum');p.max=num(p.max,-1000000,1000000,'Maximum')}
 if(n.type==='caps'){p.percent=num(p.percent,1,100,'Percent');p.min=num(p.min,1,200,'Minimum letters')}
 if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
@@ -126,14 +149,17 @@ if(n.type==='getcount'&&!/^[a-z0-9_]{1,24}$/i.test(p.counter))bad('Counter names
 if((n.type==='log'||n.type==='channelis')&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
 if(n.type==='sayto'&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
 if(T.spec.name!==undefined&&p.name&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Variable names use letters, numbers and underscores')
+let xo=Number(n.xo);xo=Number.isInteger(xo)&&xo>0&&T.out.length?Math.min(3,xo):0
+const xi=[]
+if(Array.isArray(n.xi)&&n.type!=='note')for(const r of n.xi.slice(0,4)){if(!Array.isArray(r))continue;const k=String(r[0]||'').trim(),v=String(r[1]===undefined?'':r[1]);if(!/^[a-z0-9_]{1,24}$/i.test(k))bad('Extra input names use letters, numbers and underscores');if(v.length>200)bad('Extra input is too long');xi.push([k,v])}
 const dd=typeof n.d==='string'?n.d.trim().slice(0,200):''
-nodes.push({...(dd?{d:dd}:{}),id:n.id,type:n.type,x:Math.max(-5000,Math.min(5000,Math.round(Number(n.x)||0))),y:Math.max(-5000,Math.min(5000,Math.round(Number(n.y)||0))),p})
+nodes.push({...(dd?{d:dd}:{}),...(xo?{xo}:{}),...(xi.length?{xi}:{}),id:n.id,type:n.type,x:Math.max(-5000,Math.min(5000,Math.round(Number(n.x)||0))),y:Math.max(-5000,Math.min(5000,Math.round(Number(n.y)||0))),p})
 }
 const by=new Map(nodes.map(n=>[n.id,n]))
 const seen=new Set(),edges=[]
 for(const e of g.edges){
 if(!e||!by.has(e.f)||!by.has(e.t))bad('Invalid connection')
-if(!TYPES[by.get(e.f).type].out.includes(e.o))bad('Invalid connection')
+if(!TYPES[by.get(e.f).type].out.includes(e.o)&&!(/^x[1-3]$/.test(e.o)&&(by.get(e.f).xo||0)>=Number(e.o[1])))bad('Invalid connection')
 if(TYPES[by.get(e.t).type].trigger||TYPES[by.get(e.t).type].entry)bad('Nothing can lead into a trigger, subflow start or note')
 const k=e.f+':'+e.o
 if(seen.has(k))continue
@@ -248,12 +274,13 @@ const n=by.get(cur)
 if(!n)break
 const P=n.p,R=s=>render(s,vars)
 let branch=null,route=null
+if(n.xi)for(const[xk,xv]of n.xi)setv(xk,R(xv))
 switch(n.type){
 case'if':branch=test(P.op,R(P.left),R(P.right));break
 case'chance':branch=rnd()*100<Number(P.percent);break
 case'ismod':branch=await io.isMod();break
 case'hasrole':branch=P.role?await io.hasRole(R(P.role)):false;break
-case'time':{const h=new Date(ctx.at||Date.now()).getUTCHours(),a=Number(P.from),b=Number(P.to);branch=a<=b?h>=a&&h<=b:h>=a||h<=b;break}
+case'time':{const w=wall(ctx.at||Date.now(),P.tz||'UTC'),m=w.h*60+w.mi,a=parseClock(P.from,false),b=parseClock(P.to,true);branch=a===null||b===null?false:a<=b?m>=a&&m<=b:m>=a||m<=b;break}
 case'cooldown':branch=await io.cooldown(n.id,Number(P.seconds),P.scope);break
 case'once':branch=(await io.count('once_'+n.id,1,'user'))===1;break
 case'stop':log.push({id:n.id,did:'stop'});return
@@ -261,7 +288,7 @@ case'gate':branch=P.on==='1';break
 case'channelis':branch=ctx.channel.toLowerCase()===R(P.channel).replace(/^#/,'').toLowerCase();break
 case'isowner':branch=await io.isOwner();break
 case'newmember':{const d=await io.joinedDays();branch=d!==null&&d<Number(P.days);break}
-case'weekday':{const d=new Date(ctx.at||Date.now()).getUTCDay();branch=P.day==='weekdays'?d>=1&&d<=5:P.day==='weekend'?d===0||d===6:DAYS.indexOf(P.day)===d;break}
+case'weekday':{const d=wall(ctx.at||Date.now(),P.tz||'UTC').wd;branch=P.day==='weekdays'?d>=1&&d<=5:P.day==='weekend'?d===0||d===6:DAYS.indexOf(P.day)===d;break}
 case'wordlist':{const l=R(P.input).toLowerCase();branch=P.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean).some(x=>l.includes(x));break}
 case'if2':{const a=test(P.op,R(P.left),R(P.right)),b=test(P.op2,R(P.left2),R(P.right2));branch=P.join==='or'?a||b:a&&b;break}
 case'switch':{const v=R(P.input).trim().toLowerCase();route='else';for(const k of['1','2','3','4']){const c=P['v'+k].trim().toLowerCase();if(c&&c===v){route='c'+k;break}}break}
@@ -288,10 +315,12 @@ case'load':if(P.name){const v=await io.load(P.key.toLowerCase(),P.scope);log.pus
 case'getcount':if(P.name)log.push({id:n.id,did:'getcount',value:setv(P.name,String(await io.getCount(P.counter.toLowerCase(),P.scope)))});break
 case'word':if(P.name){const w=R(P.input).trim().split(/\s+/).filter(Boolean);log.push({id:n.id,did:'word',value:setv(P.name,w[Number(P.n)-1]||'')})}break
 case'combine':if(P.name)log.push({id:n.id,did:'combine',value:setv(P.name,R(P.a)+R(P.sep)+R(P.b))});break
-case'clock':if(P.name){const d=new Date(ctx.at||Date.now()),M=['January','February','March','April','May','June','July','August','September','October','November','December'];const v={unix:String(Math.floor(d.getTime()/1000)),date:vars.date,time:vars.time,hour:String(d.getUTCHours()),minute:String(d.getUTCMinutes()),day:String(d.getUTCDate()),month:String(d.getUTCMonth()+1),monthname:M[d.getUTCMonth()],year:String(d.getUTCFullYear()),weekday:vars.weekday}[P.what]||'';log.push({id:n.id,did:'clock',value:setv(P.name,v)})}break
+case'clock':if(P.name){const w=wall(ctx.at||Date.now(),P.tz||'UTC'),M=['January','February','March','April','May','June','July','August','September','October','November','December'],p2=x=>String(x).padStart(2,'0');const v={unix:String(Math.floor((ctx.at||Date.now())/1000)),date:w.y+'-'+p2(w.mo)+'-'+p2(w.d),time:p2(w.h)+':'+p2(w.mi),hour:String(w.h),minute:String(w.mi),day:String(w.d),month:String(w.mo),monthname:M[w.mo-1],year:String(w.y),weekday:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][w.wd]}[P.what]||'';log.push({id:n.id,did:'clock',value:setv(P.name,v)})}break
 case'userinfo':if(P.name)log.push({id:n.id,did:'userinfo',value:setv(P.name,String(await io.memberInfo(P.what)))});break
 case'serverinfo':if(P.name)log.push({id:n.id,did:'serverinfo',value:setv(P.name,String(await io.serverInfo(P.what)))});break
 case'api':case'http':if(P.name&&calls<3){calls++;const r=n.type==='api'?await io.api(P.kind,R(P.input)):await io.http(R(P.url),R(P.path));const v=r&&r.text?r.text:R(P.fallback);log.push({id:n.id,did:n.type,value:setv(P.name,v)});if(r&&r.extra)for(const[k,x]of Object.entries(r.extra))setv(P.name+'_'+k,x)}break
+case'jsonget':if(P.name){let v='';try{const j=JSON.parse(R(P.input));const r=P.path?pathGet(j,P.path):j;v=r===undefined?'':typeof r==='object'?JSON.stringify(r):String(r)}catch{}log.push({id:n.id,did:'jsonget',value:setv(P.name,v)})}break
+case'item':if(P.name){const a=R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean);const v=P.op==='count'?String(a.length):P.op==='random'?(a[Math.floor(rnd()*a.length)]||''):P.op==='last'?(a[a.length-1]||''):(a[Number(P.n)-1]||'');log.push({id:n.id,did:'item',value:setv(P.name,v)})}break
 case'pick':{const o=P.options.split('\n').map(x=>x.trim()).filter(Boolean);if(o.length&&P.name)log.push({id:n.id,did:'pick',value:setv(P.name,R(o[Math.floor(rnd()*o.length)]))});break}
 case'set':if(P.name)log.push({id:n.id,did:'set',value:setv(P.name,R(P.value))});break
 case'count':if(P.name)log.push({id:n.id,did:'count',value:setv(P.name,String(await io.count(P.name.toLowerCase(),Number(P.by)||0,P.scope)))});break
@@ -301,6 +330,7 @@ case'text':if(P.name)log.push({id:n.id,did:'text',value:setv(P.name,xform(P.fn,R
 case'randnum':if(P.name){const a=Number(P.min),b=Number(P.max),lo=Math.min(a,b),hi=Math.max(a,b);log.push({id:n.id,did:'randnum',value:setv(P.name,String(lo+Math.floor(rnd()*(hi-lo+1))))})}break
 case'map':if(P.name){const k=R(P.input).trim().toLowerCase();let out=null;for(const line of P.table.split('\n')){const i=line.indexOf('=');if(i>0&&line.slice(0,i).trim().toLowerCase()===k){out=line.slice(i+1).trim();break}}log.push({id:n.id,did:'map',value:setv(P.name,out===null?R(P.fallback):R(out))})}break
 }
+if(n.xo&&depth<6)for(let xn=1;xn<=n.xo;xn++){const xs=next(n.id,'x'+xn);if(xs)await chain(xs,depth+1)}
 if(route!==null){log.push({id:n.id,did:route});cur=next(n.id,route)}
 else if(branch!==null){log.push({id:n.id,did:branch?'yes':'no'});cur=next(n.id,branch?'yes':'no')}
 else cur=next(n.id,'next')
@@ -308,6 +338,8 @@ else cur=next(n.id,'next')
 }
 for(const trig of graph.nodes.filter(n=>TYPES[n.type].trigger&&triggered(n,ctx))){
 log.push({id:trig.id,did:'start'})
+if(trig.xi)for(const[xk,xv]of trig.xi)setv(xk,render(xv,vars))
+for(let xn=1;xn<=(trig.xo||0);xn++){const xs=next(trig.id,'x'+xn);if(xs)await chain(xs,1)}
 await chain(next(trig.id,'next'),0)
 }
 return log

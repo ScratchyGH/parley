@@ -14,7 +14,8 @@ const walk=id=>{if(reach.has(id))return;reach.add(id);const n=by.get(id);if(n?.t
 for(const n of g.nodes)if(TYPES[n.type].trigger)walk(n.id)
 const set=new Set()
 for(const n of g.nodes){
-if(n.p.name&&['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http'].includes(n.type))set.add(n.p.name.toLowerCase())
+if(n.p.name&&['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','jsonget','item'].includes(n.type))set.add(n.p.name.toLowerCase())
+for(const r of n.xi||[])set.add(r[0].toLowerCase())
 }
 const cmds=new Map()
 for(const n of g.nodes){
