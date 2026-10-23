@@ -1,6 +1,7 @@
 import{h,tzo}from'./util.js'
 import{clearUrl}from'./tweaks.js'
 
+const rx=(a,b)=>{try{return new RegExp(a)}catch{return new RegExp(b)}}
 const KW={
 js:'async await break case catch class const continue debugger default delete do else export extends finally for from function if import in instanceof let new of return static super switch this throw try typeof var void while with yield true false null undefined interface type enum implements public private protected readonly as',
 py:'and as assert async await break class continue def del elif else except finally for from global if import in is lambda None nonlocal not or pass raise return try while with yield True False self',
@@ -72,9 +73,9 @@ const INLINE=[
 ['color',/\[color=(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|red|orange|yellow|green|teal|blue|purple|pink|gray)\]([\s\S]+?)\[\/color\]/],
 ['kbd',/\[\[([^\]\n]{1,20})\]\]/],
 ['sup',/\^\(([^)\n]{1,40})\)|\^([A-Za-z0-9]{1,12})/],
-['sub',/(?<!~)~([^~\n\s][^~\n]{0,40}?)~(?!~)/],
+['sub',rx('(?<!~)~([^~\\n\\s][^~\\n]{0,40}?)~(?!~)','~([^~\\n\\s][^~\\n]{0,40}?)~(?!~)')],
 ['time',/<t:(\d{1,12})(?::([tTdDfFR]))?>/],
-['italic',/(?<![\w*])\*([^*\n]+?)\*(?!\*)|(?<!\w)_([^_\n]+?)_(?!\w)/],
+['italic',rx('(?<![\\w*])\\*([^*\\n]+?)\\*(?!\\*)|(?<!\\w)_([^_\\n]+?)_(?!\\w)','\\*([^*\\n]+?)\\*(?!\\*)|_([^_\\n]+?)_(?!\\w)')],
 ['url',/https?:\/\/[^\s<>()]{1,2000}[^\s<>().,;:!?'"*_]/],
 ['mention',/<@(everyone|u_[a-z0-9]{16}|&r_[a-z0-9]{16})>/],
 ['chan',/<#(ch_[a-z0-9]{16})>/],
