@@ -2,6 +2,7 @@ import{seasonWindow}from'./seasons.js'
 export const VANITY={1:3,3:6,7:10,14:16,30:25,90:55,180:90,365:140,730:220,1095:290,1825:400,3650:600,0:900}
 import{fail,now,newId,str,body,clamp,limit,json}from'./util.js'
 import{loadMember,P}from'./perms.js'
+import{hollowBump}from'./hollow.js'
 
 const DEF={rate:5,dailyHours:12,giftMax:200,giftDaily:500,giftMinAgeHours:24,boostCapMb:300}
 const MILE=[[10,10],[50,50],[100,100],[250,250]]
@@ -139,6 +140,7 @@ earned+=amt
 notes.push(h+' hours milestone: +'+amt)
 }
 try{await c.env.DB.batch(st)}catch(e){if(!String(e.message).includes('UNIQUE'))throw e}
+if(credit>0)hollowBump(c,c.user.id,'shift_sec',Math.round(credit/1000))
 return{earned,notes,balance:await bal(c.env,c.user.id),check:sent?{tok,at:sent}:null,paused:!!paused,counting:human}
 })
 r.add('POST','/api/pars/ack',async c=>{

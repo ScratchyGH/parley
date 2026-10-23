@@ -1,5 +1,6 @@
 export const SEASONS={
 spook:{name:'Spooked Out',from:[10,1],to:[11,3]},
+hollow:{name:'Haunted Hollow',from:[10,1],to:[10,31]},
 xmas:{name:'Yuletide',from:[12,10],to:[12,28]},
 nye:{name:'Midnight Countdown',from:[12,29],to:[1,7]},
 love:{name:'Lovestruck',from:[2,1],to:[2,15]},

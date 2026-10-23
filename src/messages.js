@@ -8,6 +8,7 @@ import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
 import{antispam}from'./antispam.js'
 import{touchStreak}from'./streaks.js'
+import{hollowBump}from'./hollow.js'
 import{runBlocks}from'./blocks.js'
 import{place}from'./store.js'
 import{pushTo}from'./push.js'
@@ -220,6 +221,7 @@ await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEve
 labsAfter(c,rr,message)
 if(rr.kind==='channel'&&!c.user.is_bot)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
 if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
+if(rr.kind==='channel'&&!c.user.is_bot&&content.length>=3)hollowBump(c,c.user.id,'msg',1)
 if(rr.kind==='dm'&&rr.conv&&rr.conv.type==='dm')c.ec.waitUntil(touchStreak(c,rr.room,content).catch(()=>{}))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})
@@ -333,7 +335,7 @@ const m=await getMsg(c,rr,c.p.mid)
 const ex=await c.env.DB.prepare('select count(distinct emoji) n,max(emoji=?) has from reactions where message_id=?').bind(c.p.emoji,m.id).first()
 if(!ex.has&&ex.n>=20)fail(400,'This message has too many different reactions')
 const res=await c.env.DB.prepare('insert or ignore into reactions(message_id,user_id,emoji) values(?,?,?)').bind(m.id,c.user.id,c.p.emoji).run()
-if(res.meta.changes){await publishMsg(c,rr,{t:'reaction',room:rr.room,mid:m.id,emoji:c.p.emoji,uid:c.user.id,add:true});labsReact(c,rr,m,c.p.emoji,c.user.id,true)}
+if(res.meta.changes){if(m.author_id!==c.user.id)hollowBump(c,c.user.id,'react',c.p.emoji==='👁'?2:1);await publishMsg(c,rr,{t:'reaction',room:rr.room,mid:m.id,emoji:c.p.emoji,uid:c.user.id,add:true});labsReact(c,rr,m,c.p.emoji,c.user.id,true)}
 return{ok:true}
 })
 r.add('DELETE','/api/rooms/:room/messages/:mid/reactions/:emoji',async c=>{
