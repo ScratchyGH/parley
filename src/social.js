@@ -1,6 +1,7 @@
 import{fail,now,newId,str,opt,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember}from'./perms.js'
 import{PUBLIC,badgesOf,linksOf}from'./auth.js'
+import{triage}from'./modai.js'
 
 const pair=(x,y)=>x<y?[x,y]:[y,x]
 const settingsOf=u=>{try{return JSON.parse(u.settings||'{}')}catch{return{}}}
@@ -329,7 +330,9 @@ await resolveRoom(c.env,m.room,c.user.id)
 serverId=m.server_id
 }else if(b.type==='user')await userById(c.env,id)
 else{const s=await c.env.DB.prepare('select id from servers where id=?').bind(id).first();if(!s)fail(404,'Server not found')}
-await c.env.DB.prepare('insert into reports(id,reporter_id,target_type,target_id,server_id,reason,created_at) values(?,?,?,?,?,?,?)').bind(newId('rp'),c.user.id,b.type,id,serverId,reason,now()).run()
+const rid=newId('rp')
+await c.env.DB.prepare('insert into reports(id,reporter_id,target_type,target_id,server_id,reason,created_at) values(?,?,?,?,?,?,?)').bind(rid,c.user.id,b.type,id,serverId,reason,now()).run()
+c.ec.waitUntil(triage(c,rid).catch(()=>{}))
 return json({ok:true},201)
 })
 
@@ -337,7 +340,7 @@ r.add('GET','/api/servers/:sid/reports',async c=>{
 const m=await loadMember(c.env,c.p.sid,c.user.id)
 if(!m)fail(404,'Server not found')
 if(!(m.base&P.MODERATE))fail(403,'You do not have permission to do that')
-const rows=(await c.env.DB.prepare("select r.id,r.target_type,r.target_id,r.reason,r.created_at,u.username reporter,(select content from messages where id=r.target_id and r.target_type='message') content from reports r join users u on u.id=r.reporter_id where r.server_id=? and r.status='open' order by r.created_at desc limit 100").bind(m.server.id).all()).results
+const rows=(await c.env.DB.prepare("select r.id,r.target_type,r.target_id,r.reason,r.created_at,r.ai_verdict,r.ai_category,r.ai_severity,r.ai_conf,r.ai_note,r.ai_action,u.username reporter,(select content from messages where id=r.target_id and r.target_type='message') content from reports r join users u on u.id=r.reporter_id where r.server_id=? and r.status='open' order by coalesce(r.ai_severity,0) desc,coalesce(r.ai_conf,0) desc,r.created_at desc limit 100").bind(m.server.id).all()).results
 return{reports:rows}
 })
 r.add('POST','/api/servers/:sid/reports/:rid',async c=>{

@@ -31,6 +31,7 @@ import hookRoutes from'./devhooks.js'
 import pluginRoutes from'./plugins.js'
 import backupRoutes,{dailyBackup}from'./backup.js'
 import legalRoutes from'./legal.js'
+import modaiRoutes from'./modai.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
 import{d1Store}from'./store.js'
@@ -68,6 +69,7 @@ botlabRoutes(router)
 xlabsRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
+modaiRoutes(router)
 caseRoutes(router)
 templateRoutes(router)
 gifRoutes(router)

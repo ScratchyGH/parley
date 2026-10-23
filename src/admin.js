@@ -103,8 +103,9 @@ return{ok:true,devices_banned:devices,until}
 
 r.add('GET','/api/admin/reports',async c=>{
 guard(c)
-const rows=(await c.env.DB.prepare("select r.id,r.target_type,r.target_id,r.server_id,r.reason,r.created_at,u.username reporter,(select author_id from messages where id=r.target_id) msg_author from reports r join users u on u.id=r.reporter_id where r.status='open' order by r.created_at desc limit 100").all()).results
-return{reports:rows}
+const rows=(await c.env.DB.prepare("select r.id,r.target_type,r.target_id,r.server_id,r.reason,r.created_at,r.ai_verdict,r.ai_category,r.ai_severity,r.ai_conf,r.ai_note,r.ai_action,u.username reporter,(select author_id from messages where id=r.target_id) msg_author from reports r join users u on u.id=r.reporter_id where r.status='open' order by coalesce(r.ai_severity,0) desc,coalesce(r.ai_conf,0) desc,r.created_at desc limit 100").all()).results
+const handled=(await c.env.DB.prepare("select id,target_type,target_id,ai_category,ai_severity,ai_conf,ai_note,ai_action,ai_at from reports where ai_action in('auto_removed','auto_dismissed') order by ai_at desc limit 25").all()).results
+return{reports:rows,handled}
 })
 r.add('POST','/api/admin/reports/:id',async c=>{
 guard(c)
