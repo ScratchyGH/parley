@@ -3,6 +3,7 @@ import{resolveRoom}from'./perms.js'
 import{publishMsg}from'./messages.js'
 const GUARD='@cf/meta/llama-guard-3-8b'
 const JUDGE='@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+const QUICK='@cf/meta/llama-3.1-8b-instruct-fast'
 const CATS=['harassment','hate','threat','violence','sexual','minor_safety','self_harm','spam','scam','doxxing','illegal','impersonation','other','none']
 const SCHEMA={type:'object',properties:{verdict:{type:'string',enum:['violation','no_violation','unclear']},category:{type:'string',enum:CATS},severity:{type:'integer'},confidence:{type:'integer'},reason:{type:'string'}},required:['verdict','category','severity','confidence','reason']}
 const SYS=`You are the trust and safety analyst for Parley, a chat platform. You judge one user report using the evidence supplied.
@@ -25,23 +26,20 @@ try{return JSON.parse(s.slice(a,b+1))}catch{return null}
 async function guardCheck(env,text){
 if(!text)return null
 try{
-const o=await env.AI.run(GUARD,{messages:[{role:'user',content:text.slice(0,3000)}],max_tokens:30})
+const o=await env.AI.run(GUARD,{messages:[{role:'user',content:text.slice(0,3000)}],max_tokens:20})
 const r=o&&o.response
 if(r&&typeof r==='object')return{unsafe:r.safe===false,cats:r.categories||[]}
 const s=String(r||'').toLowerCase()
 return{unsafe:/^\s*unsafe/.test(s),cats:(s.match(/s\d+/g)||[])}
 }catch{return null}
 }
-async function judge(env,ev){
+async function judge(env,ev,model,tokens){
 const msgs=[{role:'system',content:SYS},{role:'user',content:'<evidence>\n'+ev+'\n</evidence>'}]
-for(const rf of[{response_format:{type:'json_schema',json_schema:SCHEMA}},{}]){
 try{
-const o=await env.AI.run(JUDGE,{messages:msgs,max_tokens:220,temperature:0,...rf})
+const o=await env.AI.run(model,{messages:msgs,max_tokens:tokens,temperature:0})
 const j=parseJson(o&&o.response)
-if(j&&j.verdict)return j
-}catch{}
-}
-return null
+return j&&j.verdict?j:null
+}catch{return null}
 }
 async function evidence(env,rp){
 const out=[`Reporter says: ${trim(rp.reason,600)}`,`Report type: ${rp.target_type}`]
@@ -50,14 +48,15 @@ if(rp.target_type==='message'){
 msg=await env.DB.prepare('select id,room,author_id,content,deleted_at from messages where id=?').bind(rp.target_id).first()
 if(!msg||msg.deleted_at)return{gone:true}
 room=msg.room;author=msg.author_id;text=msg.content
-const before=(await env.DB.prepare('select author_id,content from messages where room=? and id<? and deleted_at is null order by id desc limit 8').bind(msg.room,msg.id).all()).results.reverse()
-const after=(await env.DB.prepare('select author_id,content from messages where room=? and id>? and deleted_at is null order by id limit 2').bind(msg.room,msg.id).all()).results
+const[b0,a0,att0]=await env.DB.batch([env.DB.prepare('select author_id,content from messages where room=? and id<? and deleted_at is null order by id desc limit 6').bind(msg.room,msg.id),env.DB.prepare('select author_id,content from messages where room=? and id>? and deleted_at is null order by id limit 1').bind(msg.room,msg.id),env.DB.prepare('select count(*) n from files where message_id=?').bind(msg.id)])
+const before=b0.results.reverse()
+const after=a0.results
 const tag={};let n=0
 const who=id=>id===author?'REPORTED USER':tag[id]||(tag[id]='User '+String.fromCharCode(65+n++%26))
 out.push('Conversation before:');for(const m of before)out.push(`${who(m.author_id)}: ${trim(m.content,300)}`)
 out.push(`>>> REPORTED MESSAGE by REPORTED USER: ${trim(msg.content,1500)}`)
 if(after.length){out.push('Conversation after:');for(const m of after)out.push(`${who(m.author_id)}: ${trim(m.content,300)}`)}
-const att=await env.DB.prepare('select count(*) n from files where message_id=?').bind(msg.id).first()
+const att=att0.results[0]
 if(att&&att.n)out.push(`The message has ${att.n} attachment(s) that were not inspected.`)
 }else if(rp.target_type==='user'){
 author=rp.target_id
@@ -113,16 +112,23 @@ return r&&['off','suggest','auto'].includes(r.v)?r.v:'suggest'
 }
 export async function triage(c,id){
 if(!c.env.AI)return
-const mode=await modMode(c.env)
-if(mode==='off')return
-const rp=await c.env.DB.prepare("select * from reports where id=? and status='open'").bind(id).first()
-if(!rp)return
+const[mode,rp]=await Promise.all([modMode(c.env),c.env.DB.prepare("select * from reports where id=? and status='open'").bind(id).first()])
+if(mode==='off'||!rp)return
 const e=await evidence(c.env,rp)
 if(e.gone){
 await c.env.DB.prepare("update reports set ai_verdict='unclear',ai_category='none',ai_severity=0,ai_conf=0,ai_note=?,ai_at=? where id=?").bind('The reported content no longer exists.',now(),id).run()
 return
 }
-const[g,j]=await Promise.all([guardCheck(c.env,e.text),judge(c.env,e.ev)])
+const put=async(x,note,action,st)=>{await c.env.DB.prepare('update reports set ai_verdict=?,ai_category=?,ai_severity=?,ai_conf=?,ai_note=?,ai_action=?,ai_at=?,status=? where id=?').bind(x.verdict,x.cat,x.sev,x.conf,note,action,now(),st,id).run()}
+const gp=guardCheck(c.env,e.text)
+const[g,q]=await Promise.all([gp,judge(c.env,e.ev,QUICK,90)])
+if(q){
+const y=combine(q,g)
+await put(y,trim(q.reason,240),'none','open')
+if(y.verdict==='no_violation'&&y.conf>=88&&g&&!g.unsafe&&y.sev===0){if(mode==='auto'&&y.conf>=96&&rp.target_type==='message')await put(y,trim(q.reason,240),'auto_dismissed','resolved')
+return}
+}
+const j=await judge(c.env,e.ev,JUDGE,110)||q
 if(!j)return
 const x=combine(j,g)
 const note=trim(j.reason,240)
@@ -135,8 +141,7 @@ await removeMsg(c,rp,e,`${x.cat}: ${note}`)
 action='auto_removed'
 }else if(x.verdict==='no_violation'&&x.conf>=96&&g&&!g.unsafe)action='auto_dismissed'
 }
-const st=action==='none'?'open':'resolved'
-await c.env.DB.prepare('update reports set ai_verdict=?,ai_category=?,ai_severity=?,ai_conf=?,ai_note=?,ai_action=?,ai_at=?,status=? where id=?').bind(x.verdict,x.cat,x.sev,x.conf,note,action,now(),st,id).run()
+await put(x,note,action,action==='none'?'open':'resolved')
 }
 export default function(r){
 r.add('GET','/api/admin/modai',async c=>{
