@@ -48,6 +48,7 @@ const P={x:0,y:0,hp:100,max:100,spd:150,dmg:10,rate:.62,count:1,pierce:0,mag:72,
 const E=[],B=[],EB=[],G=[],F=[],X=[],HP=[]
 let t=0,kills=0,acc=0,bi=0,phase='menu',paused=false,raf=0,last=0,shake=0,boss=null,orbA=0,note='',noteT=0,id=0,endT=0,won=false,jx=0,jy=0,jo=null,beep=0,clock=0,novaFx=0,cur=[],muted=false,best=0
 try{best=Number(localStorage.getItem('parley.rush.best'))||0}catch{}
+const prev=best
 const keys={}
 let ac=null,mg=null,mt=0
 const audio=()=>{try{if(!ac){ac=new AudioContext();mg=ac.createGain();mg.gain.value=muted?0:1;mg.connect(ac.destination)}if(ac.state==='suspended')ac.resume()}catch{}}
@@ -135,6 +136,7 @@ const finish=()=>{
 if(phase==='end')return
 phase='end'
 endT=0
+P.hit=0
 try{if(Math.floor(t)>best){best=Math.floor(t);localStorage.setItem('parley.rush.best',String(best))}}catch{}
 if(won){tone(523,.3,.06,'triangle');setTimeout(()=>tone(659,.3,.06,'triangle'),150);setTimeout(()=>tone(784,.5,.06,'triangle'),300)}else tone(110,.9,.08,'sawtooth',.4)
 }
@@ -168,7 +170,7 @@ if(m>1){kx/=m;ky/=m}
 if(m>.05){P.x+=kx*P.spd*dt;P.y+=ky*P.spd*dt;P.fx=kx;P.fy=ky;P.walk+=dt;if(Math.abs(kx)>.1)P.face=kx>0?1:-1}
 P.hit-=dt
 if(P.reg)P.hp=Math.min(P.max,P.hp+P.reg*dt)
-acc+=dt*Math.min(7,.9+t/42)
+acc+=dt*Math.min(7,.65+t/40)
 while(acc>=1){acc--;if(E.length<70+Math.min(190,t*.62))pick()}
 if(bi<BOSS_AT.length&&t>=BOSS_AT[bi]&&!boss){
 const[x,y]=ring()
@@ -422,13 +424,13 @@ ctx.font='600 11px system-ui,sans-serif';ctx.textAlign='left';ctx.fillStyle='rgb
 }
 const menu=()=>{
 ctx.fillStyle='rgba(6,3,12,.55)';ctx.fillRect(0,0,W,H)
-const cy=H*.3
+const cy=H*.22
 ctx.save();ctx.globalAlpha=.9;ctx.shadowColor='#ff7a1a';ctx.shadowBlur=40;ctext('GOURD RUSH',W/2,cy,'900 '+Math.min(110,W/6.2)+'px '+FONT,'#ffb347',8);ctx.restore()
 ctext('Survive until dawn',W/2,cy+Math.min(70,W/10),'italic 700 '+Math.min(26,W/28)+'px '+FONT,'#e8d6ff',4)
-const s=A.player[Math.floor(clock*3)%2],sc=3
+const s=A.player[Math.floor(clock*3)%2],sc=2.6
 ctx.shadowColor='rgba(0,0,0,0)'
-ctx.drawImage(s.c,W/2-s.ax*sc,H*.5-s.ay*sc+20+Math.sin(clock*2)*3,s.w*sc,s.h*sc)
-const ly=H*.74
+ctx.drawImage(s.c,W/2-s.ax*sc,H*.66-s.ay*sc+Math.sin(clock*2)*3,s.w*sc,s.h*sc)
+const ly=H*.77
 ctext('Move  WASD or arrow keys   |   Touch: drag',W/2,ly,'600 15px system-ui,sans-serif','#e8d6ff',3)
 ctext('Your lantern fires on its own. Collect gems, pick upgrades, outlast the Hollowgrin.',W/2,ly+24,'600 14px system-ui,sans-serif','#c9b3e6',3)
 const a=.6+Math.sin(clock*4)*.4
@@ -447,7 +449,7 @@ const row=(i,l,v)=>{ctx.font='600 15px system-ui,sans-serif';ctx.textAlign='left
 row(0,'Time survived',mmss(t))
 row(1,'Enemies defeated',String(kills))
 row(2,'Level reached',String(P.lv))
-if(Math.floor(t)>=best&&best)ctext('New best time',W/2,py+152,'800 14px system-ui,sans-serif','#7dff9a',3)
+if(Math.floor(t)>prev)ctext('New best time',W/2,py+152,'800 14px system-ui,sans-serif','#7dff9a',3)
 if(endT>1){ctx.globalAlpha=.6+Math.sin(clock*4)*.4;ctext('Press SPACE or tap to continue',W/2,H*.86,'800 18px '+FONT,'#ffb347',5)}
 ctx.globalAlpha=1
 }

@@ -195,13 +195,14 @@ const T=256,[c,g]=mk(T,T,2)
 g.fillStyle=lg(g,0,0,T,T,[[0,'#211a38'],[.5,'#1b1530'],[1,'#1f1836']]);g.fillRect(0,0,T,T)
 let s=7
 const r=()=>(s=(s*16807)%2147483647)/2147483647
-for(let i=0;i<260;i++){g.fillStyle=['#2a2146','#150f26','#2e2550','#18122c'][Math.floor(r()*4)];g.globalAlpha=.55;g.beginPath();g.ellipse(r()*T,r()*T,3+r()*16,2+r()*8,0,0,7);g.fill()}
+for(let i=0;i<220;i++){g.fillStyle=['#2a2146','#150f26','#2e2550','#18122c'][Math.floor(r()*4)];g.globalAlpha=.5;const x=r()*T,y=r()*T,rx=3+r()*16,ry=2+r()*8;for(const a of[-T,0,T])for(const b of[-T,0,T]){g.beginPath();g.ellipse(x+a,y+b,rx,ry,0,0,7);g.fill()}}
 g.globalAlpha=1
 for(let i=0;i<1600;i++){g.fillStyle=['#2d2450','#120c20','#35305e','#1a1430'][Math.floor(r()*4)];g.fillRect(r()*T,r()*T,1+r()*1.5,1+r()*1.5)}
-for(let i=0;i<150;i++){
+for(let i=0;i<70;i++){
 const x=14+r()*(T-28),y=14+r()*(T-28),n=3+Math.floor(r()*3)
-g.strokeStyle=r()>.5?'#2c5a44':'#244636';g.lineWidth=1.2
+g.globalAlpha=.7;g.strokeStyle=r()>.5?'#27503d':'#203f32';g.lineWidth=1.1
 for(let k=0;k<n;k++){g.beginPath();g.moveTo(x+k*1.6,y);g.quadraticCurveTo(x+k*1.6+(k-n/2)*1.2,y-3,x+k*2.2-n,y-5-r()*4);g.stroke()}
+g.globalAlpha=1
 }
 for(let i=0;i<9;i++){const x=20+r()*(T-40),y=20+r()*(T-40);g.strokeStyle='rgba(8,4,16,.5)';g.lineWidth=1.2;g.beginPath();g.moveTo(x,y);g.lineTo(x+r()*16-8,y+r()*10);g.lineTo(x+r()*30-15,y+r()*20);g.stroke()}
 return{c,T}
