@@ -8,6 +8,7 @@ import{casesPage,warnDialog,templateShare,caseFilter}from'./modcases.js'
 import{pickImage,uploadImage,CATEGORIES,inviteDialog}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
 import{fileUrl,gtag}from'./util.js'
+import{aiBadge}from'./modai.js'
 
 
 const row=(label,sub,control)=>h('div',{class:'row sp',style:{padding:'8px 0',borderBottom:'1px solid var(--border)'}},h('div',null,h('div',{style:{color:'var(--strong)'}},label),sub?h('div',{class:'hint',style:{margin:0}},sub):null),control)
@@ -382,7 +383,7 @@ async function reports(pg,sid){
 mount(pg,h('h3',null,'Reports'),h('div',{class:'hint'},'Loading…'))
 try{
 const r=await GET(`/api/servers/${sid}/reports`)
-mount(pg,h('h3',null,'Open reports'),h('div',{class:'list'},r.reports.length?r.reports.map(x=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${x.target_type} reported by @${x.reporter}`),h('div',null,x.reason),x.content?h('div',{class:'card',style:{margin:'4px 0',padding:'6px 8px'}},x.content.slice(0,300)):null,h('small',null,fmtStamp(x.created_at))),
+mount(pg,h('h3',null,'Open reports'),h('div',{class:'list'},r.reports.length?r.reports.map(x=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${x.target_type} reported by @${x.reporter}`),h('div',null,x.reason),x.content?h('div',{class:'card',style:{margin:'4px 0',padding:'6px 8px'}},x.content.slice(0,300)):null,aiBadge(x),h('small',null,fmtStamp(x.created_at))),
 h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/reports/${x.id}`,{});reports(pg,sid)}catch(e){fail(e)}}}},'Resolve'))):h('div',{class:'hint'},'No open reports')))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
 }

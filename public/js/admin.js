@@ -6,6 +6,7 @@ import{parsAdmin,seasonAdmin}from'./pars.js'
 import{REVAMP_AT,previewRestart,previewToggle,previewActive}from'./revamp.js'
 import{programAdmin}from'./exp.js'
 import{screeningAdmin}from'./screenui.js'
+import{aiBadge,modaiPanel,handledList}from'./modai.js'
 
 export function adminView(pg){
 let cur='stats'
@@ -105,7 +106,7 @@ async function reports(pg){
 mount(pg,h('h3',null,'Reports'),h('div',{class:'hint'},'Loading…'))
 try{
 const d=await GET('/api/admin/reports')
-mount(pg,await contentReports(),h('h3',null,'Open reports'),h('div',{class:'list'},d.reports.length?d.reports.map(r=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${r.target_type} · reported by @${r.reporter}`),h('div',null,r.reason),h('small',null,`${r.target_id}${r.server_id?' in '+r.server_id:''} · ${fmtStamp(r.created_at)}`)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id,{});reports(pg)}catch(e){fail(e)}}}},'Resolve'),(()=>{const uid=r.target_type==='user'?r.target_id:r.msg_author;return uid&&uid!==S.me.id?h('button',{class:'btn sm dng',on:{click:()=>suspendDialog({id:uid,username:r.target_type==='user'?'user':'message author'},()=>reports(pg))}},'Suspend…'):null})())):h('div',{class:'hint'},'No open reports')))
+mount(pg,await contentReports(),await modaiPanel(()=>reports(pg)),h('h3',null,'Open reports'),h('div',{class:'list'},d.reports.length?d.reports.map(r=>h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,`${r.target_type} · reported by @${r.reporter}`),h('div',null,r.reason),aiBadge(r),h('small',null,`${r.target_id}${r.server_id?' in '+r.server_id:''} · ${fmtStamp(r.created_at)}`)),r.ai_verdict?null:h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id+'/analyze',{});reports(pg)}catch(e){fail(e)}}}},'Analyze'),h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/admin/reports/'+r.id,{});reports(pg)}catch(e){fail(e)}}}},'Resolve'),(()=>{const uid=r.target_type==='user'?r.target_id:r.msg_author;return uid&&uid!==S.me.id?h('button',{class:'btn sm dng',on:{click:()=>suspendDialog({id:uid,username:r.target_type==='user'?'user':'message author'},()=>reports(pg))}},'Suspend…'):null})())):h('div',{class:'hint'},'No open reports')),handledList(d.handled))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
 }
 async function appeals(pg){
