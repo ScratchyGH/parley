@@ -231,4 +231,31 @@ await bump(c,c.user.id,'night_win',1)
 }
 return{ok,candy,night_max:max}
 })
+r.add('POST','/api/events/halloween/rush/start',async c=>{
+if(!live())fail(409,'The event is over')
+limit('hw:rstart:'+c.user.id,30,60000)
+await wallet(c.env,c.user.id)
+const id=newId('nr')
+await c.env.DB.prepare('insert into event_night_runs(id,user_id,night,started_at) values(?,?,0,?)').bind(id,c.user.id,now()).run()
+return{run:id}
+})
+r.add('POST','/api/events/halloween/rush/finish',async c=>{
+if(!live())fail(409,'The event is over')
+limit('hw:rfin:'+c.user.id,30,60000)
+const b=await body(c.req,300)
+const run=await c.env.DB.prepare('select * from event_night_runs where id=? and user_id=? and night=0').bind(String(b.run||''),c.user.id).first()
+if(!run||run.finished_at)fail(404,'No such run')
+const el=Math.floor((now()-run.started_at)/1000)
+const secs=Math.max(0,Math.min(Number(b.secs)|0,el+3,360))
+const kills=Math.max(0,Math.min(Number(b.kills)|0,secs*7))
+const win=b.ok===true&&secs>=340
+const paid=(await c.env.DB.prepare('select count(*) n from event_night_runs where user_id=? and night=0 and ok=1 and finished_at>?').bind(c.user.id,now()-DAY).first()).n
+let candy=0
+if(secs>=20&&paid<8){
+candy=Math.min(150,Math.floor(secs/6)+Math.floor(kills/8)+(win?60:0))
+await c.env.DB.prepare('update event_wallet set candy=candy+?,xp=xp+?,updated_at=? where user_id=? and season=?').bind(candy,Math.ceil(candy/3),now(),c.user.id,SEASON).run()
+}
+await c.env.DB.prepare('update event_night_runs set finished_at=?,ok=? where id=?').bind(now(),candy>0?1:0,run.id).run()
+return{ok:win,candy,secs,kills,left:Math.max(0,8-paid-(candy>0?1:0))}
+})
 }
