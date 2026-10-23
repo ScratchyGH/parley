@@ -83,6 +83,34 @@ h('div',{class:'hq-art'},q.kind==='night'?h('span',{class:'hq-n'},String(q.seq))
 h('div',{class:'hq-b'},h('h5',null,q.title),h('p',null,q.descr),h('div',{class:'hq-bar'},h('i',{style:{width:pr+'%'}})),h('div',{class:'hq-rw'},h('span',{class:'hq-c'},candySvg(15),String(q.candy)),h('span',null,q.xp+' XP'),h('span',{class:'hq-prog'},metricText(q,q.n)))),
 s==='claimed'?h('button',{class:'btn sm',disabled:true},'Claimed'):s==='lock'?h('button',{class:'btn sm',disabled:true},'Locked'):s==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim'):h('span',{class:'hq-go'},Math.round(pr)+'%'))
 }
+async function startRush(rerender){
+let run
+try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
+css()
+const{playRush}=await import('./rush.js')
+const box=h('div',{class:'hw-gamebox'})
+const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the run'},'Leave run')
+const root=h('div',{class:'hw-game hw-rushg',role:'dialog','aria-modal':'true','aria-label':'Gourd Rush'},box,closeBtn)
+document.body.append(root)
+let stop=null,over=false
+const end=async()=>{
+if(over)return
+over=true
+try{stop?.()}catch{}
+root.remove()
+await loadHollow()
+rerender?.()
+}
+closeBtn.addEventListener('click',()=>{if(over)return;over=true;try{stop?.()}catch{}root.remove()})
+stop=playRush(box,async r=>{
+if(over)return
+try{
+const x=await POST(API+'/rush/finish',{run,ok:!!r.ok,secs:r.secs,kills:r.kills})
+toast(x.candy?'Run paid '+x.candy+' candy.':x.left===0?'Daily candy limit reached for runs.':'Survive 20 seconds to earn candy.',x.candy?'ok':undefined)
+}catch(e){toast(e.message||'Could not save the result','err')}
+setTimeout(end,600)
+})
+}
 async function startNight(night,rerender){
 let run
 try{run=(await POST(API+'/night/start',{night})).run}catch(e){toast(e.message||'Could not start','err');return}
@@ -117,7 +145,8 @@ const nights=d.quests.filter(q=>q.kind==='night')
 const row=h('div',{class:'hw-tapes'},...nights.map(q=>h('div',{class:'hw-tape'},tape3d({title:q.title.replace(/^Night \d: /,''),tag:'NIGHT '+q.seq,state:qState(q),progress:q.n/q.target}),h('div',{class:'hw-tcap'},h('b',null,metricText(q,q.n)),qState(q)==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim '+q.candy+' candy'):h('span',null,q.claimed?'Collected':q.locked?'Claim the last night first':q.descr)))))
 const max=d.wallet.night_max
 const play=h('div',{class:'hw-play hw-scan'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'REC  CAM 01'),h('h3',null,'Night Shift'),h('p',null,'Hold the hall until six. Watch the feeds, close the door when something walks up, keep the power alive. Each win pays candy.')),h('div',{class:'hw-play-b'},...[1,2,3,4,5].map(n=>h('button',{class:'btn'+(n<=max?' pri':''),disabled:n>max,on:{click:()=>startNight(n,rerender)}},n<=max?'Night '+n:'Night '+n+' locked'))))
-return h('div',null,play,row)
+const rush=h('div',{class:'hw-play hw-rush'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'LIVE  ARENA'),h('h3',null,'Gourd Rush'),h('p',null,'Hold out in the dark until dawn. Move with WASD or the arrow keys, your lantern fires on its own. Level up, grab upgrades and take down the Hollowgrin. Runs pay candy, up to 8 a day.')),h('div',{class:'hw-play-b'},h('button',{class:'btn pri',on:{click:()=>startRush(rerender)}},'Play Gourd Rush')))
+return h('div',null,rush,play,row)
 }
 function questsView(d,rerender){
 const part=(t,k)=>h('section',null,h('h4',{class:'hw-h'},t),h('div',{class:'hq-list'},...d.quests.filter(q=>q.kind===k).map(q=>questCard(q,rerender))))
