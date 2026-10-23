@@ -120,6 +120,9 @@ return[cookie(c.url,token,SESSION_MS/1000),stashCookie(c.url,stash.slice(0,4))]
 
 export const ip=c=>c.req.headers.get('cf-connecting-ip')||'local'
 export const iters=env=>Math.min(100000,Math.max(1000,parseInt(env.PBKDF2_ITERS)||100000))
+export const nameKeys=raw=>{const r=String(raw||'').trim();const o=new Set([r,r.toLowerCase()]);for(const f of['NFC','NFKC','NFD']){try{const n=r.normalize(f);o.add(n);o.add(n.toLowerCase())}catch{}}return[...o].filter(x=>x&&x.length<=80).slice(0,10)}
+export const findUser=async(env,raw,cols)=>{const k=nameKeys(raw);if(!k.length)return null;const q=await env.DB.prepare('select '+(cols||'*')+' from users where username in ('+k.map(()=>'?').join(',')+') and deleted_at is null').bind(...k).all();const rows=q.results||[];return rows.find(x=>x.username===k[0])||rows.find(x=>x.username===k[1])||rows[0]||null}
+export const normRecovery=s=>{const h=String(s||'').toLowerCase().replace(/[^0-9a-f]/g,'');return h.length===20?h.match(/.{5}/g).join('-'):String(s||'').trim().toLowerCase()}
 export const recoveryCode=()=>{const h=randHex(10);return h.match(/.{5}/g).join('-')}
 
 async function attempts(env,key){
@@ -165,11 +168,12 @@ return json({user:me(u),recovery_code:code},201,{'set-cookie':setCookie})
 r.add('POST','/api/auth/login',async c=>{
 limit('login:'+ip(c),30,900000)
 const b=await body(c.req)
-const username=str(b.username,1,40,'Username').toLowerCase()
+const rawName=str(b.username,1,80,'Username')
+const username=rawName.trim().toLowerCase()
 const pw=str(b.password,1,200,'Password')
 const key='u:'+username
 if(await attempts(c.env,key)>=8||await attempts(c.env,'i:'+ip(c))>=40)fail(429,'Too many failed attempts. Try again in 15 minutes.')
-const u=await c.env.DB.prepare('select * from users where username=? and deleted_at is null').bind(username).first()
+const u=await findUser(c.env,rawName)
 const salt=u?u.pass_salt:'00'.repeat(16)
 const h=await pbkdf2(pw,salt,u?u.pass_iters:iters(c.env))
 if(!u||!safeEq(h,u.pass_hash)){
@@ -231,12 +235,13 @@ return json({ok:true},200,{'set-cookie':stashCookie(c.url,stash.filter(x=>x!==t)
 r.add('POST','/api/auth/recover',async c=>{
 limit('rec:'+ip(c),8,3600000)
 const b=await body(c.req)
-const username=str(b.username,1,40,'Username').toLowerCase()
-const code=str(b.recovery_code,5,40,'Recovery code')
+const rawName=str(b.username,1,80,'Username')
+const username=rawName.trim().toLowerCase()
+const code=str(b.recovery_code,5,60,'Recovery code')
 const pw=str(b.password,10,200,'Password')
 if(await attempts(c.env,'r:'+username)>=5)fail(429,'Too many attempts. Try again later.')
-const u=await c.env.DB.prepare('select * from users where username=? and deleted_at is null').bind(username).first()
-if(!u||!u.recovery_hash||!safeEq(await sha(code.toLowerCase()),u.recovery_hash)){await bump(c.env,'r:'+username);fail(401,'Invalid username or recovery code')}
+const u=await findUser(c.env,rawName)
+if(!u||!u.recovery_hash||!safeEq(await sha(normRecovery(code)),u.recovery_hash)){await bump(c.env,'r:'+username);fail(401,'Invalid username or recovery code')}
 const salt=randHex(16)
 const n=iters(c.env)
 const next=recoveryCode()
@@ -440,7 +445,7 @@ return new Response(JSON.stringify(data,null,1),{headers:{'content-type':'applic
 r.add('POST','/api/appeals',async c=>{
 limit('appeal:'+ip(c),5,3600000)
 const b=await body(c.req)
-const u=await c.env.DB.prepare('select id,suspended,pass_hash,pass_salt,pass_iters from users where username=? and deleted_at is null').bind(str(b.username,1,40,'Username').toLowerCase()).first()
+const u=await findUser(c.env,str(b.username,1,80,'Username'),'id,username,suspended,pass_hash,pass_salt,pass_iters')
 if(!u||!u.suspended)fail(404,'No suspended account matches')
 if(!safeEq(await pbkdf2(str(b.password,1,200,'Password'),u.pass_salt,u.pass_iters),u.pass_hash))fail(401,'Invalid credentials')
 const ev=Array.isArray(b.evidence)?b.evidence.slice(0,5).map(x=>{let k;try{k=new URL(String(x))}catch{fail(400,'Evidence links must be full https:// URLs')}if(k.protocol!=='https:'||k.href.length>300)fail(400,'Evidence links must be https:// URLs under 300 characters');return k.href}):[]

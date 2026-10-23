@@ -35,8 +35,11 @@ const backupCodes=()=>Array.from({length:8},()=>randHex(4).replace(/(.{4})(.{4})
 
 export async function checkSecondFactor(env,u,input){
 if(typeof input!=='string')return false
-const t=input.trim().toLowerCase()
-if(await verifyTotp(u.totp_secret,t))return true
+const t0=input.trim().toLowerCase()
+if(await verifyTotp(u.totp_secret,t0.replace(/\s/g,'')))return true
+const hx=t0.replace(/[^0-9a-f]/g,'')
+const t=hx.length===8?hx.slice(0,4)+'-'+hx.slice(4):t0
+if(hx.length===20&&u.recovery_hash&&safeEq(await sha(hx.match(/.{5}/g).join('-')),u.recovery_hash))return true
 if(/^[0-9a-f]{4}-[0-9a-f]{4}$/.test(t)&&u.backup_hashes){
 const list=JSON.parse(u.backup_hashes)
 const h=await sha(t)
