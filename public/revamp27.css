@@ -1,6 +1,6 @@
 html.rv27:root{--gold:#b9b8ae;--r:14px;--rr:20px;--hi:#a9a8a0;--blue:#c7c6c0;--accent:#6f6d66;--on-accent:#fff;--bg:#121211;--side:#191917;--panel:#22221f;--surf2:#2d2c28;--border:rgba(169,168,160,.18);--text:#d4d3cc;--strong:#f6f5ef;--muted:#8f8d84;--sel:rgba(138,136,127,.22);--neutral:#aeada4;--hover:rgba(169,168,160,.09);--glow:rgba(138,136,127,.4);--lift:0 10px 34px rgba(0,0,0,.45);--shadow:0 14px 44px rgba(0,0,0,.5);--gold:#c9c8c1;color-scheme:dark}
 html.rv27 body{background:#0a0a09}
-html.rv27 body::before{content:"";position:fixed;inset:-25%;z-index:0;pointer-events:none;background:radial-gradient(38% 38% at 18% 20%,rgba(111,109,102,.55),transparent 70%),radial-gradient(34% 34% at 82% 12%,rgba(130,132,128,.34),transparent 70%),radial-gradient(40% 40% at 78% 88%,rgba(190,189,180,.22),transparent 70%),radial-gradient(34% 34% at 10% 90%,rgba(150,146,138,.28),transparent 70%);filter:blur(30px);animation:rvdrift 38s ease-in-out infinite alternate}
+html.rv27 body::before{content:"";position:fixed;inset:-25%;z-index:0;pointer-events:none;background:radial-gradient(38% 38% at 18% 20%,rgba(111,109,102,.55),transparent 70%),radial-gradient(34% 34% at 82% 12%,rgba(130,132,128,.34),transparent 70%),radial-gradient(40% 40% at 78% 88%,rgba(190,189,180,.22),transparent 70%),radial-gradient(34% 34% at 10% 90%,rgba(150,146,138,.28),transparent 70%);}
 html.rv27 body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px);background-size:26px 26px;mask-image:radial-gradient(70% 70% at 50% 40%,#000,transparent)}
 @keyframes rvdrift{from{transform:translate3d(-3%,-2%,0) rotate(0deg) scale(1)}to{transform:translate3d(3%,3%,0) rotate(14deg) scale(1.12)}}
 html.rv27 .shell{position:relative;z-index:1}
@@ -8,19 +8,19 @@ html.rv27 .btn{border-radius:999px;border-color:transparent;background:var(--sur
 html.rv27 .btn:hover{transform:translateY(-1px)}
 html.rv27 .btn.pri{background:linear-gradient(135deg,#a9a8a0,#58564f);color:#fff;box-shadow:0 8px 22px rgba(88,86,79,.5)}
 html.rv27 .inp,html.rv27 .sel,html.rv27 textarea.inp{border-radius:16px;background:rgba(255,255,255,.045);border-color:var(--border)}
-html.rv27 .dlg{border-radius:30px;background:rgba(26,26,24,.88);backdrop-filter:blur(22px) saturate(1.4);box-shadow:0 36px 90px rgba(0,0,0,.65),0 0 0 1px rgba(169,168,160,.28)}
-html.rv27 .menu{border-radius:20px;background:rgba(26,26,24,.94);backdrop-filter:blur(16px);box-shadow:0 20px 56px rgba(0,0,0,.6),0 0 0 1px rgba(169,168,160,.22)}
+html.rv27 .dlg{border-radius:30px;background:rgba(26,26,24,.97);box-shadow:0 36px 90px rgba(0,0,0,.65),0 0 0 1px rgba(169,168,160,.28)}
+html.rv27 .menu{border-radius:20px;background:rgba(26,26,24,.98);box-shadow:0 20px 56px rgba(0,0,0,.6),0 0 0 1px rgba(169,168,160,.22)}
 html.rv27 ::-webkit-scrollbar{width:10px;height:10px}
 html.rv27 ::-webkit-scrollbar-thumb{background:rgba(169,168,160,.3);border-radius:10px;border:3px solid transparent;background-clip:padding-box}
 @media(min-width:821px){
 html.rv27 .shell{padding:16px;gap:16px;grid-template-columns:88px 268px minmax(0,1fr) auto}
-html.rv27 .ws{scrollbar-width:none;align-self:center;height:auto;max-height:100%;padding:16px 0;gap:12px;border:0;border-radius:44px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));backdrop-filter:blur(22px) saturate(1.4);box-shadow:0 18px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.14);overflow-x:visible}
+html.rv27 .ws{scrollbar-width:none;align-self:center;height:auto;max-height:100%;padding:16px 0;gap:12px;border:0;border-radius:44px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));box-shadow:0 18px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.14);overflow-x:visible}
 html.rv27 .wbtn{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.07);box-shadow:none;transition:transform .25s cubic-bezier(.3,1.6,.5,1),border-radius .25s,background .2s,box-shadow .25s}
 html.rv27 .wbtn:hover{transform:scale(1.2) translateX(5px);border-radius:18px;background:rgba(169,168,160,.28);box-shadow:0 10px 26px rgba(111,109,102,.5)}
 html.rv27 .wbtn.on{border-radius:18px;background:linear-gradient(135deg,#8a887f,#58564f);box-shadow:0 0 0 2px rgba(190,189,180,.7),0 10px 26px rgba(111,109,102,.6)}
 html.rv27 .wwrap .pip{left:-12px;width:6px;border-radius:6px;background:linear-gradient(#c9c8c1,#a9a8a0);box-shadow:0 0 14px #a9a8a0}
 html.rv27 .ws .sep{background:none;height:6px;width:6px;border-radius:50%;background:rgba(169,168,160,.5)}
-html.rv27 .ctx,html.rv27 .panel{border:0;border-radius:32px;background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));backdrop-filter:blur(22px) saturate(1.4);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden}
+html.rv27 .ctx,html.rv27 .panel{border:0;border-radius:32px;background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden}
 html.rv27 .panel{width:264px}
 html.rv27 .ctx-h{height:72px;padding:0 22px;font-family:var(--disp,inherit);font-size:19px;font-weight:800;letter-spacing:-.01em;border:0;background:linear-gradient(135deg,rgba(138,136,127,.38),rgba(130,132,128,.14))}
 html.rv27 .ctx-b{padding:12px}
@@ -31,8 +31,8 @@ html.rv27 .ci.on::before{content:"";position:absolute;left:5px;top:50%;width:6px
 html.rv27 .cat{padding:18px 10px 6px;color:var(--gold);font-weight:800;font-size:12px;opacity:.85}
 html.rv27 .qs{border-radius:999px;background:rgba(255,255,255,.06)}
 html.rv27 .me{margin:12px;border:0;border-radius:24px;background:linear-gradient(135deg,rgba(138,136,127,.3),rgba(190,189,180,.1));box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
-html.rv27 .main{border:0;border-radius:36px;background:linear-gradient(180deg,rgba(20,20,18,.78),rgba(14,14,13,.82));backdrop-filter:blur(24px);box-shadow:0 24px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden}
-html.rv27 .top{height:56px;margin:14px 18px 0;padding:0 18px;border:0;border-radius:999px;background:rgba(255,255,255,.06);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+html.rv27 .main{border:0;border-radius:36px;background:linear-gradient(180deg,rgba(20,20,18,.78),rgba(14,14,13,.82));box-shadow:0 24px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden}
+html.rv27 .top{height:56px;margin:14px 18px 0;padding:0 18px;border:0;border-radius:999px;background:rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
 html.rv27 .top h2{font-family:var(--disp,inherit);font-size:17px;font-weight:800;letter-spacing:-.01em;background:linear-gradient(90deg,#fff,#c7c6c0);-webkit-background-clip:text;background-clip:text;color:transparent}
 html.rv27 .top .tp{border:0;padding-left:6px}
 html.rv27 .msgs{padding:14px 6px 8px}
@@ -43,7 +43,7 @@ html.rv27 .mh time{margin-left:auto;opacity:.55}
 html.rv27 .mh b{letter-spacing:-.005em}
 html.rv27 .mact{border-radius:999px;padding:3px 6px;background:rgba(34,34,31,.95);border:0;box-shadow:0 10px 28px rgba(0,0,0,.5),inset 0 0 0 1px rgba(169,168,160,.3)}
 html.rv27 .comp{padding:2px 28px 26px}
-html.rv27 .cbox{max-width:none;border:0;border-radius:32px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04));backdrop-filter:blur(16px);box-shadow:0 20px 56px rgba(0,0,0,.5),inset 0 0 0 1px rgba(169,168,160,.32)}
+html.rv27 .cbox{max-width:none;border:0;border-radius:32px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04));box-shadow:0 20px 56px rgba(0,0,0,.5),inset 0 0 0 1px rgba(169,168,160,.32)}
 html.rv27 .cbox:focus-within{box-shadow:0 20px 56px rgba(0,0,0,.5),inset 0 0 0 1px #c7c6c0,0 0 0 5px rgba(138,136,127,.3),0 0 40px rgba(138,136,127,.35)}
 html.rv27 .home{padding-top:6px}
 }
@@ -114,7 +114,7 @@ html.rv27 .m:hover{background:rgba(255,255,255,.045);transform:none;box-shadow:n
 html.rv27 .m.cont{margin-top:-2px;border-radius:14px}
 html.rv27 .mact{border-radius:12px}
 html.rv27 .comp{padding:2px 22px 20px}
-html.rv27 .cbox{border-radius:20px;backdrop-filter:blur(12px)}
+html.rv27 .cbox{border-radius:20px;}
 html.rv27 .cbox:focus-within{box-shadow:0 14px 40px rgba(0,0,0,.45),inset 0 0 0 1px #c7c6c0,0 0 0 3px rgba(138,136,127,.28)}
 html.rv27 .btn{border-radius:12px}
 html.rv27 .btn.pri{background:linear-gradient(135deg,#9a9890,#68665f);box-shadow:0 6px 16px rgba(0,0,0,.35)}
