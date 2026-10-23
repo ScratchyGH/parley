@@ -5,7 +5,7 @@ const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=nu
 let cssOn=false
 const TYPES={
 wisp:{r:9,hp:8,sp:112,dmg:5,xp:1,spr:'wisp'},
-ghoul:{r:14,hp:38,sp:52,dmg:9,xp:3,spr:'ghoul'},
+ghoul:{r:14,hp:32,sp:52,dmg:9,xp:3,spr:'ghoul'},
 bone:{r:12,hp:22,sp:72,dmg:7,xp:2,spr:'bone'},
 reaper:{r:20,hp:210,sp:62,dmg:16,xp:14,spr:'reaper'},
 boss:{r:56,hp:2600,sp:46,dmg:24,xp:120,spr:'boss'}
@@ -44,7 +44,7 @@ ro.observe(box)
 const A=buildArt(4)
 const LS=(()=>{const mkL=(rgb)=>{const c=el('canvas');c.width=c.height=128;const g=c.getContext('2d');const q=g.createRadialGradient(64,64,0,64,64,64);q.addColorStop(0,'rgba('+rgb+',1)');q.addColorStop(.35,'rgba('+rgb+',.7)');q.addColorStop(1,'rgba('+rgb+',0)');g.fillStyle=q;g.fillRect(0,0,128,128);return c};return{w:mkL('255,255,255'),warm:mkL('255,150,50'),cyan:mkL('90,200,255'),red:mkL('255,60,50'),vio:mkL('170,110,255')}})()
 const flashOf=s=>{if(s.fc)return s.fc;const c=el('canvas');c.width=s.c.width;c.height=s.c.height;const g=c.getContext('2d');g.drawImage(s.c,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);s.fc=c;return c}
-const P={x:0,y:0,hp:100,max:100,spd:150,dmg:10,rate:.62,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,fx:1,fy:0,face:1,up:{},walk:0}
+const P={x:0,y:0,hp:120,max:120,spd:150,dmg:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,fx:1,fy:0,face:1,up:{},walk:0}
 const E=[],B=[],EB=[],G=[],F=[],X=[],HP=[]
 let t=0,kills=0,acc=0,bi=0,phase='menu',paused=false,raf=0,last=0,shake=0,boss=null,orbA=0,note='',noteT=0,id=0,endT=0,won=false,jx=0,jy=0,jo=null,beep=0,clock=0,novaFx=0,cur=[],muted=false,best=0
 try{best=Number(localStorage.getItem('parley.rush.best'))||0}catch{}
@@ -75,8 +75,8 @@ const pick=()=>{
 const sc=1+t/130,p=R()
 let k='wisp'
 if(t>120&&p<.045)k='reaper'
-else if(t>28&&p<.34)k='ghoul'
-else if(t>8&&p<.66)k='bone'
+else if(t>45&&p<.3)k='ghoul'
+else if(t>14&&p<.62)k='bone'
 const[x,y]=ring()
 spawnE(k,x,y,sc)
 }
@@ -328,6 +328,7 @@ if(e.k==='wisp')lights.push([e.x,e.y-12,42,.55,'cyan'])
 else if(e.k==='reaper')lights.push([e.x,e.y-30,60,.5,'vio'])
 else if(e.k==='boss')lights.push([e.x,e.y-40,170,.9,'warm'])
 }else if(it.k==='pl'){
+if(phase==='menu')continue
 const s=A.player[Math.floor(P.walk*9)%2]
 shadow(P.x,P.y,13)
 const blink=P.hit>0&&Math.floor(t*30)%2===0
