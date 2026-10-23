@@ -71,7 +71,7 @@ setImg(img,f,m)
 a.append(img)
 }
 else if(f.mime.startsWith('video/'))a.append(h('video',{src:u,controls:true,preload:'metadata','aria-label':f.name}))
-else if(f.mime.startsWith('audio/'))a.append(h('div',null,h('div',{class:'hint'},f.name),h('audio',{src:u,controls:true,preload:'none'})))
+else if(f.mime.startsWith('audio/')){const vc=/^voice-clip/i.test(f.name);a.append(h('div',{class:vc?'vclip':null},vc?null:h('div',{class:'hint'},f.name),h('audio',{src:u,controls:true,preload:vc?'metadata':'none'}),vc?h('div',{class:'vsub','aria-label':'Subtitles'},f.transcript||'Transcribing…'):null))}
 else if(f.mime.startsWith('text/plain')&&f.size<=262144)a.append(textFile(f,m))
 else a.append(fileLink(f,m))
 }

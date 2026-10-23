@@ -24,6 +24,7 @@ import{tosGate}from'./legal.js'
 import{checkOffer}from'./exp.js'
 import{startRevamp}from'./revamp.js'
 import{startUpdates}from'./update.js'
+import{startStreaks}from'./streakui.js'
 import{maybeTour}from'./tour.js'
 
 const root=document.getElementById('app')
@@ -77,6 +78,7 @@ startPars()
 startDiag()
 startRevamp()
 startUpdates()
+startStreaks(()=>renderCtx())
 setTimeout(whatsNew,1200)
 setTimeout(maybeTour,2600)
 }
@@ -316,6 +318,8 @@ chatEvent(room,m)
 break
 case'safety.removed':toast('A message of yours was removed because this server scans for explicit content','err');break
 case'pars.gift':emit('pars.gift',m);break
+case'streak':emit('streak',m);break
+case'streak.sync':emit('streak.sync',m);break
 case'notif':
 if(m.remind)toast('Reminder: '+m.remind,'ok')
 S.notifN++

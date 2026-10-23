@@ -1,4 +1,5 @@
 import{scheduleDialog}from'./schedule.js'
+import{recorderButton}from'./voiceclip.js'
 import{translateMsg,catchUp,remind,remindDialog,parseDelay}from'./tools.js'
 import{h,mount,clear,icon,gtag,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey,tzo}from'./util.js'
 import{render,plain}from'./md.js'
@@ -288,7 +289,9 @@ const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click
 const un=tw('show_username')&&m.author.username?h('span',{class:'hint tw-un'},'@'+m.author.username):null
 const bdg=m.author.badge?h('span',{class:'bdg-i '+m.author.badge,title:'Badge'}):null
 const ttl=m.author.title?h('span',{class:'ttl '+m.author.title}):null
-main.append(h('div',{class:'mh'},nm,un,bdg,ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString(undefined,tzo()),'data-t':m.created_at},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
+const inNp=!!m.author.nameplate
+if(inNp){if(bdg)nm.append(bdg);if(ttl)nm.append(ttl)}
+main.append(h('div',{class:'mh'},nm,un,inNp?null:bdg,inNp?null:ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString(undefined,tzo()),'data-t':m.created_at},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
@@ -515,6 +518,7 @@ C.fileIn,C.ta,
 h('button',{type:'button',class:'ib',title:'Schedule message','aria-label':'Schedule message',on:{click:()=>scheduleDialog(C.room,C.ta.value,()=>{C.ta.value='';autoGrow()})}},icon('clock')),
 h('button',{type:'button',class:'ib',title:'Create poll','aria-label':'Create poll',on:{click:()=>pollDialog(C.room)}},icon('list')),
 h('button',{type:'button',class:'ib',title:'Stickers','aria-label':'Stickers',on:{click:()=>stickerDialog(C.room)}},icon('image')),
+perms&P.ATTACH?recorderButton(addFiles):null,
 perms&P.ATTACH?h('button',{type:'button',class:'ib',title:'GIF','aria-label':'Send a GIF',on:{click:()=>openGif('')}},icon('gif')):null,
 h('button',{type:'button',class:'ib',title:'Emoji','aria-label':'Emoji',on:{click:e=>emojiPicker(e.currentTarget,em=>insert(em),info?.sid)}},icon('smile')),
 C.sendBtn)))

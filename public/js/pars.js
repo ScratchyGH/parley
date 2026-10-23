@@ -3,24 +3,46 @@ import{S,on}from'./state.js'
 import{sv,svg}from'./svg.js'
 import{checkGifts}from'./giftreveal.js'
 
-let marks=new Set(),beat=null
-const note=()=>{marks.add(Math.floor(Date.now()/5000))}
+let beat=null,evs=[],lastMove=0,chk=null
+const T={keydown:'k',pointerdown:'c',touchstart:'c',wheel:'s',scroll:'s',pointermove:'m'}
+const note=(e)=>{
+if(!e.isTrusted||e.repeat)return
+const t=Date.now(),ty=T[e.type]
+if(ty==='m'){if(t-lastMove<250)return;lastMove=t}
+evs.push([t,ty])
+if(evs.length>600)evs=evs.slice(-400)
+}
+function sample(){
+const t=Date.now()
+evs=evs.filter(x=>t-x[0]<60000)
+const w=Array(12).fill(0),n={k:0,c:0,s:0,m:0}
+for(const[ts,ty]of evs){const i=Math.min(11,Math.floor((t-ts)/5000));w[i]=Math.min(60,w[i]+1);n[ty]++}
+return{w,k:n.k,c:n.c,s:n.s,m:n.m,v:true}
+}
+function showCheck(ck){
+if(chk||!ck)return
+const shown=performance.now()
+const b=h('button',{class:'btn pri',on:{click:async e=>{
+if(!e.isTrusted)return
+try{const r=await POST('/api/pars/ack',{tok:ck.tok,ms:Math.round(performance.now()-shown)});if(r.ok){chk.remove();chk=null;toast('Thanks, still earning Pars',null)}}catch{}
+}}},'I am here')
+chk=h('div',{class:'updb',role:'alert',style:{top:'auto',bottom:(20+Math.random()*60)+'px',left:(20+Math.random()*55)+'%'}},h('b',null,'Still there?'),h('span',null,'Click to keep earning Pars'),b)
+document.body.append(chk)
+}
 export function startPars(){
 if(beat)return
-for(const ev of['keydown','pointerdown','wheel','touchstart'])addEventListener(ev,e=>{if(e.isTrusted)note()},{passive:true,capture:true})
+for(const ev of Object.keys(T))addEventListener(ev,note,{passive:true,capture:true})
 beat=setInterval(async()=>{
-const cut=Math.floor(Date.now()/5000)-12
-const i=[...marks].filter(x=>x>cut).length
-marks=new Set([...marks].filter(x=>x>cut))
 if(document.visibilityState!=='visible'||!document.hasFocus())return
 try{
-const r=await POST('/api/pars/beat',{i,v:true})
+const r=await POST('/api/pars/beat',sample())
 if(S.me)S.me.pars=r.balance
 if(r.earned>0)toast('+'+r.earned+' Pars earned',null)
 for(const n of r.notes||[])toast(n)
+if(r.check)showCheck(r.check)
 }catch{}
 },60000)
-setTimeout(()=>POST('/api/pars/beat',{i:0,v:true}).catch(()=>{}),1500)
+setTimeout(()=>POST('/api/pars/beat',{w:[],v:true}).catch(()=>{}),1500)
 setTimeout(checkGifts,3000)
 on('pars.gift',()=>checkGifts())
 }

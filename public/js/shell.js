@@ -14,6 +14,7 @@ import{startTour}from'./tour.js'
 import{openServerSettings,channelSettings,leaveServer}from'./ssettings.js'
 import{accountsDialog}from'./accounts.js'
 import{eventsDialog}from'./dialogs2.js'
+import{streakChip}from'./streakui.js'
 
 export const el={}
 let panel=null
@@ -253,7 +254,7 @@ return h('div',{class:'ci'+(active?' on':'')+(u&&!active?' un':''),on:{contextme
 ])}},
 h('button',{class:'cib','aria-current':active?'page':null,on:{click:()=>{go('/dm/'+c.id);closeDrawers()}}},
 c.type==='group'?avatar({id:c.id,name:title,icon_id:c.icon_id},'sm'):avatar(o||{display_name:title},'sm',st),
-h('span',{class:'nm'},title),pending?h('span',{class:'hint',style:{margin:0}},'request'):null),
+h('span',{class:'nm'},title),o?streakChip(o.id):null,pending?h('span',{class:'hint',style:{margin:0}},'request'):null),
 u&&!active?(u.mentions?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},u.mentions):h('span',{style:{width:'8px',height:'8px',borderRadius:'50%',background:'var(--strong)'}})):null)
 }
 
