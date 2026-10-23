@@ -32,6 +32,7 @@ import pluginRoutes from'./plugins.js'
 import backupRoutes,{dailyBackup}from'./backup.js'
 import legalRoutes from'./legal.js'
 import modaiRoutes from'./modai.js'
+import toolsRoutes,{deliverReminders}from'./tools.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
 import{d1Store}from'./store.js'
@@ -70,6 +71,7 @@ xlabsRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
 modaiRoutes(router)
+toolsRoutes(router)
 caseRoutes(router)
 templateRoutes(router)
 gifRoutes(router)
@@ -221,6 +223,7 @@ if(!res.ok){let m='Failed';try{m=(await res.json()).error||m}catch{}throw new Er
 })
 await Promise.allSettled(pend)
 await xlabsCron(env,ec)
+await deliverReminders(env,ec).catch(()=>{})
 await Promise.allSettled(pend)
 }catch(e){console.error('scheduled send',String(e&&e.message||e))}
 const last=await env.DB.prepare("select v from app_settings where k='last_sweep'").first().catch(()=>null)
