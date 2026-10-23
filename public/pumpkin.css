@@ -19,3 +19,4 @@
 .gx-view{position:absolute;left:-120px;top:-40px;width:560px;height:420px;pointer-events:none;z-index:1}
 .gx-view .gx3{width:100%;height:100%;display:block}
 .gx-hw .gx-shadow,.gx-hw .gx-3d{display:none}
+.gx-hw .gx-item{top:30px}
