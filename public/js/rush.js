@@ -230,10 +230,10 @@ ctx.fill()
 const draw=()=>{
 const sx=calm?0:(R()-.5)*shake,sy=calm?0:(R()-.5)*shake
 const cx=P.x-W/2+sx,cy=P.y-H/2+sy
-ctx.fillStyle='#0c0913'
+ctx.fillStyle='#181228'
 ctx.fillRect(0,0,W,H)
 const gs=96,i0=Math.floor(cx/gs),j0=Math.floor(cy/gs)
-ctx.strokeStyle='#151021'
+ctx.strokeStyle='#231a38'
 ctx.lineWidth=1
 ctx.beginPath()
 for(let i=i0;i<=i0+W/gs+1;i++){const x=i*gs-cx;ctx.moveTo(x,0);ctx.lineTo(x,H)}
@@ -242,7 +242,7 @@ ctx.stroke()
 for(let i=i0;i<=i0+W/gs+1;i++)for(let j=j0;j<=j0+H/gs+1;j++){
 const h=hash(i,j),x=i*gs-cx+(h%60)+18,y=j*gs-cy+((h>>8)%60)+18
 if(h%9===0){
-ctx.fillStyle='#241c33'
+ctx.fillStyle='#352a4d'
 ctx.beginPath();ctx.moveTo(x-9,y+14);ctx.lineTo(x-9,y-4);ctx.arc(x,y-4,9,Math.PI,0);ctx.lineTo(x+9,y+14);ctx.fill()
 ctx.fillStyle='#17112280'
 ctx.fillRect(x-4,y,8,2);ctx.fillRect(x-1,y-6,2,10)
@@ -333,10 +333,10 @@ ctx.beginPath();ctx.arc(px,py,11,0,TAU);ctx.fill()
 ctx.fillStyle='#4f7a1c'
 ctx.fillRect(px-2,py-16,4,7)
 face(px,py,15,'#2a0d02')
-const gr=ctx.createRadialGradient(px,py,40,px,py,Math.max(W,H)*.55)
+const gr=ctx.createRadialGradient(px,py,90,px,py,Math.max(W,H)*.6)
 gr.addColorStop(0,'rgba(8,4,14,0)')
-gr.addColorStop(.45,'rgba(8,4,14,.35)')
-gr.addColorStop(1,'rgba(8,4,14,.93)')
+gr.addColorStop(.5,'rgba(8,4,14,.2)')
+gr.addColorStop(1,'rgba(8,4,14,.8)')
 ctx.fillStyle=gr
 ctx.fillRect(0,0,W,H)
 ctx.fillStyle='#000a'
