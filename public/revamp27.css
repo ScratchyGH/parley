@@ -123,3 +123,7 @@ html.rv27 .dlg{border-radius:24px}
 html.rv27 .menu{border-radius:14px}
 }
 @media(prefers-reduced-motion:reduce){html.rv27 body::before,#rvlay *,html.rvx-in *{animation:none!important}}
+
+html.rv27 .m[class*="bb_"]:has(+.m.cont){border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:0}
+html.rv27 .m.cont[class*="bb_"]{border-top-left-radius:0;border-top-right-radius:0;margin-top:0}
+html.rv27 .m.cont[class*="bb_"]:not(:has(+.m.cont)){border-bottom-left-radius:14px;border-bottom-right-radius:14px}
