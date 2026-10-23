@@ -16,3 +16,6 @@
 .gx-cd{filter:drop-shadow(0 0 16px rgba(255,150,40,.7))}
 .rm .gx-pop .gx-face,.perf .gx-pop .gx-face{animation:none}
 @media(prefers-reduced-motion:reduce){.gx-pop .gx-face{animation:none}}
+.gx-view{position:absolute;left:-120px;top:-40px;width:560px;height:420px;pointer-events:none;z-index:1}
+.gx-view .gx3{width:100%;height:100%;display:block}
+.gx-hw .gx-shadow,.gx-hw .gx-3d{display:none}
