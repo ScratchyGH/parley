@@ -38,11 +38,11 @@ btn)
 }
 function draw(){
 const err=h('div',{class:'err',role:'alert'})
-const un=h('input',{class:'inp',autocomplete:'username',autocapitalize:'none',spellcheck:false,maxLength:40,required:true,autofocus:true})
+const un=h('input',{class:'inp',autocomplete:'username',autocapitalize:'none',spellcheck:false,maxLength:80,required:true,autofocus:true})
 const pw=h('input',{class:'inp',type:'password',autocomplete:tab==='login'?'current-password':'new-password',required:true,maxLength:200})
 const dn=h('input',{class:'inp',maxLength:32,autocomplete:'nickname'})
 const rc=h('input',{class:'inp',autocomplete:'off',spellcheck:false,placeholder:'xxxxx-xxxxx-xxxxx-xxxxx'})
-const tot=h('input',{class:'inp',autocomplete:'one-time-code',inputmode:'text',spellcheck:false,maxLength:24,placeholder:'123456 or backup code','aria-label':'Two-factor code'})
+const tot=h('input',{class:'inp',autocomplete:'one-time-code',inputmode:'text',spellcheck:false,maxLength:40,placeholder:'123456, backup code or recovery code','aria-label':'Two-factor code'})
 const totBox=h('div',{hidden:true},field('Two-factor code',tot))
 const pw2=h('input',{class:'inp',type:'password',autocomplete:'new-password',maxLength:200})
 const submit=h('button',{class:'btn pri',type:'submit',style:{width:'100%',margin:'8px 0 0'}},tab==='login'?'Sign in':tab==='register'?'Create account':'Reset password')
