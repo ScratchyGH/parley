@@ -249,8 +249,9 @@ function tzField(){
 const dev=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone}catch{return ''}})()
 const cur=setting('tz','')
 const now=h('span',{class:'hint',style:{margin:0}})
-const tick=()=>{try{now.textContent='Now: '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short',...(cur?{timeZone:cur}:{})})}catch{}}
+const tick=()=>{try{const z=setting('tz','');now.textContent='Now: '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZoneName:'short',...(z?{timeZone:z}:{})})}catch{}}
 tick()
+const iv=setInterval(()=>{if(!now.isConnected)clearInterval(iv);else tick()},1000)
 let all=[]
 try{all=Intl.supportedValuesOf('timeZone').filter(z=>!TZS.some(x=>x[0]===z))}catch{}
 const sel=h('select',{class:'sel','aria-label':'Time zone',style:{width:'auto',maxWidth:'100%'},on:{change:async e=>{try{await saveSettings({tz:e.target.value});tick()}catch(x){fail(x)}}}},

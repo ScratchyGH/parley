@@ -69,6 +69,7 @@ mount(body,d.notifications.length?d.notifications.map(n=>{
 const x=n.data
 let text='',fn=null
 if(n.type==='mention'){text=`${x.from} mentioned you in ${roomLabel(x.room)}`;fn=()=>gotoMessage(x.room,x.message_id)}
+else if(n.type==='reminder'){text='Reminder: '+(x.note||'check this message');fn=x.message_id?()=>gotoMessage(x.room,x.message_id):null}
 else if(n.type==='friend_request'){text=`${x.name} sent you a friend request`;fn=()=>go('/friends/pending')}
 else text=n.type
 return h('button',{class:'ci'+(n.read_at?'':' un'),style:{flexDirection:'column',alignItems:'flex-start',height:'auto'},on:{click:()=>{fn?.();POST('/api/notifications/read',{ids:[n.id]}).catch(()=>{})}}},h('span',null,text),h('small',{class:'hint',style:{margin:'0'}},fmtRel(n.created_at)))

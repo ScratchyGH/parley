@@ -1,5 +1,6 @@
 import{scheduleDialog}from'./schedule.js'
-import{h,mount,clear,icon,gtag,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey}from'./util.js'
+import{translateMsg,catchUp,remind,remindDialog,parseDelay}from'./tools.js'
+import{h,mount,clear,icon,gtag,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey,tzo}from'./util.js'
 import{render,plain}from'./md.js'
 import{emojiPicker}from'./emoji.js'
 import{S,P,on,emit,cacheUser,user,isDm,chanInfo,conv,convTitle,roomPerms,setting,hubOf,loadMembers,can}from'./state.js'
@@ -287,7 +288,7 @@ const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click
 const un=tw('show_username')&&m.author.username?h('span',{class:'hint tw-un'},'@'+m.author.username):null
 const bdg=m.author.badge?h('span',{class:'bdg-i '+m.author.badge,title:'Badge'}):null
 const ttl=m.author.title?h('span',{class:'ttl '+m.author.title}):null
-main.append(h('div',{class:'mh'},nm,un,bdg,ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString()},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
+main.append(h('div',{class:'mh'},nm,un,bdg,ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString(undefined,tzo()),'data-t':m.created_at},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
 if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
@@ -377,6 +378,8 @@ if(m.content)items.push({icon:'copy',label:'Copy text',fn:()=>copyText(m.content
 const path=isDm(C.room)?`/dm/${C.room}`:`/s/${info?.sid}/${C.room}`
 items.push({icon:'link',label:'Copy link',fn:()=>copyText(`${location.origin}${path}?m=${m.id}`)})
 if(tw('dev_ids')){items.push({icon:'copy',label:'Copy message ID',fn:()=>copyText(m.id)},{icon:'copy',label:'Copy user ID',fn:()=>copyText(m.author.id)},{icon:'copy',label:'Copy channel ID',fn:()=>copyText(C.room)})}
+if(m.content)items.push({icon:'globe',label:'Translate',fn:()=>translateMsg(m.content)})
+items.push({icon:'clock',label:'Remind me',fn:()=>remindDialog(m)})
 items.push({icon:'bookmark',label:'Save message',fn:async()=>{try{await PUT('/api/saved/'+m.id);toast('Saved','ok')}catch(e){fail(e)}}})
 if(!own&&info&&can(info.sid,P.MODERATE)&&m.author.id!==S.me.id)items.push({icon:'flag',label:'Warn author',fn:()=>warnDialog(info.sid,m.author,m.id)})
 if(!own)items.push({icon:'flag',label:'Report message',fn:()=>emit('ui:report',{type:'message',id:m.id})})
@@ -712,6 +715,8 @@ if(!C.editing){
 const sl=slash(raw)
 if(sl.error){toast(sl.error,'err');return}
 if(sl.gif!==undefined){C.ta.value='';autoGrow();openGif(sl.gif);return}
+if(sl.catchup){C.ta.value='';autoGrow();catchUp(C.room);return}
+if(sl.remind){const mn=parseDelay(sl.remind.when);if(!mn){toast('Use a time like 30m, 2h or 1d','err');return}C.ta.value='';autoGrow();remind(mn,sl.remind.note);return}
 raw=sl.text
 }
 const text=encodeMentions(raw)

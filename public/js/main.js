@@ -1,4 +1,4 @@
-import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce}from'./util.js'
+import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce,fmtStamp}from'./util.js'
 import{render}from'./md.js'
 import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
 import{setRooms,sendAll,stopAll}from'./net.js'
@@ -317,6 +317,7 @@ break
 case'safety.removed':toast('A message of yours was removed because this server scans for explicit content','err');break
 case'pars.gift':emit('pars.gift',m);break
 case'notif':
+if(m.remind)toast('Reminder: '+m.remind,'ok')
 S.notifN++
 emit('notifn')
 reloadUnread()
@@ -455,7 +456,10 @@ try{await GET('/api/me')}catch(e){if(e.status===401)showAuth('Your session has e
 on('voice:update',()=>{
 if(S.me)setRooms(desiredRooms())
 })
-on('settings',()=>{renderCtx();refreshComposer()})
+const retime=()=>document.querySelectorAll('.mh time[data-t]').forEach(e=>{const t=fmtStamp(+e.dataset.t);if(e.textContent!==t)e.textContent=t})
+on('settings',()=>{renderCtx();refreshComposer();retime()})
+setInterval(retime,30000)
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)retime()})
 
 addEventListener('keydown',e=>{
 if(!S.me)return
