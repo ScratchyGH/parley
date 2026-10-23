@@ -23,6 +23,7 @@ import{whatsNew}from'./whatsnew.js'
 import{tosGate}from'./legal.js'
 import{checkOffer}from'./exp.js'
 import{startRevamp}from'./revamp.js'
+import{startUpdates}from'./update.js'
 import{maybeTour}from'./tour.js'
 
 const root=document.getElementById('app')
@@ -75,6 +76,7 @@ await route()
 startPars()
 startDiag()
 startRevamp()
+startUpdates()
 setTimeout(whatsNew,1200)
 setTimeout(maybeTour,2600)
 }
