@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,avatar,toast,fail,popup,field,toggle}from'./util.js'
+import{h,mount,icon,GET,POST,avatar,toast,fail,popup,field,toggle,dialog}from'./util.js'
 import{tone,desktop}from'./notify.js'
 import{S,on,emit,conv}from'./state.js'
 import{send as wsSend,isOpen}from'./net.js'
@@ -24,6 +24,42 @@ let timers=[]
 const sig=(to,data)=>wsSend(V.hub,{t:'sig',to,ch:V.ch,data})
 const setState=()=>wsSend(V.hub,{t:'voice.state',m:V.muted||V.deaf,d:V.deaf,vid:!!V.cam,scr:!!V.scr,h:!!V.hand})
 
+const micWhy=e=>{
+const n=e&&e.name
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return['Microphone not available here','This page cannot reach a microphone. Open Parley directly in Chrome, Edge, Firefox or Safari (not inside another app) and make sure the address starts with https.']
+if(n==='NotAllowedError'||n==='SecurityError')return['Allow microphone access','Your browser is blocking the microphone for Parley. Click the lock or tune icon next to the address bar, set Microphone to Allow, then press Allow microphone below. On a phone, also check that your browser is allowed to use the microphone in system settings.']
+if(n==='NotFoundError'||n==='OverconstrainedError')return['No microphone found','Plug in or enable a microphone, then press Allow microphone below. If you picked a specific microphone in voice settings, it may be unplugged.']
+if(n==='NotReadableError'||n==='AbortError')return['Your microphone is busy','Another app or tab is using your microphone. Close it, then press Allow microphone below.']
+return['Microphone problem',(e&&e.message)||'The microphone could not be started.']
+}
+const micOpts=()=>{const pr=voicePrefs();return{audio:{deviceId:pr.input?{ideal:pr.input}:undefined,echoCancellation:pr.echo,noiseSuppression:pr.noise,autoGainControl:pr.agc},video:false}}
+function askMic(first){
+return new Promise(res=>{
+let done=false
+const title=h('b',null),msg=h('p',{style:{margin:'8px 0 0'}})
+const set=e=>{const[t,m]=micWhy(e);title.textContent=t;msg.textContent=m}
+set(first)
+const finish=v=>{if(done)return;done=true;res(v)}
+const d=dialog('Microphone needed',h('div',{class:'bd'},h('div',{style:{display:'flex',gap:'12px',alignItems:'flex-start'}},icon('mic'),h('div',null,title,msg))),{sticky:true,onclose:()=>finish(null),footer:close=>[
+h('button',{class:'btn',on:{click:()=>{close()}}},'Continue without microphone'),
+h('button',{class:'btn pri',on:{click:async()=>{
+try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('none');const st=await navigator.mediaDevices.getUserMedia(micOpts());done=true;d.close();res(st)}catch(e){set(e)}
+}}},'Allow microphone')
+]})
+})
+}
+export async function enableMic(){
+if(!V.ch||V.mic)return
+const st=await askMic(null)
+if(!st)return
+V.mic=st
+V.muted=false
+for(const p of V.peers.values()){for(const t of st.getAudioTracks())p.senders.mic=p.pc.addTrack(t,st)}
+watchStream('me',st)
+for(const uid of V.peers.keys())setTimeout(()=>sendKinds(uid),300)
+setState()
+emit('voice:update')
+}
 export async function joinVoice({ch,hub,label,path,stage}){
 if(V.joining)return
 if(V.ch===ch)return
@@ -38,12 +74,11 @@ const pr=voicePrefs()
 V.muted=false
 V.deaf=false
 try{
-if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('this browser or in-app view blocks microphone access, open Parley in Chrome or Safari')
-V.mic=await navigator.mediaDevices.getUserMedia({audio:{deviceId:pr.input?{ideal:pr.input}:undefined,echoCancellation:pr.echo,noiseSuppression:pr.noise,autoGainControl:pr.agc},video:false})
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('none')
+V.mic=await navigator.mediaDevices.getUserMedia(micOpts())
 }catch(e){
-V.mic=null
-V.muted=true
-toast('Microphone unavailable ('+(e.name==='NotAllowedError'?'permission denied':e.message)+'). Joined listen-only.','err')
+V.mic=await askMic(e)
+if(!V.mic){V.muted=true;toast('Joined listen-only. Press the microphone button any time to turn it on.')}
 }
 V.ch=ch;V.hub=hub;V.label=label;V.path=path
 V.joined=false
@@ -237,7 +272,7 @@ setState()
 emit('voice:update')
 }
 export const toggleMute=()=>{
-if(!V.mic){toast('No microphone is available','err');return}
+if(!V.mic){enableMic();return}
 if(V.deaf){setDeaf(false);return}
 setMuted(!V.muted)
 }
@@ -309,7 +344,7 @@ for(const p of V.peers.values())await tuneSender(p.senders.scr)
 export async function toggleScreen(){
 if(!V.ch)return
 if(V.scr){stopScreen();return}
-if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){toast('Screen sharing is not supported in this browser','err');return}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){toast(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?'Your phone browser cannot share its screen. You can still watch others share, or share from a computer.':'Screen sharing is not supported in this browser. Try Chrome, Edge, Firefox or Safari on a computer.','err');return}
 const pr=voicePrefs()
 try{
 V.scr=await navigator.mediaDevices.getDisplayMedia({video:scrConstraints(pr),audio:pr.scrAudio?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false})
@@ -550,7 +585,7 @@ btn(V.deaf?'deaf':'headphones',V.deaf?'Undeafen':'Deafen',toggleDeaf,V.deaf?'on'
 btn(V.cam?'video':'videooff',V.cam?'Turn camera off':'Turn camera on',toggleCam,V.cam?'on':''),
 btn('hand',V.hand?'Lower hand':'Raise hand',toggleHand,V.hand?'on':''),
 btn('screen',V.scr?'Stop sharing screen':'Share screen',toggleScreen,V.scr?'on':''),
-conv(chId)?.members?.length>2?h('button',{class:'ib',title:'Add people to this call','aria-label':'Add people to this call',on:{click:e=>invitePeople(chId,e.currentTarget)}},icon('plus')):null,
+...(conv(chId)?.members?.length>2?[h('button',{class:'ib',title:'Add people to this call','aria-label':'Add people to this call',on:{click:e=>invitePeople(chId,e.currentTarget)}},icon('plus'))]:[]),
 btn('sliders','Voice settings',()=>emit('ui:voicesettings')),
 btn('leave','Disconnect',leaveVoice,'dng'))
 }else bar.append(h('button',{class:'btn pri',on:{click:()=>joinVoice({ch:chId,hub,label,path,stage})}},icon(stage?'hand':'volume','s'),stage?'Join stage':'Join voice'),h('button',{class:'btn',on:{click:()=>emit('ui:voicesettings')}},icon('sliders','s'),'Settings'))
