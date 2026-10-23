@@ -75,3 +75,7 @@
 .hw-rush .hw-play-t h3{color:#ffb347}
 .hw-rush .hw-rec::before{background:#ff7a1a}
 .hw-rushg{background:#0c0913}
+.hw-fb{display:flex;flex-direction:column;gap:8px;min-width:220px}
+.hw-fr{display:grid;grid-template-columns:54px 1fr 24px;align-items:center;gap:8px;font-size:13px}
+.hw-fr input[type=range]{width:100%}
+.hw-fr input[type=checkbox]{justify-self:start}
