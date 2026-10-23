@@ -38,6 +38,7 @@ const pr=voicePrefs()
 V.muted=false
 V.deaf=false
 try{
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('this browser or in-app view blocks microphone access, open Parley in Chrome or Safari')
 V.mic=await navigator.mediaDevices.getUserMedia({audio:{deviceId:pr.input?{ideal:pr.input}:undefined,echoCancellation:pr.echo,noiseSuppression:pr.noise,autoGainControl:pr.agc},video:false})
 }catch(e){
 V.mic=null
@@ -98,9 +99,26 @@ V.speaking.delete(uid)
 emit('voice:streams')
 }
 
+function routeAudio(p){
+let micId=null
+for(const[id,st]of p.astreams)if(p.kinds[id]==='mic'||(!p.kinds[id]&&micId==null&&!Object.values(p.kinds).includes('screenaudio')))micId=micId||id
+for(const[id,st]of p.astreams){
+const k=p.kinds[id]
+const scr=k==='screenaudio'||(k!=='mic'&&micId!=null&&id!==micId)
+if(scr){
+if(!p.scrAudioEl){p.scrAudioEl=new Audio();p.scrAudioEl.autoplay=true;sink.append(p.scrAudioEl);const pr=voicePrefs();if(pr.output&&p.scrAudioEl.setSinkId)p.scrAudioEl.setSinkId(pr.output).catch(()=>{})}
+if(p.scrAudioEl.srcObject!==st)p.scrAudioEl.srcObject=st
+p.scrAudioEl.muted=V.deaf;p.scrAudioEl.volume=p.vol
+}else{
+if(!p.audioEl){p.audioEl=new Audio();p.audioEl.autoplay=true;sink.append(p.audioEl);const pr=voicePrefs();if(pr.output&&p.audioEl.setSinkId)p.audioEl.setSinkId(pr.output).catch(()=>{})}
+if(p.audioEl.srcObject!==st){p.audioEl.srcObject=st;watchStream(p.uid,st)}
+p.audioEl.muted=V.deaf;p.audioEl.volume=p.vol
+}
+}
+}
 function mkPeer(uid){
 const pc=new RTCPeerConnection({iceServers:V.ice})
-const p={uid,pc,polite:S.me.id<uid,making:false,ignore:false,streams:new Map(),kinds:{},senders:{},audioEl:null,vol:1}
+const p={uid,pc,astreams:new Map(),polite:S.me.id<uid,making:false,ignore:false,streams:new Map(),kinds:{},senders:{},audioEl:null,vol:1}
 V.peers.set(uid,p)
 pc.onicecandidate=e=>{if(e.candidate)sig(uid,{cand:e.candidate})}
 pc.onnegotiationneeded=async()=>{
@@ -113,21 +131,9 @@ emit('voice:streams')
 }
 pc.ontrack=e=>{
 const stream=e.streams[0]||new MediaStream([e.track])
-if(e.track.kind==='audio'&&p.kinds[stream.id]==='screenaudio'){
-if(!p.scrAudioEl){p.scrAudioEl=new Audio();p.scrAudioEl.autoplay=true;sink.append(p.scrAudioEl);const pr=voicePrefs();if(pr.output&&p.scrAudioEl.setSinkId)p.scrAudioEl.setSinkId(pr.output).catch(()=>{})}
-p.scrAudioEl.srcObject=stream;p.scrAudioEl.muted=V.deaf;p.scrAudioEl.volume=p.vol
-}else if(e.track.kind==='audio'){
-if(!p.audioEl){
-p.audioEl=new Audio()
-p.audioEl.autoplay=true
-sink.append(p.audioEl)
-const pr=voicePrefs()
-if(pr.output&&p.audioEl.setSinkId)p.audioEl.setSinkId(pr.output).catch(()=>{})
-}
-p.audioEl.srcObject=stream
-p.audioEl.muted=V.deaf
-p.audioEl.volume=p.vol
-watchStream(uid,stream)
+if(e.track.kind==='audio'){
+p.astreams.set(stream.id,stream)
+routeAudio(p)
 }else{
 p.streams.set(stream.id,stream)
 e.track.onended=()=>{if(!stream.getTracks().some(t=>t.readyState==='live')){p.streams.delete(stream.id);emit('voice:streams')}}
@@ -135,16 +141,18 @@ stream.onremovetrack=()=>{if(!stream.getVideoTracks().length){p.streams.delete(s
 emit('voice:streams')
 }
 }
-if(V.cam||V.scr)sendKinds(uid)
+sendKinds(uid)
+if(!V.mic)pc.addTransceiver('audio',{direction:'recvonly'})
 if(V.mic)for(const t of V.mic.getAudioTracks())p.senders.mic=pc.addTrack(t,V.mic)
 if(V.cam)for(const t of V.cam.getVideoTracks())p.senders.cam=pc.addTrack(t,V.cam)
 if(V.scr)for(const t of V.scr.getVideoTracks()){p.senders.scr=pc.addTrack(t,V.scr);tuneSender(p.senders.scr)}
 if(V.scrA)for(const t of V.scrA.getAudioTracks())p.senders.scrA=pc.addTrack(t,V.scrA)
-if(V.cam||V.scr)setTimeout(()=>sendKinds(uid),300)
+setTimeout(()=>sendKinds(uid),300)
 return p
 }
 function kindsMap(){
 const o={}
+if(V.mic)o[V.mic.id]='mic'
 if(V.cam)o[V.cam.id]='cam'
 if(V.scr)o[V.scr.id]='screen'
 if(V.scrA)o[V.scrA.id]='screenaudio'
@@ -152,12 +160,16 @@ return o
 }
 function sendKinds(uid){sig(uid,{streams:kindsMap()})}
 
-async function handleSig(from,data){
+function handleSig(from,data){
 if(!V.ch)return
 const p=V.peers.get(from)||mkPeer(from)
+p.q=(p.q||Promise.resolve()).then(()=>doSig(p,from,data)).catch(()=>{})
+return p.q
+}
+async function doSig(p,from,data){
 const pc=p.pc
 try{
-if(data.streams){p.kinds=data.streams;emit('voice:streams');return}
+if(data.streams){p.kinds=data.streams;routeAudio(p);emit('voice:streams');return}
 if(typeof data.cap==='string'){if(voicePrefs().captions)emit('voice:caption',{uid:from,text:data.cap.slice(0,200)});return}
 if(data.desc){
 const collision=data.desc.type==='offer'&&(p.making||pc.signalingState!=='stable')
@@ -297,7 +309,7 @@ for(const p of V.peers.values())await tuneSender(p.senders.scr)
 export async function toggleScreen(){
 if(!V.ch)return
 if(V.scr){stopScreen();return}
-if(!navigator.mediaDevices.getDisplayMedia){toast('Screen sharing is not supported in this browser','err');return}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){toast('Screen sharing is not supported in this browser','err');return}
 const pr=voicePrefs()
 try{
 V.scr=await navigator.mediaDevices.getDisplayMedia({video:scrConstraints(pr),audio:pr.scrAudio?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false})
