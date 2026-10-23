@@ -115,7 +115,7 @@ async function startNight(night,rerender){
 let run
 try{run=(await POST(API+'/night/start',{night})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
-const [{playNight}]=await Promise.all([import('./nightshift.js')])
+const [{playNight}]=await Promise.all([import('/g3d/nightshift3d.js')])
 const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the shift'},'Leave shift')
 const root=h('div',{class:'hw-game',role:'dialog','aria-modal':'true','aria-label':'Night Shift'},box,closeBtn)
