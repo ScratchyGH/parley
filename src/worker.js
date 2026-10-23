@@ -92,14 +92,15 @@ return{ok:true,time:now(),build:(c.env.CF_VERSION_METADATA&&c.env.CF_VERSION_MET
 router.add('GET','/api/rtc/ice',async c=>{
 limit('ice:'+c.user.id,30,60000)
 const fallback=[{urls:['stun:stun.cloudflare.com:3478']}]
-if(!c.env.TURN_KEY_ID||!c.env.TURN_API_TOKEN)return{iceServers:fallback,turn:false}
+const relay=[{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}]
+if(!c.env.TURN_KEY_ID||!c.env.TURN_API_TOKEN)return{iceServers:[...fallback,...relay],turn:true}
 try{
 const res=await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${c.env.TURN_KEY_ID}/credentials/generate-ice-servers`,{method:'POST',headers:{authorization:'Bearer '+c.env.TURN_API_TOKEN,'content-type':'application/json'},body:JSON.stringify({ttl:43200})})
-if(!res.ok)return{iceServers:fallback,turn:false}
+if(!res.ok)return{iceServers:[...fallback,...relay],turn:true}
 const d=await res.json()
 const list=Array.isArray(d.iceServers)?d.iceServers:d.iceServers?[d.iceServers]:[]
 return{iceServers:[...fallback,...list.filter(s=>s.username)],turn:true}
-}catch{return{iceServers:fallback,turn:false}}
+}catch{return{iceServers:[...fallback,...relay],turn:true}}
 })
 
 let maint={v:false,t:0}
