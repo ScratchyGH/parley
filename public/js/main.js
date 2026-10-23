@@ -1,3 +1,4 @@
+import'./halloween.js'
 import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce,fmtStamp}from'./util.js'
 import{render}from'./md.js'
 import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
@@ -17,6 +18,7 @@ import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
+import{startHollow,hollowPage,pumpkinSvg}from'./hollow.js'
 import{showOverlay,hideOverlay}from'./overlay.js'
 import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
@@ -75,6 +77,7 @@ await Promise.all([loadServers(),loadConvs(),loadFriends(),loadUnread().catch(()
 setRouteHandler(route)
 await route()
 startPars()
+startHollow()
 startDiag()
 startRevamp()
 startUpdates()
@@ -99,7 +102,7 @@ const r=parse()
 cleanup?.();cleanup=null
 closeChat()
 closeDrawers()
-if(r.name!=='pars'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
+if(r.name!=='pars'&&r.name!=='hollow'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
 const closeOv=()=>go(lastPath||'/')
 const needBack=async()=>{if(lastPath===null){lastPath='/';await renderHome('overview')}}
 if(r.name==='invite'){
@@ -125,6 +128,16 @@ const pg=h('div',{class:'par-page'})
 parsPage(pg)
 showOverlay('pars','Pars shop',parIcon(20),pg,closeOv)
 document.title='Pars shop • Parley'
+return
+}
+if(r.name==='hollow'){
+await needBack()
+S.nav={kind:'hollow'}
+syncChrome()
+const pg=h('div',{class:'par-page'})
+hollowPage(pg)
+showOverlay('hollow','Haunted Hollow',pumpkinSvg(20),pg,closeOv)
+document.title='Haunted Hollow • Parley'
 return
 }
 if(r.name==='settings'&&r.page==='pars'){go('/pars',true);return}

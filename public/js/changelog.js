@@ -1,5 +1,12 @@
-export const VERSION='2026.10.38'
+export const VERSION='2026.10.39'
 export const RELEASES=[
+{v:'2026.10.39',date:'October 23, 2026',title:'Hollowgrin Harvest',summary:'A Halloween takeover with a quest event, 3D Night Shift tapes, hidden pumpkins and pumpkin gifts.',sections:[
+['Event',[
+['Hollowgrin Harvest','Open the pumpkin button in the left bar. Finish nightly and daily quests, earn candy and XP, climb 24 reward tiers and find 13 hidden pumpkins around the app. Runs through October 31.'],
+['Night Shift','Survive five nights in a 3D office. Close the door on Gourd Gus, flash the lamp at Pippa Pale and wind Mr. Rattlejack. Watch your power.'],
+['Pumpkin gifts','Spend 40 candy to send another member a pumpkin. It might be a treat or a trick.']]],
+['Appearance',[
+['Halloween theme','Fog, cobwebs and ember colors across the site through October. Gifts now open as a glowing jack-o-lantern and there are new Hollow frames, badges, titles and bubbles.']]]]},
 {v:'2026.10.30',date:'October 22, 2026',title:'Bigger bot editor and a sortable server list',summary:'34 new bot blocks, a pan and zoom canvas with hover help, drag to reorder your servers, and Parli-Bold as a whole-site font.',sections:[
 ['Bot blocks',[
 ['34 new blocks','New triggers for replies, @everyone, invites, shouting, long messages, banned words, emoji spam and mention spam. New checks for channel, owner, new members, weekday, word lists and two-part conditions. New moderation blocks to warn, kick, ban, delete recent messages, set slow mode, change nicknames, end time outs and notify a member. New data blocks to save and load text, read counters, take a word, join text, read the clock and look up member or server info.'],

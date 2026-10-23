@@ -1,6 +1,10 @@
 import{h,GET,POST,icon,sleep}from'./util.js'
 import{swatch,parIcon}from'./pars.js'
+import{candySvg}from'./hollow.js'
+import{hwOn}from'./halloween.js'
 let busy=false
+let cssOn=false
+const loadCss=()=>{if(cssOn)return;cssOn=true;document.head.append(h('link',{rel:'stylesheet',href:'/pumpkin.css'}))}
 const shown=new Set()
 const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches
 const face=(cls,t)=>h('div',{class:'gx-f '+cls,style:{transform:t}})
@@ -12,7 +16,18 @@ function lid(){
 const w=78,hh=22,faces=[['gx-lside','rotateY(0deg) translateZ('+w+'px)'],['gx-lside','rotateY(90deg) translateZ('+w+'px)'],['gx-lside','rotateY(180deg) translateZ('+w+'px)'],['gx-lside','rotateY(-90deg) translateZ('+w+'px)'],['gx-ltop','rotateX(90deg) translateZ('+hh+'px)'],['gx-lbot','rotateX(-90deg) translateZ('+hh+'px)']]
 return h('div',{class:'gx-lid'},...faces.map(([c,t])=>face(c,t)),h('div',{class:'gx-bow'},h('i'),h('i'),h('b')))
 }
+function ribs(){
+return Array.from({length:8},(_,i)=>face('gx-rib','rotateY('+i*22.5+'deg)'))
+}
+function pumpkin(){
+return h('div',{class:'gx-box gx-pk'},...ribs(),h('div',{class:'gx-face',style:{transform:'translateZ(77px)'}},h('i',{class:'gx-eye'}),h('i',{class:'gx-eye r'}),h('i',{class:'gx-nose'}),h('i',{class:'gx-mouth'})))
+}
+function stem(){
+const ps=[0,45,90,135].map(a=>face('gx-stm','rotateY('+a+'deg)'))
+return h('div',{class:'gx-lid gx-stemw'},...ps,face('gx-leaf','translate3d(10px,26px,0) rotateZ(-30deg)'))
+}
 function item(g){
+if(g.kind==='candy')return h('div',{class:'gx-item'},h('div',{class:'gx-cd'},candySvg(84)),h('b',null,g.label))
 if(g.kind==='pars')return h('div',{class:'gx-item'},parIcon(64),h('b',null,g.label))
 if(g.kind==='bundle')return h('div',{class:'gx-item'},h('div',{class:'gx-big'},icon('gift')),h('b',null,g.label))
 const sw=swatch({kind:g.kind,id:g.item_id,name:g.label,mb:0})
@@ -23,9 +38,12 @@ return new Promise(done=>{
 const root=h('div',{class:'gx',role:'dialog','aria-label':'You received a gift'})
 const title=h('div',{class:'gx-t'},h('b',null,g.from_name),' sent you a gift')
 const it=item(g)
-const L=lid(),B=box()
+const hw=hwOn()
+if(hw)loadCss()
+const L=hw?stem():lid(),B=hw?pumpkin():box()
 const stage=h('div',{class:'gx-stage'},h('div',{class:'gx-shadow'}),h('div',{class:'gx-3d'},B,L),it)
 const ok=h('button',{class:'btn pri gx-ok',on:{click:()=>{root.classList.add('gx-out');setTimeout(()=>{root.remove();done()},350)}}},'Nice!')
+if(hw)root.classList.add('gx-hw')
 root.append(h('div',{class:'gx-glow'}),title,stage,ok)
 document.body.append(root)
 if(reduce()){root.classList.add('gx-still');root.insertBefore(it,ok);return}

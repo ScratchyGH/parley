@@ -15,6 +15,8 @@ import{openServerSettings,channelSettings,leaveServer}from'./ssettings.js'
 import{accountsDialog}from'./accounts.js'
 import{eventsDialog}from'./dialogs2.js'
 import{streakChip}from'./streakui.js'
+import{hollowBtn,onHollow}from'./hollow.js'
+import{hwOn}from'./halloween.js'
 
 export const el={}
 let panel=null
@@ -66,6 +68,7 @@ if(u.mentions)return h('span',{class:'bdg'},u.mentions>99?'99+':u.mentions)
 return null
 }
 
+onHollow(()=>{if(el.rail)renderRail()})
 export function renderRail(){
 if(!el.rail)return
 const kids=[]
@@ -89,6 +92,7 @@ w.addEventListener('drop',e=>{if(!dragId||dragId===s.id)return;e.preventDefault(
 kids.push(w)
 }
 kids.push(h('button',{class:'wbtn',title:'Create or join a server','aria-label':'Create or join a server',on:{click:()=>createServerDialog()}},icon('plus')))
+if(hwOn())kids.push(hollowBtn(S.nav.kind==='hollow',go))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='discover'?' on':''),title:'Discover servers','aria-label':'Discover servers',on:{click:()=>go('/discover')}},icon('compass')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='lab'?' on':''),title:'Bot Lab','aria-label':'Bot Lab','aria-current':S.nav.kind==='lab'?'page':null,on:{click:()=>go('/lab')}},icon('flask')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='bots'?' on':''),title:'Bots','aria-label':'Bots','aria-current':S.nav.kind==='bots'?'page':null,on:{click:()=>go('/bots')}},icon('bot')))
