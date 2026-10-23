@@ -6,6 +6,9 @@ import{VC,fail,now,newId,msgId,str,limit,body,json,clamp,placeholders}from'./uti
 import{P,resolveRoom,loadMember,chanPerms,visibleChannels}from'./perms.js'
 import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
+import{antispam}from'./antispam.js'
+import{touchStreak}from'./streaks.js'
+import{transcribeClips}from'./voice.js'
 import{runBlocks}from'./blocks.js'
 import{place}from'./store.js'
 import{pushTo}from'./push.js'
@@ -34,7 +37,7 @@ const pollIds=rows.filter(r=>r.has_poll).map(r=>r.id)
 const thIds=[...new Set(rows.map(r=>r.thread_id).filter(Boolean))]
 const[au,at,rx,rp,pd,th]=await Promise.all([
 q(`select u.id,u.username,u.display_name,u.avatar_id,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,u.title,u.bubble,${GTAG} from users u where u.id in (${placeholders(authors)})`,...authors),
-q(`select id,message_id,name,mime,size,sha256 from files where message_id in (${placeholders(ids)})`,...ids),
+q(`select id,message_id,name,mime,size,sha256,transcript from files where message_id in (${placeholders(ids)})`,...ids),
 q(`select message_id,emoji,count(*) n,max(user_id=?) me from reactions where message_id in (${placeholders(ids)}) group by message_id,emoji order by min(rowid)`,meId,...ids),
 replies.length?q(`select m.id,m.content,m.deleted_at,u.id uid,u.display_name from messages m join users u on u.id=m.author_id where m.id in (${placeholders(replies)})`,...replies):[],
 pollIds.length?pollData(env,pollIds,meId):{},
@@ -132,6 +135,7 @@ if(nonce){
 const ex=await c.env.DB.prepare('select * from messages where author_id=? and nonce=?').bind(c.user.id,nonce).first()
 if(ex)return{message:(await hydrate(c.env,[ex],c.user.id))[0],duplicate:true}
 }
+await antispam(c,rr,content,attIds.length>0)
 await automod(c.env,rr,content)
 await extBlock(c.env,rr,content,stk)
 await labsBefore(c,rr,content)
@@ -217,6 +221,8 @@ await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEve
 labsAfter(c,rr,message)
 if(rr.kind==='channel'&&!c.user.is_bot)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
 if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
+if(files.length)c.ec.waitUntil(transcribeClips(c,rr,id,files.map(f=>f.id),publishMsg,hydrate).catch(()=>{}))
+if(rr.kind==='dm'&&rr.conv&&rr.conv.type==='dm')c.ec.waitUntil(touchStreak(c,rr.room,content).catch(()=>{}))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})
 if(c.env.VAPID_PRIVATE_JWK){

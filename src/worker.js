@@ -33,6 +33,7 @@ import backupRoutes,{dailyBackup}from'./backup.js'
 import legalRoutes from'./legal.js'
 import modaiRoutes from'./modai.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
+import streakRoutes from'./streaks.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
 import{d1Store}from'./store.js'
@@ -72,6 +73,7 @@ scheduleRoutes(router)
 legalRoutes(router)
 modaiRoutes(router)
 toolsRoutes(router)
+streakRoutes(router)
 caseRoutes(router)
 templateRoutes(router)
 gifRoutes(router)

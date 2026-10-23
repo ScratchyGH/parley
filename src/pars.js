@@ -90,23 +90,37 @@ const rows=(await c.env.DB.prepare('select id,delta,kind,note,created_at from pa
 return{tx:rows}
 })
 r.add('POST','/api/pars/beat',async c=>{
-const b=await body(c.req,500)
+const b=await body(c.req,800)
 const cfg=await parsCfg(c.env)
 const t=now(),day=dayOf(t)
-const i=clamp(b.i,0,0,12)
+const w=(Array.isArray(b.w)?b.w:[]).slice(0,12).map(x=>clamp(x,0,0,60))
+while(w.length<12)w.push(0)
+const act=w.filter(x=>x>0).length,ev=w.reduce((x,y)=>x+y,0)
+const kk=clamp(b.k,0,0,500),cc=clamp(b.c,0,0,500),ss=clamp(b.s,0,0,500),mm=clamp(b.m,0,0,5000)
+const hard=kk+cc+ss
+const kinds=(kk>0)+(cc>0)+(ss>0)+(mm>0)
 let row=await c.env.DB.prepare('select * from par_beats where user_id=?').bind(c.user.id).first()
 if(!row){
-await c.env.DB.prepare('insert or ignore into par_beats(user_id,last_beat,day) values(?,?,?)').bind(c.user.id,t,day).run()
+await c.env.DB.prepare('insert or ignore into par_beats(user_id,last_beat,day,check_at) values(?,?,?,?)').bind(c.user.id,t,day,t+(20+Math.random()*25)*60000).run()
 return{earned:0,balance:await bal(c.env,c.user.id)}
 }
 const dt=t-row.last_beat
 if(dt<50000)return{earned:0,balance:await bal(c.env,c.user.id)}
 if(row.day!==day){row.day=day;row.day_ms=0;row.strikes=0}
-const same=i===row.last_i&&i>0&&i<12?row.same+1:0
 let strikes=row.strikes
-if(same>=6)strikes++
-const valid=b.v===true&&i>=4&&dt<=180000&&strikes<3&&same<6
-let credit=valid?Math.min(dt,120000):0
+const vec=w.join('.')
+let sig=[];try{sig=JSON.parse(row.sig||'[]')}catch{}
+const nz=w.filter(x=>x>0)
+const flat=nz.length>=6&&ev>=12&&nz.every(x=>x===nz[0])
+const repeat=ev>0&&sig.includes(vec)
+if(repeat||flat)strikes++
+sig=[...sig,vec].slice(-6)
+let checkAt=row.check_at,tok=row.check_tok,sent=row.check_sent,paused=row.paused
+if(!checkAt)checkAt=t+(20+Math.random()*25)*60000
+if(sent&&t-sent>180000)paused=1
+if(!sent&&checkAt<=t){tok=Math.random().toString(36).slice(2,14);sent=t}
+const human=b.v===true&&act>=4&&ev>=8&&kinds>=2&&hard>=2&&dt<=180000&&strikes<3&&!repeat&&!flat&&!paused
+let credit=human?Math.min(dt,120000):0
 const cap=cfg.dailyHours*3600000
 if(row.day_ms+credit>cap)credit=Math.max(0,cap-row.day_ms)
 const per=3600000/Math.max(1,cfg.rate)
@@ -114,7 +128,7 @@ let cm=row.credit_ms+credit
 const n=Math.floor(cm/per)
 cm-=n*per
 const total=row.total_ms+credit
-const st=[c.env.DB.prepare('update par_beats set last_beat=?,credit_ms=?,total_ms=?,day=?,day_ms=?,strikes=?,last_i=?,same=? where user_id=?').bind(t,cm,total,day,row.day_ms+credit,strikes,i,same,c.user.id)]
+const st=[c.env.DB.prepare('update par_beats set last_beat=?,credit_ms=?,total_ms=?,day=?,day_ms=?,strikes=?,last_i=?,same=?,sig=?,check_at=?,check_tok=?,check_sent=?,paused=?,hard_at=? where user_id=?').bind(t,cm,total,day,row.day_ms+credit,strikes,act,0,JSON.stringify(sig),checkAt,tok,sent,paused,hard?t:row.hard_at,c.user.id)]
 let earned=n
 if(n>0)st.push(txRow(c.env,c.user.id,n,'earn','',n+' Par'+(n>1?'s':'')+' for active use'),c.env.DB.prepare('update users set pars=pars+? where id=?').bind(n,c.user.id))
 const h0=row.total_ms/3600000,h1=total/3600000
@@ -125,7 +139,24 @@ earned+=amt
 notes.push(h+' hours milestone: +'+amt)
 }
 try{await c.env.DB.batch(st)}catch(e){if(!String(e.message).includes('UNIQUE'))throw e}
-return{earned,notes,balance:await bal(c.env,c.user.id)}
+return{earned,notes,balance:await bal(c.env,c.user.id),check:sent?{tok,at:sent}:null,paused:!!paused,counting:human}
+})
+r.add('POST','/api/pars/ack',async c=>{
+limit('ack:'+c.user.id,10,60000)
+const b=await body(c.req,300)
+const t=now()
+const row=await c.env.DB.prepare('select check_tok,check_sent,strikes from par_beats where user_id=?').bind(c.user.id).first()
+if(!row||!row.check_sent||String(b.tok||'')!==row.check_tok){
+await c.env.DB.prepare('update par_beats set strikes=strikes+1 where user_id=?').bind(c.user.id).run()
+return{ok:false}
+}
+const ms=clamp(b.ms,0,0,3600000)
+if(ms<350||t-row.check_sent<350){
+await c.env.DB.prepare('update par_beats set strikes=strikes+1 where user_id=?').bind(c.user.id).run()
+return{ok:false}
+}
+await c.env.DB.prepare("update par_beats set paused=0,check_sent=0,check_tok='',check_at=? where user_id=?").bind(t+(25+Math.random()*25)*60000,c.user.id).run()
+return{ok:true}
 })
 r.add('POST','/api/pars/buy',async c=>{
 limit('parb:'+c.user.id,30,60000)
