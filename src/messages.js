@@ -8,7 +8,6 @@ import{automod,pollData}from'./extras.js'
 import{signMsg}from'./sign.js'
 import{antispam}from'./antispam.js'
 import{touchStreak}from'./streaks.js'
-import{transcribeClips}from'./voice.js'
 import{runBlocks}from'./blocks.js'
 import{place}from'./store.js'
 import{pushTo}from'./push.js'
@@ -126,7 +125,7 @@ if(b.attachments&&(rr.perms&P.ATTACH))fwdFiles=(await c.env.DB.prepare("select *
 }
 content=content.trim()
 if(content.length>MAX_LEN)fail(413,`Messages can be up to ${MAX_LEN} characters`)
-const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))].slice(0,10):[]
+const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))].slice(0,24):[]
 let stk=null
 if(b.sticker_id){stk=await stickerFor(c.env,String(b.sticker_id),c.user.id);if(!stk)fail(400,'Sticker not available')}
 if(!content&&!attIds.length&&!stk&&!fwdFiles.length)fail(400,'Message is empty')
@@ -221,7 +220,6 @@ await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEve
 labsAfter(c,rr,message)
 if(rr.kind==='channel'&&!c.user.is_bot)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
 if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
-if(files.length)c.ec.waitUntil(transcribeClips(c,rr,id,files.map(f=>f.id),publishMsg,hydrate).catch(()=>{}))
 if(rr.kind==='dm'&&rr.conv&&rr.conv.type==='dm')c.ec.waitUntil(touchStreak(c,rr.room,content).catch(()=>{}))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
 for(const uid of notify)c.pub('u_'+uid,{t:'notif',room:rr.room,server_id:rr.serverId})
