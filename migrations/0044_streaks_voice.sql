@@ -1,0 +1,10 @@
+alter table files add column transcript text;
+alter table par_beats add column sig text not null default '';
+alter table par_beats add column check_at integer not null default 0;
+alter table par_beats add column check_tok text not null default '';
+alter table par_beats add column check_sent integer not null default 0;
+alter table par_beats add column paused integer not null default 0;
+alter table par_beats add column hard_at integer not null default 0;
+create table streaks(id text primary key,a text not null,b text not null,count integer not null default 0,best integer not null default 0,last_day integer not null default 0,day integer not null default 0,a_n integer not null default 0,b_n integer not null default 0,a_h text not null default '',b_h text not null default '',claimed integer not null default 0,created_at integer not null);
+create index streaks_a on streaks(a);
+create index streaks_b on streaks(b);
