@@ -1426,3 +1426,8 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .nf_candle{background:linear-gradient(90deg,#fff7c2,#fb923c,#fde68a,#f97316,#fff7c2);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:npshift 3.4s linear infinite,szflicktx 2.3s linear infinite}
 .np .nf_candle{text-shadow:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.6))}
 .m.bb_hollow,.par-msg.bb_hollow{border-radius:12px;box-shadow:inset 3px 0 0 #f97316,inset 0 0 28px rgba(249,115,22,.07);background-image:linear-gradient(90deg,rgba(249,115,22,.09),transparent 40%)}
+.bd_bday{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='12' width='18' height='9' rx='2' fill='%23fbcfe8' stroke='%23be185d' stroke-width='1.4'/%3E%3Cpath d='M3 15c3 2 5-2 9 0s6 2 9 0' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Crect x='11' y='6' width='2' height='6' fill='%23fff' stroke='%23be185d' stroke-width='1'/%3E%3Cpath d='M12 2c2 2 1 3 0 4-1-1-2-2 0-4z' fill='%23fbbf24'/%3E%3C/svg%3E")}
+.ef_bday::before,.ef_bday::after{width:16%;height:16%;border-radius:2px;animation:efrise 2.2s ease-out infinite}
+.ef_bday::before{left:8%;top:30%;background:#f472b6;box-shadow:60px -6px 0 #fbbf24,28px 10px 0 #38bdf8}
+.ef_bday::after{right:8%;top:40%;background:#34d399;animation-delay:1.1s;box-shadow:-52px -10px 0 #fb7185,-24px 8px 0 #fde68a}
+.ti_bday{color:#f472b6}.ti_bday::before{content:"Birthday Bomb"}
