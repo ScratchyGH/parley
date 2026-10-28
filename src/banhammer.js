@@ -14,6 +14,16 @@ return{ok:j.approve===true,note:trim(j.reason,200)||'No reason given.'}
 }catch{return{ok:false,note:'The hammer is still thinking. Try again shortly.'}}
 }
 export default function(r){
+r.add('POST','/api/banhammer/cake',async c=>{
+limit('cake:'+c.user.id,20,3600000)
+const b=await body(c.req,300)
+const target=await c.env.DB.prepare('select id,username,display_name from users where lower(username)=lower(?) and deleted_at is null').bind(String(b.to||'').trim().replace(/^@/,'')).first()
+if(!target)fail(404,'User not found')
+const shared=(await c.env.DB.prepare('select distinct server_id from members where user_id=?').bind(target.id).all()).results
+for(const s of shared)c.pub('s_'+s.server_id,{t:'banhammer.cake',uid:target.id,by:c.user.username})
+c.pub('u_'+target.id,{t:'banhammer.cake',uid:target.id,by:c.user.username})
+return{ok:true}
+})
 r.add('POST','/api/banhammer/swing',async c=>{
 limit('bh:'+c.user.id,6,3600000)
 const owns=await c.env.DB.prepare("select 1 x from par_owned where user_id=? and item_id='bh_hammer'").bind(c.user.id).first()
