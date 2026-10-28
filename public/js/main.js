@@ -332,6 +332,7 @@ break
 case'safety.removed':toast('A message of yours was removed because this server scans for explicit content','err');break
 case'pars.gift':emit('pars.gift',m);break
 case'banhammer.hit':import('./banhammerfx.js').then(x=>x.banhammerHit(m.uid,m.by));break
+case'banhammer.cake':import('./banhammerfx.js').then(x=>x.birthdayCake(m.uid,m.by));break
 case'streak':emit('streak',m);break
 case'streak.sync':emit('streak.sync',m);break
 case'notif':

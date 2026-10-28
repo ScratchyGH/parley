@@ -248,6 +248,7 @@ else if(rel.pending==='incoming')act.append(btn('Accept request',async()=>{await
 else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await DEL('/api/friends/'+u.id);refresh()}))
 else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()}))
 act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()}))
+act.append(btn('Send a birthday cake',async()=>{await POST('/api/banhammer/cake',{to:u.username});toast('Cake sent','ok')}))
 act.append(btn('Swing ban hammer',()=>{closeMenu();banhammerDialog(u)},'dng'))
 }
 const hero=heroBox(u.accent,u.banner_id)

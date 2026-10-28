@@ -22,6 +22,34 @@ function xSvg(){
 return svg('60%','0 0 40 40',
 sv('path',{d:'M8,8L32,32M32,8L8,32',stroke:'#ef4444','stroke-width':'6','stroke-linecap':'round'}))
 }
+function cakeSvg(){
+return svg(40,'0 0 40 40',
+sv('rect',{x:'5',y:'22',width:'30',height:'13',rx:'2',fill:'#f8e3c4',stroke:'#7a4a1f','stroke-width':'1.4'}),
+sv('rect',{x:'5',y:'22',width:'30',height:'5',fill:'#fff'}),
+sv('rect',{x:'9',y:'14',width:'22',height:'9',rx:'2',fill:'#fbcfe8',stroke:'#7a4a1f','stroke-width':'1.2'}),
+sv('rect',{x:'17',y:'4',width:'3',height:'10',fill:'#fde68a'}),
+sv('circle',{cx:'18.5',cy:'3',r:'2.6',fill:'#f97316'}))
+}
+export function birthdayCake(uid,by){
+toast(by+' slammed a birthday cake into your profile',undefined)
+const els=[...document.querySelectorAll('.av[data-uid="'+uid+'"]')]
+if(!els.length||still())return
+for(const el of els)playCakeOn(el)
+}
+function playCakeOn(host){
+const r=host.getBoundingClientRect()
+if(r.width<8)return
+const wrap=document.createElement('div')
+wrap.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;z-index:2147483000;pointer-events:none'
+const cake=document.createElement('div')
+cake.style.cssText='position:absolute;left:-60px;top:50%;width:40px;height:40px;transform:translateY(-50%) rotate(-20deg)'
+cake.append(cakeSvg())
+wrap.append(cake)
+document.body.append(wrap)
+host.animate([{transform:'none'},{transform:'scale(1.12)'},{transform:'none'}],{duration:260,delay:420})
+cake.animate([{transform:'translateY(-50%) rotate(-20deg)',offset:0},{transform:'translate('+(r.width*.5)+'px,-50%) rotate(15deg)',offset:.7},{transform:'translate('+(r.width*.5)+'px,-50%) rotate(15deg) scale(1.3)',opacity:0,offset:1}],{duration:700,easing:'cubic-bezier(.3,.7,.3,1)'})
+setTimeout(()=>wrap.remove(),1200)
+}
 function playOn(host){
 const r=host.getBoundingClientRect()
 if(r.width<8)return
