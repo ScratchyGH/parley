@@ -220,7 +220,7 @@ else if(grad)el.style.backgroundImage=bg
 return el
 }
 export function avatar(u,size,status){
-const el=h('div',{class:'av '+(size||'')+(u?.frame?' '+u.frame:'')+(u?.effect?' ef '+u.effect:''),style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
+const el=h('div',{class:'av '+(size||'')+(u?.frame?' '+u.frame:'')+(u?.effect?' ef '+u.effect:''),'data-uid':u?.id||null,style:{background:accentBg(u?.accent)||hashColor(u?.id||u?.name||'?')}})
 if(u?.frame)el.append(h('i',{class:'frm','aria-hidden':'true'}))
 if(u?.avatar_id||u?.icon_id){
 const img=h('img',{src:fileUrl(u.avatar_id||u.icon_id),alt:'',loading:'lazy',decoding:'async'})

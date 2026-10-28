@@ -248,6 +248,7 @@ else if(rel.pending==='incoming')act.append(btn('Accept request',async()=>{await
 else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await DEL('/api/friends/'+u.id);refresh()}))
 else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()}))
 act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()}))
+act.append(btn('Swing ban hammer',()=>{closeMenu();banhammerDialog(u)},'dng'))
 }
 const hero=heroBox(u.accent,u.banner_id)
 const BADGE={owner:'Owner',staff:'Staff',experimental:'Experimental',bot:'Bot'}
@@ -273,6 +274,16 @@ note,act,
 popup(el,Math.min(x,innerWidth-400),Math.min(y,innerHeight-460),'')
 }
 
+function banhammerDialog(u){
+const err=errBox()
+const reason=h('textarea',{class:'inp',rows:3,maxLength:300,autofocus:true,placeholder:'Why should '+u.display_name+' be banned? The hammer checks this against their recent activity.'})
+const go=h('button',{class:'btn dng',type:'submit'},'Swing')
+const d=dialog('Ban hammer',h('div',{class:'bd'},h('p',{class:'hint'},'An AI checks whether this ban is reasonable before it lands. If it is not, nothing happens to '+u.display_name+'.'),h('form',{on:{submit:submitter(go,err,async()=>{
+const r=await POST('/api/banhammer/swing',{to:u.username,reason:reason.value.trim()})
+d.close()
+toast(r.ok?u.display_name+' was banned: '+r.note:'The hammer refused: '+r.note,r.ok?'ok':undefined)
+})}},field('Reason',reason),err,h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'12px'}},go))),{})
+}
 export function reportDialog({type,id}){
 const err=errBox()
 const reason=h('textarea',{class:'inp',rows:4,maxLength:1000,required:true,autofocus:true,placeholder:'What is wrong? Moderators will see this together with the reported content.'})
