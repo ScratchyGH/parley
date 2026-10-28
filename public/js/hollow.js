@@ -83,11 +83,11 @@ h('div',{class:'hq-art'},q.kind==='night'?h('span',{class:'hq-n'},String(q.seq))
 h('div',{class:'hq-b'},h('h5',null,q.title),h('p',null,q.descr),h('div',{class:'hq-bar'},h('i',{style:{width:pr+'%'}})),h('div',{class:'hq-rw'},h('span',{class:'hq-c'},candySvg(15),String(q.candy)),h('span',null,q.xp+' XP'),h('span',{class:'hq-prog'},metricText(q,q.n)))),
 s==='claimed'?h('button',{class:'btn sm',disabled:true},'Claimed'):s==='lock'?h('button',{class:'btn sm',disabled:true},'Locked'):s==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim'):h('span',{class:'hq-go'},Math.round(pr)+'%'))
 }
-async function startRush(rerender,mode){
+async function startRush(rerender){
 let run
 try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
-const playRush=mode==='run'?(await import('/g3d/run3d.js')).playRun:(await import('/g3d/gourd3d.js')).playRush
+const{playRush}=await import('/g3d/gourd2d.js')
 const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the run'},'Leave run')
 const root=h('div',{class:'hw-game hw-rushg',role:'dialog','aria-modal':'true','aria-label':'Gourd Rush'},box,closeBtn)
@@ -115,10 +115,10 @@ async function startNight(night,rerender,fp){
 let run
 if(!fp)try{run=(await POST(API+'/night/start',{night})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
-const [{playNight}]=await Promise.all([import('/g3d/nightshift3d.js')])
+const [{playNight}]=await Promise.all([import('/g3d/doom3d.js')])
 const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the shift'},'Leave shift')
-const root=h('div',{class:'hw-game',role:'dialog','aria-modal':'true','aria-label':'Night Shift'},box,closeBtn)
+const root=h('div',{class:'hw-game',role:'dialog','aria-modal':'true','aria-label':'Hollow Siege'},box,closeBtn)
 document.body.append(root)
 let stop=null,over=false
 const end=async()=>{
@@ -145,13 +145,12 @@ function nightsView(d,rerender){
 const nights=d.quests.filter(q=>q.kind==='night')
 const row=h('div',{class:'hw-tapes'},...nights.map(q=>h('div',{class:'hw-tape'},tape3d({title:q.title.replace(/^Night \d: /,''),tag:'NIGHT '+q.seq,state:qState(q),progress:q.n/q.target}),h('div',{class:'hw-tcap'},h('b',null,metricText(q,q.n)),qState(q)==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim '+q.candy+' candy'):h('span',null,q.claimed?'Collected':q.locked?'Claim the last night first':q.descr)))))
 const max=d.wallet.night_max
-const play=h('div',{class:'hw-play hw-scan'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'REC  CAM 01'),h('h3',null,'Night Shift'),h('p',null,'Hold the hall until six. Watch the feeds, close the door when something walks up, keep the power alive. Each win pays candy.')),h('div',{class:'hw-play-b'},...[1,2,3,4,5].map(n=>h('button',{class:'btn'+(n<=max?' pri':''),disabled:n>max,on:{click:()=>startNight(n,rerender)}},n<=max?'Night '+n:'Night '+n+' locked'))))
+const play=h('div',{class:'hw-play hw-scan'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'HOLLOW SIEGE'),h('h3',null,'Hollow Siege'),h('p',null,'Fight down the corridors of a rotting chapel with a shotgun in hand. Clear each wave before the dark catches up to you. Each win pays candy.')),h('div',{class:'hw-play-b'},...[1,2,3,4,5].map(n=>h('button',{class:'btn'+(n<=max?' pri':''),disabled:n>max,on:{click:()=>startNight(n,rerender)}},n<=max?'Level '+n:'Level '+n+' locked'))))
 const fv={g:10,p:10,j:10,inf:false}
 const sl=(k,n)=>{const o=h('output',null,String(fv[k])),i=h('input',{type:'range',min:'0',max:'20',value:String(fv[k]),on:{input:()=>{fv[k]=Number(i.value);o.textContent=i.value}}});return h('label',{class:'hw-fr'},h('span',null,n),i,o)}
-const free=h('div',{class:'hw-play hw-scan hw-free'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'FREEPLAY'),h('h3',null,'Custom Night'),h('p',null,'Set how aggressive each animatronic is, from 0 to 20. Endless never reaches six and they get worse the longer you last. Freeplay pays no candy.')),h('div',{class:'hw-play-b hw-fb'},sl('g','Gus'),sl('p','Pippa'),sl('j','Jack'),h('label',{class:'hw-fr'},h('span',null,'Endless'),h('input',{type:'checkbox',on:{change:e=>{fv.inf=e.target.checked}}})),h('button',{class:'btn pri',on:{click:()=>startNight(5,rerender,{g:fv.g,p:fv.p,j:fv.j,inf:fv.inf})}},'Start freeplay')))
+const free=h('div',{class:'hw-play hw-scan hw-free'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'FREEPLAY'),h('h3',null,'Custom Siege'),h('p',null,'Set how many crawlers, screamers and brutes spawn, from 0 to 20. Endless never stops and they get worse the longer you last. Freeplay pays no candy.')),h('div',{class:'hw-play-b hw-fb'},sl('g','Crawlers'),sl('p','Screamers'),sl('j','Brutes'),h('label',{class:'hw-fr'},h('span',null,'Endless'),h('input',{type:'checkbox',on:{change:e=>{fv.inf=e.target.checked}}})),h('button',{class:'btn pri',on:{click:()=>startNight(5,rerender,{g:fv.g,p:fv.p,j:fv.j,inf:fv.inf})}},'Start freeplay')))
 const rush=h('div',{class:'hw-play hw-rush'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'LIVE  ARENA'),h('h3',null,'Gourd Rush'),h('p',null,'Hold out in the dark until dawn. Move with WASD or the arrow keys, your lantern fires on its own. Level up, grab upgrades and take down the Hollowgrin. Runs pay candy, up to 8 a day.')),h('div',{class:'hw-play-b'},h('button',{class:'btn pri',on:{click:()=>startRush(rerender)}},'Play Gourd Rush')))
-const runp=h('div',{class:'hw-play hw-rush'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'LIVE  TRACK'),h('h3',null,'Hollow Run'),h('p',null,'Sprint down the graveyard road. A and D change lane, W jumps fences, S slides under webs. Candy on the road counts toward your payout. Shares the daily run limit with Gourd Rush.')),h('div',{class:'hw-play-b'},h('button',{class:'btn pri',on:{click:()=>startRush(rerender,'run')}},'Play Hollow Run')))
-return h('div',null,rush,runp,play,free,row)
+return h('div',null,rush,play,free,row)
 }
 function questsView(d,rerender){
 const part=(t,k)=>h('section',null,h('h4',{class:'hw-h'},t),h('div',{class:'hq-list'},...d.quests.filter(q=>q.kind===k).map(q=>questCard(q,rerender))))
