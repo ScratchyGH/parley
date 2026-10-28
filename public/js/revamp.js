@@ -1,5 +1,5 @@
 import{h,GET}from'./util.js'
-export const REVAMP_AT=Date.UTC(2027,0,1,5,0,0)
+export const REVAMP_AT=Date.UTC(2026,9,28,0,0,0)
 const KEY='parley.rv.preview'
 const mem={p:false}
 const get=()=>{try{return localStorage.getItem(KEY)==='1'}catch{return mem.p}}
