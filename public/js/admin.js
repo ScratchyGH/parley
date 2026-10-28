@@ -1,4 +1,4 @@
-import{h,mount,icon,api,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast}from'./util.js'
+import{h,mount,icon,api,GET,POST,fail,dialog,confirmBox,toggle,fmtStamp,fmtSize,debounce,field,toast,avatar}from'./util.js'
 import{S}from'./state.js'
 import{guiPreview}from'./guipreview.js'
 import{studio}from'./studio.js'
@@ -241,6 +241,16 @@ mount(pg,h('h3',null,'Backups'),h('p',{class:'hint'},'Parley saves a full copy o
 load()
 }
 
+function bdayPreview(){
+const nm=S.me?.display_name||'You'
+return h('div',{class:'sa-grid'},
+h('h3',null,'13th Birthday Bomb preview'),
+h('p',{class:'muted'},'Hidden from the shop for everyone except admins until October 31.'),
+h('div',{class:'row',style:{alignItems:'center',gap:'16px',flexWrap:'wrap'}},
+avatar({...S.me,effect:'ef_bday'},'lg'),
+h('div',{class:'np par-np np_bday'},nm),
+h('b',null,nm,h('span',{class:'bdg-i bd_bday'}),h('span',{class:'ttl ti_bday'}))))
+}
 function rvAdmin(){
 const w=h('div',{class:'sa-grid'})
 const st=h('div',{class:'muted'})
@@ -252,6 +262,7 @@ st,
 h('div',{class:'row'},
 h('button',{class:'btn pri',on:{click:()=>{previewToggle(true);upd()}}},'Preview revamp (no restart)'),
 h('button',{class:'btn',on:{click:()=>{previewToggle(false);upd()}}},'Exit preview'),
-h('button',{class:'btn',on:{click:()=>previewRestart()}},'Preview countdown and restart')))
+h('button',{class:'btn',on:{click:()=>previewRestart()}},'Preview countdown and restart')),
+bdayPreview())
 return w
 }
