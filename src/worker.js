@@ -32,6 +32,7 @@ import pluginRoutes from'./plugins.js'
 import backupRoutes,{dailyBackup}from'./backup.js'
 import legalRoutes from'./legal.js'
 import modaiRoutes from'./modai.js'
+import banhammerRoutes from'./banhammer.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
 import hollowRoutes from'./hollow.js'
@@ -74,6 +75,7 @@ xlabsRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
 modaiRoutes(router)
+banhammerRoutes(router)
 hollowRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
