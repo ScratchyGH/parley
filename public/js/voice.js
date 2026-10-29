@@ -641,6 +641,25 @@ return field('Push-to-talk key',b,'Push to talk only works while this tab is foc
 return wrap
 }
 
+const vids=new WeakMap()
+let mega=null
+const place=v=>{v.style.transform='translate('+v._x+'px,'+v._y+'px) scale('+v._z+')';v.style.cursor=v._z>1?'grab':'zoom-in'}
+const vidOf=(stream,mute)=>{
+let v=vids.get(stream)
+if(v)return v
+v=h('video',{autoplay:true,playsInline:true,muted:mute})
+v.srcObject=stream
+v._z=1;v._x=0;v._y=0;v._d=null
+v.addEventListener('wheel',e=>{e.preventDefault();v._z=Math.max(1,Math.min(8,v._z*(e.deltaY<0?1.2:1/1.2)));if(v._z===1){v._x=0;v._y=0}place(v)},{passive:false})
+v.addEventListener('pointerdown',e=>{if(v._z<=1)return;v.setPointerCapture(e.pointerId);v._d=[e.clientX,e.clientY,v._x,v._y]})
+v.addEventListener('pointermove',e=>{if(!v._d)return;v._x=v._d[2]+e.clientX-v._d[0];v._y=v._d[3]+e.clientY-v._d[1];place(v)})
+v.addEventListener('pointerup',()=>{v._d=null})
+v.play?.().catch(()=>{})
+place(v)
+vids.set(stream,v)
+return v
+}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&mega){mega=null;document.querySelectorAll('.tile.mega').forEach(t=>t.classList.remove('mega'))}})
 export function mountVoiceRoom(container,chId,label,hub,path,stage){
 const draw=()=>{
 const users=S.voice[chId]||{}
@@ -653,10 +672,12 @@ const u=uid===S.me.id?S.me:S.users.get(uid)||{id:uid,display_name:'Member'}
 const st=users[uid]||{}
 const tile=h('div',{class:'tile'+(V.speaking.has(uid)&&!opts.stream?' sp':'')})
 if(opts.stream){
-const v=h('video',{autoplay:true,playsInline:true,muted:uid===S.me.id})
-v.srcObject=opts.stream
+const v=vidOf(opts.stream,uid===S.me.id)
 tile.append(v)
-tile.addEventListener('dblclick',()=>v.requestFullscreen?.())
+if(mega===opts.stream)tile.classList.add('mega')
+const eb=h('button',{type:'button',class:'vt',title:'Fill the window',on:{click:e=>{e.stopPropagation();mega=mega===opts.stream?null:opts.stream;document.querySelectorAll('.tile.mega').forEach(t=>t.classList.remove('mega'));if(mega)tile.classList.add('mega');eb.textContent=mega?'Shrink':'Expand'}}},mega===opts.stream?'Shrink':'Expand')
+tile.append(h('div',{class:'vtools'},eb,h('button',{type:'button',class:'vt',title:'Full screen',on:{click:e=>{e.stopPropagation();tile.requestFullscreen?.()}}},'Full screen'),h('button',{type:'button',class:'vt',title:'Reset zoom',on:{click:e=>{e.stopPropagation();v._z=1;v._x=0;v._y=0;place(v)}}},'Reset zoom')))
+tile.addEventListener('dblclick',()=>{if(document.fullscreenElement)document.exitFullscreen();else tile.requestFullscreen?.()})
 }else tile.append(avatar(u,'lg'))
 const q=uid!==S.me.id?V.quality[uid]:null
 tile.append(h('div',{class:'nm'},opts.label||u.display_name,st.h&&!opts.stream?h('span',{class:'hand',title:'Hand raised'},icon('hand','s')):null,st.m&&!opts.stream?icon('micoff','s'):null,st.d&&!opts.stream?icon('deaf','s'):null,q&&!opts.stream?h('span',{class:'q '+(q==='fair'?'fair':q==='poor'?'poor':''),title:'Connection: '+q},icon('refresh','s')):null))
