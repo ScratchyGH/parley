@@ -497,27 +497,27 @@ gcv.width=88;gcv.height=64
 const gctx=gcv.getContext('2d',{willReadFrequently:true})
 const FACES=[[1,3,7,5,1,0,0],[0,4,6,2,-1,0,0],[2,6,7,3,0,1,0],[0,1,5,4,0,-1,0],[4,5,7,6,0,0,1],[0,2,3,1,0,0,-1]]
 function drawGun(W,H){
-const gw=88,gh=64,f=56,bx=gw*.52,by=gh*.3
+const gw=88,gh=64,f=330,zo=3.2,bx=gw*.5,by=gh*.3
 gctx.clearRect(0,0,gw,gh)
 const ph=shotCd>0?1-shotCd/(rageT>0?.34:.62):1
 const pump=ph>.28&&ph<.85?Math.sin((ph-.28)/.57*Math.PI)*.45:0
-const gx=.3+Math.sin(bob)*.035,gy=-.06+Math.abs(Math.cos(bob))*.03+recoil*.08,gz=-recoil*.34
-const yaw=-.15,pitch=recoil*.16
+const gx=.17+Math.sin(bob)*.035,gy=-.3+Math.abs(Math.cos(bob))*.03+recoil*.08,gz=-recoil*.34
+const yaw=-.08,pitch=.22+recoil*.16
 const cy_=Math.cos(yaw),sy_=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch)
 const rot=(x,y,z)=>{let X=x*cy_+z*sy_,Z=-x*sy_+z*cy_;let Y=y*cp+Z*sp;Z=-y*sp+Z*cp;return[X,Y,Z]}
 const parts=[
-[0,-.2,2.15,.1,.1,2.1,[96,100,114]],
-[0,-.31,2.0,.085,.085,1.7,[70,74,88]],
-[0,-.2,3.2,.13,.13,.07,[34,36,42]],
+[0,-.2,2.15,.14,.14,2.1,[96,100,114]],
+[0,-.35,2.0,.11,.11,1.7,[70,74,88]],
+[0,-.2,3.2,.18,.18,.07,[34,36,42]],
 [0,-.13,3.12,.03,.05,.04,[210,70,40]],
-[0,-.22,1.0,.19,.2,.56,[108,112,126]],
+[0,-.22,1.0,.24,.24,.6,[108,112,126]],
 [.1,-.2,1.0,.01,.07,.24,[18,18,22]],
-[0,-.32,1.85-pump,.17,.13,.5,[150,96,46]],
-[0,-.32,1.66-pump,.18,.04,.05,[84,52,26]],
-[0,-.32,1.78-pump,.18,.04,.05,[84,52,26]],
-[0,-.32,1.9-pump,.18,.04,.05,[84,52,26]],
+[0,-.36,1.85-pump,.25,.18,.64,[170,106,50]],
+[0,-.36,1.62-pump,.26,.2,.05,[84,52,26]],
+[0,-.36,1.78-pump,.26,.2,.05,[84,52,26]],
+[0,-.36,1.94-pump,.26,.2,.05,[84,52,26]],
 [0,-.4,.72,.11,.32,.18,[112,70,36]],
-[0,-.37,1.85-pump,.19,.09,.26,[210,168,124]],
+[0,-.5,1.85-pump,.27,.1,.34,[210,168,124]],
 [.02,-.5,.66,.15,.13,.2,[210,168,124]]
 ]
 const L=[-.35,.8,-.45],ll=Math.hypot(...L)
@@ -538,18 +538,18 @@ draw.sort((a,b)=>b.z-a.z)
 gctx.lineWidth=1;gctx.strokeStyle='#0a0a10';gctx.lineJoin='round'
 for(const q of draw){
 gctx.fillStyle=q.c;gctx.beginPath()
-q.pts.forEach((p,i)=>{const x=bx+p[0]/p[2]*f,y=by-p[1]/p[2]*f;i?gctx.lineTo(x,y):gctx.moveTo(x,y)})
+q.pts.forEach((p,i)=>{const x=bx+p[0]/(p[2]+zo)*f,y=by-p[1]/(p[2]+zo)*f;i?gctx.lineTo(x,y):gctx.moveTo(x,y)})
 gctx.closePath();gctx.fill();gctx.stroke()
 }
 if(flash>0){
-const[X,Y,Z]=rot(0,-.2,3.3),mx=bx+(X+gx)/(Z+gz)*f,my=by-(Y+gy)/(Z+gz)*f
+const[X,Y,Z]=rot(0,-.2,3.3),mx=bx+(X+gx)/(Z+gz+zo)*f,my=by-(Y+gy)/(Z+gz+zo)*f
 gctx.fillStyle='#ff8a1a';gctx.beginPath()
 for(let i=0;i<14;i++){const a=i*Math.PI/7,r=i%2?5:13+Math.random()*4;const x=mx+Math.cos(a)*r,y=my+Math.sin(a)*r*.8;i?gctx.lineTo(x,y):gctx.moveTo(x,y)}
 gctx.closePath();gctx.fill()
 gctx.fillStyle='#fff3a0';gctx.beginPath();gctx.arc(mx,my,4,0,7);gctx.fill()
 }
 const id=gctx.getImageData(0,0,gw,gh),d=id.data
-for(let i=0;i<d.length;i+=4){d[i+3]=d[i+3]>110?255:0;d[i]=(d[i]>>5)*36;d[i+1]=(d[i+1]>>5)*36;d[i+2]=(d[i+2]>>5)*36}
+for(let i=0;i<d.length;i+=4){d[i+3]=d[i+3]>110?255:0;d[i]=(d[i]>>4)*17;d[i+1]=(d[i+1]>>4)*17;d[i+2]=(d[i+2]>>4)*17}
 gctx.putImageData(id,0,0)
 const sc=Math.max(3,Math.floor(H*.66/gh)),dw=gw*sc,dh=gh*sc
 ctx.imageSmoothingEnabled=false
