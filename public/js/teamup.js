@@ -16,7 +16,7 @@ const mkCode=()=>Array.from({length:6},()=>AL[Math.floor(Math.random()*AL.length
 let active=null,art=null
 const css=()=>{
 if(!document.getElementById('hwcss2'))document.head.append(h('link',{id:'hwcss2',rel:'stylesheet',href:'/hollow.css'}))
-if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=3'}))
+if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=4'}))
 if(!document.getElementById('rscss'))document.head.append(h('link',{id:'rscss',rel:'stylesheet',href:'/rush.css'}))
 }
 const sprite=(i)=>{
@@ -26,6 +26,14 @@ c.width=s.c.width;c.height=s.c.height
 c.getContext('2d').drawImage(s.c,0,0)
 c.className='tu-spr'
 c.style.filter=i===0?'none':i===1?'hue-rotate(160deg)':'hue-rotate(70deg)'
+return c
+}
+const mascot=()=>{
+if(!art)art=buildArt(4)
+const s=art.boss[0],c=document.createElement('canvas')
+c.width=s.c.width;c.height=s.c.height
+c.getContext('2d').drawImage(s.c,0,0)
+c.className='tu-mascot'
 return c
 }
 export function showInvite(m){
@@ -94,13 +102,16 @@ send({k:'go',list:roster,mode,rules:rl})
 launch(roster)
 }}},isHost?(roster.length>1?'Start match':'Start solo'):'Waiting for the host')
 box.replaceChildren(h('div',{class:'tu-lobby'},
+h('div',{class:'tu-moon'}),mascot(),
 h('div',{class:'tu-head'},h('h2',null,'Gourd Rush'),h('b',null,'Teamup'),h('p',null,'Hold the hollow until dawn. Board up doors, throw candy bombs, revive your squad.')),
 h('div',{class:'tu-main'},
-h('div',{class:'tu-left'},h('h4',null,'Squad'),h('div',{class:'tu-slots'},slots),sq,h('div',{class:'tu-act'},start,h('button',{class:'btn',type:'button',on:{click:close}},'Leave'))),
-h('div',{class:'tu-mid'},h('h4',null,'Mode'),modeCards,h('h4',null,'Difficulty'),diffs,h('h4',null,'Length'),lens,cin,h('h4',null,'Physics'),phys,h('h4',null,'Graphics'),h('div',{class:'tu-two'},gl,gs)),
+h('div',{class:'tu-left'},
+h('div',{class:'tu-startrow'},start,h('div',{class:'tu-stack'},h('h4',null,'Squad size'),sq,h('button',{class:'tu-pill',type:'button',on:{click:close}},'Leave'))),
+h('div',{class:'jag'},h('div',{class:'tu-slots'},slots))),
+h('div',{class:'tu-mid jag'},h('h4',null,'Mode'),modeCards,h('h4',null,'Difficulty'),diffs,h('h4',null,'Length'),lens,cin,h('h4',null,'Physics'),phys,h('h4',null,'Graphics'),h('div',{class:'tu-two'},gl,gs)),
 h('div',{class:'tu-right'},
-h('div',{class:'tu-code'},h('span',null,online?'Party code':status),h('b',null,code),h('button',{class:'btn sm',type:'button',on:{click:()=>navigator.clipboard?.writeText(link).then(()=>toast('Invite link copied','ok'),()=>toast(link))}},'Copy invite link')),
-h('h4',null,'Friends'),frl))))
+h('div',{class:'tu-code jag'},h('span',null,online?'Party code':status),h('b',null,code),h('button',{class:'tu-pill',type:'button',on:{click:()=>navigator.clipboard?.writeText(link).then(()=>toast('Invite link copied','ok'),()=>toast(link))}},'Copy invite link')),
+h('div',{class:'jag'},h('h4',null,'Friends'),frl)))))
 }
 const launch=(list,rr)=>{
 if(rr)rl=rr
