@@ -20,7 +20,6 @@ import{ping,desktop}from'./notify.js'
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
 import{startHollow,hollowPage,pumpkinSvg}from'./hollow.js'
-import{gamesPage,gamesIcon}from'./games.js'
 import{showOverlay,hideOverlay}from'./overlay.js'
 import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
@@ -104,7 +103,7 @@ const r=parse()
 cleanup?.();cleanup=null
 closeChat()
 closeDrawers()
-if(r.name!=='pars'&&r.name!=='hollow'&&r.name!=='games'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
+if(r.name!=='pars'&&r.name!=='hollow'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
 const closeOv=()=>go(lastPath||'/')
 const needBack=async()=>{if(lastPath===null){lastPath='/';await renderHome('overview')}}
 if(r.name==='invite'){
@@ -130,16 +129,6 @@ const pg=h('div',{class:'par-page'})
 parsPage(pg)
 showOverlay('pars','Pars shop',parIcon(20),pg,closeOv)
 document.title='Pars shop • Parley'
-return
-}
-if(r.name==='games'){
-await needBack()
-S.nav={kind:'games'}
-syncChrome()
-const pg=h('div',{class:'par-page'})
-gamesPage(pg)
-showOverlay('games','Games',gamesIcon(20),pg,closeOv)
-document.title='Games • Parley'
 return
 }
 if(r.name==='hollow'){

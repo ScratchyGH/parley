@@ -1,5 +1,6 @@
-export const VERSION='2026.10.41'
+export const VERSION='2026.10.42'
 export const RELEASES=[
+{v:'2026.10.42',date:'October 29, 2026',title:'Games removed',summary:'The Games hub and Deep Sleep are gone to keep Parley fast and focused.',sections:[['Removed',[['Games hub','The Games button, the seven games, seasonal packs and Deep Sleep were removed. Doom and Hollowgrin are unaffected.']]]]},
 {v:'2026.10.41',date:'October 28, 2026',title:'Games, Deep Sleep and the Horror shop',summary:'A Games hub on the left bar, seven new games, Pars unlocks for seasonal packs, the Deep Sleep story game and a Horror shop.',sections:[
 ['Games',[
 ['Games hub','Open the controller button on the left bar. Snake, 2048 and Breakout are free. Winter, Spring and Summer packs unlock with Pars.'],
