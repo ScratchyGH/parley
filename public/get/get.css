@@ -24,3 +24,4 @@ article h3{margin:0 0 6px;font-size:17px}
 article p{margin:0;color:#a9a8a0;font-size:14px;line-height:1.5}
 footer{margin-top:36px;color:#77766f;font-size:13px}
 @media(prefers-reduced-motion:no-preference){.hero{animation:in .5s ease both}@keyframes in{from{opacity:0;transform:translateY(10px)}}}
+.dl{margin:36px 0 0}.dl h2{font-size:20px;margin:0 0 12px}.dls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.dls a{display:block;text-align:center;padding:14px;border-radius:999px;background:rgba(255,255,255,.08);color:#e4e3dd;text-decoration:none;font-weight:700}.dls a:hover{background:rgba(255,255,255,.15)}.dls a:focus-visible{outline:2px solid #c7c6c0}
