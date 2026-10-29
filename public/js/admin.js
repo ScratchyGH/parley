@@ -245,11 +245,12 @@ function bdayPreview(){
 const nm=S.me?.display_name||'You'
 const av=avatar({...S.me,effect:'ef_bday',frame:'fr_bday'},'lg')
 return h('div',{class:'sa-grid'},
-h('h3',null,'13th Birthday Bomb preview'),
+h('h3',null,'Birthday Bomb preview'),
 h('p',{class:'muted'},'Hidden from the shop for everyone except admins until October 31.'),
 h('div',{class:'row',style:{alignItems:'center',gap:'16px',flexWrap:'wrap'}},
 av,
 h('button',{class:'btn pri',on:{click:()=>import('./cakefx.js').then(m=>m.throwCake(av))}},'Throw the cake'),
+h('button',{class:'btn',on:{click:()=>import('./banhammerfx.js').then(m=>m.banhammerHit(S.me.id,'You'))}},'Preview ban hammer'),
 h('div',{class:'np par-np np_bday'},nm),
 h('b',null,nm,h('span',{class:'bdg-i bd_bday'}),h('span',{class:'ttl ti_bday'}))))
 }
