@@ -1,6 +1,6 @@
 import{kit,txt}from'./kit.js'
-import{art,island,lab,room,rg,lg,draw}from'./dsart.js'
-import{art2}from'./dsart2.js'
+import{rg,lg,draw}from'./dsart.js'
+import{art,art2,island,lab,room,ready,fr}from'./custom.js'
 import{death}from'./deepdeath.js'
 const VW=960,VH=540,TAU=6.283
 const SK='parley.ds'
@@ -73,7 +73,7 @@ for(let i=0;i<9;i++){const x=1040+i*46,h=(i+1)*26;c.fillStyle=lg(c,0,430-h,0,430
 c.strokeStyle='#cfa070';c.lineWidth=7;c.beginPath();c.moveTo(1040,370);c.lineTo(1454,140);c.stroke();c.lineWidth=3;for(let i=0;i<9;i++){c.beginPath();c.moveTo(1040+i*46+10,370-i*26);c.lineTo(1040+i*46+10,430-i*26-24);c.stroke()}
 orb(c,1620,260,200,'rgba(255,200,120,.25)');c.fillStyle='#120c0a';c.fillRect(1500,120,260,310)
 const x=300+e*1130,st=cl((x-1040)/46,0,9),y=474-st*26
-shadow(c,x,474,60);draw(c,A.kid.skin[Math.floor(t*7)%2],x,y,2.4)
+shadow(c,x,474,60);draw(c,fr(A.kid.skin,1,t*.7),x,y,2.4)
 c.restore()
 }},
 {d:3.2,l:[[.62,.98,'','Click.']],f:(c,p,t,A,X)=>{
@@ -108,8 +108,8 @@ if(p>.9){c.fillStyle='rgba(255,246,200,'+(p-.9)*4+')';c.fillRect(0,0,VW,VH)}
 bedroom(c,A)
 bed(c,610,452,p>.72?(p-.72)/.22:0)
 const wk=cl(p/.4,0,1),jp=cl((p-.4)/.28,0,1)
-if(p<.68){const x=260+wk*330+jp*130,y=474-Math.sin(jp*Math.PI)*150-(jp>=1?80:0);shadow(c,x,474,50);draw(c,A.kid.skin[p<.4?Math.floor(t*7)%2:0],x,y,2.4)}
-else{c.save();c.translate(780,400);c.rotate(-Math.PI/2);c.scale(2.2,2.2);c.drawImage(A.kid.skin[0].c,-28,-76,56,80);c.restore();if(p>.74)bed(c,610,452,(p-.72)/.22)}
+if(p<.68){const x=260+wk*330+jp*130,y=474-Math.sin(jp*Math.PI)*150-(jp>=1?80:0);shadow(c,x,474,50);draw(c,(p<.4?fr(A.kid.skin,1,t*.7):A.kid.skin[0]),x,y,2.4)}
+else{c.save();c.translate(780,400);c.rotate(-Math.PI/2);c.scale(2.2,2.2);{const q=A.kid.skin[0];c.drawImage(q.c,-q.ax,-q.ay,q.w,q.h)};c.restore();if(p>.74)bed(c,610,452,(p-.72)/.22)}
 if(p>.78)for(let i=0;i<3;i++){const q=((t*.6+i*.33)%1);c.fillStyle='rgba(200,220,255,'+(1-q)+')';c.font='800 '+(18+i*8)+'px '+F;c.fillText('z',700+i*30+q*40,350-q*110)}
 c.fillStyle='rgba(2,2,10,'+(p>.9?(p-.9)*4:0)+')';c.fillRect(0,0,VW,VH)
 }},
@@ -118,7 +118,7 @@ c.fillStyle='#05020e';c.fillRect(0,0,VW,VH)
 const n=Math.pow(p,1.6)
 for(let r=0;r<18;r++){const q=((r/18+t*.5)%1),rad=10+q*q*700;c.strokeStyle='hsla('+(250+r*8)+',90%,'+(50+q*30)+'%,'+(1-q)*.6+')';c.lineWidth=2+q*10;c.beginPath();c.arc(480,270,rad,0,TAU);c.stroke()}
 for(let i=0;i<160;i++){const a=i*2.399,d=30+n*500+(i%9)*30,l=20+n*340;c.strokeStyle='hsla('+(230+i%90)+',95%,'+(60+i%30)+'%,'+(.3+n*.6)+')';c.lineWidth=1+n*3;c.beginPath();c.moveTo(480+Math.cos(a)*d,270+Math.sin(a)*d*.6);c.lineTo(480+Math.cos(a)*(d+l),270+Math.sin(a)*(d+l)*.6);c.stroke()}
-c.save();c.translate(480,270);c.rotate(t*3);const s=2.2*(1-p*.7);c.drawImage(A.kid.skin[0].c,-28*s,-40*s,56*s,80*s);c.restore()
+c.save();c.translate(480,270);c.rotate(t*3);const s=2.2*(1-p*.7);{const q=A.kid.skin[0];c.drawImage(q.c,-q.ax*s,-q.h/2*s,q.w*s,q.h*s)};c.restore()
 c.fillStyle='rgba(255,255,255,'+cl((p-.82)*5.5,0,1)+')';c.fillRect(0,0,VW,VH)
 }},
 {d:8,l:[],f:(c,p,t,A,X)=>{
@@ -127,7 +127,7 @@ if(f)dreamBg(c,t,X.isl);else terror(c,t)
 const edge=Math.abs(Math.sin(p*80*(.35+p)+Math.sin(p*27)*3))<.14
 if(edge)for(let i=0;i<7;i++){c.save();c.beginPath();c.rect(0,i*80,VW,40);c.clip();c.translate((Math.random()-.5)*60,0);if(f)terror(c,t);else dreamBg(c,t,X.isl);c.restore()}
 const sh=sc?(Math.random()-.5)*16:0
-shadow(c,480+sh,478,70);draw(c,A.kid.pumpkin[Math.floor(t*6)%2],480+sh,478,3.2)
+shadow(c,480+sh,478,70);draw(c,fr(A.kid.pumpkin,1,t*.6),480+sh,478,3.2)
 if(f)orb(c,480,330,150,'rgba(255,220,150,.18)');else orb(c,480,330,150,'rgba(255,60,60,.25)')
 if(p>.86){const s=(p-.86)/.14;c.save();c.font='900 '+(80+s*180)+'px '+F;c.textAlign='center';c.fillStyle='rgba(255,0,60,.8)';c.fillText('AAAAAAAAH',480+sh-5,200);c.fillStyle='rgba(0,220,255,.8)';c.fillText('AAAAAAAAH',480+sh+5,200);c.fillStyle='#fff';c.fillText('AAAAAAAAH',480+sh,200);c.restore();c.fillStyle='rgba(255,255,255,'+cl((p-.9)*10,0,1)+')';c.fillRect(0,0,VW,VH)}
 }},
@@ -169,10 +169,10 @@ const M={pats:0,wishes:0,bench:0,lab:0,fails:0,pc:0,...(S.m||{})}
 const sv=()=>save({m:M})
 const B=X.B
 const nw=()=>wisps.filter(x=>!x).length
-let post=!!(S.freed&&!S.dd),brk=S.dd?[1,1,1,1]:[0,0,0,0],pr=[null,null,null],shk=0,cut=-1,sh=[],dmc=null
+let post=!!(S.freed&&!S.dd&&!o.betray),brk=S.dd?[1,1,1,1]:[0,0,0,0],pr=[null,null,null],shk=0,cut=-1,sh=[],dmc=null
 const dr=(c,s,x,y,k,f,sx,sy)=>{c.save();c.translate(x,y);c.scale((f?-1:1)*k*(sx||1),k*(sy||1));c.drawImage(s.c,-s.ax,-s.ay,s.w,s.h);c.restore()}
 const smash=i=>{brk[i]=1;shk=18;const cx=[185,315,675,805][i];for(let j=0;j<26;j++)sh.push({x:cx+(Math.random()-.5)*100,y:120+Math.random()*80,vx:(Math.random()-.5)*260,vy:-Math.random()*200,l:1.4,r:2+Math.random()*4})
-const L=[['Subject 01','Thank you. I could not wake up. I could not wake up.'],['Subject 02','He told me running was the only thing keeping me alive.'],['Subject 07','Thirty years. I almost forgot I had a name.'],['','The last case holds nothing but a scorched brass key tag. It reads: HARVEST COMPLETE.']][i]
+const L=[['Subject 01','Thank you. I could not wake up. I could not wake up.'],['Subject 02','He told me running was the only thing keeping me alive.'],['Subject 07','Thirty years. I almost forgot I had a name. Do not laugh at the pumpkin.'],['','The last case holds nothing but a scorched brass key tag. It reads: HARVEST COMPLETE.']][i]
 if(i<3)pr[i]={x:cx,y:205,t:0,tx:cx+(i-1)*30,ty:340+i*14}
 if(brk.every(x=>x)){talk([L,['Dr. Cocoa','(from the doorway, very calm) Thank you. I could not break them myself. Glass that old only opens for a dreamer who is not afraid.'],['You','You used me.'],['Dr. Cocoa','They were ripe. You were the key. Now, hold still.']],()=>{cut=0})}else talk([L])}
 const cocoa=()=>{const r=[];
@@ -203,7 +203,7 @@ const cellT=i=>()=>brk[i]?'':post?'Smash the case':'Look in the cell'
 const LI=[
 {x:185,y:225,r:75,t:cellT(0),a:cellA(0,[['Cell 1','A girl sleeps standing up, eyes open. Her breath fogs the glass. The tag reads: SUBJECT 01, afraid of the dark.']])},
 {x:315,y:225,r:75,t:cellT(1),a:cellA(1,[['Cell 2','A boy presses both hands to the glass and mouths one word over and over: run.']])},
-{x:675,y:225,r:75,t:cellT(2),a:cellA(2,[['Cell 3','An old man sits perfectly still. His tag: SUBJECT 07. He has dreamt of the same hallway for thirty years.']])},
+{x:675,y:225,r:75,t:cellT(2),a:cellA(2,[['Cell 3','A boy with a pumpkin for a head sits perfectly still. His tag: SUBJECT 07. He has dreamt of the same hallway for thirty years.']])},
 {x:805,y:225,r:75,t:cellT(3),a:cellA(3,[['Cell 4','The cell is empty. Scratched on the wall: he lets you out when you are not afraid. He never lets you out.']])},
 {x:480,y:235,r:95,t:'Read the panel',a:()=>{if(gate())return;talk([['Panel','Four live feeds. Each prisoner is trapped in the same place: Terror Night. Monsters circle them in the dark. The lights are almost out.'],['Panel','Every minute they survive, a meter on the side fills. It is labelled HARVEST.'],['You','He is feeding on their fear. Dr. Cocoa is not a scientist. He is a farmer.'],['Panel',M.fails?'You have failed '+M.fails+' time'+(M.fails>1?'s':'')+'. The meter is higher each time. Enter Terror Night again?':'Sending yourself into the feed could cut a cell open. Enter Terror Night?']],()=>talk([['','Hold on. Survive the night.']],()=>go('terror')))}},
 {x:100,y:360,r:80,t:'Read the poster',a:()=>talk([['Poster','A faded poster. Six silhouettes behind a reinforced wall, a drone on the floor, one hatch in the ceiling. HOLD THE LINE. Reinforce. Breach. Win the round.'],['Scribble','drone first. always drone first.']])},
@@ -266,12 +266,12 @@ c.save();c.globalCompositeOperation='lighter';for(let i=0;i<12;i++){const sx=700
 const E=[]
 for(const[x,y]of[[300,300],[1180,420],[250,560],[1130,640],[560,240]])E.push([y,()=>{shadow(c,x,y+4,34);c.save();c.translate(x,y);c.rotate(Math.sin(t*1.1+x)*.018);draw(c,A.tree,0,0,1.1);c.restore()}])
 E.push([445,()=>draw(c,A.bench,350,445,1)])
-if(!S.dd)E.push([478,()=>{shadow(c,520,476,34);const br=1+Math.sin(t*2)*.012;dr(c,A.cocoa[Math.floor(t*1.6)%2],520,478,1.1,false,1/br,br)}])
+if(!S.dd)E.push([478,()=>{shadow(c,520,476,34);const br=1+Math.sin(t*2)*.012;dr(c,A.cocoa[0],520,478,1.1,false,1/br,br)}])
 E.push([392,()=>{shadow(c,900,392,40);dr(c,A.sheep,900,392,1.1,false,1+Math.sin(t*2.2)*.02,1-Math.sin(t*2.2)*.02)}])
 E.push([360,()=>draw(c,A.lab,1000,360,1)])
 for(let i=0;i<3;i++)if(wisps[i]){const e=IS.find(z=>z.w===i);E.push([e.y,()=>{orb(c,e.x,e.y+Math.sin(t*3+i)*7-10,46,'rgba(190,230,255,.45)');draw(c,A.wisp,e.x,e.y+Math.sin(t*3+i)*7,1.3)}])}
 const moving=!D&&(k.keys.a||k.keys.d||k.keys.w||k.keys.s||k.keys.arrowleft||k.keys.arrowright||k.keys.arrowup||k.keys.arrowdown||k.down)
-E.push([P.y,()=>{shadow(c,P.x,P.y+2,26);const q=moving?Math.sin(walk*16):Math.sin(t*2)*.4;dr(c,A.kid.cloud[moving?Math.floor(walk*8)%2:0],P.x,P.y+(moving?-Math.abs(Math.sin(walk*8))*3:0),1.15,P.f<0,1-q*.025,1+q*.035)}])
+E.push([P.y,()=>{shadow(c,P.x,P.y+2,26);const q=moving?Math.sin(walk*16):Math.sin(t*2)*.4;dr(c,fr(A.kid.cloud,moving,walk),P.x,P.y+(moving?-Math.abs(Math.sin(walk*8))*3:0),1.15,P.f<0,1-q*.025,1+q*.035)}])
 E.sort((a,b)=>a[0]-b[0]);for(const e of E)e[1]()
 for(let i=0;i<26;i++){const fx=700+Math.cos(t*.2+i*1.7)*(200+i*18),fy=450+Math.sin(t*.27+i*2.1)*(120+i*7);orb(c,fx,fy,16,'rgba(255,240,150,'+(.35+.35*Math.sin(t*2.4+i*3))+')')}
 c.restore()
@@ -286,7 +286,7 @@ const t=time
 c.drawImage(X.lab.c,0,0,VW,VH)
 const al=.06+.05*Math.sin(t*3);c.fillStyle='rgba(255,40,50,'+al+')';c.fillRect(0,0,VW,VH)
 const ps=[[185,0],[315,1],[675,2]]
-for(const[x,i]of ps){if(brk[i])continue;c.save();c.beginPath();c.rect(x-60,112,118,92);c.clip();c.globalAlpha=.85;draw(c,A.kid.skin[0],x,198+Math.sin(t*1.3+i)*1.5,1.25);c.fillStyle='rgba(30,120,180,.25)';c.fillRect(x-60,112,118,92);c.restore()}
+for(const[x,i]of ps){if(brk[i])continue;c.save();c.beginPath();c.rect(x-60,112,118,92);c.clip();c.globalAlpha=.85;draw(c,A.pris[i],x,198+Math.sin(t*1.3+i)*1.5,1.25);c.fillStyle='rgba(30,120,180,.25)';c.fillRect(x-60,112,118,92);c.restore()}
 c.fillStyle='rgba(180,240,255,.1)';for(const x of[120,250,610,740]){c.beginPath();c.moveTo(x+60,108);c.lineTo(x+100,108);c.lineTo(x+60,204);c.lineTo(x+30,204);c.fill()}
 c.save();c.beginPath();c.rect(378,98,204,108);c.clip();c.fillStyle='#14040a';c.fillRect(378,98,204,108)
 for(let i=0;i<4;i++){const bx=384+i*50,by=104;c.fillStyle='#1c0610';c.fillRect(bx,by,46,50);for(let j=0;j<2;j++){const ex=bx+23+Math.sin(t*2+i+j*3)*14,ey=by+26+Math.cos(t*1.7+i*2+j)*8;orb(c,ex-4,ey,8,'rgba(255,50,60,.8)');orb(c,ex+4,ey,8,'rgba(255,50,60,.8)')}}
@@ -297,25 +297,25 @@ c.save();c.beginPath();c.rect(860,304,48,52);c.clip();c.fillStyle='#86efac';c.fo
 orb(c,880,330,60,'rgba(120,255,160,.18)')
 if(!dmc){dmc=document.createElement('canvas');dmc.width=196;dmc.height=128;doomFrame(dmc.getContext('2d'),196,128)}
 dr(c,B.desk,740,500,1.4)
-c.save();c.beginPath();c.rect(704,362,98,64);c.clip();c.drawImage(dmc,704,362,98,64);c.restore()
-orb(c,753,394,70,'rgba(255,60,40,'+(.12+.04*Math.sin(t*2))+')')
+{const D=B.desk,r=D.scr,sx=740-D.ax*1.4+r.x*1.4,sy=500-D.ay*1.4+r.y*1.4,sw=r.w*1.4,sh=r.h*1.4,q=Math.max(sw/196,sh/128);c.save();c.beginPath();c.rect(sx,sy,sw,sh);c.clip();c.fillStyle='#000';c.fillRect(sx,sy,sw,sh);c.drawImage(dmc,sx+(sw-196*q)/2,sy+(sh-128*q)/2,196*q,128*q);c.restore()}
+orb(c,740,420,70,'rgba(255,60,40,'+(.12+.04*Math.sin(t*2))+')')
 for(let i=0;i<4;i++)if(brk[i]){const x=[185,315,675,805][i];c.save();c.beginPath();c.rect(x-60,112,118,92);c.clip();c.fillStyle='rgba(6,10,16,.78)';c.fillRect(x-60,112,118,92);c.strokeStyle='rgba(190,235,255,.8)';c.lineWidth=1.5;for(let j=0;j<9;j++){const a=j*.7+i;c.beginPath();c.moveTo(x,158);c.lineTo(x+Math.cos(a)*80,158+Math.sin(a)*60);c.stroke()}c.restore()
 c.fillStyle='rgba(190,235,255,.55)';for(let j=0;j<7;j++){c.beginPath();c.moveTo(x-40+j*13,206);c.lineTo(x-34+j*13,212);c.lineTo(x-30+j*13,205);c.fill()}}
 for(const q of sh){c.globalAlpha=Math.max(0,q.l);c.fillStyle='#bfeaff';c.fillRect(q.x,q.y,q.r,q.r);c.globalAlpha=1}
 const out=[];pr.forEach((q,i)=>{if(!q)return;const e=1-Math.pow(1-q.t,2);const x=q.x+(q.tx-q.x)*e,y=q.y+(q.ty-q.y)*e;out.push([x,y,i])})
 const shot=cut-2.0
-for(const[x,y,i]of out){const f=cut>=0&&shot>i*.5?Math.min(1,(shot-i*.5)*2.5):0;shadow(c,x,y+2,26);c.save();c.translate(x,y);c.rotate(f*1.5);c.globalAlpha=1-Math.max(0,f-.8)*3;if(f>0)c.translate(0,f*6);draw(c,A.kid.skin[0],0,0,1.25);c.restore()}
+for(const[x,y,i]of out){const f=cut>=0&&shot>i*.5?Math.min(1,(shot-i*.5)*2.5):0;shadow(c,x,y+2,26);c.save();c.translate(x,y);c.rotate(f*1.5);c.globalAlpha=1-Math.max(0,f-.8)*3;if(f>0)c.translate(0,f*6);draw(c,A.pris[i],0,0,1.25);c.restore()}
 if(cut>=0){
 const mono=cut>3.3
-if(cut<4.6){const cx=480,cy=470-Math.min(1,cut/1.2)*30;shadow(c,cx,cy+2,36);if(!mono){dr(c,A.cocoa[Math.floor(t*2)%2],cx,cy,1.3+Math.min(0,0),false,1,1);if(cut>1.2&&cut<3.1){const a=Math.atan2(out[0]?out[0][1]-cy:0,(out[Math.floor((cut-1.2)/.6)%out.length]||[480])[0]-cx);c.strokeStyle='#2a2a30';c.lineWidth=7;c.beginPath();c.moveTo(cx+14,cy-50);c.lineTo(cx+14+Math.cos(a)*34,cy-50+Math.sin(a)*20);c.stroke()}}
-else{const g=cl((cut-3.3)/1.3,0,1);dr(c,B.boss[0],cx,cy,.35+g*1.0,false,1+Math.sin(cut*40)*.02,1);orb(c,cx,cy-90*g,200*g+10,'rgba(255,140,60,'+(.3+.4*g)+')')}}
-else{const g=cl((cut-4.6)/2.4,0,1);dr(c,B.boss[Math.floor(t*3)%2],480,470,1.35,false,1,1)}
+if(cut<4.6){const cx=480,cy=470-Math.min(1,cut/1.2)*30;shadow(c,cx,cy+2,36);if(!mono){dr(c,A.cocoa[0],cx,cy,1.3+Math.min(0,0),false,1,1);if(cut>1.2&&cut<3.1){const a=Math.atan2(out[0]?out[0][1]-cy:0,(out[Math.floor((cut-1.2)/.6)%out.length]||[480])[0]-cx);c.strokeStyle='#2a2a30';c.lineWidth=7;c.beginPath();c.moveTo(cx+14,cy-50);c.lineTo(cx+14+Math.cos(a)*34,cy-50+Math.sin(a)*20);c.stroke()}}
+else{const g=cl((cut-3.3)/1.3,0,1);dr(c,B.boss.idle,cx,cy,.35+g*1.0,false,1+Math.sin(cut*40)*.02,1);orb(c,cx,cy-90*g,200*g+10,'rgba(255,140,60,'+(.3+.4*g)+')')}}
+else{const g=cl((cut-4.6)/2.4,0,1);dr(c,[B.boss.idle,B.boss.walk][Math.floor(t*2)%2],480,470,1.1,false,1,1)}
 for(let i=0;i<3;i++){const w=cl((cut-2.0-i*.5)*4,0,1)*(1-cl((cut-2.4-i*.5)*3,0,1));if(w>0){c.fillStyle='rgba(255,240,180,'+w*.8+')';c.fillRect(0,0,VW,VH)}}
 if(cut>3.3&&cut<4.7){c.fillStyle='rgba(255,255,255,'+(.25+.35*Math.sin(cut*30)**2)+')';c.fillRect(0,0,VW,VH)}
 if(cut>4.7){const g=cl((cut-4.7)/2.2,0,1);c.fillStyle='rgba(20,0,10,'+g+')';const r=Math.max(1,(1-g)*900);c.save();c.fillStyle='rgba(20,0,10,1)';c.beginPath();c.rect(0,0,VW,VH);c.arc(480,300,r,0,TAU,true);c.fill('evenodd');c.restore();c.font='900 '+(30+g*50)+'px '+F;c.textAlign='center';c.fillStyle='rgba(255,70,50,'+g+')';c.fillText('DEEP DEATH',480,280);c.textAlign='left'}
 if(cut>2.0&&cut<4.7){c.font='italic 700 24px '+F;c.textAlign='center';c.fillStyle='#ffe9c8';c.fillText(cut<3.2?'Bang.':cut<4.3?'Sweet dreams, little harvests.':'Now. The real harvest.',480,90);c.textAlign='left'}}
 const moving=!D&&(k.keys.a||k.keys.d||k.keys.w||k.keys.s||k.down)
-if(cut<0){shadow(c,P.x,P.y+2,28);const q=moving?Math.sin(walk*16):0;dr(c,A.kid.cloud[moving?Math.floor(walk*8)%2:0],P.x,P.y,1.3,P.f<0,1-q*.025,1+q*.035)}
+if(cut<0){shadow(c,P.x,P.y+2,28);const q=moving?Math.sin(walk*16):0;dr(c,fr(A.kid.cloud,moving,walk),P.x,P.y,1.3,P.f<0,1-q*.025,1+q*.035)}
 c.drawImage(vigC,0,0)
 near=prompt(c,LI)
 if(tut===2){c.fillStyle='rgba(0,0,0,.88)';c.fillRect(0,0,VW,VH);const w=720,h=w*128/196;c.drawImage(dmc,(VW-w)/2,(VH-h)/2-20,w,h);c.strokeStyle='#bfb59a';c.lineWidth=10;c.strokeRect((VW-w)/2-5,(VH-h)/2-25,w+10,h+10);c.font='600 15px Figtree,sans-serif';c.fillStyle='#8f8d84';c.textAlign='center';c.fillText('Tap or press E to close',VW/2,VH-40);c.textAlign='left'}
@@ -335,19 +335,21 @@ if(near&&near.a)near.a()
 }
 k.press=c=>{if(c==='e'||c==='enter'||c===' ')act();if(c==='escape'&&scene==='intro')toIsland()}
 k.tap=(x,y)=>{const wx=(x-ox)/sc,wy=(y-oy)/sc;if(scene==='intro'){if(wx>VW-120&&wy<40)toIsland();else act();return}if(D||tut||(near&&wy>VH-76))act()}
-if(o.after){scene='island';P={x:560,y:500,f:1};talk([['','The island is quiet. Colour comes back to the edges of things, one pixel at a time.'],['You','They are awake. All of them. I felt it.'],['Cloud Sheep','Baaa. (It nudges a pair of cracked goggles toward you, then lies down beside them.)'],['','Chapter 2 complete: Deep Death. The dream is yours now. Sleep well.']])}
+if(o.betray){brk=[1,1,1,1];pr=[185,315,675].map((x,i)=>({x,y:205,t:1,tx:x+(i-1)*30,ty:340+i*14}));P={x:480,y:430,f:1};cut=0}
+else if(o.after){scene='island';P={x:560,y:500,f:1};talk([['','The island is quiet. Colour comes back to the edges of things, one pixel at a time.'],['You','They are awake. All of them. I felt it.'],['Cloud Sheep','Baaa. (It nudges a pair of cracked goggles toward you, then lies down beside them.)'],['','Chapter 2 complete: Deep Death. The dream is yours now. Sleep well.']])}
 else if(o.res!=null){scene='lab';P={x:480,y:430,f:1};if(!o.res){M.fails++;sv()}talk(o.res?[['',"The cells hum, then go quiet. Locks release, but every glass case stays sealed."],['Dr. Cocoa','(from the doorway, very calm) Well done. You may go home now. Please use the door.'],['You','Not until the cases are open. All of them.']]:[['',"The feed cuts out. The cells stay shut. Dr. Cocoa's voice drifts down the hall."],['Dr. Cocoa','Come back when you are less afraid.']])}
 return()=>k.stop()
 }
-export function play(box){
+export function play(box,opt){
+const rp=opt&&opt.replay
 let stopCur=null,dead=false
 const S=[1,1.25,1.5,2,2.5][(window.__perf||{gpu:2}).gpu]
-const A=art(S),X={isl:island(Math.min(S,1.25)),lab:lab(Math.min(S,1.5)),liv:room(Math.min(S,1.5),'living'),B:art2(S)}
+let A,X
 import('/js/rushterror.js').then(m=>{BU=m.BUILD;AB=m.ABIL}).catch(()=>{})
 const boot=o=>{stopCur=run(box,go,o||{},A,X)}
 const go=what=>{
 stopCur&&stopCur();stopCur=null
-if(what==='death'){stopCur=death(box,A,X.B,()=>{save({dd:1});setTimeout(()=>{if(dead)return;stopCur&&stopCur();stopCur=null;boot({scene:'island',after:1})},700)});return}
+if(what==='death'){stopCur=death(box,A,X.B,()=>{if(!rp)save({dd:1});setTimeout(()=>{if(dead)return;stopCur&&stopCur();stopCur=null;boot({scene:'island',after:1})},700)});return}
 if(what==='terror')import('/js/rush.js').then(m=>{
 if(dead)return
 let fin=false
@@ -358,6 +360,6 @@ setTimeout(()=>{if(dead)return;stopCur&&stopCur();stopCur=null;if(r.ok)save({fre
 },'terror')
 })
 }
-boot()
+ready().then(()=>{if(dead)return;A=art(S);X={isl:island(Math.min(S,1.25)),lab:lab(Math.min(S,1.5)),liv:room(Math.min(S,1.5),'living'),B:art2(S)};if(rp==='intro')boot({scene:'intro'});else if(rp==='betrayal')boot({scene:'lab',betray:1});else if(rp==='death')go('death');else boot()})
 return()=>{dead=true;stopCur&&stopCur()}
 }

@@ -1,6 +1,7 @@
 import{kit,txt}from'./kit.js'
 import{lg,rg,draw}from'./dsart.js'
 import{pcap}from'/js/perf.js'
+import{fr as fr2}from'./custom.js'
 const VW=960,VH=540,WW=2400,WH=1600,TAU=6.283
 const F='Georgia,"Times New Roman",serif'
 const cl=(v,a,b)=>Math.max(a,Math.min(b,v))
@@ -154,16 +155,16 @@ c.drawImage(G,0,0,WW,WH)
 for(const[lx,ly,lr]of LAVA){c.save();c.globalCompositeOperation='lighter';c.fillStyle='rgba(255,120,40,'+(.12+.05*Math.sin(time*3+lx))+')';c.beginPath();c.ellipse(lx,ly,lr*1.5,lr*1.1,0,0,TAU);c.fill();c.restore()}
 for(const ch of chests)draw(c,A2.chest[ch.o],ch.x,ch.y,1.2)
 const ents=[]
-ents.push({y:P.y,f:()=>{c.fillStyle='rgba(0,0,0,.4)';c.beginPath();c.ellipse(P.x,P.y+2,P.form?34:22,P.form?10:7,0,0,TAU);c.fill();const fr=Math.floor(P.walk*8)%2,fl=P.inv>0&&Math.floor(time*30)%2;if(fl)c.globalAlpha=.45;if(P.form){draw(c,A2.form[fr],P.x,P.y+Math.sin(time*6)*2,1.15,P.f<0)}else{draw(c,A.kid.cloud[(Math.abs(P.vx)+Math.abs(P.vy)>20)?fr:0],P.x,P.y-(Math.abs(P.vx)+Math.abs(P.vy)>20?Math.abs(Math.sin(P.walk*8))*3:0),1.25,P.f<0)}c.globalAlpha=1}})
-for(const e of en)ents.push({y:e.y,f:()=>{if(e.hurt>0)c.globalAlpha=.6;draw(c,A2.blob[Math.floor(e.fr)%2],e.x,e.y,1.1);c.globalAlpha=1}})
+ents.push({y:P.y,f:()=>{c.fillStyle='rgba(0,0,0,.4)';c.beginPath();c.ellipse(P.x,P.y+2,P.form?34:22,P.form?10:7,0,0,TAU);c.fill();const fr=Math.floor(P.walk*10)%5,fl=P.inv>0&&Math.floor(time*30)%2;if(fl)c.globalAlpha=.45;if(P.form){draw(c,A2.form[fr],P.x,P.y+Math.sin(time*6)*2,1.15,P.f<0)}else{draw(c,fr2(A.kid.cloud,Math.abs(P.vx)+Math.abs(P.vy)>20,P.walk),P.x,P.y-(Math.abs(P.vx)+Math.abs(P.vy)>20?Math.abs(Math.sin(P.walk*8))*3:0),1.25,P.f<0)}c.globalAlpha=1}})
+for(const e of en)ents.push({y:e.y,f:()=>{if(e.hurt>0)c.globalAlpha=.6;draw(c,A2.bat[Math.floor(e.fr*1.3)%4],e.x,e.y-26+Math.sin(e.fr*2)*5,1.1);c.globalAlpha=1}})
 if(boss.hp>0||over===1)ents.push({y:boss.y,f:()=>{
-const b=boss,st=b.st,fr=st==='slam'||st==='summon'||st==='volley'||st==='ring'?2:(Math.floor(b.fr*3)%2)
+const b=boss,st=b.st,K=B.boss,w=over===1&&b.hp<=0?K.death:st==='slam'?(b.t>.3?K.jump:K.attack):st==='summon'||st==='volley'||st==='ring'?K.jump:st==='lunge'?(b.t>0?K.fall:K.run):b.hurt>0?K.hurt:st==='idle'?[K.walk,K.run][Math.floor(b.fr*2.5)%2]:K.idle
 if(over===1&&b.hp<=0){c.globalAlpha=Math.max(0,1-endT*.4)}
 c.save();c.translate(b.x,b.y);c.fillStyle='rgba(0,0,0,.42)';c.beginPath();c.ellipse(0,2,90,20,0,0,TAU);c.fill()
 if(st==='wait')c.globalAlpha=Math.min(1,(4.2-intro)/2)
 if(b.hurt>0){c.filter='brightness(2.2)'}
 const sq=st==='lunge'&&b.t>0?1-.12*(1-b.t/.65):1
-c.scale((b.dir<0?-1:1)*1.15*(2-sq),1.15*sq);c.drawImage(B.boss[fr].c,-120,-244,240,250);c.restore();c.filter='none';c.globalAlpha=1
+c.scale((b.dir<0?-1:1)*1.1*(2-sq),1.1*sq);c.drawImage(w.c,-w.ax,-w.ay,w.w,w.h);c.restore();c.filter='none';c.globalAlpha=1
 c.save();c.globalCompositeOperation='lighter';c.fillStyle=rg(c,b.x,b.y-120,0,170,[[0,'rgba(255,140,60,'+(.18+.06*Math.sin(time*4))+')'],[1,'rgba(0,0,0,0)']]);c.fillRect(b.x-170,b.y-290,340,340);c.restore()}})
 ents.sort((a,b)=>a.y-b.y);for(const e of ents)e.f()
 if(boss.st==='slam'||boss.st==='lunge'){const sl=boss.st==='slam';c.save();c.globalAlpha=.25+.3*(sl?boss.sm:1-boss.t/.65);c.fillStyle='#ff3a2a';if(sl){c.beginPath();c.ellipse(boss.tx,boss.ty,130,130*.7,0,0,TAU);c.fill();c.strokeStyle='#ff8a6a';c.lineWidth=4;c.globalAlpha=.9;c.stroke();c.beginPath();c.ellipse(boss.tx,boss.ty,130*boss.sm,130*boss.sm*.7,0,0,TAU);c.stroke()}else{c.translate(boss.x,boss.y);c.rotate(boss.aim);c.fillRect(0,-34,520,68)}c.restore()}
