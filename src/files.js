@@ -259,6 +259,25 @@ c.ec.waitUntil(caches.default.put(key,out.clone()))
 return out
 })
 
+r.add('GET','/api/unfurl-img',async c=>{
+limit('uimg:'+c.user.id,120,60000)
+let u
+try{u=new URL(str(c.url.searchParams.get('url'),8,2000,'URL'))}catch{fail(400,'Invalid URL')}
+const host=u.hostname.toLowerCase()
+if(u.protocol!=='https:'||u.username||u.password||host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(host)||host.includes(':')||!host.includes('.'))fail(400,'URL not allowed')
+const key=new Request('https://uimg.cache/'+encodeURIComponent(u.href))
+const hit=await caches.default.match(key)
+if(hit)return hit
+const res=await fetch(u.href,{redirect:'follow',headers:{'user-agent':'ParleyLinkPreview/1.0',accept:'image/*'},cf:{cacheTtl:86400}})
+const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()
+if(!res.ok||!/^image\/(png|jpeg|webp|gif|avif)$/.test(ct))fail(404,'No image')
+const buf=await res.arrayBuffer()
+if(buf.byteLength>2500000)fail(404,'Image too large')
+const out=new Response(buf,{headers:{'content-type':ct,'cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
+c.ec.waitUntil(caches.default.put(key,out.clone()))
+return out
+})
+
 r.add('GET','/api/unfurl',async c=>{
 limit('unf:'+c.user.id,30,60000)
 let u
@@ -266,7 +285,7 @@ try{u=new URL(str(c.url.searchParams.get('url'),8,2000,'URL'))}catch{fail(400,'I
 if(!['http:','https:'].includes(u.protocol)||u.username||u.password)fail(400,'Invalid URL')
 const host=u.hostname.toLowerCase()
 if(host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(host)||host.includes(':')||!host.includes('.'))fail(400,'URL not allowed')
-const cacheKey=new Request('https://unfurl.cache/'+encodeURIComponent(u.href))
+const cacheKey=new Request('https://unfurl2.cache/'+encodeURIComponent(u.href))
 const hit=await caches.default.match(cacheKey)
 if(hit)return hit
 const ctl=new AbortController()
@@ -288,6 +307,8 @@ const dec2=s=>s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').
 out.title=dec2(meta('og:title')||(t?t[1].trim():''))
 out.description=dec2(meta('og:description')||meta('description'))
 out.site=dec2(meta('og:site_name')||host)
+const im=meta('og:image')||meta('twitter:image')
+if(im)try{const iu=new URL(dec2(im),u.href);if(iu.protocol==='https:'&&iu.hostname.includes('.')&&!/^(\d+\.){3}\d+$/.test(iu.hostname))out.image=iu.href}catch{}
 if(itch){const pm=html.match(/https:\/\/[a-z-]+\.itch\.zone\/html\/[\w\-\/.]+/);if(pm)out.play=pm[0]}
 }
 }catch{}finally{clearTimeout(timer)}
