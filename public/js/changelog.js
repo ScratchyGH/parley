@@ -1,5 +1,21 @@
-export const VERSION='2026.10.39'
+export const VERSION='2026.10.41'
 export const RELEASES=[
+{v:'2026.10.41',date:'October 28, 2026',title:'Games, Deep Sleep and the Horror shop',summary:'A Games hub on the left bar, seven new games, Pars unlocks for seasonal packs, the Deep Sleep story game and a Horror shop.',sections:[
+['Games',[
+['Games hub','Open the controller button on the left bar. Snake, 2048 and Breakout are free. Winter, Spring and Summer packs unlock with Pars.'],
+['Deep Sleep','Say goodnight, fall asleep and find out what lives inside the dream. Explore the island, break into the lab and take on Terror Night to free the people locked inside. Includes a tutorial for every Terror Night building and ability.'],
+['Pause, screenshot, fullscreen','Every game now has a bar for all three. Gifts no longer interrupt a game, you get a short notice instead.']]],
+['Shop',[
+['Horror shop','A frame, effect, nameplate, name style, badge, title and message style, all dark and all bought with Pars.']]]]},
+{v:'2026.10.40',date:'October 28, 2026',title:'Lighter and smoother',summary:'CPU and GPU modes, joined message bubbles, a screenshare fallback, automatic database cleanup and a redesigned download page.',sections:[
+['Performance',[
+['CPU and GPU usage','Settings, Performance. Pick Low, Medium, Normal, High or Max for each. Lower modes drop blur, shadows and animations and render games at a smaller size.'],
+['Automatic cleanup','Old run data, config noise in logs, old bot versions and expired sessions are now removed on their own.']]],
+['Fixes',[
+['Message bubbles','Messages from the same person join together again.'],
+['Kaboom','The cake now always lands on the right avatar.'],
+['Screen share','Devices that cannot capture a screen share their camera instead of showing an error.'],
+['Doom and Gourd Rush','The cursor locks in the desktop app, the minimap is bigger and the Hollowgrin boss is weaker.']]]]},
 {v:'2026.10.39',date:'October 23, 2026',title:'Hollowgrin Harvest',summary:'A Halloween takeover with a quest event, 3D Night Shift tapes, hidden pumpkins and pumpkin gifts.',sections:[
 ['Event',[
 ['Hollowgrin Harvest','Open the pumpkin button in the left bar. Finish nightly and daily quests, earn candy and XP, climb 24 reward tiers and find 13 hidden pumpkins around the app. Runs through October 31.'],

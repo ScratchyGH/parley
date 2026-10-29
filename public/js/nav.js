@@ -11,7 +11,7 @@ if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)retu
 const a=e.target.closest?.('a[href]')
 if(!a||a.target||a.hasAttribute('download')||a.origin!==location.origin)return
 const p=a.pathname
-if(!/^\/(bots|lab|discover|friends|settings|s|dm|pars|hollow)(\/|$)/.test(p))return
+if(!/^\/(bots|lab|discover|friends|settings|s|dm|pars|hollow|games)(\/|$)/.test(p))return
 e.preventDefault()
 go(p+a.search)
 })
@@ -26,6 +26,7 @@ if(p[0]==='s')return{name:'server',sid:p[1],ch:p[2]||null,m}
 if(p[0]==='discover')return{name:'discover'}
 if(p[0]==='pars')return{name:'pars'}
 if(p[0]==='hollow')return{name:'hollow'}
+if(p[0]==='games')return{name:'games'}
 if(p[0]==='lab'){
 if(!p[1])return{name:'lab',view:'mine'}
 if(p[1]==='new')return{name:'lab',view:'new'}
