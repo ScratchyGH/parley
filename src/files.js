@@ -285,14 +285,14 @@ try{u=new URL(str(c.url.searchParams.get('url'),8,2000,'URL'))}catch{fail(400,'I
 if(!['http:','https:'].includes(u.protocol)||u.username||u.password)fail(400,'Invalid URL')
 const host=u.hostname.toLowerCase()
 if(host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(host)||host.includes(':')||!host.includes('.'))fail(400,'URL not allowed')
-const cacheKey=new Request('https://unfurl2.cache/'+encodeURIComponent(u.href))
+const cacheKey=new Request('https://unfurl3.cache/'+encodeURIComponent(u.href))
 const hit=await caches.default.match(cacheKey)
 if(hit)return hit
 const ctl=new AbortController()
-const timer=setTimeout(()=>ctl.abort(),4000)
+const timer=setTimeout(()=>ctl.abort(),8000)
 let out={url:u.href,title:'',description:'',site:host}
-try{
-const res=await fetch(u.href,{signal:ctl.signal,redirect:'follow',headers:{'user-agent':'ParleyLinkPreview/1.0','accept':'text/html'}})
+const grab=async ua=>{
+const res=await fetch(u.href,{signal:ctl.signal,redirect:'follow',headers:{'user-agent':ua,'accept':'text/html,application/xhtml+xml','accept-language':'en-US,en;q=0.9'}})
 const ct=res.headers.get('content-type')||''
 if(res.ok&&ct.includes('text/html')){
 const reader=res.body.getReader()
@@ -310,6 +310,14 @@ out.site=dec2(meta('og:site_name')||host)
 const im=meta('og:image')||meta('twitter:image')
 if(im)try{const iu=new URL(dec2(im),u.href);if(iu.protocol==='https:'&&iu.hostname.includes('.')&&!/^(\d+\.){3}\d+$/.test(iu.hostname))out.image=iu.href}catch{}
 if(itch){const pm=html.match(/https:\/\/[a-z-]+\.itch\.zone\/html\/[\w\-\/.]+/);if(pm)out.play=pm[0]}
+}
+}
+try{
+await grab('ParleyLinkPreview/1.0')
+if(!out.title)await grab('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
+if(!out.title&&/(^|\.)(youtube\.com|youtu\.be)$/.test(host)){
+const o=await(await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(u.href),{signal:ctl.signal})).json()
+out.title=String(o.title||'').slice(0,300);out.description=String(o.author_name||'').slice(0,300);out.site='YouTube'
 }
 }catch{}finally{clearTimeout(timer)}
 const resp=new Response(JSON.stringify(out),{headers:{'content-type':'application/json','cache-control':'public, max-age=3600'}})
