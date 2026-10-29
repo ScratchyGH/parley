@@ -1448,3 +1448,4 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 @keyframes bdfall{0%{transform:translateY(-130%) rotate(-14deg);opacity:0}12%{opacity:1}100%{transform:translateY(240%) rotate(20deg);opacity:.9}}
 .m:hover,.msgs .m:hover{background:transparent}
 .m.hl,.m.hl:hover{background:color-mix(in srgb,var(--hi) 16%,transparent)}
+.itch{margin:6px 0}.itch-fr{width:min(640px,100%);aspect-ratio:16/10;border:0;border-radius:12px;background:#000;display:block}.itch-bar{margin-top:6px}
