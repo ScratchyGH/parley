@@ -7,7 +7,7 @@ This is a description of what the code does, not a certification. It has not bee
 - Passwords: PBKDF2-SHA256, random 16 byte salt per user, 100,000 iterations stored with each hash. That is the platform maximum for Workers' WebCrypto and is below current general guidance for PBKDF2 (hundreds of thousands). Use long passwords; minimum length is 10. Verification is constant time.
 - Sessions: a random 32 byte token in an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on https). Only its SHA-256 is stored, so a database leak does not yield usable sessions. Sessions expire after 30 days of inactivity and can be listed and revoked. Changing the password or using recovery signs out other sessions.
 - Login throttling: 8 failed attempts per username and 40 per address in 15 minutes lock further attempts. Unknown usernames take the same code path, so timing does not reveal which usernames exist.
-- Recovery: there is no email. Each account has a one time recovery code, shown once, stored only as a hash, replaced after each use. Losing both the password and the code means losing the account.
+- Recovery: email is optional. An account can confirm an email and reset its password with a 15 minute code (stored only as a hash, five tries), and two-factor accounts must also give their code. Each account has a one time recovery code, shown once, stored only as a hash, replaced after each use. Losing both the password and the code means losing the account.
 - Account deletion anonymises the user and requires the password. Servers you own must be transferred or deleted first.
 
 ## Requests
@@ -79,7 +79,7 @@ Reports (messages, users, servers), per server moderation (timeout, kick, ban, a
 
 - Best effort rate limiting (above).
 - PBKDF2 iteration count (above), and its CPU cost on the free plan is unverified in production.
-- No email verification, so nothing stops one person from making many accounts except per address registration limits.
+- Email is optional at signup, so nothing stops one person from making many accounts except per address registration limits.
 - Two factor authentication is TOTP only. A lost authenticator plus lost backup codes means the account cannot be recovered by the recovery code.
 - Peer-to-peer mode (off by default) reveals your IP address to peers over WebRTC. Peers can withhold messages from history pages, and a page may contain messages that were deleted while that peer was offline, until you refresh from the server. Files fetched from peers are verified by SHA-256 and messages by the server signature, so peers cannot forge content, only omit it.
 - OAuth only accounts have no password until the owner sets one, so they have no recovery code until then. Losing the linked provider account loses the Parley account unless a passkey or password was added.

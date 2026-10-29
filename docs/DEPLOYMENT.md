@@ -21,6 +21,7 @@ Cloudflare D1 is the default database and file store. Each of these is switched 
 
 | Service | Secrets | What it does | Free limits (check current terms) |
 | --- | --- | --- | --- |
+| Resend | `RESEND_API_KEY`, optional variable `MAIL_FROM` (like `Parley <no-reply@example.com>`) | Sends email confirmation codes, password reset codes and security alerts. Without a verified domain Resend only sends from `onboarding@resend.dev` to your own address | 3,000 emails a month on the free plan |
 | Turso | `TURSO_URL` (`libsql://...`), `TURSO_TOKEN` | Replaces D1 as the main database. The schema is created automatically on first request. Also stores files. | about 5 GB. Every query becomes an internet round trip, so expect it to be slower than D1 |
 | Supabase Storage | `SUPABASE_URL`, `SUPABASE_KEY` (service role key), optional `SUPABASE_BUCKET` (default `parley`, create it as a private bucket) | Stores files up to 16 MiB | about 1 GB, 50 MB per object |
 | Firebase Firestore | `FIREBASE_SA` (the whole service account JSON, Firestore in Native mode on the free Spark plan) | Stores files up to 16 MiB in 512 KiB documents | about 1 GiB, 20k writes per day |

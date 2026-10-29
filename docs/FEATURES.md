@@ -7,7 +7,7 @@ Verification levels used below:
 - **Untested**: written, with no test of any kind.
 - **Missing**: does not exist. Not hidden behind a disabled button.
 
-Nothing has been deployed to Cloudflare.
+Parley is deployed at https://parley.heavengtwashere.workers.dev and runs in daily use. Older sections below keep their original verification notes.
 
 ## Accounts
 
@@ -20,7 +20,7 @@ Nothing has been deployed to Cloudflare.
 | Account export (JSON) and deletion | API tested, UI written |
 | Suspended account appeal page | API tested, UI written |
 | Username protection: lookalike matching (case, dots, dashes, underscores, 0/o, 1/i/l, 5/s, 3/e, 4/a, 7/t, 8/b), reserved names, old names stay reserved for the previous owner (last 6 kept), deleted accounts keep their names reserved | API tested |
-| Email verification, email based recovery | Missing |
+| Email confirmation, email password reset, password change alerts | Built, needs the `RESEND_API_KEY` secret |
 | Two factor authentication (TOTP, 8 backup codes, login gate) | API tested; UI written. No QR code: the secret and an `otpauth://` link are shown |
 
 ## Servers, channels, roles
@@ -196,7 +196,7 @@ D1 and R2 remain authoritative. P2P is an optional accelerator and is off by def
 - Migrations are `0001_init.sql` to `0015_cases_templates_tags.sql` (0015 adds mod cases, templates, server tags and drops the removed maintenance bypass table; earlier ones are described next, from the first eight) (0003: username claims, stickers, vanity, lockdown, bots; 0004: D1 file chunks; 0005: partial indexes for message lists, pins and spam checks; 0006: bot projects, tags, releases, installs; 0007: OAuth identities, passkeys, WebAuthn challenges; 0008: indexes for the nightly cleanup). Apply with `npm run migrate:remote` before deploying.
 - Display names are not unique and are not protected, so someone can still copy another person's display name. Usernames (which are the unique handle) are protected.
 - Full text search is still a LIKE scan: D1 FTS5 would roughly triple message write cost on the free plan.
-- Not buildable on the free tier without a third party: email verification and recovery, end to end encryption, full text search, an SFU for large calls.
+- Not buildable on the free tier without a third party: end to end encryption, full text search, an SFU for large calls.
 - HEIC/HEIF files are accepted and downloadable but not displayed inline.
 
 ## October 2026 update
@@ -285,3 +285,9 @@ Bundle items grant several cosmetics at once; vanity links from bundles expire a
 
 ## Shop overhaul (migration 0029)
 Items gained `title` and `bubble` kinds (`users.title`, `users.bubble`). Bundle `data` is `{"variants":{"legacy":{...},"modern":{...}},"ends_at":ms}`; each variant has `items`, `vanity_days`, `price`, `gift_price`, `server_price`. Ownership of a bundle version is a `par_owned` row with `item_id='bundle:<id>:<variant>'`, enforced once-only by a partial unique index. `POST /api/pars/buy` accepts `variant`, `to` (gift a cosmetic or bundle; gifts exclude the vanity link) and `target:'server'` for a bundle's vanity time. The Timeskipper bundle (`bn_time`) stops selling at `ends_at`.
+
+## Bot Lab (v2026.10.50)
+284 block types. Pure blocks live in `src/labmore.js` and `src/labmore2.js`, the engine in `src/blockrun.js`, outside services in `src/apiblock.js`, and validation in `src/botcheck.js`. The 64 ready-made API services run server side with a limit of 3 outside calls per run and 20 per minute per bot. The feed and preview blocks read RSS, Atom and page metadata over https. Device, Bluetooth, serial, USB and NFC blocks only run on a member's device after they tap Allow.
+
+## Slash commands and email (v2026.10.51)
+The command block takes a description and inputs (`name | text, number, yesno or a, b, c | hint`), which `public/js/cmdopts.js` parses on both client and server. `GET /api/servers/:sid/commands` lists the commands of installed bots for the `/` menu. Email (`src/email.js`, migration 0057) confirms an address, resets passwords with a 15 minute code and sends security alerts through Resend.
