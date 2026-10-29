@@ -159,17 +159,17 @@ const scr=k==='screenaudio'||(k!=='mic'&&micId!=null&&id!==micId)
 if(scr){
 if(!t.scrAudioEl){t.scrAudioEl=new Audio();t.scrAudioEl.autoplay=true;sink.append(t.scrAudioEl);const pr=voicePrefs();if(pr.output&&t.scrAudioEl.setSinkId)t.scrAudioEl.setSinkId(pr.output).catch(()=>{})}
 if(t.scrAudioEl.srcObject!==st)t.scrAudioEl.srcObject=st
-t.scrAudioEl.muted=V.deaf;t.scrAudioEl.volume=t.vol
+setVol(t.scrAudioEl,V.deaf?0:t.vol)
 }else{
 if(!t.audioEl){t.audioEl=new Audio();t.audioEl.autoplay=true;sink.append(t.audioEl);const pr=voicePrefs();if(pr.output&&t.audioEl.setSinkId)t.audioEl.setSinkId(pr.output).catch(()=>{})}
 if(t.audioEl.srcObject!==st){t.audioEl.srcObject=st;watchStream(t.uid,st)}
-t.audioEl.muted=V.deaf;t.audioEl.volume=t.vol
+setVol(t.audioEl,V.deaf?0:t.vol)
 }
 }
 }
 function mkPeer(uid){
 const pc=new RTCPeerConnection({iceServers:V.ice})
-const p={uid,pc,astreams:new Map(),polite:S.me.id<uid,making:false,ignore:false,streams:new Map(),kinds:{},senders:{},audioEl:null,vol:1}
+const p={uid,pc,astreams:new Map(),polite:S.me.id<uid,making:false,ignore:false,streams:new Map(),kinds:{},senders:{},audioEl:null,vol:2.5}
 V.peers.set(uid,p)
 pc.onicecandidate=e=>{if(e.candidate)sig(uid,{cand:e.candidate})}
 pc.onnegotiationneeded=async()=>{
@@ -376,7 +376,7 @@ setMuted(!V.muted)
 }
 export function setDeaf(v){
 V.deaf=v
-for(const p of V.peers.values()){if(p.audioEl)p.audioEl.muted=v;if(p.scrAudioEl)p.scrAudioEl.muted=v}
+for(const p of V.peers.values()){if(p.audioEl)setVol(p.audioEl,v?0:p.vol);if(p.scrAudioEl)setVol(p.scrAudioEl,v?0:p.vol)}
 V.mic?.getAudioTracks().forEach(t=>t.enabled=!v&&!V.muted)
 setState()
 emit('voice:update')
@@ -494,12 +494,23 @@ V.watch.delete('me')
 watchStream('me',ns)
 }catch(e){fail(e)}
 }
+let boostCtx=null
+function setVol(a,v){
+const st=a.srcObject
+try{
+if(!boostCtx){boostCtx=new AudioContext();const o=voicePrefs().output;if(o&&boostCtx.setSinkId)boostCtx.setSinkId(o).catch(()=>{})}
+if(st&&a._st!==st){try{a._src&&a._src.disconnect()}catch{}a._st=st;a._src=boostCtx.createMediaStreamSource(st);a._g=boostCtx.createGain();a._src.connect(a._g);a._g.connect(boostCtx.destination)}
+if(a._g){a.volume=0;a._g.gain.value=v;if(boostCtx.state==='suspended')boostCtx.resume().catch(()=>{});return}
+}catch{}
+a.volume=Math.min(1,v)
+}
 export function applyOutput(id){
+if(boostCtx?.setSinkId)boostCtx.setSinkId(id||'').catch(()=>{})
 for(const p of V.peers.values())for(const a of[p.audioEl,p.scrAudioEl])if(a?.setSinkId)a.setSinkId(id||'').catch(()=>{})
 }
 export function setPeerVolume(uid,v){
 const p=V.peers.get(uid)
-if(p){p.vol=v;if(p.audioEl)p.audioEl.volume=v;if(p.scrAudioEl)p.scrAudioEl.volume=v}
+if(p){p.vol=v;if(p.audioEl)setVol(p.audioEl,V.deaf?0:v);if(p.scrAudioEl)setVol(p.scrAudioEl,V.deaf?0:v)}
 }
 
 function watchStream(id,stream){
@@ -652,7 +663,7 @@ tile.append(h('div',{class:'nm'},opts.label||u.display_name,st.h&&!opts.stream?h
 if(uid!==S.me.id&&!opts.stream)tile.addEventListener('contextmenu',e=>{
 e.preventDefault()
 const p=V.peers.get(uid)
-const r=h('input',{type:'range',min:0,max:1,step:.05,value:p?.vol??1,'aria-label':'Volume',on:{input:e=>setPeerVolume(uid,+e.target.value)}})
+const r=h('input',{type:'range',min:0,max:4,step:.1,value:p?.vol??2.5,'aria-label':'Volume',on:{input:e=>setPeerVolume(uid,+e.target.value)}})
 popup([h('div',{style:{padding:'8px'}},h('div',{class:'hint'},'Volume for '+u.display_name),r)],e.clientX,e.clientY)
 })
 return tile
