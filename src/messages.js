@@ -103,8 +103,8 @@ const x=(await db.prepare(sel+(sp.get('before')?' and id<?':' and id<>?')+' orde
 moreBefore=x.length>lim
 rows=x.slice(0,lim).reverse()
 }
-const rs=await db.prepare('select last_read,mentions from read_state where user_id=? and room=?').bind(c.user.id,rr.room).first()
-return{messages:await hydrate(c.env,rows,c.user.id),more_before:moreBefore,more_after:moreAfter,last_read:rs?.last_read||'',mentions:rs?.mentions||0}
+const[rs,hy]=await Promise.all([db.prepare('select last_read,mentions from read_state where user_id=? and room=?').bind(c.user.id,rr.room).first(),hydrate(c.env,rows,c.user.id)])
+return{messages:hy,more_before:moreBefore,more_after:moreAfter,last_read:rs?.last_read||'',mentions:rs?.mentions||0}
 })
 
 r.add('POST','/api/rooms/:room/messages',async c=>{
@@ -130,6 +130,7 @@ const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))
 let stk=null
 if(b.sticker_id){stk=await stickerFor(c.env,String(b.sticker_id),c.user.id);if(!stk)fail(400,'Sticker not available')}
 if(!content&&!attIds.length&&!stk&&!fwdFiles.length)fail(400,'Message is empty')
+const lastP=c.env.DB.prepare('select content,created_at from messages where room=? and author_id=? order by id desc limit 1').bind(rr.room,c.user.id).first()
 const nonce=typeof b.nonce==='string'&&b.nonce.length<=40?b.nonce:null
 if(nonce){
 const ex=await c.env.DB.prepare('select * from messages where author_id=? and nonce=?').bind(c.user.id,nonce).first()
@@ -139,7 +140,7 @@ await antispam(c,rr,content,attIds.length>0)
 await automod(c.env,rr,content)
 await extBlock(c.env,rr,content,stk)
 await labsBefore(c,rr,content)
-const last=await c.env.DB.prepare('select content,created_at from messages where room=? and author_id=? order by id desc limit 1').bind(rr.room,c.user.id).first()
+const last=await lastP
 if(last){
 const priv=rr.kind==='channel'&&(rr.perms&(P.MANAGE_MESSAGES|P.MODERATE))
 if(rr.kind==='channel'&&rr.ch.slowmode&&!priv&&now()-last.created_at<rr.ch.slowmode*1000)fail(429,`Slow mode is on. Wait ${Math.ceil((rr.ch.slowmode*1000-(now()-last.created_at))/1000)}s before sending again.`)

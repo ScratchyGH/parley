@@ -265,13 +265,9 @@ return{servers:rows}
 
 r.add('GET','/api/servers/:sid',async c=>{
 const m=await mem(c,c.p.sid)
-const vis=await visibleChannels(c.env,m)
-const cats=(await c.env.DB.prepare('select * from categories where server_id=? order by position').bind(m.server.id).all()).results
-const roles=(await c.env.DB.prepare('select id,name,color,position,perms,is_everyone from roles where server_id=? order by position desc').bind(m.server.id).all()).results
-const count=await c.env.DB.prepare('select count(*) n from members where server_id=?').bind(m.server.id).first()
-const emoji=(await c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all()).results
+const[vis,catsR,rolesR,count,emojiR,expc]=await Promise.all([visibleChannels(c.env,m),c.env.DB.prepare('select * from categories where server_id=? order by position').bind(m.server.id).all(),c.env.DB.prepare('select id,name,color,position,perms,is_everyone from roles where server_id=? order by position desc').bind(m.server.id).all(),c.env.DB.prepare('select count(*) n from members where server_id=?').bind(m.server.id).first(),c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all(),expCfg(c.env)])
+const cats=catsR.results,roles=rolesR.results,emoji=emojiR.results
 const s=m.server
-const expc=await expCfg(c.env)
 const onb=onbOf(s.onboarding)
 let onboarded=true
 if(onb.on){

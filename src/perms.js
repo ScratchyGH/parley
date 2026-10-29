@@ -5,9 +5,9 @@ export const DEFAULT=P.VIEW|P.SEND|P.CREATE_INVITE|P.CONNECT|P.ATTACH|P.REACT
 export const PERM_NAMES=Object.keys(P)
 
 export async function loadMember(env,serverId,userId){
-const row=await env.DB.prepare('select s.*,m.nickname,m.timeout_until from servers s join members m on m.server_id=s.id and m.user_id=? where s.id=?').bind(userId,serverId).first()
+const[row,rr]=await Promise.all([env.DB.prepare('select s.*,m.nickname,m.timeout_until from servers s join members m on m.server_id=s.id and m.user_id=? where s.id=?').bind(userId,serverId).first(),env.DB.prepare('select id,perms,position,is_everyone from roles where server_id=? and (is_everyone=1 or id in (select role_id from member_roles where server_id=? and user_id=?))').bind(serverId,serverId,userId).all()])
 if(!row)return null
-const roles=(await env.DB.prepare('select id,perms,position,is_everyone from roles where server_id=? and (is_everyone=1 or id in (select role_id from member_roles where server_id=? and user_id=?))').bind(serverId,serverId,userId).all()).results
+const roles=rr.results
 const owner=row.owner_id===userId
 let base=0,top=0,everyone=null
 const roleIds=[]
@@ -45,8 +45,8 @@ return{ch,perms:chanPerms(m,ch,ovs)}
 }
 
 export async function visibleChannels(env,m){
-const chs=(await env.DB.prepare('select * from channels where server_id=? order by position,created_at').bind(m.server.id).all()).results
-const ovs=(await env.DB.prepare('select o.* from overrides o join channels c on c.id=o.channel_id where c.server_id=?').bind(m.server.id).all()).results
+const[a,b]=await Promise.all([env.DB.prepare('select * from channels where server_id=? order by position,created_at').bind(m.server.id).all(),env.DB.prepare('select o.* from overrides o join channels c on c.id=o.channel_id where c.server_id=?').bind(m.server.id).all()])
+const chs=a.results,ovs=b.results
 const by={}
 for(const o of ovs)(by[o.channel_id]||=[]).push(o)
 const out=[]
@@ -61,9 +61,9 @@ if(typeof room!=='string')fail(400,'Invalid room')
 if(room.startsWith('ch_')){
 const ch=await env.DB.prepare('select * from channels where id=?').bind(room).first()
 if(!ch)fail(404,'Channel not found')
-const m=await loadMember(env,ch.server_id,userId)
+const[m,ovr]=await Promise.all([loadMember(env,ch.server_id,userId),env.DB.prepare('select target_type,target_id,allow,deny from overrides where channel_id=?').bind(room).all()])
 if(!m)fail(404,'Channel not found')
-const ovs=(await env.DB.prepare('select target_type,target_id,allow,deny from overrides where channel_id=?').bind(room).all()).results
+const ovs=ovr.results
 const perms=chanPerms(m,ch,ovs)
 if(!(perms&P.VIEW))fail(404,'Channel not found')
 return{kind:'channel',room,ch,m,perms,ovs,serverId:ch.server_id,hub:'s_'+ch.server_id}
