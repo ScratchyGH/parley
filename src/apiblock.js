@@ -16,6 +16,11 @@ rd.cancel().catch(()=>{})
 return JSON.parse(s)
 }catch{return null}finally{clearTimeout(t)}
 }
+async function place(i){
+if(!i)return null
+const g=await getJson('https://geocoding-api.open-meteo.com/v1/search?count=1&name='+enc(i))
+return g&&g.results&&g.results[0]||null
+}
 export const PRESETS=[
 ['joke','Random joke'],['catfact','Cat fact'],['catpic','Cat picture'],['dogpic','Dog picture'],['advice','Random advice'],['quote','Inspiring quote'],['fact','Random fact'],['trivia','Trivia question'],['weather','Weather for a city'],['define','Define a word'],['wiki','Wikipedia summary'],['crypto','Crypto price in USD'],['pokemon','Pokémon info'],['time','Time in a time zone'],['xkcd','Latest xkcd comic'],['country','Country facts'],['github','GitHub user'],['npm','npm package'],['mcserver','Minecraft server status'],['mcuser','Minecraft player'],['exchange','Exchange rate'],['dadjoke','Dad joke'],['chuck','Chuck Norris joke'],['kanye','Kanye quote'],['fox','Fox picture'],['meal','Random meal'],['cocktail','Random cocktail']
 ]
@@ -73,6 +78,19 @@ kanye:async()=>{const d=await getJson('https://api.kanye.rest/');return d&&d.quo
 fox:async()=>{const d=await getJson('https://randomfox.ca/floof/');return d&&d.image?{text:d.image}:null},
 meal:async()=>{const d=await getJson('https://www.themealdb.com/api/json/v1/1/random.php');const m=d&&d.meals&&d.meals[0];return m?{text:cap(`${m.strMeal} (${m.strCategory}, ${m.strArea})`),extra:{name:cap(m.strMeal,80),image:m.strMealThumb}}:null},
 cocktail:async()=>{const d=await getJson('https://www.thecocktaildb.com/api/json/v1/1/random.php');const m=d&&d.drinks&&d.drinks[0];return m?{text:cap(`${m.strDrink} (${m.strCategory})`),extra:{name:cap(m.strDrink,80),image:m.strDrinkThumb}}:null},
+dd_invite:async i=>{const c=String(i||'').trim().replace(/[?#].*$/,'').split('/').pop().replace(/[^A-Za-z0-9-]/g,'').slice(0,32);if(!c)return null;const d=await getJson('https://discord.com/api/v10/invites/'+c+'?with_counts=true');if(!d||!d.guild)return null;const g=d.guild;return{text:cap(`${g.name}: ${d.approximate_member_count||0} members, ${d.approximate_presence_count||0} online`),extra:{server:cap(g.name,100),members:String(d.approximate_member_count||0),online:String(d.approximate_presence_count||0),id:String(g.id),code:c,channel:cap(d.channel&&d.channel.name,60),about:cap(g.description,200),inviter:cap(d.inviter&&(d.inviter.global_name||d.inviter.username),60)}}},
+dd_widget:async i=>{const id=String(i||'').replace(/\D/g,'').slice(0,20);if(!id)return null;const d=await getJson('https://discord.com/api/guilds/'+id+'/widget.json');if(!d||!d.name)return null;return{text:cap(`${d.name}: ${d.presence_count} online`),extra:{server:cap(d.name,100),online:String(d.presence_count),invite:cap(d.instant_invite,100),people:cap((d.members||[]).slice(0,10).map(m=>m.username).join(', '),300)}}},
+dd_template:async i=>{const c=String(i||'').trim().replace(/[?#].*$/,'').split('/').pop().replace(/[^A-Za-z0-9-]/g,'').slice(0,32);if(!c)return null;const d=await getJson('https://discord.com/api/v10/guilds/templates/'+c);return d&&d.name?{text:cap(`${d.name}: used ${d.usage_count} times`+(d.description?', '+d.description:'')),extra:{name:cap(d.name,100),uses:String(d.usage_count),about:cap(d.description,200),creator:cap(d.creator&&(d.creator.global_name||d.creator.username),60)}}:null},
+dd_app:async i=>{const id=String(i||'').replace(/\D/g,'').slice(0,20);if(!id)return null;const d=await getJson('https://discord.com/api/v10/applications/'+id+'/rpc');return d&&d.name?{text:cap(d.name+(d.description?': '+d.description:''),300),extra:{name:cap(d.name,100),about:cap(d.description,250),bot_public:String(!!d.bot_public)}}:null},
+dd_status:async()=>{const d=await getJson('https://discordstatus.com/api/v2/summary.json');if(!d||!d.status)return null;const inc=(d.incidents||[])[0];return{text:cap('Discord: '+d.status.description+(inc?'. Latest issue: '+inc.name:'')),extra:{level:cap(d.status.indicator,20),state:cap(d.status.description,100),issue:cap(inc?inc.name:'None',150),issues:String((d.incidents||[]).length)}}},
+w_geo:async i=>{const p=await place(i);return p?{text:cap(`${p.name}, ${p.country||''}: ${p.latitude}, ${p.longitude}, ${p.timezone||''}`),extra:{city:cap(p.name,60),country:cap(p.country,60),lat:String(p.latitude),lon:String(p.longitude),zone:cap(p.timezone,40),population:String(p.population||0),elevation:String(p.elevation==null?'':p.elevation)}}:null},
+w_forecast:async i=>{const p=await place(i);if(!p)return null;const w=await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=3`);const d=w&&w.daily;if(!d||!d.time)return null;const day=k=>new Date(d.time[k]+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'short',timeZone:'UTC'});const ln=d.time.map((_,k)=>`${day(k)} ${Math.round(d.temperature_2m_min[k])} to ${Math.round(d.temperature_2m_max[k])}°C, rain ${d.precipitation_sum[k]} mm`);return{text:cap(p.name+': '+ln.join('; '),400),extra:{today:cap(ln[0],100),tomorrow:cap(ln[1]||'',100),high:String(Math.round(d.temperature_2m_max[0])),low:String(Math.round(d.temperature_2m_min[0]))}}},
+w_sun:async i=>{const p=await place(i);if(!p)return null;const w=await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&daily=sunrise,sunset&timezone=auto&forecast_days=1`);const d=w&&w.daily;if(!d||!d.sunrise)return null;const a=d.sunrise[0].slice(11),b=d.sunset[0].slice(11);return{text:`${p.name}: sunrise ${a}, sunset ${b} (local time)`,extra:{sunrise:a,sunset:b}}},
+w_air:async i=>{const p=await place(i);if(!p)return null;const w=await getJson(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${p.latitude}&longitude=${p.longitude}&current=us_aqi,pm2_5`);const c=w&&w.current;if(!c||c.us_aqi==null)return null;const a=c.us_aqi,l=a<=50?'good':a<=100?'moderate':a<=150?'unhealthy for sensitive groups':a<=200?'unhealthy':a<=300?'very unhealthy':'hazardous';return{text:`${p.name}: air quality index ${a} (${l}), PM2.5 ${c.pm2_5}`,extra:{aqi:String(a),level:l,pm25:String(c.pm2_5)}}},
+w_quake:async()=>{const d=await getJson('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');if(!d||!d.features)return null;const f=d.features[0];if(!f)return{text:'No earthquakes of magnitude 4.5 or more in the last day.',extra:{count:'0'}};const p=f.properties;return{text:cap(`Latest: magnitude ${p.mag} ${p.place}. ${d.features.length} of magnitude 4.5 or more in the last day.`),extra:{mag:String(p.mag),place:cap(p.place,100),count:String(d.features.length),url:cap(p.url,150)}}},
+w_iss:async()=>{const d=await getJson('https://api.wheretheiss.at/v1/satellites/25544');return d&&d.latitude!=null?{text:`The ISS is at ${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)}, ${Math.round(d.altitude)} km up, moving ${Math.round(d.velocity)} km/h.`,extra:{lat:d.latitude.toFixed(3),lon:d.longitude.toFixed(3),altitude:String(Math.round(d.altitude)),speed:String(Math.round(d.velocity))}}:null},
+w_holiday:async i=>{const c=String(i||'US').trim().toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'US';const d=await getJson('https://date.nager.at/api/v3/NextPublicHolidays/'+c);const f=d&&d[0];return f?{text:`${f.name} on ${f.date} (${c})`,extra:{name:cap(f.name,80),date:f.date}}:null},
+w_launch:async()=>{const d=await getJson('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1&mode=list');const f=d&&d.results&&d.results[0];return f?{text:cap(`${f.name} at ${f.net}`+(f.status&&f.status.name?' ('+f.status.name+')':'')),extra:{name:cap(f.name,100),when:cap(f.net,40),state:cap(f.status&&f.status.name,40)}}:null},
 time:async i=>{
 const z=String(i||'UTC').trim().replace(/[^A-Za-z0-9_\/+-]/g,'').slice(0,40)||'UTC'
 try{return{text:new Intl.DateTimeFormat('en-US',{timeZone:z,dateStyle:'medium',timeStyle:'short'}).format(new Date())}}catch{return null}
@@ -107,4 +125,14 @@ if(d==null)return null
 const v=path?pathGet(d,path):d
 if(v===undefined)return null
 return{text:cap(typeof v==='object'?JSON.stringify(v):v)}
+}
+export async function runWebhook(key,href,body){
+if(!allow(key))return false
+if(!/^https:\/\/(discord|discordapp)\.com\/api(\/v\d+)?\/webhooks\/\d{5,25}\/[\w-]{20,100}$/.test(href))return false
+const ctl=new AbortController()
+const t=setTimeout(()=>ctl.abort(),4000)
+try{
+const r=await fetch(href,{method:'POST',signal:ctl.signal,redirect:'error',headers:{'content-type':'application/json','user-agent':'ParleyBot/1.0'},body:JSON.stringify({...body,allowed_mentions:{parse:[]}})})
+return r.ok
+}catch{return false}finally{clearTimeout(t)}
 }

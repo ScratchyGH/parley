@@ -1,5 +1,6 @@
 import{fail}from'./util.js'
 import{pathGet}from'./apiblock.js'
+import*as L from'./labfx.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
 const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words','capital','nospaces','digits','letters','left','right','repeat','slug']
 const MATH=['+','-','*','/','%','max','min','pow','floor','ceil','round','abs']
@@ -26,6 +27,7 @@ const o={}
 for(const x of f.formatToParts(new Date(at)))o[x.type]=x.value
 return{h:Number(o.hour)%24,mi:Number(o.minute),d:Number(o.day),mo:Number(o.month),y:Number(o.year),wd:WD[o.weekday]??0}
 }
+const UN={m:['l',1],km:['l',1000],cm:['l',.01],mm:['l',.001],mi:['l',1609.344],yd:['l',.9144],ft:['l',.3048],in:['l',.0254],kg:['w',1],g:['w',.001],lb:['w',.45359237],oz:['w',.028349523125],mps:['s',1],kmh:['s',1/3.6],mph:['s',.44704],knot:['s',.514444],l:['v',1],ml:['v',.001],gal:['v',3.785411784],cup:['v',.2365882365],c:['t'],f:['t'],k:['t'],b:['d',1],kb:['d',1e3],mb:['d',1e6],gb:['d',1e9],tb:['d',1e12],sec:['T',1],min:['T',60],hr:['T',3600],day:['T',86400]}
 export const TYPES={
 msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0']},def:{mode:'contains',text:'',ci:'1'}},
 cmd:{out:NX,trigger:true,spec:{prefix:3,name:32},def:{prefix:'!',name:'ping'}},
@@ -128,7 +130,46 @@ numformat:{out:NX,spec:{name:24,input:30},def:{name:'number',input:'{arg1}'}},
 base:{out:NX,spec:{name:24,input:30,to:['bin','hex','oct','dec']},def:{name:'converted',input:'{arg1}',to:'bin'}},
 urlenc:{out:NX,spec:{name:24,input:300},def:{name:'encoded',input:'{args}'}},
 hashnum:{out:NX,spec:{name:24,input:200,max:9},def:{name:'score',input:'{args}',max:'100'}},
-rps:{out:NX,spec:{name:24,input:30},def:{name:'result',input:'{arg1}'}}
+rps:{out:NX,spec:{name:24,input:30},def:{name:'result',input:'{arg1}'}},
+dd:{out:NX,spec:{name:24,kind:['invite','widget','template','app','status'],input:100,fallback:100},def:{name:'discord',kind:'invite',input:'{arg1}',fallback:'Discord did not answer.'}},
+ddwebhook:{out:NX,spec:{name:24,url:200,user:80,avatar:300,text:1900},def:{name:'sent',url:'https://discord.com/api/webhooks/',user:'',avatar:'',text:''}},
+ddembed:{out:NX,spec:{name:24,url:200,user:80,title:200,text:1500,color:7,image:300,footer:100},def:{name:'sent',url:'https://discord.com/api/webhooks/',user:'',title:'',text:'',color:'5865F2',image:'',footer:''}},
+ddformat:{out:NX,spec:{name:24,input:500,fmt:['bold','italic','bolditalic','underline','strike','spoiler','code','codeblock','quote','h1','h2','h3','subtext','nolink']},def:{name:'styled',input:'{text}',fmt:'bold'}},
+ddtime:{out:NX,spec:{name:24,input:20,fmt:['t','T','d','D','f','F','R']},def:{name:'stamp',input:'',fmt:'R'}},
+ddsnowflake:{out:NX,spec:{name:24,input:30},def:{name:'flake',input:'{arg1}'}},
+ddmention:{out:NX,spec:{name:24,kind:['user','channel','role'],id:30},def:{name:'ping',kind:'user',id:'{userid}'}},
+ddinvitecode:{out:NX,spec:{name:24,input:500},def:{name:'invite',input:'{text}'}},
+ddemoji:{out:NX,spec:{name:24,label:32,id:30,animated:['0','1']},def:{name:'emoji',label:'emoji',id:'',animated:'0'}},
+ddlink:{out:NX,spec:{name:24,kind:['message','channel','user','invite','server'],a:30,b:30,c:30},def:{name:'link',kind:'invite',a:'',b:'',c:''}},
+world:{out:NX,spec:{name:24,kind:['geo','forecast','sun','air','quake','iss','holiday','launch'],input:60,fallback:100},def:{name:'world',kind:'forecast',input:'{args}',fallback:'No data for that.'}},
+moonphase:{out:NX,spec:{name:24,date:20},def:{name:'moon',date:''}},
+distance:{out:NX,spec:{name:24,lat1:12,lon1:12,lat2:12,lon2:12,unit:['km','mi']},def:{name:'distance',lat1:'',lon1:'',lat2:'',lon2:'',unit:'km'}},
+unitconv:{out:NX,spec:{name:24,value:30,from:Object.keys(UN),to:Object.keys(UN)},def:{name:'converted',value:'{arg1}',from:'km',to:'mi'}},
+colorconv:{out:NX,spec:{name:24,input:30},def:{name:'color',input:'{arg1}'}},
+morse:{out:NX,spec:{name:24,input:200,mode:['encode','decode']},def:{name:'morse',input:'{args}',mode:'encode'}},
+roman:{out:NX,spec:{name:24,input:20,mode:['toroman','tonumber']},def:{name:'roman',input:'{arg1}',mode:'toroman'}},
+caesar:{out:NX,spec:{name:24,input:300,shift:3},def:{name:'cipher',input:'{args}',shift:'3'}},
+hashtext:{out:NX,spec:{name:24,input:300,algo:['sha256','sha1','sha512']},def:{name:'hash',input:'{args}',algo:'sha256'}},
+uuid:{out:NX,spec:{name:24},def:{name:'uuid'}},
+nato:{out:NX,spec:{name:24,input:100},def:{name:'spelled',input:'{args}'}},
+binarytext:{out:NX,spec:{name:24,input:200,mode:['encode','decode']},def:{name:'binary',input:'{args}',mode:'encode'}},
+foreach:{out:['each','done'],spec:{name:24,input:500},def:{name:'item',input:'{args}'}},
+devvibrate:{out:NX,spec:{pattern:40},def:{pattern:'200,100,200'}},
+devspeak:{out:NX,spec:{text:300},def:{text:'{text}'}},
+devtone:{out:NX,spec:{freq:5,ms:5},def:{freq:'440',ms:'400'}},
+devflash:{out:NX,spec:{color:7,ms:5},def:{color:'FFFFFF',ms:'400'}},
+devnotify:{out:NX,spec:{title:60,body:200},def:{title:'{server}',body:'{text}'}},
+devcopy:{out:NX,spec:{text:500},def:{text:'{text}'}},
+devopen:{out:NX,spec:{url:300},def:{url:'https://'}},
+devshare:{out:NX,spec:{text:300},def:{text:'{text}'}},
+devwake:{out:NX,spec:{seconds:3},def:{seconds:'30'}},
+devbattery:{out:NX,spec:{},def:{}},
+devnet:{out:NX,spec:{},def:{}},
+btscan:{out:NX,spec:{prefix:30},def:{prefix:''}},
+btbattery:{out:NX,spec:{prefix:30},def:{prefix:''}},
+btheart:{out:NX,spec:{seconds:3},def:{seconds:'15'}},
+btread:{out:NX,spec:{prefix:30,service:40,char:40,as:['text','hex','number']},def:{prefix:'',service:'battery_service',char:'battery_level',as:'number'}},
+btwrite:{out:NX,spec:{prefix:30,service:40,char:40,hex:64},def:{prefix:'',service:'ffe0',char:'ffe1',hex:'01'}}
 }
 export const MAX_NODES=200
 const NAMEF=['name']
@@ -173,6 +214,19 @@ if(n.type==='percent')p.decimals=num(p.decimals,0,4,'Decimals')
 if(n.type==='dateadd')p.days=num(p.days,-36500,36500,'Days')
 if(n.type==='bar')p.width=num(p.width,3,30,'Width')
 if(n.type==='hashnum')p.max=num(p.max,1,1000000,'Highest')
+if(n.type==='ddembed'&&p.color&&!/^#?[0-9a-f]{6}$/i.test(p.color))bad('Colors are six hex digits like 5865F2')
+if((n.type==='ddwebhook'||n.type==='ddembed')&&!/^https:\/\/(discord|discordapp)\.com\/api(\/v\d+)?\/webhooks\/\d{5,25}\/[\w-]{20,100}$/.test(p.url)&&p.url!=='https://discord.com/api/webhooks/')bad('Use a Discord webhook URL that starts with https://discord.com/api/webhooks/')
+if((n.type==='ddwebhook'||n.type==='ddembed')&&p.avatar&&!/^https:\/\//i.test(p.avatar))bad('The avatar link must start with https://')
+if(n.type==='ddembed'&&p.image&&!/^https:\/\//i.test(p.image))bad('The image link must start with https://')
+if(n.type==='caesar')p.shift=num(p.shift,-25,25,'Shift')
+if(n.type==='devtone'){p.freq=num(p.freq,100,2000,'Pitch');p.ms=num(p.ms,50,2000,'Length')}
+if(n.type==='devflash'){if(!/^#?[0-9a-f]{6}$/i.test(p.color))bad('Colors are six hex digits like FFFFFF');p.ms=num(p.ms,50,3000,'Length')}
+if(n.type==='devvibrate'&&!/^\d{1,4}(,\d{1,4}){0,7}$/.test(p.pattern.replace(/\s/g,'')))bad('Vibration is a comma list of milliseconds like 200,100,200')
+if(n.type==='devwake')p.seconds=num(p.seconds,1,300,'Seconds')
+if(n.type==='btheart')p.seconds=num(p.seconds,3,60,'Seconds')
+if(n.type==='devopen'&&!/^https:\/\//i.test(p.url))bad('The link must start with https://')
+if((n.type==='btread'||n.type==='btwrite')&&(!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.service)||!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.char)))bad('Use a Bluetooth name like battery_service or a UUID')
+if(n.type==='btwrite'&&!/^([0-9a-f]{2}){1,32}$/i.test(p.hex.replace(/\s/g,'')))bad('The value is hex bytes like 01FF')
 if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
 if(n.type==='emojispam'||n.type==='mentionspam')p.count=num(p.count,1,50,'Count')
 if(n.type==='newmember')p.days=num(p.days,1,365,'Days')
@@ -291,6 +345,8 @@ case'replace':{const i=arg.indexOf('|');if(i<0)return s;return s.split(arg.slice
 }
 return s
 }
+const DEV=/^(dev|bt)/
+const wsc=s=>String(s).replace(/\s/g,'')
 export function baseVars(ctx,rnd){
 const d=new Date(ctx.at||Date.now())
 const p2=n=>String(n).padStart(2,'0')
@@ -306,6 +362,7 @@ const next=(id,o)=>graph.edges.find(e=>e.f===id&&e.o===o)?.t
 const vars=baseVars(ctx,rnd)
 const log=[]
 let steps=0,sends=0,acts=0,heavy=0,waited=0,calls=0
+const devs=[]
 const setv=(name,v)=>{vars[name.toLowerCase()]=clip(v,500);return vars[name.toLowerCase()]}
 async function chain(start,depth){
 let cur=start
@@ -385,6 +442,32 @@ case'base':if(P.name){const x=Number(R(P.input));let v='';if(Number.isSafeIntege
 case'urlenc':if(P.name)log.push({id:n.id,did:'urlenc',value:setv(P.name,encodeURIComponent(R(P.input)))});break
 case'hashnum':if(P.name){let hh=2166136261;for(const c of R(P.input).trim().toLowerCase()){hh^=c.codePointAt(0);hh=Math.imul(hh,16777619)>>>0}log.push({id:n.id,did:'hashnum',value:setv(P.name,String(hh%(Number(P.max)+1)))})}break
 case'rps':if(P.name){const o=['rock','paper','scissors'],u=R(P.input).trim().toLowerCase(),b=o[Math.floor(rnd()*3)],i=o.indexOf(u);setv(P.name+'_bot',b);log.push({id:n.id,did:'rps',value:setv(P.name,i<0?'invalid':i===o.indexOf(b)?'tie':(i+1)%3===o.indexOf(b)?'lose':'win')})}break
+case'dd':case'world':if(P.name&&calls<3){calls++;const r=await io.api((n.type==='dd'?'dd_':'w_')+P.kind,R(P.input));const v=r&&r.text?r.text:R(P.fallback);log.push({id:n.id,did:n.type,value:setv(P.name,v)});if(r&&r.extra)for(const[k,x]of Object.entries(r.extra))setv(P.name+'_'+k,x)}break
+case'ddwebhook':case'ddembed':{const body=n.type==='ddwebhook'?{content:R(P.text).slice(0,1900)}:{embeds:[{title:R(P.title).slice(0,250)||undefined,description:R(P.text).slice(0,1900)||undefined,color:parseInt(P.color.replace('#','')||'5865F2',16),image:R(P.image).startsWith('https://')?{url:R(P.image)}:undefined,footer:R(P.footer)?{text:R(P.footer).slice(0,100)}:undefined}]}
+if(P.user.trim())body.username=R(P.user).slice(0,80)
+if(R(P.avatar).startsWith('https://'))body.avatar_url=R(P.avatar)
+let ok=false
+if(calls<3&&sends<4&&(body.content||body.embeds&&(body.embeds[0].title||body.embeds[0].description))){calls++;sends++;ok=!ctx.dry&&await io.webhook(P.url,body)}
+log.push({id:n.id,did:n.type,value:P.name?setv(P.name,ctx.dry?'dry run':ok?'yes':'no'):''});break}
+case'ddformat':if(P.name)log.push({id:n.id,did:'ddformat',value:setv(P.name,L.style(R(P.input),P.fmt))});break
+case'ddtime':if(P.name){const u=R(P.input).trim()===''?Math.floor((ctx.at||Date.now())/1000):Math.floor(Number(R(P.input)));log.push({id:n.id,did:'ddtime',value:setv(P.name,Number.isFinite(u)?'<t:'+u+':'+P.fmt+'>':'')})}break
+case'ddsnowflake':if(P.name){const f=L.flake(R(P.input));log.push({id:n.id,did:'ddsnowflake',value:setv(P.name,f?String(f.unix):'')});setv(P.name+'_date',f?f.date:'');setv(P.name+'_days',f?String(f.days):'');setv(P.name+'_avatar',f?f.avatar:'')}break
+case'ddmention':if(P.name){const id=R(P.id).replace(/\D/g,'').slice(0,25);log.push({id:n.id,did:'ddmention',value:setv(P.name,id?(P.kind==='user'?'<@'+id+'>':P.kind==='channel'?'<#'+id+'>':'<@&'+id+'>'):'')})}break
+case'ddinvitecode':if(P.name){const m=R(P.input).match(/(?:discord\.gg|discord(?:app)?\.com\/invite)\/([A-Za-z0-9-]{2,32})/i);log.push({id:n.id,did:'ddinvitecode',value:setv(P.name,m?m[1]:'')});setv(P.name+'_url',m?'https://discord.gg/'+m[1]:'')}break
+case'ddemoji':if(P.name){const id=R(P.id).replace(/\D/g,'').slice(0,25),lb=R(P.label).replace(/[^A-Za-z0-9_]/g,'').slice(0,32)||'emoji',an=P.animated==='1';log.push({id:n.id,did:'ddemoji',value:setv(P.name,id?'https://cdn.discordapp.com/emojis/'+id+(an?'.gif':'.png'):'')});setv(P.name+'_markup',id?'<'+(an?'a':'')+':'+lb+':'+id+'>':'')}break
+case'ddlink':if(P.name){const a=R(P.a).replace(/[^A-Za-z0-9@-]/g,''),b=R(P.b).replace(/\D/g,''),c=R(P.c).replace(/\D/g,'');const v=P.kind==='message'?(a&&b&&c?'https://discord.com/channels/'+a+'/'+b+'/'+c:''):P.kind==='channel'?(a&&b?'https://discord.com/channels/'+a+'/'+b:''):P.kind==='user'?(a?'https://discord.com/users/'+a:''):P.kind==='invite'?(a?'https://discord.gg/'+a:''):(a?'https://discord.com/channels/'+a:'');log.push({id:n.id,did:'ddlink',value:setv(P.name,v)})}break
+case'moonphase':if(P.name){const t=R(P.date).trim(),at=t?Date.parse(t+'T12:00:00Z'):ctx.at||Date.now();const m=Number.isFinite(at)?L.moon(at):null;log.push({id:n.id,did:'moonphase',value:setv(P.name,m?m.name:'')});setv(P.name+'_illum',m?String(m.illum):'');setv(P.name+'_age',m?m.age:'')}break
+case'distance':if(P.name){const v=[P.lat1,P.lon1,P.lat2,P.lon2].map(x=>Number(R(x)));log.push({id:n.id,did:'distance',value:setv(P.name,v.every(Number.isFinite)&&Math.abs(v[0])<=90&&Math.abs(v[2])<=90&&Math.abs(v[1])<=180&&Math.abs(v[3])<=180?String(L.haversine(...v,P.unit)):'')})}break
+case'unitconv':if(P.name)log.push({id:n.id,did:'unitconv',value:setv(P.name,L.convert(R(P.value),P.from,P.to,UN))});break
+case'colorconv':if(P.name){const c=L.color(R(P.input));log.push({id:n.id,did:'colorconv',value:setv(P.name,c?c.hex:'')});setv(P.name+'_rgb',c?c.rgb:'');setv(P.name+'_hsl',c?c.hsl:'')}break
+case'morse':if(P.name)log.push({id:n.id,did:'morse',value:setv(P.name,L.morse(R(P.input),P.mode))});break
+case'roman':if(P.name)log.push({id:n.id,did:'roman',value:setv(P.name,L.roman(R(P.input),P.mode))});break
+case'caesar':if(P.name)log.push({id:n.id,did:'caesar',value:setv(P.name,L.caesar(R(P.input),P.shift))});break
+case'hashtext':if(P.name)log.push({id:n.id,did:'hashtext',value:setv(P.name,await L.hash(P.algo,R(P.input)))});break
+case'uuid':if(P.name)log.push({id:n.id,did:'uuid',value:setv(P.name,crypto.randomUUID())});break
+case'nato':if(P.name)log.push({id:n.id,did:'nato',value:setv(P.name,L.nato(R(P.input)))});break
+case'binarytext':if(P.name)log.push({id:n.id,did:'binarytext',value:setv(P.name,L.binary(R(P.input),P.mode))});break
+case'foreach':{const a=R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean).slice(0,10);if(depth<5){for(let i=0;i<a.length&&steps<60;i++){setv(P.name||'item',a[i]);setv((P.name||'item')+'_index',String(i+1));const f=next(n.id,'each');if(f)await chain(f,depth+1)}}log.push({id:n.id,did:'foreach',value:String(a.length)});route='done';break}
 case'pick':{const o=P.options.split('\n').map(x=>x.trim()).filter(Boolean);if(o.length&&P.name)log.push({id:n.id,did:'pick',value:setv(P.name,R(o[Math.floor(rnd()*o.length)]))});break}
 case'set':if(P.name)log.push({id:n.id,did:'set',value:setv(P.name,R(P.value))});break
 case'count':if(P.name)log.push({id:n.id,did:'count',value:setv(P.name,String(await io.count(P.name.toLowerCase(),Number(P.by)||0,P.scope)))});break
@@ -393,6 +476,7 @@ case'math':if(P.name)log.push({id:n.id,did:'math',value:setv(P.name,calc(R(P.a),
 case'text':if(P.name)log.push({id:n.id,did:'text',value:setv(P.name,xform(P.fn,R(P.input),P.arg))});break
 case'randnum':if(P.name){const a=Number(P.min),b=Number(P.max),lo=Math.min(a,b),hi=Math.max(a,b);log.push({id:n.id,did:'randnum',value:setv(P.name,String(lo+Math.floor(rnd()*(hi-lo+1))))})}break
 case'map':if(P.name){const k=R(P.input).trim().toLowerCase();let out=null;for(const line of P.table.split('\n')){const i=line.indexOf('=');if(i>0&&line.slice(0,i).trim().toLowerCase()===k){out=line.slice(i+1).trim();break}}log.push({id:n.id,did:'map',value:setv(P.name,out===null?R(P.fallback):R(out))})}break
+default:if(DEV.test(n.type)&&devs.length<5){const a={};for(const[k,v]of Object.entries(P))a[k]=R(v).slice(0,500);devs.push({k:n.type,a});log.push({id:n.id,did:'device',kind:n.type})}
 }
 if(n.xo&&depth<6)for(let xn=1;xn<=n.xo;xn++){const xs=next(n.id,'x'+xn);if(xs)await chain(xs,depth+1)}
 if(route!==null){log.push({id:n.id,did:route});cur=next(n.id,route)}
@@ -406,5 +490,6 @@ if(trig.xi)for(const[xk,xv]of trig.xi)setv(xk,render(xv,vars))
 for(let xn=1;xn<=(trig.xo||0);xn++){const xs=next(trig.id,'x'+xn);if(xs)await chain(xs,1)}
 await chain(next(trig.id,'next'),0)
 }
+if(devs.length&&io.device)await io.device(devs)
 return log
 }

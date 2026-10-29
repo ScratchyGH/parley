@@ -3,7 +3,7 @@ import{resolveRoom,loadMember,P}from'./perms.js'
 import{signMsg}from'./sign.js'
 import{hydrate,publishMsg}from'./messages.js'
 import{execute}from'./blockrun.js'
-import{runApi,runHttp}from'./apiblock.js'
+import{runApi,runHttp,runWebhook}from'./apiblock.js'
 import{messageExplicit,filterOn}from'./safety.js'
 
 async function say(c,room,sid,botId,text,replyTo){
@@ -138,6 +138,12 @@ return what==='role_count'?rs.length:rs.map(x=>x.name).join(', ')
 },
 api:(k,i)=>runApi('b:'+botId,k,i),
 http:(u,pt)=>runHttp('b:'+botId,u,pt),
+webhook:(u,b)=>runWebhook('b:'+botId,u,b),
+device:async acts=>{
+try{limit('dev:'+botId+':'+uid,6,60000)}catch{return}
+const b=await c.env.DB.prepare('select display_name from users where id=?').bind(botId).first()
+c.pub('u_'+uid,{t:'bot.device',bot:botId,name:b?b.display_name:'A bot',acts})
+},
 serverInfo:async what=>{
 if(what==='name')return(await c.env.DB.prepare('select name from servers where id=?').bind(sid).first())?.name||''
 const t=what==='members'?'members':what==='channels'?'channels':'roles'
@@ -224,7 +230,7 @@ cooldown:async()=>true,
 isOwner:async()=>false,joinedDays:async()=>30,notice:async t=>{sent.push({note:'Privately notifies the member: '+t})},unpin:async()=>{sent.push({note:'Unpins the message'})},slowmode:async s=>{sent.push({note:'Sets slow mode to '+s+' seconds'})},setNick:async n=>{sent.push({note:n?'Sets the nickname to '+n:'Clears the nickname'})},untimeout:async()=>{sent.push({note:'Ends the time out'})},kick:async r=>{sent.push({note:'Kicks the member: '+r})},ban:async r=>{sent.push({note:'Bans the member: '+r})},purge:async n=>{sent.push({note:'Deletes up to '+n+' recent messages from the member'})},
 warn:async r=>{const k='user:warns';mem.set(k,(mem.get(k)||0)+1);sent.push({note:'Warns the member: '+r});return mem.get(k)},
 save:async(k,v,s)=>{mem.set('tx:'+s+':'+k,v)},load:async(k,s)=>mem.has('tx:'+s+':'+k)?mem.get('tx:'+s+':'+k):null,getCount:async(k,s)=>mem.get(s+':'+k)||0,memberInfo:async w=>w==='joined_days'?30:w==='role_count'?1:w==='roles'?'Member':'Tester',serverInfo:async w=>w==='name'?'Your server':w==='members'?42:w==='channels'?8:5,
-api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),
+api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),webhook:async()=>false,device:async a=>{sent.push({note:'Asks the member to allow on their device: '+a.map(x=>x.k).join(', ')})},
 isMod:async()=>false,
 hasRole:async()=>false,
 del:async()=>{sent.push({note:'Deletes the message'})},
