@@ -435,6 +435,7 @@ const firePurple=p=>{
 const a=p.ang,lv=p.ab.purple||1
 S.pj.push({id:S.id++,k:9,x:p.x+Math.cos(a)*30,y:p.y+Math.sin(a)*30,vx:Math.cos(a)*540,vy:Math.sin(a)*540,life:1.8,pr:99999,hit:new Set(),a,own:p.u,d:420+lv*120})
 ev('sh',16);ev('x',rd(p.x),rd(p.y),240,11)
+for(const e of S.en){const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy);if(d<150&&e.k!=='boss'&&!e.al){e.kx+=dx/(d||1)*300;e.ky+=dy/(d||1)*300}}
 }
 const enter=(p,o,ret)=>{
 const[i,j]=o.id.split(',').map(Number)
@@ -455,7 +456,7 @@ S.out.push({to:p.u,m:{k:'tp',x:rd(x),y:rd(y)}})
 }
 const fx=(p,dt)=>{
 if(p.s!=='up')return
-if(p.hpt>0){p.hpt-=dt;if(p.hpt<=0)firePurple(p)}
+if(p.hpt>0){p.hpt-=dt;const fx0=p.x+Math.cos(p.ang)*44,fy0=p.y+Math.sin(p.ang)*44;for(const e of S.en){if(e.al||e.k==='boss')continue;const dx=fx0-e.x,dy=fy0-e.y,d=Math.hypot(dx,dy);if(d<460&&d>30){e.x+=dx/d*150*dt;e.y+=dy/d*150*dt}}if(p.hpt<=0)firePurple(p)}
 if(p.bh>0){
 p.inv=Math.max(p.inv,.25)
 for(const e of S.en){
@@ -708,7 +709,9 @@ if(t){
 p.cd=p.rate*(p.bl>0?.5:1)*(p.gi>0?1.2:1)
 const a=Math.atan2(t.y-p.y,t.x-p.x),sp=p.count>1?.17:0
 p.ang=a
-for(let i=0;i<p.count;i++){const o=a+(i-(p.count-1)/2)*sp;S.pj.push({id:S.id++,k:0,x:p.x,y:p.y,vx:Math.cos(o)*430,vy:Math.sin(o)*430,life:1.05,pr:p.pierce+(p.bl>0?3:0),hit:new Set(),a:o,own:p.u,d:p.dmg*(p.gi>0?1.6:1),h:p.bl>0?1:0})}
+const ds=p.bl>0&&(p.ds=(p.ds||0)+1)%5===0
+if(ds)txt(p.x,p.y-48,'Direct Shot','#6ec1ff',1)
+for(let i=0;i<p.count;i++){const o=a+(i-(p.count-1)/2)*sp,v=ds?800:430;S.pj.push({id:S.id++,k:0,x:p.x,y:p.y,vx:Math.cos(o)*v,vy:Math.sin(o)*v,life:1.05,pr:p.pierce+(p.bl>0?3:0)+(ds?9:0),hit:new Set(),a:o,own:p.u,d:p.dmg*(p.gi>0?1.6:1)*(ds?2.8:1),h:p.bl>0&&!ds?1:0})}
 }
 }
 if(p.nova){p.nv-=dt;if(p.nv<=0){p.nv=p.nova;ev('x',Math.round(p.x),Math.round(p.y),210,9);for(const e of S.en){const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<210*210){hit(e,p.dmg*2.6,false,p.u);const d=Math.hypot(dx,dy)||1;e.kx+=dx/d*260;e.ky+=dy/d*260}}}}
@@ -826,6 +829,7 @@ if(d<mm*mm&&d>.01){const q=Math.sqrt(d),f=(mm-q)*.5;if(a.k!=='boss'){a.x-=dx/q*f
 for(const p of S.pj){
 p.life-=dt
 if(p.h){let t=null,bd=420*420;for(const e of S.en){if(e.al)continue;const dx=e.x-p.x,dy=e.y-p.y,d=dx*dx+dy*dy;if(d<bd){bd=d;t=e}}if(t){const sp=Math.hypot(p.vx,p.vy),a=Math.atan2(p.vy,p.vx);let df=Math.atan2(t.y-p.y,t.x-p.x)-a;df=Math.atan2(Math.sin(df),Math.cos(df));const na=a+df*Math.min(1,dt*9);p.vx=Math.cos(na)*sp;p.vy=Math.sin(na)*sp;p.a=na}}
+if(p.k===9)for(const e of S.en){if(e.al||e.k==='boss')continue;const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy);if(d<240&&d>1){e.x+=dx/d*320*dt;e.y+=dy/d*320*dt}}
 p.x+=p.vx*dt;p.y+=p.vy*dt
 const s=WP[p.k]
 if(s&&p.lob){if(p.life<=0){p.dead=1;boom(p.x,p.y,p.k,pl.get(p.own))}continue}
@@ -842,7 +846,7 @@ const dx=e.x-p.x,dy=e.y-p.y-4,mm=e.r+(p.k===9?64:5)
 if(dx*dx+dy*dy<mm*mm){
 p.hit.add(e.id)
 const crit=Math.random()<cc
-hit(e,dm*(crit?2:1),crit,p.own)
+hit(e,p.k===9?(e.k==='boss'?e.max*.3:1e6):dm*(crit?2:1),crit,p.own)
 e.kx+=p.vx*.12;e.ky+=p.vy*.12
 burst(p.x,p.y,'#ffd27a',3)
 if(p.pr--<=0){p.dead=1;break}

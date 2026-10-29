@@ -86,6 +86,7 @@ startUpdates()
 startStreaks(()=>renderCtx())
 {const tc=new URLSearchParams(location.search).get('tu');if(tc&&/^[A-Z0-9]{6}$/.test(tc)){history.replaceState(null,'','/');setTimeout(()=>import('/js/teamup.js').then(x=>x.openTeamup(tc)),900)}}
 setTimeout(whatsNew,1200)
+import('./appnotice.js').then(m=>m.appNotice())
 setTimeout(maybeTour,2600)
 }
 
