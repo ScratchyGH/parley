@@ -169,6 +169,7 @@ if(host)sim.pick(me,id);else send({k:'p',id})
 tone(660,.1,.04,'triangle')
 }
 const showCards=(ids,lv)=>{
+if(RU.test){setTimeout(()=>{if(L.offer)take(ids[0])},150)}
 L.offer=ids
 cards.replaceChildren(el('h3','rs-lv','Level '+lv))
 const row=el('div','rs-row')
