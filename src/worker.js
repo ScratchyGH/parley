@@ -243,8 +243,15 @@ await xlabsCron(env,ec)
 await deliverReminders(env,ec).catch(()=>{})
 await Promise.allSettled(pend)
 }catch(e){console.error('scheduled send',String(e&&e.message||e))}
-const last=await env.DB.prepare("select v from app_settings where k='last_sweep'").first().catch(()=>null)
-if(last&&t-Number(last.v)<20*3600000)return
+const ks=(await env.DB.prepare("select k,v from app_settings where k in ('last_sweep','prune_v1')").all().catch(()=>({results:[]}))).results
+const last=ks.find(x=>x.k==='last_sweep')
+if(last&&t-Number(last.v)<20*3600000){
+if(!ks.some(x=>x.k==='prune_v1')){
+await env.DB.prepare("insert or ignore into app_settings(k,v) values('prune_v1','1')").run().catch(()=>{})
+await prune(env,t)
+}
+return
+}
 await env.DB.prepare("insert into app_settings(k,v) values('last_sweep',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()
 try{await dailyBackup(env)}catch(e){console.error('backup',String(e&&e.message||e))}
 try{await expireVanity(env)}catch(e){}
@@ -266,6 +273,22 @@ const D=86400000
 await env.DB.batch([30,90,365].map(n=>env.DB.prepare("update messages set deleted_at=?,content='' where deleted_at is null and pinned=0 and created_at<? and server_id in (select id from servers where retention_days=?)").bind(t,t-n*D,n)))
 await env.DB.prepare('delete from client_errors where created_at<?').bind(t-30*D).run()
 }catch(e){}
+await prune(env,t)
 try{await env.DB.exec('PRAGMA optimize')}catch(e){}
 }
+}
+async function prune(env,t){
+const D=86400000
+const q=[
+"delete from event_night_runs where started_at<"+(t-D),
+"delete from mod_log where created_at<"+(t-14*D)+" and (action like 'db.%' or action like 'channel.%' or action like 'maintenance.%' or action in ('automod.update','server.update','pars.grant'))",
+"delete from mod_log where created_at<"+(t-180*D),
+"delete from bot_versions where id in (select id from (select id,row_number() over (partition by project_id order by rev desc) n from bot_versions) where n>3)",
+"delete from client_errors where created_at<"+(t-7*D),
+"delete from webauthn_challenges where expires_at<"+t,
+"delete from notifications where created_at<"+(t-30*D),
+"delete from sessions where expires_at<"+t,
+"delete from login_attempts where reset_at<"+t
+]
+for(const x of q)await env.DB.prepare(x).run().catch(()=>{})
 }
