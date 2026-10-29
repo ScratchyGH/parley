@@ -93,7 +93,7 @@ return{ok:true,time:now(),build:(c.env.CF_VERSION_METADATA&&c.env.CF_VERSION_MET
 
 router.add('GET','/api/rtc/ice',async c=>{
 limit('ice:'+c.user.id,30,60000)
-const fallback=[{urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:global.stun.twilio.com:3478']}]
+const fallback=[{urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:global.stun.twilio.com:3478','stun:stun2.l.google.com:19302','stun:stun3.l.google.com:19302','stun:stun.stunprotocol.org:3478','stun:stun.services.mozilla.com:3478']}]
 const relay=[]
 if(!c.env.TURN_KEY_ID||!c.env.TURN_API_TOKEN)return{iceServers:[...fallback,...relay],turn:true}
 try{
