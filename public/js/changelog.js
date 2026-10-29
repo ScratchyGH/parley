@@ -1,5 +1,6 @@
-export const VERSION='2026.10.42'
+export const VERSION='2026.10.43'
 export const RELEASES=[
+{v:'2026.10.43',date:'October 29, 2026',title:'Programs and itch.io',summary:'You can now upload programs, and itch.io games play in chat again.',sections:[['Files',[['Upload programs','.exe, .msi, .jar and other program files can be attached. Anyone downloading one has to confirm they trust it first.']]],['Chat',[['itch.io games','Play here now uses the official itch.io embed, so games load instead of showing a blank frame.']]]]},
 {v:'2026.10.42',date:'October 29, 2026',title:'Games removed',summary:'The Games hub and Deep Sleep are gone to keep Parley fast and focused.',sections:[['Removed',[['Games hub','The Games button, the seven games, seasonal packs and Deep Sleep were removed. Doom and Hollowgrin are unaffected.']]]]},
 {v:'2026.10.41',date:'October 28, 2026',title:'Games, Deep Sleep and the Horror shop',summary:'A Games hub on the left bar, seven new games, Pars unlocks for seasonal packs, the Deep Sleep story game and a Horror shop.',sections:[
 ['Games',[

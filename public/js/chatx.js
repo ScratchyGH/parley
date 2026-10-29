@@ -1,4 +1,4 @@
-import{h,icon,POST,fileUrl,fmtSize,lightbox,saveBlob,toast,fail,fmtRel}from'./util.js'
+import{h,icon,POST,fileUrl,fmtSize,lightbox,saveBlob,toast,fail,fmtRel,confirmBox}from'./util.js'
 import{S,noteThread}from'./state.js'
 import{displayUrl,displayBlob}from'./codec.js'
 import{pref}from'./prefs.js'
@@ -19,11 +19,22 @@ img.src=await displayUrl(u,f.mime)
 img.src=u
 }
 }
+const RISKY=/\.(exe|msi|bat|cmd|com|scr|dll|ps1|vbs|jar|apk|hta|lnk|reg|sh|app|dmg|pkg|deb|rpm|appimage)$/i
 function fileLink(f,m){
 const u=fileUrl(f.id)
 const a=h('a',{class:'file',href:u,download:f.name,rel:'noopener'},icon('file'),h('div',{class:'grow'},h('div',null,f.name),h('small',null,fmtSize(f.size))),icon('download','s'))
 const prog=a.querySelector('small')
+const risky=RISKY.test(f.name)
+if(risky)prog.textContent=fmtSize(f.size)+' · program, only download if you trust the sender'
 a.addEventListener('click',async e=>{
+if(risky&&!a.dataset.ok){
+e.preventDefault()
+if(!await confirmBox('Download a program?',`${f.name} is a program file. It can run code on your device and harm it, and Parley cannot check it. Only download it if you trust the person who sent it.`,'I trust it, download',true))return
+a.dataset.ok='1'
+a.click()
+delete a.dataset.ok
+return
+}
 if(!(f.size>=8388608||pref('p2p')&&pref('p2pFiles'))||!canSwarm(f)||a.dataset.busy)return
 e.preventDefault()
 a.dataset.busy='1'

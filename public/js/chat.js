@@ -339,7 +339,7 @@ return/^[A-Za-z0-9_-]{11}$/.test(id)?id:''
 function itchPlay(d){
 const box=h('div',{class:'itch'})
 const btn=h('button',{type:'button',class:'btn pri',on:{click:()=>{
-const fr=h('iframe',{src:d.play,class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
+const fr=h('iframe',{src:'https://itch.io/embed-upload/'+d.play.match(/\/html\/(\d+)/)[1]+'?color=1a1a1a',class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
 box.replaceChildren(fr,h('div',{class:'row itch-bar'},h('button',{type:'button',class:'btn sm',on:{click:()=>fr.requestFullscreen?.()}},'Fullscreen'),h('button',{type:'button',class:'btn sm',on:{click:()=>itchPlay.close(box,d)}},'Close')))
 }}},'Play '+(d.title||'game')+' here')
 box.append(btn)
