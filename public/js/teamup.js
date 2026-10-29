@@ -16,24 +16,24 @@ const mkCode=()=>Array.from({length:6},()=>AL[Math.floor(Math.random()*AL.length
 let active=null,art=null
 const css=()=>{
 if(!document.getElementById('hwcss2'))document.head.append(h('link',{id:'hwcss2',rel:'stylesheet',href:'/hollow.css'}))
-if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=4'}))
+if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=5'}))
 if(!document.getElementById('rscss'))document.head.append(h('link',{id:'rscss',rel:'stylesheet',href:'/rush.css'}))
 }
-const sprite=(i)=>{
+const sprite=(i,dim)=>{
 if(!art)art=buildArt(4)
 const s=art.player[0],c=document.createElement('canvas')
 c.width=s.c.width;c.height=s.c.height
 c.getContext('2d').drawImage(s.c,0,0)
-c.className='tu-spr'
-c.style.filter=i===0?'none':i===1?'hue-rotate(160deg)':'hue-rotate(70deg)'
+c.className='tu-spr'+(dim?' tu-sil':'')
+if(!dim)c.style.filter=i===0?'none':i===1?'hue-rotate(160deg)':'hue-rotate(70deg)'
 return c
 }
-const mascot=()=>{
+const mascot=(cls,k)=>{
 if(!art)art=buildArt(4)
-const s=art.boss[0],c=document.createElement('canvas')
+const s=(k||art.boss)[0],c=document.createElement('canvas')
 c.width=s.c.width;c.height=s.c.height
 c.getContext('2d').drawImage(s.c,0,0)
-c.className='tu-mascot'
+c.className=cls||'tu-mascot'
 return c
 }
 export function showInvite(m){
@@ -80,8 +80,8 @@ const link=location.origin+'/?tu='+code
 const slots=Array.from({length:3},(_,i)=>{
 const m=roster[i]
 if(m)return h('div',{class:'tu-slot on',style:{'--c':COL[i]}},sprite(i),h('b',null,m.n),h('span',null,m.u===hostUid?'Host':'Ready'))
-if(i<cap)return h('div',{class:'tu-slot open',style:{'--c':COL[i]}},h('i',{class:'tu-plus'},'+'),h('span',null,'Waiting for a friend'))
-return h('div',{class:'tu-slot locked'},h('span',null,'Locked'))
+if(i<cap)return h('div',{class:'tu-slot open',style:{'--c':COL[i]}},sprite(i,1),h('b',null,'Open seat'),h('span',null,'Invite a friend'))
+return h('div',{class:'tu-slot locked'},sprite(i,1),h('b',null,'Locked'),h('span',null,i===1?'Pick Duos':'Pick Trios'))
 })
 const hs=!isHost
 const upd=()=>{bcast();lobby()}
@@ -100,7 +100,7 @@ const start=h('button',{class:'tu-go',type:'button',disabled:!isHost,on:{click:(
 phase='game'
 send({k:'go',list:roster,mode,rules:rl})
 launch(roster)
-}}},isHost?(roster.length>1?'Start match':'Start solo'):'Waiting for the host')
+}}},h('span',{class:'tu-gt'},isHost?(roster.length>1?'Start match':'Start solo'):'Waiting for host'),h('span',{class:'tu-gs'},MODES2.find(m=>m[0]===rl.mode)[1]+' / '+DIFFS[rl.diff][1]+' / '+(rl.len?rl.len+' min':'Infinite')),(art||(art=buildArt(4)),mascot('tu-gi',art.player)))
 box.replaceChildren(h('div',{class:'tu-lobby'},
 h('div',{class:'tu-moon'}),mascot(),
 h('div',{class:'tu-head'},h('h2',null,'Gourd Rush'),h('b',null,'Teamup'),h('p',null,'Hold the hollow until dawn. Board up doors, throw candy bombs, revive your squad.')),
@@ -110,7 +110,7 @@ h('div',{class:'tu-startrow'},start,h('div',{class:'tu-stack'},h('h4',null,'Squa
 h('div',{class:'jag'},h('div',{class:'tu-slots'},slots))),
 h('div',{class:'tu-mid jag'},h('h4',null,'Mode'),modeCards,h('h4',null,'Difficulty'),diffs,h('h4',null,'Length'),lens,cin,h('h4',null,'Physics'),phys,h('h4',null,'Graphics'),h('div',{class:'tu-two'},gl,gs)),
 h('div',{class:'tu-right'},
-h('div',{class:'tu-code jag'},h('span',null,online?'Party code':status),h('b',null,code),h('button',{class:'tu-pill',type:'button',on:{click:()=>navigator.clipboard?.writeText(link).then(()=>toast('Invite link copied','ok'),()=>toast(link))}},'Copy invite link')),
+h('div',{class:'tu-code jag'},mascot('tu-logo',art.player),h('span',null,online?'Party code':status),h('b',null,code),h('button',{class:'tu-pill',type:'button',on:{click:()=>navigator.clipboard?.writeText(link).then(()=>toast('Invite link copied','ok'),()=>toast(link))}},'Copy invite link')),
 h('div',{class:'jag'},h('h4',null,'Friends'),frl)))))
 }
 const launch=(list,rr)=>{
