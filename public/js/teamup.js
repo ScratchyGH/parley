@@ -16,7 +16,7 @@ if(!document.getElementById('rscss'))document.head.append(h('link',{id:'rscss',r
 const sprite=(i)=>{
 if(!art)art=buildArt(4)
 const s=art.player[0],c=document.createElement('canvas')
-c.width=s.w;c.height=s.h
+c.width=s.c.width;c.height=s.c.height
 c.getContext('2d').drawImage(s.c,0,0)
 c.className='tu-spr'
 c.style.filter=i===0?'none':i===1?'hue-rotate(160deg)':'hue-rotate(70deg)'
