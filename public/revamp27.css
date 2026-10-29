@@ -140,3 +140,43 @@ html.rv27 .menu{border-radius:20px}
 html.rv27 .m.hl:not(.x),html.rv27 .m.hl:not(.x):hover{background:color-mix(in srgb,var(--hi) 24%,rgba(255,255,255,.05));border-color:color-mix(in srgb,var(--hi) 70%,transparent);box-shadow:inset 3px 0 0 var(--hi)}
 html.rv27 .m:not([class*="bb_"]),html.rv27 .m:not([class*="bb_"]):hover{background:transparent;border-color:transparent;box-shadow:none;transform:none}
 html.rv27 .m.hl:not(.x),html.rv27 .m.hl:not(.x):hover{background:color-mix(in srgb,var(--hi) 24%,rgba(255,255,255,.05));border-color:color-mix(in srgb,var(--hi) 70%,transparent);box-shadow:inset 3px 0 0 var(--hi)}
+html.rv27 .card{border:0;border-radius:22px;background:linear-gradient(160deg,rgba(40,40,37,.9),rgba(24,24,22,.9));box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+html.rv27 .auth{background:radial-gradient(900px 500px at 50% -10%,rgba(138,136,127,.25),transparent),#0a0a09}
+html.rv27 .auth .card{border-radius:34px;padding:30px;box-shadow:0 40px 100px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06)}
+html.rv27 .tabs{background:rgba(255,255,255,.05);border-radius:999px;padding:4px;gap:2px}
+html.rv27 .tabs button{border-radius:999px;font-weight:700;padding:8px}
+html.rv27 .tabs button.on{background:linear-gradient(135deg,#8a887f,#58564f);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+html.rv27 .split{background:transparent}
+html.rv27 .split nav{border:0;background:rgba(255,255,255,.035);margin:10px 0 10px 10px;border-radius:24px;padding:12px}
+html.rv27 .split nav button{border-radius:999px;padding:9px 14px;transition:transform .15s,background .15s}
+html.rv27 .split nav button:hover{transform:translateX(3px)}
+html.rv27 .split nav button.on{background:linear-gradient(90deg,rgba(138,136,127,.5),rgba(138,136,127,.1));color:#fff}
+html.rv27 .split nav h4{color:var(--gold);letter-spacing:.12em}
+html.rv27 .split .pg{padding:22px 26px}
+html.rv27 .split .pg h3{font-family:var(--disp,inherit);font-size:22px;letter-spacing:-.01em}
+html.rv27 .li{border-radius:18px;padding:9px 12px;transition:background .15s,transform .15s}
+html.rv27 .li:hover{background:rgba(169,168,160,.12);transform:translateX(3px)}
+html.rv27 .list{gap:4px}
+html.rv27 .chip{border-radius:999px;background:rgba(255,255,255,.07)}
+html.rv27 .toast{border:0;border-radius:20px;background:rgba(30,30,28,.97);box-shadow:0 16px 44px rgba(0,0,0,.5)}
+html.rv27 .tip{border-radius:999px;padding:5px 12px;background:rgba(30,30,28,.98)}
+html.rv27 .pcard{border-radius:30px;background:rgba(26,26,24,.98);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+html.rv27 .pcard .av.lg{border-color:rgba(26,26,24,.98)}
+html.rv27 .empty{border-radius:28px;background:rgba(255,255,255,.025);margin:14px}
+html.rv27 .perm{padding:8px 4px}
+html.rv27 .hint{opacity:.8}
+html.rv27 .btn.dng{background:rgba(190,70,70,.18);color:#e8a0a0}
+html.rv27 .btn.sm{padding-inline:14px}
+html.rv27 table{border-collapse:separate;border-spacing:0 4px}
+html.rv27 table td,html.rv27 table th{padding:8px 12px;background:rgba(255,255,255,.035)}
+html.rv27 table td:first-child,html.rv27 table th:first-child{border-radius:14px 0 0 14px}
+html.rv27 table td:last-child,html.rv27 table th:last-child{border-radius:0 14px 14px 0}
+html.rv27 input[type=checkbox],html.rv27 input[type=radio]{accent-color:#a9a8a0}
+html.rv27 input[type=range]{accent-color:#a9a8a0}
+html.rv27 .hw-view,html.rv27 [class^="hw-"][class$="-card"],html.rv27 .hw-rec,html.rv27 .hw-note,html.rv27 .hw-stat,html.rv27 .hw-tier,html.rv27 .hw-gamebox{border-radius:22px}
+html.rv27 .sa-grid>*,html.rv27 .dbgrid>*,html.rv27 .stkc{border-radius:20px}
+html.rv27 .np,html.rv27 .par-np{border-radius:999px}
+html.rv27 .overlay,html.rv27 .scrim{backdrop-filter:blur(10px) saturate(.8);background:rgba(8,8,7,.6)}
+html.rv27 .dlg h2,html.rv27 .dlg h3{font-family:var(--disp,inherit);letter-spacing:-.01em}
+html.rv27 .dlg .row.sp{padding-top:6px}
+@media(max-width:760px){html.rv27 .shell{padding:0;gap:0}html.rv27 .ctx,html.rv27 .main,html.rv27 .panel{border-radius:0}html.rv27 .split nav{margin:0;border-radius:0}html.rv27 .dlg{border-radius:26px 26px 0 0}}
