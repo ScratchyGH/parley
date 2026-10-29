@@ -242,8 +242,9 @@ let SW=320,SH=200,img=null,pix=null,zb=null
 function size(){
 const w=wrap.clientWidth||800,h=wrap.clientHeight||500
 cv.width=w;cv.height=h
-SH=Math.round(Math.max(150,Math.min(240,h/3)))
-SW=Math.round(Math.max(200,Math.min(520,SH*w/h)))
+const gq=[.55,.78,1,1.2,1.4][(window.__perf||{gpu:2}).gpu]
+SH=Math.round(Math.max(100,Math.min(300,h/3*gq)))
+SW=Math.round(Math.max(140,Math.min(680,SH*w/h)))
 buf.width=SW;buf.height=SH
 img=bctx.createImageData(SW,SH)
 pix=new Uint32Array(img.data.buffer)
@@ -315,15 +316,16 @@ let c=0
 for(const e of enemies)if(e!==src&&Math.hypot(e.x-x,e.y-y)<2.1){e.hp-=48;e.fl=.2;c++}
 if(c>=2)announce('CHAIN REACTION',2)
 }
-const kd=e=>{au();keys[e.key.toLowerCase()]=true;if(e.key===' ')e.preventDefault()}
+let paused=false
+const kd=e=>{au();if(e.key.toLowerCase()==='p'&&!over){paused=!paused;if(paused&&document.pointerLockElement===cv)document.exitPointerLock?.();return}keys[e.key.toLowerCase()]=true;if(e.key===' ')e.preventDefault()}
 const ku=e=>{keys[e.key.toLowerCase()]=false}
 spawnWave()
 addEventListener('keydown',kd)
 addEventListener('keyup',ku)
 const onmove=e=>{if(document.pointerLockElement===cv)ang+=e.movementX*.0024}
 document.addEventListener('mousemove',onmove)
-const onlock=()=>{locked=document.pointerLockElement===cv}
-document.addEventListener('pointerlockchange',onlock)
+const onlock=()=>{locked=document.pointerLockElement===cv;if(locked)lockFail=false}
+document.addEventListener('pointerlockchange',onlock);cv.tabIndex=0
 let st=null,lk=null,lockFail=false,drag=null,tmx=0,tmy=0
 const half=e=>e.clientX<cv.getBoundingClientRect().left+cv.clientWidth/2
 const down=e=>{
@@ -334,8 +336,8 @@ if(half(e)&&!st)st={id:e.pointerId,x:e.clientX,y:e.clientY}
 else if(!lk)lk={id:e.pointerId,x:e.clientX,moved:0,t:performance.now()}
 return
 }
-if(!locked&&!lockFail){cv.requestPointerLock?.();setTimeout(()=>{if(document.pointerLockElement!==cv)lockFail=true},250)}
-if(lockFail){drag={x:e.clientX,moved:0};return}
+if(!locked){cv.focus?.();try{const p=cv.requestPointerLock({unadjustedMovement:true});p&&p.catch&&p.catch(()=>{try{cv.requestPointerLock()}catch{}})}catch{try{cv.requestPointerLock()}catch{}}if(!lockFail)setTimeout(()=>{if(document.pointerLockElement!==cv)lockFail=true},1500)}
+if(lockFail&&!locked){drag={x:e.clientX,moved:0};return}
 fireHeld=true
 }
 const up=e=>{
@@ -355,7 +357,8 @@ return
 }
 if(drag){const dx=e.movementX||0;drag.moved+=Math.abs(dx);ang+=dx*.004}
 }
-const onlockerr=()=>{lockFail=true}
+let lerr=0
+const onlockerr=()=>{if(++lerr>=3)lockFail=true}
 document.addEventListener('pointerlockerror',onlockerr)
 cv.addEventListener('pointerdown',down)
 addEventListener('pointerup',up)
@@ -601,7 +604,7 @@ ctx.fillStyle=hp>40?'#53c46a':'#e0483a';ctx.fillRect(58,22,Math.max(0,140*hp/100
 ctx.fillStyle='#ffe9c4'
 ctx.fillText(fp?.inf?'Endless wave '+wave:'Wave '+wave+' / '+maxWave,24,22+f*1.4)
 ctx.fillText(kills+' slain    '+Math.floor(t/60)+':'+String(Math.floor(t)%60).padStart(2,'0'),24,22+f*2.7)
-const ms=5,mx0=W-14-MAPW*ms,my0=14
+const ms=Math.max(8,Math.min(14,Math.round(Math.min(W,H)/26))),mx0=W-14-MAPW*ms,my0=14
 ctx.fillStyle='rgba(8,4,8,.6)';ctx.fillRect(mx0-4,my0-4,MAPW*ms+8,MAPH*ms+8)
 for(let y=0;y<MAPH;y++)for(let x=0;x<MAPW;x++)if(map[y*MAPW+x]){ctx.fillStyle='#4b3a5a';ctx.fillRect(mx0+x*ms,my0+y*ms,ms,ms)}
 ctx.fillStyle='#ff4a3a'
@@ -647,6 +650,7 @@ raf=requestAnimationFrame(tick)
 const dt=Math.min(.05,(now-lastT)/1000)
 lastT=now
 if(over){render();hud();return}
+if(paused){render();hud();ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,0,cv.width,cv.height);ctx.fillStyle='#e8e6df';ctx.font='900 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSED',cv.width/2,cv.height/2);ctx.font='16px sans-serif';ctx.fillText('Press P to resume',cv.width/2,cv.height/2+30);ctx.textAlign='left';return}
 t+=dt
 rageT=Math.max(0,rageT-dt)
 streakT-=dt;if(streakT<=0)streak=0
