@@ -1,5 +1,6 @@
 import{TYPES}from'./blockrun.js'
 import{LAB}from'./labmore.js'
+import{parseOpts}from'../public/js/cmdopts.js'
 const BUILTIN=new Set(['user','username','userid','mention','channel','server','text','time','hour','date','weekday','args','arg1','arg2','arg3'])
 export function validateGraph(g){
 const out=[]
@@ -17,6 +18,7 @@ const set=new Set()
 for(const n of g.nodes){
 if(n.p.name&&(LAB[n.type]||['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','feed','preview','jsonget','item','dd','world','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink','moonphase','distance','unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext','foreach'].includes(n.type)))set.add(n.p.name.toLowerCase())
 for(const r of n.xi||[])set.add(r[0].toLowerCase())
+if(n.type==='cmd'&&n.p.options)for(const o of parseOpts(n.p.options))set.add(o.name)
 }
 const cmds=new Map()
 for(const n of g.nodes){

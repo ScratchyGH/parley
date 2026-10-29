@@ -3,6 +3,7 @@ import{pathGet}from'./apiblock.js'
 import*as L from'./labfx.js'
 import{LAB}from'./labmore.js'
 import{TRIG}from'./labmore2.js'
+import{parseOpts,parseArgs}from'../public/js/cmdopts.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
 const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words','capital','nospaces','digits','letters','left','right','repeat','slug']
 const MATH=['+','-','*','/','%','max','min','pow','floor','ceil','round','abs']
@@ -32,7 +33,7 @@ return{h:Number(o.hour)%24,mi:Number(o.minute),d:Number(o.day),mo:Number(o.month
 const UN={m:['l',1],km:['l',1000],cm:['l',.01],mm:['l',.001],mi:['l',1609.344],yd:['l',.9144],ft:['l',.3048],in:['l',.0254],kg:['w',1],g:['w',.001],lb:['w',.45359237],oz:['w',.028349523125],mps:['s',1],kmh:['s',1/3.6],mph:['s',.44704],knot:['s',.514444],l:['v',1],ml:['v',.001],gal:['v',3.785411784],cup:['v',.2365882365],c:['t'],f:['t'],k:['t'],b:['d',1],kb:['d',1e3],mb:['d',1e6],gb:['d',1e9],tb:['d',1e12],sec:['T',1],min:['T',60],hr:['T',3600],day:['T',86400]}
 export const TYPES={
 msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0']},def:{mode:'contains',text:'',ci:'1'}},
-cmd:{out:NX,trigger:true,spec:{prefix:3,name:32},def:{prefix:'!',name:'ping'}},
+cmd:{out:NX,trigger:true,spec:{prefix:3,name:32,desc:100,options:600},def:{prefix:'!',name:'ping',desc:'',options:''}},
 mention:{out:NX,trigger:true,spec:{},def:{}},
 join:{out:NX,trigger:true,spec:{},def:{}},
 link:{out:NX,trigger:true,spec:{},def:{}},
@@ -342,7 +343,7 @@ return n.p.mode==='equals'?a===b:n.p.mode==='starts'?a.startsWith(b):a.includes(
 if(n.type==='cmd'){
 const pre=n.p.prefix+n.p.name
 const l=t.toLowerCase(),p=pre.toLowerCase()
-return l===p||l.startsWith(p+' ')
+const sl='/'+n.p.name.toLowerCase();return l===p||l.startsWith(p+' ')||l===sl||l.startsWith(sl+' ')
 }
 return false
 }
@@ -521,6 +522,7 @@ for(const trig of graph.nodes.filter(n=>TYPES[n.type].trigger&&triggered(n,ctx))
 log.push({id:trig.id,did:'start'})
 if(trig.xi)for(const[xk,xv]of trig.xi)setv(xk,render(xv,vars))
 for(let xn=1;xn<=(trig.xo||0);xn++){const xs=next(trig.id,'x'+xn);if(xs)await chain(xs,1)}
+if(trig.type==='cmd'&&trig.p.options){const o=parseOpts(trig.p.options),rest=ctx.text.trim().replace(/^\S+\s*/,''),a=parseArgs(o,rest);if(a.v)for(const[k,x]of Object.entries(a.v))setv(k,x)}
 await chain(next(trig.id,'next'),0)
 }
 if(devs.length&&io.device)await io.device(devs)

@@ -301,6 +301,18 @@ const p=await mine(c,c.p.id,'maintainer')
 await c.env.DB.prepare('delete from bot_releases where id=? and project_id=?').bind(c.p.rid,p.id).run()
 return{ok:true}
 })
+r.add('GET','/api/servers/:sid/commands',async c=>{
+const m=await loadMember(c.env,c.p.sid,c.user.id)
+if(!m)fail(404,'Server not found')
+const rows=(await c.env.DB.prepare('select p.bot_id,p.name,p.blocks,u.display_name,u.avatar_id from bot_installs i join bot_projects p on p.id=i.project_id join members mm on mm.server_id=i.server_id and mm.user_id=p.bot_id join users u on u.id=p.bot_id where i.server_id=? and p.blocks is not null limit 10').bind(c.p.sid).all()).results
+const out=[]
+for(const row of rows){
+let g
+try{g=JSON.parse(row.blocks)}catch{continue}
+for(const n of (g.nodes||[]).filter(n=>n.type==='cmd').slice(0,25))out.push({bot:{id:row.bot_id,name:row.display_name||row.name,avatar_id:row.avatar_id||null},name:String(n.p.name||'').toLowerCase(),prefix:n.p.prefix||'!',desc:String(n.p.desc||'').slice(0,100),options:String(n.p.options||'')})
+}
+return{commands:out.slice(0,100)}
+})
 r.add('POST','/api/bothub/:id/install',async c=>{
 limit('bothubi:'+c.user.id,30,3600000)
 const b=await body(c.req)

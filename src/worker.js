@@ -23,6 +23,7 @@ import labRoutes from'./lab.js'
 import xlabsRoutes,{xlabsCron}from'./xlabs.js'
 import gifRoutes from'./gifs.js'
 import caseRoutes from'./cases.js'
+import emailRoutes from'./email.js'
 import templateRoutes from'./templates.js'
 import{sweepExplicitServers}from'./servers.js'
 import botxRoutes from'./botx.js'
@@ -81,6 +82,7 @@ toolsRoutes(router)
 streakRoutes(router)
 voiceRoutes(router)
 caseRoutes(router)
+emailRoutes(router)
 templateRoutes(router)
 gifRoutes(router)
 signinRoutes(router)

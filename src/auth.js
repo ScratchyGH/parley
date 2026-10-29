@@ -1,4 +1,5 @@
 import{TOS_VERSION}from'./tos.js'
+import{alertUser}from'./email.js'
 import{checkSecondFactor}from'./totp.js'
 import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
@@ -372,6 +373,7 @@ await c.env.DB.batch([
 c.env.DB.prepare('update users set pass_hash=?,pass_salt=?,pass_iters=? where id=?').bind(await pbkdf2(pw,salt,n),salt,n,c.user.id),
 c.env.DB.prepare('delete from sessions where user_id=? and id!=?').bind(c.user.id,c.user.sid)
 ])
+await alertUser(c.env,c.user.id,'Your Parley password was changed','The password on your Parley account was just changed and your other devices were signed out.').catch(()=>{})
 return{ok:true}
 })
 
