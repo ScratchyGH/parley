@@ -200,8 +200,8 @@ if(b===undefined){
 const h=hash(i+999,j-777)
 if((h%100)>=48)b=false
 else{
-const k=BUILD[(h>>7)%6][0]
-b={k,x:i*CELL+50+((h>>9)%260),y:j*CELL+90+((h>>16)%230),hp:k==='crypt'?150:1,cd:0,sp:3,ch:0,used:0,dead:0}
+const k=BUILD[(h>>>7)%6][0]
+b={k,x:i*CELL+50+((h>>>9)%260),y:j*CELL+90+((h>>>16)%230),hp:k==='crypt'?150:1,cd:0,sp:3,ch:0,used:0,dead:0}
 if(Math.hypot(b.x,b.y)<180)b=false
 }
 BS.set(key,b)
