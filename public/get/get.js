@@ -4,7 +4,8 @@ const ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigat
 const android=/Android/.test(ua)
 const win=/Windows/.test(ua)
 const mac=!ios&&/Mac/.test(ua)
-const p=ios?'ios':android?'android':win?'win':mac?'mac':'linux'
+const ut=/Ubuntu/.test(ua)&&/Mobile|Tablet/.test(ua)
+const p=ut?'ut':ios?'ios':android?'android':win?'win':mac?'mac':'linux'
 const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone
 try{if(standalone&&location.origin===APP){location.replace('/')}}catch{}
 document.querySelector('[data-p="'+p+'"]')?.classList.add('me')
