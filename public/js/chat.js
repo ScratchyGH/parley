@@ -12,6 +12,7 @@ import{joinRoom,pageFromPeers,recordMessages,forgetMessage,seedFile}from'./p2p/i
 import{pollDialog,threadDialog,forwardDialog,stickerDialog}from'./dialogs2.js'
 import{gifPicker,importGif}from'./gifs.js'
 import{slash}from'./slash.js'
+import{slashItems,optionForm}from'./slashui.js'
 import{warnDialog}from'./modcases.js'
 import{tw}from'./tweaks.js'
 import{go}from'./nav.js'
@@ -629,6 +630,18 @@ function closeAc(){if(C?.ac){C.ac.remove();C.ac=null}}
 async function mentionCheck(){
 const t=C.ta
 const before=t.value.slice(0,t.selectionStart)
+const sm=t.value.match(/^\/([a-z0-9_]{0,20})$/i)
+if(sm){
+const q=sm[1].toLowerCase()
+const all=await slashItems(isDm(C.room)?null:chanInfo(C.room)?.sid)
+if(C.ta.value!==t.value||!/^\//.test(C.ta.value))return
+C.mentions=all.filter(x=>x.username.toLowerCase().startsWith(q)).slice(0,10)
+C.mentionIdx=0
+if(!C.mentions.length){closeAc();return}
+if(!C.ac){C.ac=h('div',{class:'ac',role:'listbox'});C.compWrap.append(C.ac)}
+drawAc()
+return
+}
 const cm=before.match(/(?:^|\s)#([a-zA-Z0-9_-]{0,40})$/)
 if(cm&&!isDm(C.room)){
 const sid=chanInfo(C.room)?.sid
@@ -658,10 +671,18 @@ if(!C.ac){C.ac=h('div',{class:'ac',role:'listbox'});C.compWrap.append(C.ac)}
 drawAc()
 }
 function drawAc(){
-mount(C.ac,C.mentions.map((u,i)=>h('button',{type:'button',role:'option',class:i===C.mentionIdx?'on':'','aria-selected':String(i===C.mentionIdx),on:{mousedown:e=>{e.preventDefault();pickMention(u)}}},u.chan?icon('hash','s'):u.special?icon('users','s'):avatar(u,'sm'),h('b',null,(u.chan?'#':'@')+u.username),h('span',{class:'hint',style:{margin:'0'}},u.special?u.display_name:u.display_name))))
+mount(C.ac,C.mentions.map((u,i)=>u.cmd?h('button',{type:'button',role:'option',class:i===C.mentionIdx?'on':'','aria-selected':String(i===C.mentionIdx),on:{mousedown:e=>{e.preventDefault();pickMention(u)}}},u.bot?avatar(u.bot,'sm'):icon('hash','s'),h('b',null,'/'+u.username+u.opts.map(o=>' ['+o.name+']').join('')),h('span',{class:'hint'},u.display_name)):h('button',{type:'button',role:'option',class:i===C.mentionIdx?'on':'','aria-selected':String(i===C.mentionIdx),on:{mousedown:e=>{e.preventDefault();pickMention(u)}}},u.chan?icon('hash','s'):u.special?icon('users','s'):avatar(u,'sm'),h('b',null,(u.chan?'#':'@')+u.username),h('span',{class:'hint',style:{margin:'0'}},u.special?u.display_name:u.display_name))))
 }
 function pickMention(u){
 const t=C.ta
+if(u.cmd){
+if(u.opts.length){mount(C.ac,optionForm(u,txt=>{t.value=txt;closeAc();autoGrow();submit()},()=>{closeAc();t.focus()}));return}
+t.value='/'+u.username+' '
+closeAc()
+t.focus()
+autoGrow()
+return
+}
 const pos=t.selectionStart
 const sig=u.chan?'#':'@'
 const before=t.value.slice(0,pos).replace(u.chan?/#[a-zA-Z0-9_-]{0,40}$/:/@[\p{L}\p{M}\p{N}_.-]{0,24}$/u,'')

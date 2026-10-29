@@ -74,6 +74,21 @@ draw()
 return box
 }
 
+async function emailBox(box){
+let d
+try{d=await GET('/api/me/email')}catch{return}
+const em=h('input',{class:'inp',type:'email',autocomplete:'email',maxLength:120,placeholder:'you@example.com','aria-label':'Email'})
+const pw=h('input',{class:'inp',type:'password',autocomplete:'current-password',placeholder:'Password','aria-label':'Password'})
+const code=h('input',{class:'inp',inputmode:'numeric',autocomplete:'one-time-code',maxLength:6,placeholder:'6 digit code','aria-label':'Email code'})
+const draw=()=>{
+if(!d.enabled){mount(box,h('p',{class:'hint'},'Email is not set up on this server yet.'));return}
+if(d.email&&d.verified){mount(box,h('p',{class:'hint'},'Confirmed: '+d.email+'. It can reset your password and gets alerts when your password changes.'),field('Password to remove',pw),h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/me/email/remove',{password:pw.value});d={enabled:true,email:null,verified:false};draw();toast('Email removed','ok')}catch(e){fail(e)}}}},'Remove email'));return}
+if(d.email){mount(box,h('p',{class:'hint'},'We sent a code to '+d.email+'. It expires in 15 minutes.'),field('Code',code),h('div',{class:'row'},h('button',{class:'btn pri',on:{click:async()=>{try{await POST('/api/me/email/verify',{code:code.value.trim()});d.verified=true;draw();toast('Email confirmed','ok')}catch(e){fail(e)}}}},'Confirm'),h('button',{class:'btn',on:{click:()=>{d.email=null;draw()}}},'Use a different email')));return}
+mount(box,h('p',{class:'hint'},'Add an email to reset a forgotten password and get alerts when your password changes. It is never shown to anyone else.'),field('Email',em),field('Password',pw),h('button',{class:'btn pri',on:{click:async()=>{try{const r=await POST('/api/me/email',{email:em.value.trim(),password:pw.value});pw.value='';d={enabled:true,email:r.email,verified:false};draw()}catch(e){fail(e)}}}},'Send code'))
+}
+draw()
+}
+
 function twofa(box){
 const me=S.me
 const out=h('div')
@@ -146,6 +161,8 @@ h('h3',{style:{marginTop:'24px'}},'Accounts on this device'),
 h('p',{class:'hint'},'Stay signed in to more than one account and switch between them without logging out.'),
 h('div',{id:'accs'}),
 h('div',{style:{marginTop:'8px'}},h('button',{class:'btn',on:{click:()=>addAccountDialog()}},icon('plus','s'),'Add an account')),
+h('h3',{style:{marginTop:'24px'}},'Email'),
+h('div',{id:'eml'}),
 h('h3',{style:{marginTop:'24px'}},'Change password'),
 field('Current password',cp),field('New password',np,'At least 10 characters. Other devices will be signed out.'),
 h('div',{style:{marginTop:'8px'}},h('button',{class:'btn pri',on:{click:async()=>{
@@ -167,6 +184,7 @@ mount(out,h('div',{class:'card',style:{fontFamily:'var(--mono)',fontSize:'16px',
 return[pw,b]
 })()),out)
 accountsList().then(l=>mount(pg.querySelector('#accs'),l))
+emailBox(pg.querySelector('#eml'))
 twofa(pg.querySelector('#tfa'))
 signin(pg.querySelector('#sgn'))
 }

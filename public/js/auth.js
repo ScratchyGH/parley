@@ -83,7 +83,7 @@ tab==='recover'?h('h2',{style:{margin:'0 0 8px',fontSize:'16px',color:'var(--str
 form,
 tab==='recover'?null:social,
 h('div',{class:'row',style:{justifyContent:'center',marginTop:'12px'}},
-tab==='recover'?h('button',{class:'btn sm',on:{click:()=>{tab='login';draw()}}},'Back to sign in'):h('button',{class:'btn sm',on:{click:()=>{tab='recover';draw()}}},'Forgot password?')))
+tab==='recover'?h('button',{class:'btn sm',on:{click:()=>{tab='login';draw()}}},'Back to sign in'):h('button',{class:'btn sm',on:{click:()=>{tab='recover';draw()}}},'Forgot password?'),tab==='recover'?h('button',{class:'btn sm',on:{click:()=>emailReset(card,()=>{tab='login';draw()})}},'Reset with email'):null))
 }
 }
 
@@ -104,4 +104,21 @@ await POST('/api/appeals',{username:un.value.trim(),password:pw.value,message:ms
 mount(root,h('div',{class:'auth'},h('div',{class:'card'},h('h1',null,'Appeal submitted'),h('p',null,'An administrator will review it. Check back by trying to sign in later.'),h('button',{class:'btn',on:{click:back}},'Back to sign in'))))
 }catch(x){err.textContent=x.message;btn.disabled=false}
 }}},field('Username',un),field('Password',pw),field('What happened?',msg),field('Evidence links (optional)',evi,'Screenshots or posts hosted somewhere you control. Only https:// links are accepted.'),err,h('div',{class:'row',style:{marginTop:'8px'}},h('button',{type:'button',class:'btn',on:{click:back}},'Back'),btn)))))
+}
+
+function emailReset(card,back){
+const err=h('div',{class:'err',role:'alert'})
+const em=h('input',{class:'inp',type:'email',autocomplete:'email',maxLength:120,required:true})
+const code=h('input',{class:'inp',inputmode:'numeric',autocomplete:'one-time-code',maxLength:6})
+const pw=h('input',{class:'inp',type:'password',autocomplete:'new-password',maxLength:200})
+const tot=h('input',{class:'inp',autocomplete:'one-time-code',maxLength:40,placeholder:'Only if two-factor is on'})
+const send=h('button',{class:'btn',type:'button',on:{click:async()=>{err.textContent='';try{await POST('/api/auth/forgot',{email:em.value.trim()});err.textContent='If that email is confirmed on an account, a code is on its way.'}catch(x){err.textContent=x.message}}}},'Send code')
+const go=h('button',{class:'btn pri',type:'submit'},'Reset password')
+mount(card,h('h1',null,'Reset with email'),h('form',{on:{submit:async e=>{
+e.preventDefault()
+err.textContent=''
+if(pw.value.length<10){err.textContent='Password must be at least 10 characters';return}
+go.disabled=true
+try{await POST('/api/auth/reset',{email:em.value.trim(),code:code.value.trim(),password:pw.value,totp:tot.value.trim()||undefined});back()}catch(x){err.textContent=x.message;go.disabled=false}
+}}},field('Email',em),send,field('Code',code),field('New password',pw,'At least 10 characters'),field('Two-factor code',tot),err,go),h('div',{class:'row',style:{justifyContent:'center',marginTop:'12px'}},h('button',{class:'btn sm',on:{click:back}},'Back to sign in')))
 }
