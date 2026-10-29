@@ -3,7 +3,7 @@ import{tone,desktop}from'./notify.js'
 import{S,on,emit,conv}from'./state.js'
 import{send as wsSend,isOpen}from'./net.js'
 
-export const V={ch:null,hub:null,label:'',path:'',peers:new Map(),mic:null,cam:null,scr:null,muted:false,deaf:false,speaking:new Set(),quality:{},ice:null,watch:new Map(),joining:false,relayFor:new Map(),relayVia:new Map()}
+export const V={ch:null,hub:null,label:'',path:'',peers:new Map(),mic:null,cam:null,scr:null,muted:false,deaf:false,speaking:new Set(),quality:{},ice:null,watch:new Map(),joining:false,relayFor:new Map(),relayVia:new Map(),scrFor:new Map(),scrVia:new Map()}
 
 const KEY='parley:voice'
 export function voicePrefs(){
@@ -104,6 +104,8 @@ for(const p of V.peers.values())closePeer(p)
 V.peers.clear()
 V.relayFor.clear()
 V.relayVia.clear()
+V.scrFor.clear()
+V.scrVia.clear()
 for(const s of[V.mic,V.cam,V.scr])s?.getTracks().forEach(t=>t.stop())
 V.mic=V.cam=V.scr=V.scrA=null
 stopCaptions()
@@ -139,6 +141,8 @@ if(r)p.pc.removeTrack(r.sender)
 }catch{}
 V.relayFor.delete(uid)
 V.relayVia.delete(uid)
+for(const[k,r]of[...V.scrFor])if(r.to===uid||r.src===uid){for(const sd of r.senders)try{V.peers.get(r.to)?.pc.removeTrack(sd)}catch{}V.scrFor.delete(k)}
+V.scrVia.delete(uid)
 for(const[toUid,r]of[...V.relayFor])if(r.fromUid===uid){try{V.peers.get(toUid)?.pc.removeTrack(r.sender)}catch{}V.relayFor.delete(toUid)}
 emit('voice:streams')
 }
@@ -174,9 +178,10 @@ try{p.making=true;await pc.setLocalDescription();sig(uid,{desc:pc.localDescripti
 pc.onconnectionstatechange=()=>{
 if(pc.connectionState==='failed'){
 try{pc.restartIce()}catch{}
-setTimeout(()=>{if(V.peers.get(uid)===p&&pc.connectionState==='failed')tryRelay(uid)},8000)
+setTimeout(()=>{if(V.peers.get(uid)===p&&pc.connectionState==='failed'){tryRelay(uid);tryScrRelay(uid)}},8000)
 }
 if(pc.connectionState==='disconnected')setTimeout(()=>{if(pc.connectionState==='disconnected'&&V.peers.get(uid)===p){try{pc.restartIce()}catch{}}},5000)
+if(pc.connectionState==='connected'&&V.scrVia.has(uid)){sig(V.scrVia.get(uid).via,{scrStop:uid});V.scrVia.delete(uid)}
 if(pc.connectionState==='connected'&&V.relayVia.has(uid)){sig(V.relayVia.get(uid),{relayStop:uid});V.relayVia.delete(uid)}
 emit('voice:streams')
 }
@@ -192,6 +197,7 @@ stream.onremovetrack=()=>{if(!stream.getVideoTracks().length){p.streams.delete(s
 emit('voice:streams')
 }
 }
+setTimeout(()=>{if(V.peers.get(uid)===p&&pc.connectionState!=='connected'&&pc.connectionState!=='closed')tryScrRelay(uid)},14000)
 sendKinds(uid)
 if(!V.mic)pc.addTransceiver('audio',{direction:'recvonly'})
 if(V.mic)for(const t of V.mic.getAudioTracks())p.senders.mic=pc.addTrack(t,V.mic)
@@ -213,6 +219,7 @@ function sendKinds(uid){
 const base=kindsMap()
 const r=V.relayFor.get(uid)
 if(r&&r.track)base[r.track.id]={k:'mic',from:r.fromUid}
+for(const x of V.scrFor.values())if(x.to===uid)for(const[id,k]of Object.entries(x.kinds))base[id]={k,from:x.src}
 sig(uid,{streams:base})
 }
 function relayHandle(fromUid,toUid){
@@ -230,6 +237,39 @@ if(old)try{toP.pc.removeTrack(old.sender)}catch{}
 const sender=toP.pc.addTrack(track)
 V.relayFor.set(toUid,{fromUid,track,sender})
 sendKinds(toUid)
+}catch{}
+}
+function scrRelayHandle(fromUid,srcUid){
+try{
+const reqP=V.peers.get(fromUid),srcP=V.peers.get(srcUid)
+if(!reqP||!srcP||fromUid===srcUid||srcUid===S.me.id||reqP.pc.connectionState==='closed')return
+const key=fromUid+'|'+srcUid
+if(V.scrFor.has(key))return
+const senders=[],kinds={}
+for(const[id,st]of srcP.streams){const kk=srcP.kinds[id];const k=kk&&kk.k||kk;if(k==='screen')for(const t of st.getVideoTracks()){senders.push(reqP.pc.addTrack(t,st));kinds[st.id]='screen'}}
+for(const[id,st]of srcP.astreams){const kk=srcP.kinds[id];const k=kk&&kk.k||kk;if(k==='screenaudio')for(const t of st.getAudioTracks()){senders.push(reqP.pc.addTrack(t,st));kinds[st.id]='screenaudio'}}
+if(!senders.length){sig(fromUid,{scrNo:srcUid});return}
+V.scrFor.set(key,{to:fromUid,src:srcUid,senders,kinds})
+sendKinds(fromUid)
+}catch{}
+}
+function scrStopHandle(fromUid,srcUid){
+const key=fromUid+'|'+srcUid
+const r=V.scrFor.get(key)
+if(!r)return
+for(const sd of r.senders)try{V.peers.get(fromUid)?.pc.removeTrack(sd)}catch{}
+V.scrFor.delete(key)
+sendKinds(fromUid)
+}
+function tryScrRelay(srcUid){
+try{
+if(V.scrVia.has(srcUid)&&V.scrVia.get(srcUid).done)return
+const tried=V.scrVia.get(srcUid)?.tried||new Set()
+const via=[...V.peers.values()].find(q=>q.uid!==srcUid&&q.pc.connectionState==='connected'&&!tried.has(q.uid))
+if(!via)return
+tried.add(via.uid)
+V.scrVia.set(srcUid,{via:via.uid,tried})
+sig(via.uid,{scrReq:srcUid})
 }catch{}
 }
 function relayStopHandle(fromUid,toUid){
@@ -252,6 +292,9 @@ function handleSig(from,data){
 if(!V.ch)return
 if(data.relayReq!==undefined){relayHandle(from,data.relayReq);return}
 if(data.relayStop!==undefined){relayStopHandle(from,data.relayStop);return}
+if(data.scrReq!==undefined){scrRelayHandle(from,data.scrReq);return}
+if(data.scrStop!==undefined){scrStopHandle(from,data.scrStop);return}
+if(data.scrNo!==undefined){tryScrRelay(data.scrNo);return}
 const p=V.peers.get(from)||mkPeer(from)
 p.q=(p.q||Promise.resolve()).then(()=>doSig(p,from,data)).catch(()=>{})
 return p.q
@@ -618,13 +661,24 @@ if(V.cam)grid.append(mkTile(uid,{stream:V.cam,label:'You (camera)'}))
 if(V.scr)grid.append(mkTile(uid,{stream:V.scr,label:'You (screen)'}))
 }else{
 const p=V.peers.get(uid)
+const u=S.users.get(uid)
+let direct=false
 if(p){
 let first=true
 for(const[sid,stream]of p.streams){
-const kind=p.kinds[sid]||(first?'cam':'screen')
+const kk=p.kinds[sid]
+const kind=(kk&&kk.k||kk)||(first?'cam':'screen')
+if(kk&&kk.from&&kk.from!==uid)continue
 first=false
-const u=S.users.get(uid)
+if(kind==='screen')direct=true
 grid.append(mkTile(uid,{stream,label:(u?.display_name||'Member')+(kind==='screen'?' (screen)':' (camera)')}))
+}
+}
+if(!direct)for(const q of V.peers.values()){
+if(q.uid===uid)continue
+for(const[sid,stream]of q.streams){
+const kk=q.kinds[sid]
+if(kk&&kk.from===uid&&kk.k==='screen')grid.append(mkTile(uid,{stream,label:(u?.display_name||'Member')+' (screen)'}))
 }
 }
 }

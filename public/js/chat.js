@@ -336,6 +336,16 @@ else if(h==='youtube.com'||h==='music.youtube.com')id=x.pathname==='/watch'?x.se
 return/^[A-Za-z0-9_-]{11}$/.test(id)?id:''
 }catch{return''}
 }
+function itchPlay(d){
+const box=h('div',{class:'itch'})
+const btn=h('button',{type:'button',class:'btn pri',on:{click:()=>{
+const fr=h('iframe',{src:d.play,class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
+box.replaceChildren(fr,h('div',{class:'row itch-bar'},h('button',{type:'button',class:'btn sm',on:{click:()=>fr.requestFullscreen?.()}},'Fullscreen'),h('button',{type:'button',class:'btn sm',on:{click:()=>itchPlay.close(box,d)}},'Close')))
+}}},'Play '+(d.title||'game')+' here')
+box.append(btn)
+return box
+}
+itchPlay.close=(box,d)=>box.replaceWith(itchPlay(d))
 function unfurlSlot(url){
 const slot=h('div',{class:'unf-slot'})
 const go=async()=>{
@@ -346,7 +356,7 @@ unfurlCache.set(url,null)
 try{d=await GET('/api/unfurl?url='+encodeURIComponent(url));unfurlCache.set(url,d)}catch{}
 }
 const yt=ytId(url)
-if(d&&(d.title||d.description))slot.append(h('div',{class:'unf'},yt?h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow',class:'unf-th'},h('img',{src:'/api/yt-thumb/'+yt,alt:'Video thumbnail',loading:'lazy',width:320,height:180}),h('span',{class:'unf-play','aria-hidden':'true'})):null,h('span',null,d.site||''),h('b',null,h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow'},d.title||url)),d.description?h('span',null,d.description.slice(0,200)):null))
+if(d&&(d.title||d.description))slot.append(h('div',{class:'unf'},d.play&&/^https:\/\/[a-z-]+\.itch\.zone\//.test(d.play)?itchPlay(d):null,yt?h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow',class:'unf-th'},h('img',{src:'/api/yt-thumb/'+yt,alt:'Video thumbnail',loading:'lazy',width:320,height:180}),h('span',{class:'unf-play','aria-hidden':'true'})):null,h('span',null,d.site||''),h('b',null,h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow'},d.title||url)),d.description?h('span',null,d.description.slice(0,200)):null))
 }
 if(unfurlCache.has(url)){const d=unfurlCache.get(url);if(d)go();return slot}
 unfurlObs||=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){unfurlObs.unobserve(e.target);e.target.__go()}},{rootMargin:'100px'})
