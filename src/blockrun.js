@@ -1,6 +1,7 @@
 import{fail}from'./util.js'
 import{pathGet}from'./apiblock.js'
 import*as L from'./labfx.js'
+import{LAB}from'./labmore.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
 const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words','capital','nospaces','digits','letters','left','right','repeat','slug']
 const MATH=['+','-','*','/','%','max','min','pow','floor','ceil','round','abs']
@@ -131,7 +132,7 @@ base:{out:NX,spec:{name:24,input:30,to:['bin','hex','oct','dec']},def:{name:'con
 urlenc:{out:NX,spec:{name:24,input:300},def:{name:'encoded',input:'{args}'}},
 hashnum:{out:NX,spec:{name:24,input:200,max:9},def:{name:'score',input:'{args}',max:'100'}},
 rps:{out:NX,spec:{name:24,input:30},def:{name:'result',input:'{arg1}'}},
-dd:{out:NX,spec:{name:24,kind:['invite','widget','template','app','status'],input:100,fallback:100},def:{name:'discord',kind:'invite',input:'{arg1}',fallback:'Discord did not answer.'}},
+dd:{out:NX,spec:{name:24,kind:['invite','widget','template','app','status','stickers'],input:100,fallback:100},def:{name:'discord',kind:'invite',input:'{arg1}',fallback:'Discord did not answer.'}},
 ddwebhook:{out:NX,spec:{name:24,url:200,user:80,avatar:300,text:1900},def:{name:'sent',url:'https://discord.com/api/webhooks/',user:'',avatar:'',text:''}},
 ddembed:{out:NX,spec:{name:24,url:200,user:80,title:200,text:1500,color:7,image:300,footer:100},def:{name:'sent',url:'https://discord.com/api/webhooks/',user:'',title:'',text:'',color:'5865F2',image:'',footer:''}},
 ddformat:{out:NX,spec:{name:24,input:500,fmt:['bold','italic','bolditalic','underline','strike','spoiler','code','codeblock','quote','h1','h2','h3','subtext','nolink']},def:{name:'styled',input:'{text}',fmt:'bold'}},
@@ -141,7 +142,7 @@ ddmention:{out:NX,spec:{name:24,kind:['user','channel','role'],id:30},def:{name:
 ddinvitecode:{out:NX,spec:{name:24,input:500},def:{name:'invite',input:'{text}'}},
 ddemoji:{out:NX,spec:{name:24,label:32,id:30,animated:['0','1']},def:{name:'emoji',label:'emoji',id:'',animated:'0'}},
 ddlink:{out:NX,spec:{name:24,kind:['message','channel','user','invite','server'],a:30,b:30,c:30},def:{name:'link',kind:'invite',a:'',b:'',c:''}},
-world:{out:NX,spec:{name:24,kind:['geo','forecast','sun','air','quake','iss','holiday','launch'],input:60,fallback:100},def:{name:'world',kind:'forecast',input:'{args}',fallback:'No data for that.'}},
+world:{out:NX,spec:{name:24,kind:['geo','forecast','sun','air','quake','iss','holiday','launch','uv','wind','elevation','onthisday','book','poem','art','colorname'],input:60,fallback:100},def:{name:'world',kind:'forecast',input:'{args}',fallback:'No data for that.'}},
 moonphase:{out:NX,spec:{name:24,date:20},def:{name:'moon',date:''}},
 distance:{out:NX,spec:{name:24,lat1:12,lon1:12,lat2:12,lon2:12,unit:['km','mi']},def:{name:'distance',lat1:'',lon1:'',lat2:'',lon2:'',unit:'km'}},
 unitconv:{out:NX,spec:{name:24,value:30,from:Object.keys(UN),to:Object.keys(UN)},def:{name:'converted',value:'{arg1}',from:'km',to:'mi'}},
@@ -169,8 +170,24 @@ btscan:{out:NX,spec:{prefix:30},def:{prefix:''}},
 btbattery:{out:NX,spec:{prefix:30},def:{prefix:''}},
 btheart:{out:NX,spec:{seconds:3},def:{seconds:'15'}},
 btread:{out:NX,spec:{prefix:30,service:40,char:40,as:['text','hex','number']},def:{prefix:'',service:'battery_service',char:'battery_level',as:'number'}},
+devmorse:{out:NX,spec:{text:40},def:{text:'SOS'}},
+devmelody:{out:NX,spec:{notes:120},def:{notes:'C4 E4 G4 C5'}},
+devtimer:{out:NX,spec:{seconds:5,label:60},def:{seconds:'60',label:'Time is up'}},
+devemoji:{out:NX,spec:{emoji:8,count:2},def:{emoji:'🎉',count:'20'}},
+devinfo:{out:NX,spec:{},def:{}},
+devfull:{out:NX,spec:{},def:{}},
+devrumble:{out:NX,spec:{ms:4},def:{ms:'500'}},
+btinfo:{out:NX,spec:{prefix:30},def:{prefix:''}},
+btnotify:{out:NX,spec:{prefix:30,service:40,char:40,seconds:3,as:['number','text','hex']},def:{prefix:'',service:'ffe0',char:'ffe1',seconds:'15',as:'text'}},
+btwritetext:{out:NX,spec:{prefix:30,service:40,char:40,text:20},def:{prefix:'',service:'ffe0',char:'ffe1',text:'go'}},
+serialsend:{out:NX,spec:{baud:6,text:200,newline:['1','0']},def:{baud:'9600',text:'LED ON',newline:'1'}},
+serialread:{out:NX,spec:{baud:6,seconds:3},def:{baud:'9600',seconds:'10'}},
+usbinfo:{out:NX,spec:{},def:{}},
+nfcread:{out:NX,spec:{seconds:3},def:{seconds:'15'}},
+nfcwrite:{out:NX,spec:{text:200},def:{text:'Hello from Parley'}},
 btwrite:{out:NX,spec:{prefix:30,service:40,char:40,hex:64},def:{prefix:'',service:'ffe0',char:'ffe1',hex:'01'}}
 }
+for(const[k,v]of Object.entries(LAB))TYPES[k]={out:v.out||NX,spec:v.spec,def:v.def}
 export const MAX_NODES=200
 const NAMEF=['name']
 const bad=m=>fail(400,m)
@@ -227,6 +244,16 @@ if(n.type==='btheart')p.seconds=num(p.seconds,3,60,'Seconds')
 if(n.type==='devopen'&&!/^https:\/\//i.test(p.url))bad('The link must start with https://')
 if((n.type==='btread'||n.type==='btwrite')&&(!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.service)||!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.char)))bad('Use a Bluetooth name like battery_service or a UUID')
 if(n.type==='btwrite'&&!/^([0-9a-f]{2}){1,32}$/i.test(p.hex.replace(/\s/g,'')))bad('The value is hex bytes like 01FF')
+if(n.type==='devmelody'&&!/^([A-G][#b]?[2-7]\s*){1,16}$/.test(p.notes.trim()+' '))bad('Notes look like C4 E4 G4 and go up to 16')
+if(n.type==='devtimer')p.seconds=num(p.seconds,1,3600,'Seconds')
+if(n.type==='devemoji')p.count=num(p.count,1,40,'Count')
+if(n.type==='devrumble')p.ms=num(p.ms,50,2000,'Length')
+if(n.type==='btnotify')p.seconds=num(p.seconds,3,60,'Seconds')
+if(n.type==='btnotify'&&(!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.service)||!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.char)))bad('Use a Bluetooth name like heart_rate or a UUID')
+if(n.type==='btwritetext'&&(!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.service)||!/^([0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z_]{3,40})$/i.test(p.char)))bad('Use a Bluetooth name or a UUID')
+if(n.type==='serialsend'||n.type==='serialread'){if(![1200,2400,4800,9600,19200,38400,57600,115200].includes(Number(p.baud)))bad('Baud rate must be a common speed like 9600 or 115200')}
+if(n.type==='serialread')p.seconds=num(p.seconds,1,60,'Seconds')
+if(n.type==='nfcread')p.seconds=num(p.seconds,3,60,'Seconds')
 if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
 if(n.type==='emojispam'||n.type==='mentionspam')p.count=num(p.count,1,50,'Count')
 if(n.type==='newmember')p.days=num(p.days,1,365,'Days')
@@ -345,7 +372,7 @@ case'replace':{const i=arg.indexOf('|');if(i<0)return s;return s.split(arg.slice
 }
 return s
 }
-const DEV=/^(dev|bt)/
+const DEV=/^(dev|bt|serial|usb|nfc)/
 const wsc=s=>String(s).replace(/\s/g,'')
 export function baseVars(ctx,rnd){
 const d=new Date(ctx.at||Date.now())
@@ -476,7 +503,7 @@ case'math':if(P.name)log.push({id:n.id,did:'math',value:setv(P.name,calc(R(P.a),
 case'text':if(P.name)log.push({id:n.id,did:'text',value:setv(P.name,xform(P.fn,R(P.input),P.arg))});break
 case'randnum':if(P.name){const a=Number(P.min),b=Number(P.max),lo=Math.min(a,b),hi=Math.max(a,b);log.push({id:n.id,did:'randnum',value:setv(P.name,String(lo+Math.floor(rnd()*(hi-lo+1))))})}break
 case'map':if(P.name){const k=R(P.input).trim().toLowerCase();let out=null;for(const line of P.table.split('\n')){const i=line.indexOf('=');if(i>0&&line.slice(0,i).trim().toLowerCase()===k){out=line.slice(i+1).trim();break}}log.push({id:n.id,did:'map',value:setv(P.name,out===null?R(P.fallback):R(out))})}break
-default:if(DEV.test(n.type)&&devs.length<5){const a={};for(const[k,v]of Object.entries(P))a[k]=R(v).slice(0,500);devs.push({k:n.type,a});log.push({id:n.id,did:'device',kind:n.type})}
+default:{const Lb=LAB[n.type];if(Lb){const r=Lb.fn(P,R,ctx.at||Date.now());if(typeof r==='boolean')branch=r;else{const v=r&&typeof r==='object'?r.v:r;if(P.name)log.push({id:n.id,did:n.type,value:setv(P.name,String(v))});if(r&&r.x&&P.name)for(const[k,x]of Object.entries(r.x))setv(P.name+'_'+k,String(x))}}else if(DEV.test(n.type)&&devs.length<5){const a={};for(const[k,v]of Object.entries(P))a[k]=R(v).slice(0,500);devs.push({k:n.type,a});log.push({id:n.id,did:'device',kind:n.type})}}
 }
 if(n.xo&&depth<6)for(let xn=1;xn<=n.xo;xn++){const xs=next(n.id,'x'+xn);if(xs)await chain(xs,depth+1)}
 if(route!==null){log.push({id:n.id,did:route});cur=next(n.id,route)}
