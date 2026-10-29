@@ -159,8 +159,93 @@ DESC.base='Converts a whole number to binary, hexadecimal or octal.'
 DESC.urlenc='Encodes text so it can go inside a web address, for example in an HTTP block.'
 DESC.hashnum='Turns text into a steady number from 0 up to your highest. The same text always gives the same number, great for rate or ship commands.'
 DESC.rps='Picks a random move for the bot and saves win, lose, tie or invalid from the member’s side. The bot move goes in name_bot.'
-const OUTL={next:'then',yes:'yes',no:'no',c1:'path 1',c2:'path 2',c3:'path 3',c4:'path 4',else:'otherwise',x1:'then 2',x2:'then 3',x3:'then 4'}
-const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam','question','shortmsg','codeblock','hasnumber','mediaurl']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop','random3','between','evenodd','lengthcheck','hasargs','isnumber']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['APIs',['api','http','jsonget']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','item','clock','userinfo','serverinfo','substr','percent','stats','sortlist','joinlist','unique','occurs','dateadd','daysuntil','dice','bar','ordinal','numformat','base','urlenc','hashnum','rps']]]
+const UNITS=[['m','meters'],['km','kilometers'],['cm','centimeters'],['mm','millimeters'],['mi','miles'],['yd','yards'],['ft','feet'],['in','inches'],['kg','kilograms'],['g','grams'],['lb','pounds'],['oz','ounces'],['mps','meters per second'],['kmh','kilometers per hour'],['mph','miles per hour'],['knot','knots'],['l','liters'],['ml','milliliters'],['gal','US gallons'],['cup','US cups'],['c','degrees Celsius'],['f','degrees Fahrenheit'],['k','kelvin'],['b','bytes'],['kb','kilobytes'],['mb','megabytes'],['gb','gigabytes'],['tb','terabytes'],['sec','seconds'],['min','minutes'],['hr','hours'],['day','days']]
+const ENC=[['encode','text to code'],['decode','code to text']]
+const WEBH='Discord webhook link'
+Object.assign(DEFS,{
+dd:{title:'DiscordDirect: look something up',tone:'dd',out:['next'],fields:[['kind','Look up','select',[['invite','Server from an invite'],['widget','Server widget by server ID'],['template','Server template'],['app','Discord app or bot by ID'],['status','Discord status']]],['input','Invite link or code, or ID','text'],['name','Save as','text'],['fallback','If it fails','text']],init:{name:'discord',kind:'invite',input:'{arg1}',fallback:'Discord did not answer.'}},
+ddwebhook:{title:'DiscordDirect: post with a webhook',tone:'dd',out:['next'],fields:[['url',WEBH,'text'],['user','Name to show (optional)','text'],['avatar','Picture link (optional)','text'],['text','Message','area'],['name','Save result as (yes or no)','text']],init:{url:'https://discord.com/api/webhooks/',user:'',avatar:'',text:'{user} said: {text}',name:'sent'}},
+ddembed:{title:'DiscordDirect: post an embed',tone:'dd',out:['next'],fields:[['url',WEBH,'text'],['user','Name to show (optional)','text'],['title','Title','text'],['text','Description','area'],['color','Color (hex)','text'],['image','Image link (optional)','text'],['footer','Footer (optional)','text'],['name','Save result as (yes or no)','text']],init:{url:'https://discord.com/api/webhooks/',user:'',title:'New message',text:'{text}',color:'5865F2',image:'',footer:'',name:'sent'}},
+ddformat:{title:'DiscordDirect: style text',tone:'dd',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['fmt','Style','select',[['bold','bold'],['italic','italic'],['bolditalic','bold italic'],['underline','underline'],['strike','strikethrough'],['spoiler','spoiler'],['code','inline code'],['codeblock','code block'],['quote','quote'],['h1','big heading'],['h2','medium heading'],['h3','small heading'],['subtext','small text'],['nolink','hide link previews']]]],init:{name:'styled',input:'{text}',fmt:'bold'}},
+ddtime:{title:'DiscordDirect: timestamp that adapts',tone:'dd',out:['next'],fields:[['name','Save as','text'],['input','Unix seconds (empty is now)','text'],['fmt','Show as','select',[['R','relative (in 3 hours)'],['t','short time'],['T','long time'],['d','short date'],['D','long date'],['f','date and time'],['F','full date and time']]]],init:{name:'stamp',input:'',fmt:'R'}},
+ddsnowflake:{title:'DiscordDirect: read an ID',tone:'dd',out:['next'],fields:[['name','Save as','text'],['input','Discord ID','text']],init:{name:'flake',input:'{arg1}'}},
+ddmention:{title:'DiscordDirect: build a mention',tone:'dd',out:['next'],fields:[['name','Save as','text'],['kind','Mention a','select',[['user','member'],['channel','channel'],['role','role']]],['id','ID','text']],init:{name:'ping',kind:'user',id:'{userid}'}},
+ddinvitecode:{title:'DiscordDirect: find an invite in text',tone:'dd',out:['next'],fields:[['name','Save code as','text'],['input','Text','text']],init:{name:'invite',input:'{text}'}},
+ddemoji:{title:'DiscordDirect: custom emoji link',tone:'dd',out:['next'],fields:[['name','Save as','text'],['label','Emoji name','text'],['id','Emoji ID','text'],['animated','Animated','check']],init:{name:'emoji',label:'emoji',id:'',animated:'0'}},
+ddlink:{title:'DiscordDirect: build a link',tone:'dd',out:['next'],fields:[['name','Save as','text'],['kind','Link to','select',[['invite','invite (code in first box)'],['server','server (server ID)'],['channel','channel (server ID, channel ID)'],['message','message (server, channel, message IDs)'],['user','profile (user ID)']]],['a','First','text'],['b','Second','text'],['c','Third','text']],init:{name:'link',kind:'invite',a:'',b:'',c:''}},
+world:{title:'World: real-world data',tone:'world',out:['next'],fields:[['kind','Get','select',[['forecast','3 day forecast for a city'],['geo','Map position of a city'],['sun','Sunrise and sunset in a city'],['air','Air quality in a city'],['quake','Latest earthquake'],['iss','International Space Station position'],['holiday','Next public holiday (country code)'],['launch','Next rocket launch']]],['input','City or country code','text'],['name','Save as','text'],['fallback','If it fails','text']],init:{name:'world',kind:'forecast',input:'{args}',fallback:'No data for that.'}},
+moonphase:{title:'World: moon phase',tone:'world',out:['next'],fields:[['name','Save as','text'],['date','Date like 2027-01-01 (empty is today)','text']],init:{name:'moon',date:''}},
+distance:{title:'World: distance between two places',tone:'world',out:['next'],fields:[['name','Save as','text'],['lat1','Latitude 1','text'],['lon1','Longitude 1','text'],['lat2','Latitude 2','text'],['lon2','Longitude 2','text'],['unit','In','select',[['km','kilometers'],['mi','miles']]]],init:{name:'distance',lat1:'',lon1:'',lat2:'',lon2:'',unit:'km'}},
+unitconv:{title:'Lab: convert units',tone:'lab',out:['next'],fields:[['name','Save as','text'],['value','Number','text'],['from','From','select',UNITS],['to','To','select',UNITS]],init:{name:'converted',value:'{arg1}',from:'km',to:'mi'}},
+colorconv:{title:'Lab: convert a color',tone:'lab',out:['next'],fields:[['name','Save hex as','text'],['input','Hex like #FF8800 or 255,136,0','text']],init:{name:'color',input:'{arg1}'}},
+morse:{title:'Lab: Morse code',tone:'lab',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['mode','Do','select',ENC]],init:{name:'morse',input:'{args}',mode:'encode'}},
+roman:{title:'Lab: Roman numerals',tone:'lab',out:['next'],fields:[['name','Save as','text'],['input','Value','text'],['mode','Do','select',[['toroman','number to Roman'],['tonumber','Roman to number']]]],init:{name:'roman',input:'{arg1}',mode:'toroman'}},
+caesar:{title:'Lab: Caesar cipher',tone:'lab',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['shift','Shift (-25 to 25)','text']],init:{name:'cipher',input:'{args}',shift:'3'}},
+hashtext:{title:'Lab: hash text',tone:'lab',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['algo','Algorithm','select',[['sha256','SHA-256'],['sha1','SHA-1'],['sha512','SHA-512']]]],init:{name:'hash',input:'{args}',algo:'sha256'}},
+uuid:{title:'Lab: random unique ID',tone:'lab',out:['next'],fields:[['name','Save as','text']],init:{name:'uuid'}},
+nato:{title:'Lab: spell with the phonetic alphabet',tone:'lab',out:['next'],fields:[['name','Save as','text'],['input','Text','text']],init:{name:'spelled',input:'{args}'}},
+binarytext:{title:'Lab: text and binary',tone:'lab',out:['next'],fields:[['name','Save as','text'],['input','Text or 8 digit groups','text'],['mode','Do','select',ENC]],init:{name:'binary',input:'{args}',mode:'encode'}},
+foreach:{title:'Repeat for each item',tone:'logic',out:['each','done'],fields:[['name','Item variable','text'],['input','List (commas or lines, up to 10)','area']],init:{name:'item',input:'{args}'}},
+devvibrate:{title:'Device: vibrate',tone:'dev',out:['next'],fields:[['pattern','Milliseconds on, off, on... (up to 8)','text']],init:{pattern:'200,100,200'}},
+devspeak:{title:'Device: speak out loud',tone:'dev',out:['next'],fields:[['text','Text','text']],init:{text:'{text}'}},
+devtone:{title:'Device: play a tone',tone:'dev',out:['next'],fields:[['freq','Pitch in Hz (100 to 2000)','text'],['ms','Milliseconds','text']],init:{freq:'440',ms:'400'}},
+devflash:{title:'Device: flash the screen',tone:'dev',out:['next'],fields:[['color','Color (hex)','text'],['ms','Milliseconds','text']],init:{color:'FFFFFF',ms:'400'}},
+devnotify:{title:'Device: show a notification',tone:'dev',out:['next'],fields:[['title','Title','text'],['body','Text','text']],init:{title:'{server}',body:'{text}'}},
+devcopy:{title:'Device: copy text',tone:'dev',out:['next'],fields:[['text','Text','text']],init:{text:'{text}'}},
+devopen:{title:'Device: open a link',tone:'dev',out:['next'],fields:[['url','Link (https only)','text']],init:{url:'https://'}},
+devshare:{title:'Device: open the share sheet',tone:'dev',out:['next'],fields:[['text','Text','text']],init:{text:'{text}'}},
+devwake:{title:'Device: keep the screen awake',tone:'dev',out:['next'],fields:[['seconds','Seconds (up to 300)','text']],init:{seconds:'30'}},
+devbattery:{title:'Device: check battery',tone:'dev',out:['next'],fields:[],init:{}},
+devnet:{title:'Device: check connection',tone:'dev',out:['next'],fields:[],init:{}},
+btscan:{title:'Bluetooth: find a nearby device',tone:'bt',out:['next'],fields:[['prefix','Only names starting with (optional)','text']],init:{prefix:''}},
+btbattery:{title:'Bluetooth: read a device battery',tone:'bt',out:['next'],fields:[['prefix','Only names starting with (optional)','text']],init:{prefix:''}},
+btheart:{title:'Bluetooth: watch a heart rate band',tone:'bt',out:['next'],fields:[['seconds','Seconds (3 to 60)','text']],init:{seconds:'15'}},
+btread:{title:'Bluetooth: read a value',tone:'bt',out:['next'],fields:[['prefix','Only names starting with (optional)','text'],['service','Service name or UUID','text'],['char','Characteristic name or UUID','text'],['as','Show as','select',[['number','number'],['text','text'],['hex','hex bytes']]]],init:{prefix:'',service:'battery_service',char:'battery_level',as:'number'}},
+btwrite:{title:'Bluetooth: send bytes to a gadget',tone:'bt',out:['next'],fields:[['prefix','Only names starting with (optional)','text'],['service','Service UUID','text'],['char','Characteristic UUID','text'],['hex','Hex bytes like 01FF','text']],init:{prefix:'',service:'ffe0',char:'ffe1',hex:'01'}}
+})
+Object.assign(DESC,{
+dd:'Looks up public Discord information with no bot at all: an invite, a server widget, a template, an app or the Discord status. Saves the answer and details like name_members and name_online.',
+ddwebhook:'Posts a message to a Discord channel through a webhook link, so you can bridge or mirror without a Discord bot. Mentions are blocked. Anyone who edits this bot can see the link.',
+ddembed:'Posts a Discord embed with a title, text, color and image through a webhook. Mentions are blocked. Anyone who edits this bot can see the link.',
+ddformat:'Wraps text in Discord markdown such as bold, spoiler, code, quote or a heading.',
+ddtime:'Makes a Discord timestamp that shows in every reader’s own time zone and language, like in 3 hours.',
+ddsnowflake:'Reads the creation time of any Discord ID. Saves unix seconds, plus name_date, name_days and name_avatar for the default avatar.',
+ddmention:'Builds a Discord mention for a member, channel or role ID.',
+ddinvitecode:'Finds a Discord invite in text and saves its code, with the clean link in name_url.',
+ddemoji:'Builds the image link and the message code for a Discord custom emoji.',
+ddlink:'Builds a link to a Discord invite, server, channel, message or profile from IDs.',
+world:'Gets real-world data: forecast, map position, sunrise and sunset, air quality, the latest earthquake, the space station, the next holiday or the next rocket launch.',
+moonphase:'Saves the moon phase for a date, with name_illum for percent lit and name_age for days old.',
+distance:'Saves the distance over the Earth’s surface between two latitude and longitude pairs.',
+unitconv:'Converts length, weight, speed, volume, temperature, data size and time between units. Different kinds of units give an empty result.',
+colorconv:'Turns a hex or red green blue color into hex, name_rgb and name_hsl.',
+morse:'Turns text into Morse code with slashes between words, or turns Morse code back into text.',
+roman:'Converts 1 to 3999 into Roman numerals, or Roman numerals into a number.',
+caesar:'Shifts each letter by a number of places. Use a negative shift to undo it.',
+hashtext:'Saves a SHA hash of the text as hex. The same text always gives the same hash.',
+uuid:'Saves a random unique ID.',
+nato:'Spells letters and numbers with the phonetic alphabet, like Alfa Bravo Charlie.',
+binarytext:'Turns text into groups of eight binary digits, or turns them back into text.',
+foreach:'Runs the blocks on the each path once for every item in a list, up to 10 items, then follows done. The item is in the variable you name, with its position in name_index.',
+devvibrate:'Asks the member to allow their device to vibrate. Works on phones with a supported browser.',
+devspeak:'Asks the member to allow their device to read text out loud.',
+devtone:'Asks the member to allow their device to play a short tone.',
+devflash:'Asks the member to allow a short screen flash in a color.',
+devnotify:'Asks the member to allow a system notification on their device.',
+devcopy:'Asks the member to allow copying text to their clipboard.',
+devopen:'Asks the member to allow opening a link in a new tab.',
+devshare:'Asks the member to allow the share sheet to open with some text.',
+devwake:'Asks the member to allow keeping their screen awake for a while.',
+devbattery:'Asks the member to allow showing their device battery level to them.',
+devnet:'Asks the member to allow showing their connection type and speed to them.',
+btscan:'Asks the member to pick a nearby Bluetooth device and shows its name to them. Works in Chrome, Edge and the Android and desktop apps.',
+btbattery:'Asks the member to pick a Bluetooth device and shows its battery level to them.',
+btheart:'Asks the member to pick a Bluetooth heart rate band and shows the live beats per minute to them.',
+btread:'Asks the member to pick a Bluetooth device and shows one value read from it.',
+btwrite:'Asks the member to pick a Bluetooth gadget and sends it bytes, for lights, toys and robots that listen on Bluetooth LE.'
+})
+const OUTL={each:'for each',done:'when done',next:'then',yes:'yes',no:'no',c1:'path 1',c2:'path 2',c3:'path 3',c4:'path 4',else:'otherwise',x1:'then 2',x2:'then 3',x3:'then 4'}
+const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam','question','shortmsg','codeblock','hasnumber','mediaurl']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop','random3','between','evenodd','lengthcheck','hasargs','isnumber','foreach']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['APIs',['api','http','jsonget']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','item','clock','userinfo','serverinfo','substr','percent','stats','sortlist','joinlist','unique','occurs','dateadd','daysuntil','dice','bar','ordinal','numformat','base','urlenc','hashnum','rps']],['DiscordDirect (no bot needed)',['dd','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink']],['Real world',['world','moonphase','distance']],['Lab tools',['unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext']],['Device (runs on the member\'s device)',['devvibrate','devspeak','devtone','devflash','devnotify','devcopy','devopen','devshare','devwake','devbattery','devnet']],['Bluetooth',['btscan','btbattery','btheart','btread','btwrite']]]
 const T=(nodes,edges)=>({nodes,edges})
 const N=(id,type,x,y,p)=>({id,type,x,y,p:{...DEFS[type].init,...p}})
 const E=(f,o,t)=>({f,o,t})
@@ -176,6 +261,14 @@ const STARTERS=[
 ['Joke command',T([N('a','cmd',40,40,{name:'joke'}),N('b','api',340,40,{kind:'joke',name:'joke'}),N('c','say',640,40,{text:'{joke}',reply:'1'})],[E('a','next','b'),E('b','next','c')])],
 ['Dice roller',T([N('a','cmd',40,40,{name:'roll'}),N('b','randnum',340,40,{name:'dice',min:'1',max:'6'}),N('c','say',640,40,{text:'{mention} rolled a {dice}.',reply:'0'})],[E('a','next','b'),E('b','next','c')])],
 ['Cooldown command',T([N('a','cmd',40,40,{name:'daily'}),N('b','cooldown',340,40,{seconds:'86400',scope:'user'}),N('c','count',640,0,{name:'streak',by:'1',scope:'user'}),N('d','say',940,0,{text:'Daily claimed! Total: {streak}',reply:'1'}),N('e','say',640,200,{text:'Come back later.',reply:'1'})],[E('a','next','b'),E('b','yes','c'),E('c','next','d'),E('b','no','e')])]
+['Discord invite checker',T([N('a','cmd',40,40,{name:'invite'}),N('b','dd',340,40,{kind:'invite',input:'{arg1}',name:'dc',fallback:'I could not read that invite.'}),N('c','say',640,40,{text:'{dc}',reply:'1'})],[E('a','next','b'),E('b','next','c')])],
+['Discord account age',T([N('a','cmd',40,40,{name:'created'}),N('b','ddsnowflake',340,40,{name:'age',input:'{arg1}'}),N('c','ddtime',640,40,{name:'when',input:'{age}',fmt:'F'}),N('d','say',940,40,{text:'That ID was created {when}.',reply:'1'})],[E('a','next','b'),E('b','next','c'),E('c','next','d')])],
+['Moon phase command',T([N('a','cmd',40,40,{name:'moon'}),N('b','moonphase',340,40,{name:'moon'}),N('c','say',640,40,{text:'The moon is {moon}, {moon_illum}% lit.',reply:'1'})],[E('a','next','b'),E('b','next','c')])],
+['Unit converter',T([N('a','cmd',40,40,{name:'tof'}),N('b','unitconv',340,40,{name:'f',value:'{arg1}',from:'c',to:'f'}),N('c','say',640,40,{text:'{arg1} C is {f} F',reply:'1'})],[E('a','next','b'),E('b','next','c')])],
+['Space check',T([N('a','cmd',40,40,{name:'space'}),N('b','world',340,40,{kind:'iss',input:'',name:'iss',fallback:'The station did not answer.'}),N('c','world',640,40,{kind:'launch',input:'',name:'launch',fallback:'No launch found.'}),N('d','say',940,40,{text:'{iss}\nNext launch: {launch}',reply:'1'})],[E('a','next','b'),E('b','next','c'),E('c','next','d')])],
+['Shout to each word',T([N('a','cmd',40,40,{name:'shout'}),N('b','foreach',340,40,{name:'w',input:'{args}'}),N('c','ddformat',640,10,{name:'big',input:'{w}',fmt:'h2'}),N('d','say',940,10,{text:'{big}'})],[E('a','next','b'),E('b','each','c'),E('c','next','d')])],
+['Ping my phone',T([N('a','cmd',40,40,{name:'buzz'}),N('b','devvibrate',340,40,{pattern:'300,100,300'}),N('c','devspeak',640,40,{text:'{user} says hello'})],[E('a','next','b'),E('b','next','c')])],
+['Bluetooth battery check',T([N('a','cmd',40,40,{name:'battery'}),N('b','btbattery',340,40,{prefix:''})],[E('a','next','b')])],
 ]
 const uid=()=>'n'+Math.random().toString(36).slice(2,8)
 

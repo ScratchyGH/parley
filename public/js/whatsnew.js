@@ -11,7 +11,7 @@ const main=h('div',{class:'wn-main'})
 const draw=()=>{
 const r=RELEASES[cur]
 mount(rail,RELEASES.map((x,i)=>h('button',{type:'button',class:i===cur?'on':'','aria-current':i===cur?'true':null,on:{click:()=>{cur=i;draw()}}},h('b',null,'v'+x.v),h('small',null,x.date))))
-mount(main,h('div',{class:'wn-head'},h('div',{class:'wn-meta'},h('span',{class:'wn-v'},'Version '+r.v),h('span',null,r.date),i0(cur)),h('h2',null,r.title),h('p',{class:'wn-sum'},r.summary)),r.sections.map(sec))
+mount(main,h('div',{class:'wn-head'},r.img?h('img',{class:'wn-img',src:r.img,alt:'Brit',width:84,height:84}):null,h('div',{class:'wn-meta'},h('span',{class:'wn-v'},'Version '+r.v),h('span',null,r.date),i0(cur)),h('h2',null,r.title),h('p',{class:'wn-sum'},r.summary)),r.sections.map(sec))
 main.scrollTop=0
 }
 const i0=i=>i===0?h('span',{class:'wn-latest'},'Latest'):null

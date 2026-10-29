@@ -2,6 +2,7 @@ import'./perf.js'
 import'./halloween.js'
 import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce,fmtStamp}from'./util.js'
 import{render}from'./md.js'
+import{deviceRequest}from'./devblock.js'
 import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
 import{setRooms,sendAll,stopAll}from'./net.js'
 import{go,parse,setRouteHandler,lastChan,setLastChan}from'./nav.js'
@@ -367,6 +368,7 @@ loadServers().then(()=>{if(S.nav.sid===id){toast(m.t==='server.deleted'?'This se
 break
 }
 case'notice':toast(m.text);break
+case'bot.device':deviceRequest(m);break
 case'call.ring':
 if(V.ch){POST(`/api/conversations/${m.room}/ring/decline`,{busy:true}).catch(()=>{});break}
 ringToast(m.from,m.room,()=>startCall(m.room))
