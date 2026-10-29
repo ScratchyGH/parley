@@ -4,68 +4,116 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121211">
-<title>Get Parley</title>
-<meta name="description" content="Download Parley for iPhone, Android, Windows, Mac, Linux and Ubuntu Touch.">
+<title>Parley, a free home for your group chat</title>
+<meta name="description" content="Messages, voice calls and screen share for friend groups and communities. Free, no email, no ads. Apps for Windows, Mac, Linux, Android, iPhone, Ubuntu Touch and the web.">
 <link rel="icon" href="/logo-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fonts/figtree.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="get.css">
 </head>
 <body>
-<main>
-<header><img src="/mascot.webp" width="44" height="44" alt=""><b>Parley</b></header>
+<header class="top">
+<a class="brand" href="#top"><img src="/mascot.webp" width="40" height="40" alt="">Parley</a>
+<nav aria-label="Sections"><a href="#features">Features</a><a href="#free">Why free</a><a href="#devices">Get the app</a><a href="#faq">Questions</a></nav>
+<a id="web" class="pill ghost" href="https://parley.heavengtwashere.workers.dev/?web=1">Open in browser</a>
+</header>
+<main id="top">
 <section class="hero">
 <div class="hl">
-<h1>Chat, call and hang out. As an app.</h1>
-<p>Servers, voice, screen share and games in one free app. It opens in its own window, takes almost no storage and updates itself.</p>
-<div class="cta"><button id="go" class="big">Install Parley</button><a id="web" class="big alt" href="https://parley.heavengtwashere.workers.dev/?web=1">Open web version</a></div>
+<h1>One free place for your friends to talk.</h1>
+<p class="lead">Messages, voice calls and screen share for friend groups and communities. No email to sign up, no ads, no subscription.</p>
+<div class="cta"><a id="go" class="pill solid" href="#devices">Get Parley</a><a class="pill ghost" href="#features">See what it does</a></div>
 <p id="note" class="note"></p>
+<ul class="facts"><li>Free</li><li>No email needed</li><li>Calls go device to device</li><li>On every device</li></ul>
 </div>
-<div class="mock" aria-hidden="true">
-<div class="mk-rail"><img src="/mascot.webp" alt=""><b></b><b></b><b class="on"></b><b></b></div>
-<div class="mk-ch"><h4>Night Owls</h4><u>general</u><u class="on">game night</u><u>music</u><u>screenshare</u><h5>Voice</h5><u>Lounge</u></div>
-<div class="mk-main">
-<div class="mk-top">game night</div>
-<div class="mk-m"><s></s><div class="bub"><em>Mika</em>Gourd Rush run in five, who is in?</div></div>
-<div class="mk-m"><s class="b"></s><div class="bub"><em>Dax</em>Me. Sharing my screen so you can watch the boss.</div></div>
-<div class="mk-m me"><div class="bub">Joining the call now.</div></div>
-<div class="mk-in">Message #game night</div>
+<div class="stage" aria-hidden="true">
+<div class="win">
+<div class="rail"><img src="/mascot.webp" alt=""><b></b><b class="on"></b><b></b></div>
+<div class="chs"><h4>Night Owls</h4><u>general</u><u class="on">game night</u><u>clips</u><u>music</u><h5>Voice</h5><u class="v">Lounge</u></div>
+<div class="chat">
+<div class="bar">game night</div>
+<div class="msgs">
+<div class="m a1"><s class="c1">M</s><div><em>Mika</em><p>Rotten Machines, who is in for a run?</p></div></div>
+<div class="m a2"><div class="card"><div class="art"><span>Play</span></div><small>itch.io</small><b>Rotten Machines</b><span>Short, atmospheric dark driving game</span></div></div>
+<div class="m a3"><s class="c2">D</s><div><em>Dax</em><p>Me. Sharing my screen so you can watch.</p><i>+3</i></div></div>
+<div class="m a4 me"><div><p>Joining the call now.</p></div></div>
+</div>
+<div class="vc a5"><span class="who sp"><s class="c1">M</s></span><span class="who"><s class="c2">D</s></span><span class="who sp2"><s class="c3">K</s></span><b>Lounge</b><span class="live">Live</span></div>
 </div>
 </div>
-</section>
-<section class="feat">
-<h2>Everything a community needs</h2>
-<div class="fg">
-<article><h3>Voice and video</h3><p>Peer to peer calls with noise control, push to talk and captions. Joins even when your mic is blocked.</p></article>
-<article><h3>Screen share on every device</h3><p>Share a window or your whole screen. If two people cannot connect directly, other viewers pass the stream along, so it works without a relay server.</p></article>
-<article><h3>Servers and channels</h3><p>Roles, threads, forums, stages, polls and scheduled events.</p></article>
-<article><h3>Play inside chat</h3><p>Post an itch.io link to a browser game and play it right in the message.</p></article>
-<article><h3>Hollow games</h3><p>Gourd Rush, Terror Night and a horror shooter, on desktop and touch.</p></article>
-<article><h3>Pars and cosmetics</h3><p>Earn Pars, collect banners, nameplates and seasonal sets.</p></article>
-<article><h3>Light on your device</h3><p>No big download. Installs as a small web app and keeps itself current.</p></article>
-<article><h3>Private by design</h3><p>No email needed. Your recovery code is the only key to your account.</p></article>
 </div>
 </section>
-<section class="dl"><h2>Downloads</h2><div class="dls"><a id="d-ios" href="https://parley.heavengtwashere.workers.dev/api/get/parley.mobileconfig">iPhone and iPad</a><a href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley-Setup.exe">Windows</a><a href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.dmg">Mac</a><a href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.AppImage">Linux</a><a href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.apk">Android</a><a href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.click">Ubuntu Touch</a></div><p class="note">iPhone: open this page in Safari, tap iPhone and iPad, choose Allow, then open Settings and tap Profile Downloaded to install. Parley appears on your Home Screen.</p></section>
-<section id="steps" class="steps" hidden></section>
-<section class="grid">
-<article data-p="ios"><h3>iPhone and iPad</h3><p>Open this page in Safari, tap Share, then Add to Home Screen.</p></article>
-<article data-p="android"><h3>Android</h3><p>Tap Install. Parley is added to your app drawer.</p></article>
-<article data-p="win"><h3>Windows</h3><p>Install from Edge or Chrome. It gets its own taskbar icon and window.</p></article>
-<article data-p="mac"><h3>Mac</h3><p>Install from Chrome or Edge, or use File, Add to Dock in Safari.</p></article>
-<article data-p="web"><h3>Web version</h3><p>No install needed. Works in any modern browser on any device.</p></article>
-<article data-p="linux"><h3>Linux</h3><p>Download the AppImage, or install from Chrome, Edge or Brave.</p></article>
-<article data-p="ut"><h3>Ubuntu Touch</h3><p>Download the .click file and install it from OpenStore or with the click command.</p></article>
+
+<section id="features" class="feat">
+<h2>Everything a community needs, nothing it has to pay for</h2>
+<div class="bento">
+<article class="t6"><h3>Voice and video that stay fast</h3><p>Calls travel straight between people, so they are quick and cost nothing to run. Noise control, push to talk and live captions are built in, and you can join even when your mic is blocked.</p></article>
+<article class="t6"><h3>Screen share on every device</h3><p>Share a window or your whole screen. If two people cannot connect directly, other viewers pass the stream along, so it keeps working without a relay server.</p></article>
+<article class="t4"><h3>Servers that fit your group</h3><p>Channels, roles, threads, forums, stages, polls and scheduled events.</p></article>
+<article class="t4"><h3>Links that show what they are</h3><p>Post a link and get a card with its picture and title. Post an itch.io game and play it right in the message.</p></article>
+<article class="t4"><h3>Files of any size</h3><p>Send big files and download them from other members too. Program files ask the downloader to confirm they trust them first.</p></article>
+<article class="t6"><h3>Bots, built your way</h3><p>Make a bot with blocks in Bot Lab, or use the HTTP API with a bot token. Share bots with other servers in the Bot hub.</p></article>
+<article class="t6"><h3>Pars and cosmetics</h3><p>Earn Pars by being around, then spend them on banners, nameplates, frames and seasonal sets.</p></article>
+</div>
 </section>
-<section class="faq"><h2>Questions</h2>
-<details><summary>Is Parley free?</summary><p>Yes. It runs on free hosting and has no ads.</p></details>
-<details><summary>How do I get it on my iPhone?</summary><p>Open this page in Safari and tap iPhone and iPad under Downloads, then allow the profile and install it from Settings. You can also use Share, then Add to Home Screen.</p></details>
-<details><summary>Why does my computer warn me about the installer?</summary><p>The Windows and Mac apps are not signed with a paid certificate yet. The installer is built in the open on GitHub from this repository.</p></details>
-<details><summary>Do I have to install it?</summary><p>No. Open web version works in any modern browser.</p></details>
+
+<section class="steps3">
+<h2>Up and running in a minute</h2>
+<ol>
+<li><b>Pick a username.</b><span>There is no email. You get a recovery code, and it is the only key to your account, so save it.</span></li>
+<li><b>Join or start a server.</b><span>Open an invite link from a friend, or make a server and share your own.</span></li>
+<li><b>Hop in a voice channel.</b><span>Talk, share your screen, or just leave it open while you game.</span></li>
+</ol>
 </section>
-<footer>Installed Parley is the full app. Nothing is stored beyond a small cache.</footer>
+
+<section id="free" class="free">
+<div>
+<h2>Why it costs nothing</h2>
+<p>Parley runs on free hosting and hands the heavy work to the people using it. Calls, screen shares and big files move between members when they can, so there is almost no server bill to pass on.</p>
+<p>That is also why there are no ads and no paid tier. Pars are earned, not bought.</p>
+</div>
+<ul class="pts">
+<li><b>Peer to peer first</b><span>Media goes device to device and falls back to other members before any server.</span></li>
+<li><b>No email, no tracking profile</b><span>Your account is a username and a recovery code.</span></li>
+<li><b>Built in the open</b><span>The apps are built on GitHub from the same repository as the site.</span></li>
+</ul>
+</section>
+
+<section id="devices" class="dev">
+<h2>Get Parley on your device</h2>
+<p class="sub">Every app opens the same Parley and stays current. Pick the one that fits.</p>
+<div id="steps" class="steps" hidden></div>
+<div class="tiles">
+<article data-p="win"><h3>Windows</h3><p>Windows 10 and 11. Windows may warn that the app is unsigned.</p><div class="dls"><a data-dl="windows" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley-Setup.exe">Installer</a><a data-dl="portable" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley-Portable.exe">Portable</a></div></article>
+<article data-p="mac"><h3>Mac</h3><p>Intel and Apple silicon. Not signed by Apple, so right-click the app and choose Open the first time.</p><div class="dls"><a data-dl="mac" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.dmg">Disk image</a></div></article>
+<article data-p="linux"><h3>Linux</h3><p>AppImage runs on most distributions and updates itself. Packages for Debian and Fedora families too.</p><div class="dls"><a data-dl="linux" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.AppImage">AppImage</a><a data-dl="deb" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.deb">.deb</a><a data-dl="rpm" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.rpm">.rpm</a></div></article>
+<article data-p="android"><h3>Android</h3><p>Install from your browser menu, or sideload the package. Works on Chromebooks too.</p><div class="dls"><a id="pwa-a" data-act="install" href="#devices">Install from browser</a><a data-dl="android" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.apk">APK</a></div></article>
+<article data-p="ios"><h3>iPhone and iPad</h3><p>Open this page in Safari, then Add to Home Screen. Or install the profile, which adds the icon in one step.</p><div class="dls"><a data-act="ios" href="#devices">Add to Home Screen</a><a href="https://parley.heavengtwashere.workers.dev/api/get/parley.mobileconfig">Profile</a></div></article>
+<article data-p="ut"><h3>Ubuntu Touch</h3><p>A click package for Ubuntu Touch phones and tablets. Install it from OpenStore sideloading or with the click command.</p><div class="dls"><a data-dl="ubuntutouch" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.click">.click</a></div></article>
+<article data-p="web"><h3>Any browser</h3><p>No install. Works in current Chrome, Edge, Firefox and Safari, on any device.</p><div class="dls"><a href="https://parley.heavengtwashere.workers.dev/?web=1">Open Parley</a></div></article>
+</div>
+</section>
+
+<section id="faq" class="faq">
+<h2>Questions</h2>
+<details><summary>Is Parley really free?</summary><p>Yes. It runs on free hosting, has no ads and has no paid plan. Pars, the in-app currency, are earned by using it.</p></details>
+<details><summary>Do I need an email address?</summary><p>No. You choose a username and get a recovery code. Keep the code somewhere safe, because it is the only way back into your account.</p></details>
+<details><summary>How do I get it on my iPhone?</summary><p>Open this page in Safari, tap Share, then Add to Home Screen. You can also tap Profile under iPhone and iPad, allow it, and finish in Settings.</p></details>
+<details><summary>Why does my computer warn me about the installer?</summary><p>The Windows and Mac apps are not signed with a paid certificate. They are built on GitHub from this repository, and the Linux AppImage and packages are built the same way.</p></details>
+<details><summary>Can I upload programs and files?</summary><p>Yes. Anyone downloading a program file such as an .exe has to confirm they trust it first. Parley cannot scan it, so only download programs from people you know.</p></details>
+<details><summary>Do the apps get updates?</summary><p>The apps open the live site, so the app itself is always current. The Windows and Linux apps also update their wrapper in the background.</p></details>
+<details><summary>Do I have to install anything?</summary><p>No. Open in browser works anywhere, and your account is the same on every device.</p></details>
+</section>
+
+<section class="end">
+<h2>Come hang out</h2>
+<p>Make an account in a few seconds and bring your friends.</p>
+<div class="cta"><a class="pill solid" href="https://parley.heavengtwashere.workers.dev/?web=1">Open Parley</a><a class="pill ghost" href="#devices">Get the app</a></div>
+</section>
 </main>
+<footer>Installed Parley is the full app. Nothing is stored beyond a small cache.</footer>
 <script src="get.js"></script>
 </body>
 </html>
