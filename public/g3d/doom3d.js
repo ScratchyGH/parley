@@ -324,21 +324,42 @@ const onmove=e=>{if(document.pointerLockElement===cv)ang+=e.movementX*.0024}
 document.addEventListener('mousemove',onmove)
 const onlock=()=>{locked=document.pointerLockElement===cv}
 document.addEventListener('pointerlockchange',onlock)
-let tx=null
+let st=null,lk=null,lockFail=false,drag=null,tmx=0,tmy=0
+const half=e=>e.clientX<cv.getBoundingClientRect().left+cv.clientWidth/2
 const down=e=>{
-if(e.pointerType==='touch'){tx={x:e.clientX,id:e.pointerId,moved:0,t:performance.now()};cv.setPointerCapture?.(e.pointerId);return}
 au()
-if(!locked)cv.requestPointerLock?.()
+if(e.pointerType==='touch'){
+cv.setPointerCapture?.(e.pointerId)
+if(half(e)&&!st)st={id:e.pointerId,x:e.clientX,y:e.clientY}
+else if(!lk)lk={id:e.pointerId,x:e.clientX,moved:0,t:performance.now()}
+return
+}
+if(!locked&&!lockFail){cv.requestPointerLock?.();setTimeout(()=>{if(document.pointerLockElement!==cv)lockFail=true},250)}
+if(lockFail){drag={x:e.clientX,moved:0};return}
 fireHeld=true
 }
 const up=e=>{
-if(e.pointerType==='touch'&&tx){if(performance.now()-tx.t<260&&tx.moved<12)shoot();tx=null;return}
+if(e.pointerType==='touch'){
+if(st&&e.pointerId===st.id){st=null;tmx=0;tmy=0}
+if(lk&&e.pointerId===lk.id){if(performance.now()-lk.t<300&&lk.moved<14)shoot();lk=null}
+return
+}
+if(drag){if(drag.moved<6)shoot();drag=null}
 fireHeld=false
 }
-const mv=e=>{if(!locked&&e.pointerType!=='touch'&&(e.buttons&1))ang+=e.movementX*.004
-if(tx&&e.pointerId===tx.id){const dx=e.clientX-tx.x;tx.x=e.clientX;tx.moved+=Math.abs(dx);ang+=dx*.006}}
+const mv=e=>{
+if(e.pointerType==='touch'){
+if(st&&e.pointerId===st.id){const dx=e.clientX-st.x,dy=e.clientY-st.y,d=Math.hypot(dx,dy)||1,m=Math.min(1,d/50);tmx=dx/d*m;tmy=dy/d*m}
+else if(lk&&e.pointerId===lk.id){const dx=e.clientX-lk.x;lk.x=e.clientX;lk.moved+=Math.abs(dx);ang+=dx*.006}
+return
+}
+if(drag){const dx=e.movementX||0;drag.moved+=Math.abs(dx);ang+=dx*.004}
+}
+const onlockerr=()=>{lockFail=true}
+document.addEventListener('pointerlockerror',onlockerr)
 cv.addEventListener('pointerdown',down)
 addEventListener('pointerup',up)
+addEventListener('pointercancel',up)
 cv.addEventListener('pointermove',mv)
 const wallDist=(ox,oy,dx,dy)=>{
 let mx=Math.floor(ox),my=Math.floor(oy)
@@ -451,7 +472,7 @@ pix[y*SW+x]=(255<<24)|((b>255?255:b|0)<<16)|((g>255?255:g|0)<<8)|(r>255?255:r|0)
 }
 const sprites=[]
 for(const o of torches)sprites.push({x:o.x,y:o.y,img:A.torch,sz:.5,z:.1,glow:1,ph:o.ph})
-for(const o of pickups)sprites.push({x:o.x,y:o.y,img:o.k==='rage'?A.rage:A.pack,sz:.4,z:.85,glow:o.k==='rage'?1:0,ph:o.x})
+for(const o of pickups)sprites.push({x:o.x,y:o.y,img:o.k==='rage'?A.rage:A.pack,sz:.4,z:.14+Math.sin(t*3+o.x)*.03,glow:o.k==='rage'?1:0,ph:o.x})
 for(const f of fb)sprites.push({x:f.x,y:f.y,img:A.fire,sz:.34,z:.5,glow:1,ph:f.x})
 for(const g of gibs)sprites.push({x:g.x,y:g.y,col:g.col,sz:.07,z:g.z,glow:0,ph:0})
 for(const e of enemies)sprites.push({x:e.x,y:e.y,img:A[e.d.sp],sz:e.d.sz,z:e.d.fly?.35+Math.sin(t*3+e.ph)*.08:.5,fl:e.fl,e})
@@ -551,7 +572,7 @@ gctx.fillStyle='#fff3a0';gctx.beginPath();gctx.arc(mx,my,4,0,7);gctx.fill()
 const id=gctx.getImageData(0,0,gw,gh),d=id.data
 for(let i=0;i<d.length;i+=4){d[i+3]=d[i+3]>110?255:0;d[i]=(d[i]>>4)*17;d[i+1]=(d[i+1]>>4)*17;d[i+2]=(d[i+2]>>4)*17}
 gctx.putImageData(id,0,0)
-const sc=Math.max(3,Math.floor(H*.66/gh)),dw=gw*sc,dh=gh*sc
+const sc=Math.max(2,Math.floor(H*.42/gh)),dw=gw*sc,dh=gh*sc
 ctx.imageSmoothingEnabled=false
 ctx.drawImage(gcv,Math.round((W-dw)/2),H-dh+Math.round(6*sc*.3),dw,dh)
 }
@@ -607,11 +628,17 @@ ctx.textAlign='left'
 ctx.globalAlpha=1
 }
 if(rageT>0){ctx.fillStyle='rgba(8,4,8,.62)';ctx.fillRect(14,14+f*3.3+20,200,f*1.4);ctx.fillStyle='#ff3a1a';ctx.fillRect(18,14+f*3.3+24,192*Math.min(1,rageT/9),f*1.4-8);ctx.fillStyle='#fff';ctx.fillText('RAGE',24,14+f*3.3+25)}
-if(!locked&&!tx&&!('ontouchstart' in window)){
+if(('ontouchstart' in window)&&t<10){
+ctx.font='700 '+Math.round(f)+'px system-ui,sans-serif'
+ctx.textAlign='center'
+ctx.fillStyle='rgba(8,4,8,.65)';ctx.fillRect(W/2-290,H-54,580,34)
+ctx.fillStyle='#d8c9b0';ctx.fillText('Left thumb moves, right thumb turns, tap to fire',W/2,H-46)
+ctx.textAlign='left'
+}else if(!locked&&!('ontouchstart' in window)){
 ctx.font='700 '+Math.round(f)+'px system-ui,sans-serif'
 ctx.textAlign='center'
 ctx.fillStyle='rgba(8,4,8,.65)';ctx.fillRect(W/2-250,H-54,500,34)
-ctx.fillStyle='#d8c9b0';ctx.fillText('Click to capture the mouse. WASD move, shift sprint, click fire',W/2,H-46)
+ctx.fillStyle='#d8c9b0';ctx.fillText(lockFail?'Drag to turn, click to fire. WASD move':'Click to capture the mouse. WASD move, shift sprint, click fire',W/2,H-46)
 ctx.textAlign='left'
 }
 }
@@ -637,8 +664,8 @@ hurt=Math.max(0,hurt-dt*1.5)
 bannerT=Math.max(0,bannerT-dt)
 if(keys['arrowleft'])ang-=2.4*dt
 if(keys['arrowright'])ang+=2.4*dt
-const mvF=(keys['w']||keys['arrowup']?1:0)-(keys['s']||keys['arrowdown']?1:0)
-const mvS=(keys['d']?1:0)-(keys['a']?1:0)
+const mvF=(keys['w']||keys['arrowup']?1:0)-(keys['s']||keys['arrowdown']?1:0)-tmy
+const mvS=(keys['d']?1:0)-(keys['a']?1:0)+tmx
 const sp=3.1*(keys['shift']?1.5:1)
 if(mvF||mvS){
 const dx=(Math.cos(ang)*mvF-Math.sin(ang)*mvS),dy=(Math.sin(ang)*mvF+Math.cos(ang)*mvS)
@@ -731,6 +758,8 @@ removeEventListener('keyup',ku)
 removeEventListener('pointerup',up)
 document.removeEventListener('mousemove',onmove)
 document.removeEventListener('pointerlockchange',onlock)
+document.removeEventListener('pointerlockerror',onlockerr)
+removeEventListener('pointercancel',up)
 ro.disconnect()
 document.exitPointerLock?.()
 try{ac?.close()}catch{}
