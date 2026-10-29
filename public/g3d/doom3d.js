@@ -409,7 +409,7 @@ const ro=y*SW
 for(let x=0;x<SW;x++){
 const tx=((fx*TS)&(TS-1)),ty=((fy*TS)&(TS-1))
 const c=src[ty*TS+tx]
-const r=(c&255)*sh,g=((c>>8)&255)*sh,b=((c>>16)&255)*sh
+const r=(c&255)*sh*1.12,g=((c>>8)&255)*sh*.8,b=((c>>16)&255)*sh*.78
 pix[ro+x]=(255<<24)|((b>255?255:b|0)<<16)|((g>255?255:g|0)<<8)|(r>255?255:r|0)
 fx+=stx;fy+=sty
 }
@@ -437,7 +437,7 @@ let tx=Math.floor(wx*TS)
 if(side===0&&rdx>0)tx=TS-1-tx
 if(side===1&&rdy<0)tx=TS-1-tx
 const tk=T.walls[kind[Math.max(0,Math.min(MAPH-1,my))*MAPW+Math.max(0,Math.min(MAPW-1,mx))]]
-const sh=Math.min(1.15,1.6/(1+pd*pd*.12))*(side?.72:1)*fk
+const sh=Math.min(1,1.5/(1+pd*pd*.2))*(side?.66:.9)*fk
 const step=TS/lh
 let tp=(ds<0?-ds:0)*step
 if(ds<0)ds=0
@@ -445,7 +445,7 @@ if(de>=SH)de=SH-1
 for(let y=ds;y<=de;y++){
 const c=tk[(tp|0)*TS+tx]
 tp+=step
-const r=(c&255)*sh,g=((c>>8)&255)*sh,b=((c>>16)&255)*sh
+const r=(c&255)*sh*1.12,g=((c>>8)&255)*sh*.8,b=((c>>16)&255)*sh*.78
 pix[y*SW+x]=(255<<24)|((b>255?255:b|0)<<16)|((g>255?255:g|0)<<8)|(r>255?255:r|0)
 }
 }
@@ -563,7 +563,7 @@ g.addColorStop(0,'rgba(200,0,0,0)');g.addColorStop(1,'rgba(200,0,0,'+Math.min(.6
 ctx.fillStyle=g;ctx.fillRect(0,0,W,H)
 }
 const vg=ctx.createRadialGradient(W/2,H/2,H*.4,W/2,H/2,H*.95)
-vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.55)')
+vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(14,0,0,.8)')
 ctx.fillStyle=vg;ctx.fillRect(0,0,W,H)
 drawGun(W,H)
 if(rageT>0){ctx.fillStyle='rgba(255,20,0,'+(.1+Math.sin(t*12)*.04)+')';ctx.fillRect(0,0,W,H)}
