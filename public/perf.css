@@ -6,3 +6,6 @@ html[data-cpu="0"] canvas.fx,html[data-cpu="0"] .ambient,html[data-cpu="0"] .sno
 html[data-cpu="0"] .itch{display:none!important}
 .gbar{position:fixed;top:12px;right:132px;z-index:2147483000;display:flex;gap:6px}
 @media(max-width:640px){.gbar{right:auto;left:12px}}
+html:not([data-gpu="4"]) .main::before{animation:none!important}
+html:not([data-gpu="3"]):not([data-gpu="4"]).hw body::after{display:none!important}
+html[data-gpu="0"] [class*="ef_"]::before,html[data-gpu="0"] [class*="ef_"]::after,html[data-gpu="1"] .ef_aurora::before,html[data-gpu="1"] .ef_void::before{animation:none!important}
