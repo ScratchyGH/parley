@@ -97,6 +97,7 @@ jobs:
           }catch{cb({})}
           })
           win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
+          win.webContents.setUserAgent(win.webContents.getUserAgent()+' ParleyDesktop/2')
           win.loadURL(SITE)
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
           if(app.isPackaged&&process.platform!=='darwin')updates()
