@@ -94,7 +94,7 @@ return{ok:true,time:now(),build:(c.env.CF_VERSION_METADATA&&c.env.CF_VERSION_MET
 router.add('GET','/api/rtc/ice',async c=>{
 limit('ice:'+c.user.id,30,60000)
 const fallback=[{urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:global.stun.twilio.com:3478']}]
-const relay=[{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}]
+const relay=[]
 if(!c.env.TURN_KEY_ID||!c.env.TURN_API_TOKEN)return{iceServers:[...fallback,...relay],turn:true}
 try{
 const res=await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${c.env.TURN_KEY_ID}/credentials/generate-ice-servers`,{method:'POST',headers:{authorization:'Bearer '+c.env.TURN_API_TOKEN,'content-type':'application/json'},body:JSON.stringify({ttl:43200})})

@@ -45,7 +45,7 @@ return{key,items:Array.isArray(x.items)?x.items:[],vanity_days:Number(x.vanity_d
 }
 async function findUser(env,name){
 const n=String(name||'').trim().replace(/^@/,'')
-if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(n))fail(400,'Enter a username')
+if(!/^[\p{L}\p{M}\p{N}_.-]{3,24}$/u.test(n))fail(400,'Enter a username')
 const u=await env.DB.prepare('select id,username,display_name,is_bot,created_at from users where lower(username)=lower(?) and deleted_at is null').bind(n).first()
 if(!u||u.is_bot)fail(404,'User not found')
 return u
@@ -330,6 +330,15 @@ if(!Number.isFinite(price)||price<0||price>100000)fail(400,'Price must be betwee
 const en=b.enabled===undefined?it.enabled:b.enabled?1:0
 await c.env.DB.prepare('update par_items set price=?,enabled=? where id=?').bind(price,en,it.id).run()
 return{ok:true}
+})
+r.add('POST','/api/admin/pars/resend-gift',async c=>{
+guard(c)
+const b=await body(c.req,1000)
+const u=await c.env.DB.prepare('select id,username from users where username=? collate nocase').bind(String(b.username||'').trim()).first()
+if(!u)fail(404,'User not found')
+await inbox(c.env,u.id,String(b.from||c.user.display_name||'Parley').slice(0,60),'bundle',null,String(b.label||'Birthday Bomb').slice(0,80),0)
+c.pub('u_'+u.id,{t:'pars.gift'})
+return{ok:true,to:u.username}
 })
 r.add('POST','/api/admin/pars/grant',async c=>{
 guard(c)

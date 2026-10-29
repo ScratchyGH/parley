@@ -8,7 +8,7 @@ const GT=c=>`(select s.${c} from servers s where s.id=u.tag_server and s.tag is 
 export const GTAG=[GT('tag'),GT('tag_emoji'),GT('tag_icon_id')].join(',')
 export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,u.title,u.bubble,${GTAG},u.created_at`
 const SESSION_MS=30*86400000
-const NAME=/^[a-zA-Z0-9_.-]{3,24}$/
+const NAME=/^[\p{L}\p{M}\p{N}_.-]{3,24}$/u
 
 export function cookie(url,token,maxAge){
 const secure=url.protocol==='https:'?'; Secure':''
@@ -140,7 +140,7 @@ if(c.env.REGISTRATION_OPEN==='false')fail(403,'Registration is closed')
 limit('reg:'+ip(c),10,3600000)
 const b=await body(c.req)
 const username=str(b.username,3,24,'Username')
-if(!NAME.test(username))fail(400,'Username may only contain letters, numbers, dots, dashes and underscores')
+if(!NAME.test(username))fail(400,'Username may only contain letters from any language, numbers, dots, dashes and underscores')
 const bad=nameProblem(c.env,username)
 if(bad)fail(400,bad)
 if(await claimOwner(c.env,username))fail(409,'That username is taken or too similar to an existing or previously used one')

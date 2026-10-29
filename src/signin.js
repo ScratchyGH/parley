@@ -90,7 +90,7 @@ try{return unb64u(v)}catch{fail(400,n+' is invalid')}
 }
 
 async function newUser(c,want,label){
-const clean=String(want||'user').replace(/[^a-zA-Z0-9_.-]/g,'').slice(0,18)
+const clean=String(want||'user').replace(/[^\p{L}\p{M}\p{N}_.-]/gu,'').slice(0,18)
 for(let i=0;i<8;i++){
 let name=clean.length>=3?clean:'user'+clean
 if(i)name=name.slice(0,18)+Math.floor(1000+Math.random()*9000)
