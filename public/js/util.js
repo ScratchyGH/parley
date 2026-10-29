@@ -1,6 +1,7 @@
 import{pref}from'./prefs.js'
 export const h=(tag,props,...kids)=>{
 const el=document.createElement(tag)
+if(tag==='img')el.decoding='async'
 if(props)for(const[k,v]of Object.entries(props)){
 if(v==null||v===false)continue
 if(k==='class')el.className=v
