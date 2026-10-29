@@ -37,6 +37,7 @@ import banhammerRoutes from'./banhammer.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
 import hollowRoutes from'./hollow.js'
+import teamupRoutes from'./teamup.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -78,6 +79,7 @@ legalRoutes(router)
 modaiRoutes(router)
 banhammerRoutes(router)
 hollowRoutes(router)
+teamupRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
 voiceRoutes(router)
@@ -179,10 +181,11 @@ if(room!=='u_'+user.id)return new Response('Forbidden',{status:403})
 }else if(room.startsWith('bw_')){
 const p=await env.DB.prepare('select id,owner_id from bot_projects where id=?').bind(room.slice(3)).first()
 if(!p||!await roleOf(env,p,user.id))return new Response('Not a collaborator',{status:403})
-}else return new Response('Bad room',{status:400})
+}else if(!/^tu_[A-Z0-9]{6}$/.test(room))return new Response('Bad room',{status:400})
 const stub=env.HUB.get(env.HUB.idFromName(room))
 const r2=new Request(req)
 r2.headers.set('x-uid',user.id)
+r2.headers.set('x-tu',room.startsWith('tu_')?'1':'0')
 r2.headers.set('x-access',JSON.stringify(access))
 let hide=false
 try{hide=JSON.parse(user.settings||'{}').show_presence===false}catch{}

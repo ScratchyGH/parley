@@ -12,13 +12,15 @@ if(u.pathname==='/ws'){
 if(req.headers.get('upgrade')!=='websocket')return new Response('Expected websocket',{status:426})
 const uid=req.headers.get('x-uid')
 const access=JSON.parse(req.headers.get('x-access')||'{}')
+const tu=req.headers.get('x-tu')==='1'
+if(tu&&!this.socketsOf(uid).length&&new Set(this.ctx.getWebSockets().map(w=>(w.deserializeAttachment()||{}).uid)).size>=12)return new Response('Party is full',{status:403})
 await this.ctx.storage.put('a:'+uid,access)
 this.cache.set(uid,access)
 const pair=new WebSocketPair()
 const first=!this.socketsOf(uid).length
 this.ctx.acceptWebSocket(pair[1])
 const cid=crypto.randomUUID().replace(/-/g,'').slice(0,10)
-pair[1].serializeAttachment({uid,cid,pres:req.headers.get('x-pres')||'online',p2p:[]})
+pair[1].serializeAttachment({uid,cid,pres:req.headers.get('x-pres')||'online',p2p:[],tu})
 const presence=[]
 const seen=new Set()
 for(const w of this.ctx.getWebSockets()){const a=w.deserializeAttachment();if(a&&!seen.has(a.uid)){seen.add(a.uid);if(a.pres!=='invisible')presence.push({uid:a.uid,s:a.pres})}}
@@ -80,6 +82,13 @@ if(!m||typeof m.t!=='string')return
 const ac=await this.access(a.uid)
 const canView=ch=>ac.v==='*'||(typeof ch==='string'&&ac.v.includes(ch))
 if(m.t==='ping'){ws.send('{"t":"pong"}');return}
+if(m.t==='tu'){
+if(!a.tu)return
+const d=JSON.stringify({t:'tu',f:a.uid,d:m.d})
+if(d.length>8000)return
+for(const w of this.ctx.getWebSockets()){const x=w.deserializeAttachment();if(!x||!x.tu||x.cid===a.cid)continue;if(m.to&&x.uid!==m.to)continue;try{w.send(d)}catch{}}
+return
+}
 if(m.t==='typing'){if(canView(m.ch))await this.broadcast({t:'typing',ch:m.ch,uid:a.uid},m.ch,a.uid);return}
 if(m.t==='bw.cursor'){
 const x=Number(m.x),y=Number(m.y)
