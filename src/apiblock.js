@@ -194,13 +194,18 @@ const v=path?pathGet(d,path):d
 if(v===undefined)return null
 return{text:cap(typeof v==='object'?JSON.stringify(v):v)}
 }
+export const HOOK=/^https:\/\/(?:(?:ptb|canary)\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/(\d{5,25})\/([\w-]{20,120})$/
+export const hookUrl=u=>{const m=HOOK.exec(String(u||'').trim().replace(/[?#].*$/,'').replace(/\/+$/,''));return m?'https://discord.com/api/webhooks/'+m[1]+'/'+m[2]:null}
 export async function runWebhook(key,href,body){
-if(!allow(key))return false
-if(!/^https:\/\/(discord|discordapp)\.com\/api(\/v\d+)?\/webhooks\/\d{5,25}\/[\w-]{20,100}$/.test(href))return false
+if(!allow(key))return'rate limited'
+const url=hookUrl(href)
+if(!url)return'bad webhook link'
 const ctl=new AbortController()
-const t=setTimeout(()=>ctl.abort(),4000)
+const t=setTimeout(()=>ctl.abort(),6000)
 try{
-const r=await fetch(href,{method:'POST',signal:ctl.signal,redirect:'error',headers:{'content-type':'application/json','user-agent':'ParleyBot/1.0'},body:JSON.stringify({...body,allowed_mentions:{parse:[]}})})
-return r.ok
-}catch{return false}finally{clearTimeout(t)}
+const r=await fetch(url+'?wait=true',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json','user-agent':'DiscordBot (https://parley.heavengtwashere.workers.dev, 1.0)'},body:JSON.stringify({...body,allowed_mentions:{parse:[]}})})
+if(r.ok)return true
+let d='';try{d=(await r.text()).slice(0,120)}catch{}
+return 'Discord said '+r.status+' '+d
+}catch(e){return'could not reach Discord'}finally{clearTimeout(t)}
 }

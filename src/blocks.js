@@ -138,7 +138,12 @@ return what==='role_count'?rs.length:rs.map(x=>x.name).join(', ')
 },
 api:(k,i)=>runApi('b:'+botId,k,i),
 http:(u,pt)=>runHttp('b:'+botId,u,pt),
-webhook:(u,b)=>runWebhook('b:'+botId,u,b),
+webhook:async(u,b)=>{
+const r=await runWebhook('b:'+botId,u,b)
+if(r===true)return true
+try{limit('whfail:'+botId,3,300000);const o=await c.env.DB.prepare('select bot_owner from users where id=?').bind(botId).first();if(o&&o.bot_owner)c.pub('u_'+o.bot_owner,{t:'notice',text:'Your bot could not send to Discord: '+r})}catch{}
+return r
+},
 device:async acts=>{
 try{limit('dev:'+botId+':'+uid,6,60000)}catch{return}
 const b=await c.env.DB.prepare('select display_name from users where id=?').bind(botId).first()

@@ -1,5 +1,5 @@
 import{fail}from'./util.js'
-import{pathGet}from'./apiblock.js'
+import{pathGet,hookUrl}from'./apiblock.js'
 import*as L from'./labfx.js'
 import{LAB}from'./labmore.js'
 import{TRIG}from'./labmore2.js'
@@ -238,7 +238,7 @@ if(n.type==='dateadd')p.days=num(p.days,-36500,36500,'Days')
 if(n.type==='bar')p.width=num(p.width,3,30,'Width')
 if(n.type==='hashnum')p.max=num(p.max,1,1000000,'Highest')
 if(n.type==='ddembed'&&p.color&&!/^#?[0-9a-f]{6}$/i.test(p.color))bad('Colors are six hex digits like 5865F2')
-if((n.type==='ddwebhook'||n.type==='ddembed')&&!/^https:\/\/(discord|discordapp)\.com\/api(\/v\d+)?\/webhooks\/\d{5,25}\/[\w-]{20,100}$/.test(p.url)&&p.url!=='https://discord.com/api/webhooks/')bad('Use a Discord webhook URL that starts with https://discord.com/api/webhooks/')
+if((n.type==='ddwebhook'||n.type==='ddembed')&&!hookUrl(p.url)&&p.url!=='https://discord.com/api/webhooks/')bad('Use a Discord webhook URL that starts with https://discord.com/api/webhooks/')
 if((n.type==='ddwebhook'||n.type==='ddembed')&&p.avatar&&!/^https:\/\//i.test(p.avatar))bad('The avatar link must start with https://')
 if(n.type==='ddembed'&&p.image&&!/^https:\/\//i.test(p.image))bad('The image link must start with https://')
 if(n.type==='caesar')p.shift=num(p.shift,-25,25,'Shift')
@@ -481,8 +481,8 @@ case'ddwebhook':case'ddembed':{const body=n.type==='ddwebhook'?{content:R(P.text
 if(P.user.trim())body.username=R(P.user).slice(0,80)
 if(R(P.avatar).startsWith('https://'))body.avatar_url=R(P.avatar)
 let ok=false
-if(calls<3&&sends<4&&(body.content||body.embeds&&(body.embeds[0].title||body.embeds[0].description))){calls++;sends++;ok=!ctx.dry&&await io.webhook(P.url,body)}
-log.push({id:n.id,did:n.type,value:P.name?setv(P.name,ctx.dry?'dry run':ok?'yes':'no'):''});break}
+if(calls<3&&sends<4&&(body.content||body.embeds&&(body.embeds[0].title||body.embeds[0].description))){calls++;sends++;ok=ctx.dry?false:await io.webhook(P.url,body)}
+log.push({id:n.id,did:n.type,value:P.name?setv(P.name,ctx.dry?'dry run':ok===true?'yes':'no'):''});break}
 case'ddformat':if(P.name)log.push({id:n.id,did:'ddformat',value:setv(P.name,L.style(R(P.input),P.fmt))});break
 case'ddtime':if(P.name){const u=R(P.input).trim()===''?Math.floor((ctx.at||Date.now())/1000):Math.floor(Number(R(P.input)));log.push({id:n.id,did:'ddtime',value:setv(P.name,Number.isFinite(u)?'<t:'+u+':'+P.fmt+'>':'')})}break
 case'ddsnowflake':if(P.name){const f=L.flake(R(P.input));log.push({id:n.id,did:'ddsnowflake',value:setv(P.name,f?String(f.unix):'')});setv(P.name+'_date',f?f.date:'');setv(P.name+'_days',f?String(f.days):'');setv(P.name+'_avatar',f?f.avatar:'')}break
