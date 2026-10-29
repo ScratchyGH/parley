@@ -336,9 +336,16 @@ if(half(e)&&!st)st={id:e.pointerId,x:e.clientX,y:e.clientY}
 else if(!lk)lk={id:e.pointerId,x:e.clientX,moved:0,t:performance.now()}
 return
 }
-if(!locked){cv.focus?.();try{const p=cv.requestPointerLock({unadjustedMovement:true});p&&p.catch&&p.catch(()=>{try{cv.requestPointerLock()}catch{}})}catch{try{cv.requestPointerLock()}catch{}}if(!lockFail)setTimeout(()=>{if(document.pointerLockElement!==cv)lockFail=true},1500)}
 if(lockFail&&!locked){drag={x:e.clientX,moved:0};return}
 fireHeld=true
+}
+const grab=e=>{
+if(e.button!==0||locked)return
+cv.focus?.()
+let p
+try{p=cv.requestPointerLock({unadjustedMovement:true})}catch{try{cv.requestPointerLock()}catch{}}
+if(p&&p.catch)p.catch(()=>{try{cv.requestPointerLock()}catch{}})
+if(!lockFail)setTimeout(()=>{if(document.pointerLockElement!==cv)lockFail=true},1500)
 }
 const up=e=>{
 if(e.pointerType==='touch'){
@@ -360,9 +367,11 @@ if(drag){const dx=e.movementX||0;drag.moved+=Math.abs(dx);ang+=dx*.004}
 let lerr=0
 const onlockerr=()=>{if(++lerr>=3)lockFail=true}
 document.addEventListener('pointerlockerror',onlockerr)
+cv.addEventListener('mousedown',grab)
 cv.addEventListener('pointerdown',down)
+addEventListener('blur',()=>{fireHeld=false})
 addEventListener('pointerup',up)
-addEventListener('pointercancel',up)
+addEventListener('pointercancel',e=>{if(e.pointerType==='touch')up(e)})
 cv.addEventListener('pointermove',mv)
 const wallDist=(ox,oy,dx,dy)=>{
 let mx=Math.floor(ox),my=Math.floor(oy)
