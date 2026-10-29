@@ -285,7 +285,7 @@ try{u=new URL(str(c.url.searchParams.get('url'),8,2000,'URL'))}catch{fail(400,'I
 if(!['http:','https:'].includes(u.protocol)||u.username||u.password)fail(400,'Invalid URL')
 const host=u.hostname.toLowerCase()
 if(host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(host)||host.includes(':')||!host.includes('.'))fail(400,'URL not allowed')
-const cacheKey=new Request('https://unfurl3.cache/'+encodeURIComponent(u.href))
+const cacheKey=new Request('https://unfurl4.cache/'+encodeURIComponent(u.href))
 const hit=await caches.default.match(cacheKey)
 if(hit)return hit
 const ctl=new AbortController()
@@ -320,7 +320,7 @@ const o=await(await fetch('https://www.youtube.com/oembed?format=json&url='+enco
 out.title=String(o.title||'').slice(0,300);out.description=String(o.author_name||'').slice(0,300);out.site='YouTube'
 }
 }catch{}finally{clearTimeout(timer)}
-const resp=new Response(JSON.stringify(out),{headers:{'content-type':'application/json','cache-control':'public, max-age=3600'}})
+const resp=new Response(JSON.stringify(out),{headers:{'content-type':'application/json','cache-control':'public, max-age='+(out.title?3600:60)}})
 c.ec.waitUntil(caches.default.put(cacheKey,resp.clone()))
 return resp
 })
