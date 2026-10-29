@@ -180,3 +180,11 @@ html.rv27 .overlay,html.rv27 .scrim{backdrop-filter:blur(10px) saturate(.8);back
 html.rv27 .dlg h2,html.rv27 .dlg h3{font-family:var(--disp,inherit);letter-spacing:-.01em}
 html.rv27 .dlg .row.sp{padding-top:6px}
 @media(max-width:760px){html.rv27 .shell{padding:0;gap:0}html.rv27 .ctx,html.rv27 .main,html.rv27 .panel{border-radius:0}html.rv27 .split nav{margin:0;border-radius:0}html.rv27 .dlg{border-radius:26px 26px 0 0}}
+html.rv27 .mw>.m.cont{margin-top:0;border-top-left-radius:8px;border-top-right-radius:26px}
+html.rv27 .mw>.m:not(.cont){margin-top:8px}
+html.rv27 .mw:has(+.mw>.m.cont)>.m{margin-bottom:2px;border-bottom-left-radius:8px}
+html.rv27 .mw>.m.cont+*{margin-top:0}
+html.rv27 .mw:has(+.mw>.m.cont)>.m[class*="bb_"]{border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:0}
+html.rv27 .mw>.m.cont[class*="bb_"]{border-top-left-radius:0;border-top-right-radius:0;margin-top:0}
+html.rv27 .mw>.m.cont[class*="bb_"]:not(:has(.x)){border-bottom-left-radius:8px;border-bottom-right-radius:26px}
+html.rv27 .mw:has(+.mw>.m.cont)>.m.cont[class*="bb_"]{border-bottom-left-radius:0;border-bottom-right-radius:0}

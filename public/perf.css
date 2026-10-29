@@ -1,0 +1,8 @@
+html[data-gpu="0"] *,html[data-gpu="0"] *::before,html[data-gpu="0"] *::after{animation:none!important;transition:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important;text-shadow:none!important;filter:none!important;background-attachment:scroll!important}
+html[data-gpu="1"] *,html[data-gpu="1"] *::before,html[data-gpu="1"] *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;transition-duration:.08s!important}
+html[data-gpu="1"] .mw .m{box-shadow:none!important}
+html[data-cpu="0"] .mw .m:hover,html[data-cpu="1"] .mw .m:hover{transform:none!important}
+html[data-cpu="0"] canvas.fx,html[data-cpu="0"] .ambient,html[data-cpu="0"] .snow,html[data-cpu="0"] .petals{display:none!important}
+html[data-cpu="0"] .itch{display:none!important}
+.gbar{position:fixed;top:12px;right:132px;z-index:2147483000;display:flex;gap:6px}
+@media(max-width:640px){.gbar{right:auto;left:12px}}
