@@ -150,3 +150,31 @@ html.rv27 .comp{padding:0;border-top:1px solid var(--border);background:rgba(0,0
 html.rv27 .cbox{border-radius:0;background:transparent;box-shadow:none;padding:6px 22px}
 html.rv27 .cbox:focus-within{box-shadow:none;background:rgba(255,255,255,.035)}
 }
+@media(min-width:821px){
+html.rv27 .shell{grid-template-columns:268px minmax(0,1fr) auto;grid-template-rows:60px minmax(0,1fr);grid-template-areas:"ws ws ws" "ctx main panel"}
+html.rv27 .ws{grid-area:ws;flex-direction:row;align-items:center;justify-content:flex-start;padding:0 16px;gap:6px;border:0;border-bottom:1px solid var(--border);overflow-x:auto;overflow-y:hidden;background:rgba(0,0,0,.4)}
+html.rv27 .ctx{grid-area:ctx}
+html.rv27 .main{grid-area:main}
+html.rv27 .panel{grid-area:panel}
+html.rv27 .ws .sep{width:1px;height:26px;margin:0 6px;border-radius:0;background:var(--border)}
+html.rv27 .wwrap{flex:none}
+html.rv27 .wbtn{width:auto;min-width:40px;height:38px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.06);overflow:hidden}
+html.rv27 .wbtn.on{border-radius:999px;background:var(--text,#fff);color:#111;box-shadow:none}
+html.rv27 .wwrap .pip{left:50%;top:auto;bottom:-9px;width:18px;height:3px;margin:0 0 0 -9px;border-radius:3px}
+html.rv27 .ctx{background:transparent;border-right:1px solid var(--border)}
+html.rv27 .ctx-h{height:64px;font-size:20px;font-weight:900;letter-spacing:-.02em;border:0;background:none}
+html.rv27 .cat{padding:22px 18px 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+html.rv27 .ci{border-radius:10px;margin:1px 10px;padding-left:12px;min-height:34px;font-size:14px}
+html.rv27 .ci.on{background:var(--text,#fff);color:#111;box-shadow:none}
+html.rv27 .ci.on::before{display:none}
+html.rv27 .main{background:rgba(255,255,255,.03)}
+html.rv27 .top{height:64px;padding:0 28px}
+html.rv27 .top h2{font-size:22px;font-weight:900;letter-spacing:-.025em}
+html.rv27 .msgs{padding:12px 0}
+html.rv27 .m{grid-template-columns:44px minmax(0,1fr);gap:0 14px;margin:2px 22px;padding:10px 14px;border:0;border-radius:18px;background:transparent}
+html.rv27 .m:hover{background:rgba(255,255,255,.05)}
+html.rv27 .m.cont{margin:0 22px;border-radius:18px}
+html.rv27 .comp{padding:10px 22px 18px;border:0;background:transparent}
+html.rv27 .cbox{border-radius:999px;padding:4px 18px;background:rgba(255,255,255,.08);box-shadow:0 6px 24px rgba(0,0,0,.4)}
+html.rv27 .cbox:focus-within{background:rgba(255,255,255,.1);box-shadow:0 6px 24px rgba(0,0,0,.4),0 0 0 2px var(--hi)}
+}
