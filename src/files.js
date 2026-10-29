@@ -313,8 +313,8 @@ if(itch){const pm=html.match(/https:\/\/[a-z-]+\.itch\.zone\/html\/[\w\-\/.]+/);
 }
 }
 try{
-await grab('ParleyLinkPreview/1.0')
-if(!out.title)await grab('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
+try{await grab('ParleyLinkPreview/1.0')}catch{}
+if(!out.title)try{await grab('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')}catch{}
 if(!out.title&&/(^|\.)(youtube\.com|youtu\.be)$/.test(host)){
 const o=await(await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(u.href),{signal:ctl.signal})).json()
 out.title=String(o.title||'').slice(0,300);out.description=String(o.author_name||'').slice(0,300);out.site='YouTube'
