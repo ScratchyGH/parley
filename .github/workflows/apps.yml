@@ -40,7 +40,7 @@ jobs:
           EOF
           cat > picker.js <<'EOF'
           const{contextBridge,ipcRenderer}=require('electron')
-          contextBridge.exposeInMainWorld('pickSource',id=>ipcRenderer.send('pick-source',id))
+          contextBridge.exposeInMainWorld('pickApi',{pick:id=>ipcRenderer.send('pick-source',id),onSources:f=>ipcRenderer.on('sources',(e,l)=>f(l))})
           EOF
           cat > main.js <<'EOF'
           const{app,BrowserWindow,shell,session,dialog,desktopCapturer,ipcMain}=require('electron')
@@ -49,17 +49,24 @@ jobs:
           let win,cache=[],cacheAt=0,busy=false
           const grab=()=>desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:320,height:200},fetchWindowIcons:false}).then(r=>{cache=r;cacheAt=Date.now();return r})
           const refresh=()=>{if(busy)return;busy=true;grab().catch(()=>{}).finally(()=>{busy=false})}
-          const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
-          const pick=(parent,sources)=>new Promise(res=>{
-          const p=new BrowserWindow({width:760,height:520,parent,modal:true,show:false,autoHideMenuBar:true,backgroundColor:'#0a0a09',title:'Choose what to share',webPreferences:{contextIsolation:true,sandbox:true,preload:require('path').join(__dirname,'picker.js')}})
-          const html='<!doctype html><meta charset=utf-8><style>body{margin:0;background:#0a0a09;color:#eee;font:13px system-ui;padding:14px}h1{font-size:16px;margin:0 0 12px}div{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}button{background:#17171a;border:2px solid #2a2a30;border-radius:10px;color:#eee;padding:8px;cursor:pointer;text-align:left}button:hover{border-color:#8a8aa0}img{width:100%;border-radius:6px;display:block;margin-bottom:6px}span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}</style><h1>Choose what to share</h1><div>'+sources.map(s=>'<button data-id="'+esc(s.id)+'"><img src="'+s.thumbnail.toDataURL()+'"><span>'+esc(s.name)+'</span></button>').join('')+'</div><script>document.querySelectorAll("button").forEach(b=>b.onclick=()=>window.pickSource(b.dataset.id))</script>'
-          let done=false
-          const h=(e,id)=>{if(e.sender===p.webContents)fin(id)}
-          const fin=id=>{if(done)return;done=true;ipcMain.removeListener('pick-source',h);if(!p.isDestroyed())p.destroy();res(id)}
-          ipcMain.on('pick-source',h)
-          p.on('closed',()=>fin(null))
-          p.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent(html))
-          p.once('ready-to-show',()=>p.show())
+          let pw=null,cur=null,quitting=false
+          const PH='<!doctype html><meta charset=utf-8><style>body{margin:0;background:#0a0a09;color:#eee;font:13px system-ui;padding:14px}h1{font-size:16px;margin:0 0 12px}#g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}button{background:#17171a;border:2px solid #2a2a30;border-radius:10px;color:#eee;padding:8px;cursor:pointer;text-align:left}button:hover{border-color:#8a8aa0}img{width:100%;border-radius:6px;display:block;margin-bottom:6px}span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}</style><h1>Choose what to share</h1><div id=g></div><script>pickApi.onSources(l=>{const g=document.getElementById("g");g.textContent="";l.forEach(s=>{const b=document.createElement("button"),i=document.createElement("img"),n=document.createElement("span");i.src=s.img;n.textContent=s.name;b.append(i,n);b.onclick=()=>pickApi.pick(s.id);g.append(b)})});addEventListener("keydown",e=>{if(e.key==="Escape")pickApi.pick(null)})</script>'
+          const fin=id=>{if(!cur)return;const r=cur;cur=null;if(pw&&!pw.isDestroyed())pw.hide();r(id)}
+          ipcMain.on('pick-source',(e,id)=>{if(pw&&!pw.isDestroyed()&&e.sender===pw.webContents)fin(id)})
+          const mkPicker=()=>{
+          if(pw&&!pw.isDestroyed())return pw
+          pw=new BrowserWindow({width:760,height:520,parent:win,modal:true,show:false,autoHideMenuBar:true,backgroundColor:'#0a0a09',title:'Choose what to share',webPreferences:{contextIsolation:true,sandbox:true,preload:require('path').join(__dirname,'picker.js')}})
+          pw.on('close',e=>{if(!quitting){e.preventDefault();fin(null)}})
+          pw.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent(PH))
+          return pw
+          }
+          const pick=sources=>new Promise(res=>{
+          if(cur)fin(null)
+          const w=mkPicker()
+          cur=res
+          const send=()=>{w.webContents.send('sources',sources.map(x=>({id:x.id,name:x.name,img:x.thumbnail.toDataURL()})));w.show()}
+          if(w.webContents.isLoading())w.webContents.once('did-finish-load',send)
+          else send()
           })
           function updates(){
           autoUpdater.autoDownload=true
@@ -91,7 +98,7 @@ jobs:
           let src=cache.length&&Date.now()-cacheAt<30000?cache:await grab()
           refresh()
           if(!src.length)return cb({})
-          const id=await pick(win,src)
+          const id=await pick(src)
           const s=src.find(x=>x.id===id)
           if(!s)return cb({})
           const r={video:s}
@@ -102,7 +109,8 @@ jobs:
           win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
           win.webContents.setUserAgent(win.webContents.getUserAgent()+' ParleyDesktop/2')
           win.loadURL(SITE)
-          win.webContents.once('did-finish-load',()=>setTimeout(refresh,1500))
+          win.webContents.once('did-finish-load',()=>setTimeout(()=>{refresh();mkPicker()},1500))
+          win.on('close',()=>{quitting=true})
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
           if(app.isPackaged&&process.platform!=='darwin')updates()
           })
