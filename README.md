@@ -24,11 +24,11 @@ Downloads for Windows, Mac, Linux and Android are on the site's download page. R
 | Part | Service |
 | --- | --- |
 | API and static client | Cloudflare Workers with static assets |
-| Data | D1 (SQLite), with extra D1 databases for file chunks. Turso, Supabase Storage and Firebase are optional |
+| Data | D1 (SQLite), with extra D1 databases for file chunks. Turso, Supabase Storage and Firebase |
 | Realtime | One Durable Object class using the WebSocket Hibernation API |
 | AI features | Workers AI |
 | Voice, video, screen share | Browser WebRTC mesh, optional Cloudflare Realtime TURN |
-| Email | Resend, optional |
+| Email | Resend|
 | Images | Vendored WebAssembly JPEG XL and AVIF codecs in a Web Worker |
 | Frontend | Plain ES modules, no build step, no framework, no runtime dependencies |
 | Apps | Electron desktop builds and an Android app, built by GitHub Actions |
