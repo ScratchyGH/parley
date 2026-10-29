@@ -440,6 +440,11 @@ try{vt.contentHint=pr.scrRes==='parli'?'detail':pr.scrFps>=30?'motion':'detail'}
 for(const p of V.peers.values())await tuneSender(p.senders.scr)
 }
 export async function toggleScreen(){
+if(V.sbusy)return
+V.sbusy=true
+try{await shareScreen()}finally{V.sbusy=false}
+}
+async function shareScreen(){
 if(!V.ch)return
 if(V.scr){stopScreen();return}
 const md=navigator.mediaDevices
@@ -450,7 +455,7 @@ try{V.scr=await md.getUserMedia({video:{facingMode:{ideal:'environment'},width:{
 }else try{
 V.scr=await md.getDisplayMedia({video:scrConstraints(pr),audio:pr.scrAudio?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false})
 }catch(e){
-if(e.name==='NotAllowedError')return
+if(e.name!=='OverconstrainedError'&&e.name!=='TypeError'){if(e.name!=='NotAllowedError'&&e.name!=='AbortError'&&e.name!=='NotFoundError')toast('Could not start screen share: '+e.message,'err');return}
 try{V.scr=await md.getDisplayMedia({video:true,audio:false})}catch(e2){if(e2.name!=='NotAllowedError')toast('Could not start screen share: '+e2.message,'err');return}
 }
 const at=V.scr.getAudioTracks()
@@ -480,6 +485,15 @@ emit('voice:update')
 emit('voice:streams')
 }
 
+let reviving=0
+async function reviveMic(){
+if(!V.mic||Date.now()-reviving<6000)return
+reviving=Date.now()
+const id=voicePrefs().input
+await switchInput(id)
+if(V.mic&&V.mic.getAudioTracks()[0]?.readyState==='ended')await switchInput('')
+}
+navigator.mediaDevices?.addEventListener?.('devicechange',()=>{const t=V.mic?.getAudioTracks()[0];if(t&&t.readyState==='ended')reviveMic()})
 export async function switchInput(id){
 const pr=voicePrefs()
 if(!V.mic)return
@@ -522,6 +536,7 @@ const an=audioCtx.createAnalyser()
 an.fftSize=512
 src.connect(an)
 V.watch.set(id,{an,buf:new Uint8Array(an.fftSize),on:0})
+if(id==='me'){const t=stream.getAudioTracks()[0];if(t){t.onended=()=>reviveMic();t.onmute=()=>setTimeout(()=>{if(t.muted)reviveMic()},1500)}}
 }catch{}
 }
 function startTimers(){
@@ -532,8 +547,11 @@ w.an.getByteTimeDomainData(w.buf)
 let sum=0
 for(const v of w.buf){const x=(v-128)/128;sum+=x*x}
 const rms=Math.sqrt(sum/w.buf.length)
+if(id==='me'){const t=V.mic?.getAudioTracks()[0];if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{});if(t&&!V.muted&&!V.deaf){if(t.readyState==='ended')reviveMic();else if(rms<.0003){if((V.dead=(V.dead||0)+1)>50){V.dead=0;reviveMic()}}else V.dead=0}}
 const uid=id==='me'?S.me.id:id
-let speaking=rms>0.035
+w.nf=w.nf==null?rms:w.nf*.98+Math.min(rms,w.nf*1.5+.002)*.02
+const thr=Math.max(.008,Math.min(.03,w.nf*2.5+.006))
+let speaking=rms>thr
 if(id==='me'&&(V.muted||V.deaf)){
 if(rms>0.08&&!V.deaf&&V.mic&&Date.now()-(V.nudge||0)>30000&&(V.loud=(V.loud||0)+1)>12){V.nudge=Date.now();V.loud=0;toast('You are muted. Others cannot hear you.')}
 speaking=false
@@ -674,6 +692,7 @@ const mkTile=(uid,opts={})=>{
 const u=uid===S.me.id?S.me:S.users.get(uid)||{id:uid,display_name:'Member'}
 const st=users[uid]||{}
 const tile=h('div',{class:'tile'+(V.speaking.has(uid)&&!opts.stream?' sp':'')})
+if(!opts.stream)tile.dataset.su=uid
 if(opts.stream){
 const v=vidOf(opts.stream,uid===S.me.id)
 tile.append(v)
@@ -748,7 +767,12 @@ const offCap=on('voice:caption',({uid,text})=>{const u=uid===S.me.id?S.me:S.user
 function showCaps(){const live=caps.filter(c=>Date.now()-c.at<7000);capBar.hidden=!live.length;mount(capBar,live.map(c=>h('div',null,h('b',null,c.n+': '),c.t)));setTimeout(()=>{if(caps.some(c=>Date.now()-c.at>=7000))showCaps()},7200)}
 draw()
 const iv=setInterval(()=>{const c=container.querySelector('.vtime');if(c&&V.since&&V.ch===chId){const s=Math.floor((Date.now()-V.since)/1000);c.textContent=(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s%3600/60)).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')}},1000)
-const offs=[on('voice:update',draw),on('voice:streams',draw),on('voice:speaking',draw)]
+let late=false
+const safe=()=>{if(document.fullscreenElement&&container.contains(document.fullscreenElement)){late=true;return}late=false;draw()}
+const fsc=()=>{if(!document.fullscreenElement&&late)safe()}
+addEventListener('fullscreenchange',fsc)
+const mark=()=>container.querySelectorAll('.tile[data-su]').forEach(t=>t.classList.toggle('sp',V.speaking.has(t.dataset.su)))
+const offs=[on('voice:update',safe),on('voice:streams',safe),on('voice:speaking',mark),()=>removeEventListener('fullscreenchange',fsc)]
 return()=>{clearInterval(iv);offs.forEach(f=>f());offCap()}
 }
 
