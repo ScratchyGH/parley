@@ -1,5 +1,6 @@
 import{h}from'./util.js'
 import{V}from'./voice.js'
+import{gaming}from'./gamebar.js'
 let cur=null,busy=false
 const check=async()=>{
 if(busy)return
@@ -19,6 +20,7 @@ document.body.append(b)
 let n=5
 const tick=()=>{
 if(V.ch||V.joining){t.textContent='when your call ends';setTimeout(tick,2000);return}
+if(gaming()){t.textContent='when your game ends';setTimeout(tick,2000);return}
 t.textContent=String(n)
 if(n--<=0){location.reload();return}
 setTimeout(tick,1000)
