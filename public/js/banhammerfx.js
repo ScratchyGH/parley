@@ -37,18 +37,7 @@ if(!els.length||still())return
 for(const el of els)playCakeOn(el)
 }
 function playCakeOn(host){
-const r=host.getBoundingClientRect()
-if(r.width<8)return
-const wrap=document.createElement('div')
-wrap.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;z-index:2147483000;pointer-events:none'
-const cake=document.createElement('div')
-cake.style.cssText='position:absolute;left:-60px;top:50%;width:40px;height:40px;transform:translateY(-50%) rotate(-20deg)'
-cake.append(cakeSvg())
-wrap.append(cake)
-document.body.append(wrap)
-host.animate([{transform:'none'},{transform:'scale(1.12)'},{transform:'none'}],{duration:260,delay:420})
-cake.animate([{transform:'translateY(-50%) rotate(-20deg)',offset:0},{transform:'translate('+(r.width*.5)+'px,-50%) rotate(15deg)',offset:.7},{transform:'translate('+(r.width*.5)+'px,-50%) rotate(15deg) scale(1.3)',opacity:0,offset:1}],{duration:700,easing:'cubic-bezier(.3,.7,.3,1)'})
-setTimeout(()=>wrap.remove(),1200)
+import('./cakefx.js').then(m=>m.throwCake(host))
 }
 function playOn(host){
 const r=host.getBoundingClientRect()
