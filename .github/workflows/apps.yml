@@ -22,6 +22,8 @@ jobs:
             target: win
           - os: ubuntu-latest
             target: linux
+          - os: macos-latest
+            target: mac
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +36,7 @@ jobs:
           mkdir build
           cp ../public/logo-512.png build/icon.png
           cat > package.json <<EOF
-          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":"nsis","icon":"build/icon.png"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"artifactName":"Parley-Setup.exe"},"linux":{"target":"AppImage","icon":"build/icon.png","category":"Network","executableArgs":["--no-sandbox"],"artifactName":"Parley.AppImage"}}}
+          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":"nsis","icon":"build/icon.png"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"artifactName":"Parley-Setup.exe"},"mac":{"target":["dmg","zip"],"icon":"build/icon.png","category":"public.app-category.social-networking","identity":null,"artifactName":"Parley.${ext}"},"linux":{"target":"AppImage","icon":"build/icon.png","category":"Network","executableArgs":["--no-sandbox"],"artifactName":"Parley.AppImage"}}}
           EOF
           cat > main.js <<'EOF'
           const{app,BrowserWindow,shell,session,dialog}=require('electron')
@@ -68,7 +70,7 @@ jobs:
           win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
           win.loadURL(SITE)
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
-          if(app.isPackaged)updates()
+          if(app.isPackaged&&process.platform!=='darwin')updates()
           })
           app.on('window-all-closed',()=>app.quit())
           EOF
@@ -83,6 +85,8 @@ jobs:
             desktop/dist/Parley-Setup.exe
             desktop/dist/Parley-Setup.exe.blockmap
             desktop/dist/Parley.AppImage
+            desktop/dist/Parley.dmg
+            desktop/dist/Parley.zip
             desktop/dist/latest.yml
             desktop/dist/latest-linux.yml
           if-no-files-found: error
@@ -118,8 +122,56 @@ jobs:
         with:
           name: android
           path: Parley.apk
+  ubuntutouch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y imagemagick
+      - shell: bash
+        run: |
+          mkdir -p ut/c ut/d
+          convert public/logo-512.png -resize 256x256 ut/d/icon.png
+          cat > ut/d/parley.desktop <<EOF
+          [Desktop Entry]
+          Name=Parley
+          Comment=Chat, call and hang out
+          Exec=webapp-container --webapp --enable-back-forward --store-session-cookies --enable-media-hub-audio %u ${SITE}/?web=1
+          Icon=icon.png
+          Terminal=false
+          Type=Application
+          X-Ubuntu-Touch=true
+          EOF
+          cat > ut/d/parley.apparmor <<EOF
+          {"template":"ubuntu-webapp","policy_groups":["networking","webview","audio","video","camera","microphone","content_exchange","content_exchange_source","keep-display-on"],"policy_version":16.04}
+          EOF
+          sed -i 's/^ *//' ut/d/parley.desktop
+          cat > ut/c/manifest.json <<EOF
+          {"name":"parley.parleyofficial","title":"Parley","version":"1.${{ github.run_number }}.0","description":"Chat, call and hang out","maintainer":"Parley <parley@example.com>","framework":"ubuntu-sdk-16.04","architecture":"all","hooks":{"parley":{"apparmor":"parley.apparmor","desktop":"parley.desktop"}}}
+          EOF
+          cat > ut/c/control <<EOF
+          Package: parley.parleyofficial
+          Version: 1.${{ github.run_number }}.0
+          Click-Version: 0.4
+          Architecture: all
+          Maintainer: Parley <parley@example.com>
+          Installed-Size: 300
+          Description: Parley
+          EOF
+          sed -i 's/^ *//' ut/c/control
+          (cd ut/d && find . -type f -exec md5sum {} + | sed 's# \./# #') > ut/c/md5sums
+          (cd ut/c && tar --owner=0 --group=0 -czf ../control.tar.gz ./control ./manifest.json ./md5sums)
+          (cd ut/d && tar --owner=0 --group=0 -czf ../data.tar.gz .)
+          printf '2.0\n' > ut/debian-binary
+          printf '0.4\n' > ut/_click-binary
+          cd ut && ar rc Parley.click debian-binary _click-binary control.tar.gz data.tar.gz
+          ls -l Parley.click
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ubuntutouch
+          path: ut/Parley.click
+          if-no-files-found: error
   publish:
-    needs: [desktop, android]
+    needs: [desktop, android, ubuntutouch]
     if: ${{ !cancelled() && needs.desktop.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
@@ -131,5 +183,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -R out
-          gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Parley apps for Windows, Linux (AppImage) and Android. The desktop apps check this release for updates. The Android file is debug-signed for sideloading." || true
+          gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Parley apps for Windows, Mac, Linux (AppImage), Android and Ubuntu Touch. The desktop apps check this release for updates. The Android file is debug-signed for sideloading. The Mac app is unsigned: right-click it and choose Open the first time." || true
           ls out/*.yml && gh release upload apps out/* --clobber --repo "$GITHUB_REPOSITORY"
