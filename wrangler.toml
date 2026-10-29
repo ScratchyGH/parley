@@ -42,6 +42,9 @@ class_name = "Hub"
 tag = "v1"
 new_sqlite_classes = ["Hub"]
 
+[placement]
+mode = "smart"
+
 [triggers]
 crons = ["* * * * *"]
 
