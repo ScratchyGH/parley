@@ -172,7 +172,7 @@ const nw=()=>wisps.filter(x=>!x).length
 let post=!!(S.freed&&!S.dd&&!o.betray),brk=S.dd?[1,1,1,1]:[0,0,0,0],pr=[null,null,null],shk=0,cut=-1,sh=[],dmc=null
 const dr=(c,s,x,y,k,f,sx,sy)=>{c.save();c.translate(x,y);c.scale((f?-1:1)*k*(sx||1),k*(sy||1));c.drawImage(s.c,-s.ax,-s.ay,s.w,s.h);c.restore()}
 const smash=i=>{brk[i]=1;shk=18;const cx=[185,315,675,805][i];for(let j=0;j<26;j++)sh.push({x:cx+(Math.random()-.5)*100,y:120+Math.random()*80,vx:(Math.random()-.5)*260,vy:-Math.random()*200,l:1.4,r:2+Math.random()*4})
-const L=[['Subject 01','Thank you. I could not wake up. I could not wake up.'],['Subject 02','He told me running was the only thing keeping me alive.'],['Subject 07','Thirty years. I almost forgot I had a name. Do not laugh at the pumpkin.'],['','The last case holds nothing but a scorched brass key tag. It reads: HARVEST COMPLETE.']][i]
+const L=[['Subject 01','Thank you. I could not wake up. I could not wake up.'],['Subject 02','He told me running was the only thing keeping me alive.'],['Subject 07','Thirty years. I almost forgot I had a name.'],['','The last case holds nothing but a scorched brass key tag. It reads: HARVEST COMPLETE.']][i]
 if(i<3)pr[i]={x:cx,y:205,t:0,tx:cx+(i-1)*30,ty:340+i*14}
 if(brk.every(x=>x)){talk([L,['Dr. Cocoa','(from the doorway, very calm) Thank you. I could not break them myself. Glass that old only opens for a dreamer who is not afraid.'],['You','You used me.'],['Dr. Cocoa','They were ripe. You were the key. Now, hold still.']],()=>{cut=0})}else talk([L])}
 const cocoa=()=>{const r=[];
@@ -203,7 +203,7 @@ const cellT=i=>()=>brk[i]?'':post?'Smash the case':'Look in the cell'
 const LI=[
 {x:185,y:225,r:75,t:cellT(0),a:cellA(0,[['Cell 1','A girl sleeps standing up, eyes open. Her breath fogs the glass. The tag reads: SUBJECT 01, afraid of the dark.']])},
 {x:315,y:225,r:75,t:cellT(1),a:cellA(1,[['Cell 2','A boy presses both hands to the glass and mouths one word over and over: run.']])},
-{x:675,y:225,r:75,t:cellT(2),a:cellA(2,[['Cell 3','A boy with a pumpkin for a head sits perfectly still. His tag: SUBJECT 07. He has dreamt of the same hallway for thirty years.']])},
+{x:675,y:225,r:75,t:cellT(2),a:cellA(2,[['Cell 3','An old man sits perfectly still. His tag: SUBJECT 07. He has dreamt of the same hallway for thirty years.']])},
 {x:805,y:225,r:75,t:cellT(3),a:cellA(3,[['Cell 4','The cell is empty. Scratched on the wall: he lets you out when you are not afraid. He never lets you out.']])},
 {x:480,y:235,r:95,t:'Read the panel',a:()=>{if(gate())return;talk([['Panel','Four live feeds. Each prisoner is trapped in the same place: Terror Night. Monsters circle them in the dark. The lights are almost out.'],['Panel','Every minute they survive, a meter on the side fills. It is labelled HARVEST.'],['You','He is feeding on their fear. Dr. Cocoa is not a scientist. He is a farmer.'],['Panel',M.fails?'You have failed '+M.fails+' time'+(M.fails>1?'s':'')+'. The meter is higher each time. Enter Terror Night again?':'Sending yourself into the feed could cut a cell open. Enter Terror Night?']],()=>talk([['','Hold on. Survive the night.']],()=>go('terror')))}},
 {x:100,y:360,r:80,t:'Read the poster',a:()=>talk([['Poster','A faded poster. Six silhouettes behind a reinforced wall, a drone on the floor, one hatch in the ceiling. HOLD THE LINE. Reinforce. Breach. Win the round.'],['Scribble','drone first. always drone first.']])},
