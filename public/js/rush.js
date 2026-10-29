@@ -181,7 +181,6 @@ return true
 const hurt=d=>{
 if(P.hit>0||P.inv>0)return
 if(P.ward>0){P.ward-=d;text(P.x,P.y-40,'blocked','#ffe27a');tone(500,.08,.05,'triangle');P.hit=.2;if(P.ward>0)return;d=-P.ward;P.ward=0;if(d<=0)return}
-if(TR)scare=Math.max(scare,.25)
 P.hp-=d
 P.hit=.5
 shake=Math.max(shake,7)
@@ -561,7 +560,7 @@ if(TR){for(let i=0;i<7;i++){const fx=((i*397+clock*(10+i*3))%(W+500))-250,fy=(i*
 const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75)
 g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,TR?'rgba(20,0,0,.88)':'rgba(0,0,0,.55)')
 ctx.fillStyle=g;ctx.fillRect(0,0,W,H)
-if(TR&&scare>0){ctx.fillStyle='rgba(255,235,235,'+Math.min(.5,scare*.7)+')';ctx.fillRect(0,0,W,H)}
+if(TR&&scare>0){ctx.fillStyle='rgba(255,235,235,'+Math.min(.4,scare*.6)+')';ctx.fillRect(0,0,W,H)}
 if(P.hit>0){ctx.fillStyle='rgba(200,20,20,'+Math.min(.28,P.hit*.6)+')';ctx.fillRect(0,0,W,H)}
 if(P.hp<P.max*.3&&phase==='play'){const a=.1+Math.sin(clock*6)*.05;ctx.fillStyle='rgba(180,0,0,'+a+')';ctx.fillRect(0,0,W,H)}
 }
