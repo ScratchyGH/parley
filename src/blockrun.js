@@ -2,6 +2,7 @@ import{fail}from'./util.js'
 import{pathGet}from'./apiblock.js'
 import*as L from'./labfx.js'
 import{LAB}from'./labmore.js'
+import{TRIG}from'./labmore2.js'
 const OPS=['contains','notcontains','equals','neq','starts','ends','oneof','gt','lt','empty','notempty']
 const FNS=['upper','lower','title','trim','length','reverse','first','last','replace','words','capital','nospaces','digits','letters','left','right','repeat','slug']
 const MATH=['+','-','*','/','%','max','min','pow','floor','ceil','round','abs']
@@ -100,7 +101,7 @@ combine:{out:NX,spec:{name:24,a:200,sep:20,b:200},def:{name:'joined',a:'',sep:' 
 clock:{out:NX,spec:{name:24,what:['unix','date','time','hour','minute','day','month','monthname','year','weekday'],tz:40},def:{name:'now',what:'unix',tz:'UTC'}},
 userinfo:{out:NX,spec:{name:24,what:['nickname','joined_days','roles','role_count']},def:{name:'info',what:'joined_days'}},
 serverinfo:{out:NX,spec:{name:24,what:['members','channels','roles','name']},def:{name:'info',what:'members'}},
-api:{out:NX,spec:{kind:['joke','catfact','catpic','dogpic','advice','quote','fact','trivia','weather','define','wiki','crypto','pokemon','time','xkcd','country','github','npm','mcserver','mcuser','exchange','dadjoke','chuck','kanye','fox','meal','cocktail'],input:60,name:24,fallback:100},def:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
+api:{out:NX,spec:{kind:['joke','catfact','catpic','dogpic','advice','quote','fact','trivia','weather','define','wiki','crypto','pokemon','time','xkcd','country','github','npm','mcserver','mcuser','exchange','dadjoke','chuck','kanye','fox','meal','cocktail','bored','agify','nationalize','zip','spacex','rickmorty','dnd','meowfact','dogfact','hn','ghrepo','pypi','crates','wikirandom','rhyme','synonym','coinprice','progjoke','bible','anime','tv','song','chess','lichess','wayback','trending','feargreed','stoic','affirmation','ronswanson','riddle','mtg','yugioh','duck','brewery','spacenews','uuid'],input:60,name:24,fallback:100},def:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
 jsonget:{out:NX,spec:{name:24,input:500,path:100},def:{name:'value',input:'{data}',path:''}},
 item:{out:NX,spec:{name:24,input:500,op:['nth','random','count','last'],n:3},def:{name:'item',input:'{args}',op:'nth',n:'1'}},
 http:{out:NX,spec:{url:300,path:100,name:24,fallback:100},def:{url:'https://',path:'',name:'data',fallback:'No data.'}},
@@ -188,6 +189,9 @@ nfcwrite:{out:NX,spec:{text:200},def:{text:'Hello from Parley'}},
 btwrite:{out:NX,spec:{prefix:30,service:40,char:40,hex:64},def:{prefix:'',service:'ffe0',char:'ffe1',hex:'01'}}
 }
 for(const[k,v]of Object.entries(LAB))TYPES[k]={out:v.out||NX,spec:v.spec,def:v.def}
+for(const[k,v]of Object.entries(TRIG))TYPES[k]={out:NX,trigger:true,spec:v.spec,def:v.def}
+TYPES.feed={out:NX,spec:{url:300,item:['1','2','3','4','5'],part:['title','link','both'],name:24,fallback:100},def:{url:'https://',item:'1',part:'title',name:'feed',fallback:'The feed did not answer.'}}
+TYPES.preview={out:NX,spec:{url:300,part:['title','description','image','site'],name:24,fallback:100},def:{url:'{arg1}',part:'title',name:'preview',fallback:'No preview found.'}}
 export const MAX_NODES=200
 const NAMEF=['name']
 const bad=m=>fail(400,m)
@@ -220,6 +224,7 @@ if(T.spec.tz!==undefined){try{new Intl.DateTimeFormat('en-US',{timeZone:p.tz})}c
 if(n.type==='cooldown')p.seconds=num(p.seconds,1,86400,'Seconds')
 if(n.type==='timeout')p.minutes=num(p.minutes,1,60,'Minutes')
 if(n.type==='http'&&!/^https:\/\//i.test(p.url))bad('The URL must start with https://')
+if((n.type==='feed'||n.type==='preview')&&!p.url.includes('{')&&!/^https:\/\//i.test(p.url))bad('The URL must start with https://')
 if(n.type==='item')p.n=num(p.n,1,100,'Item number')
 if(n.type==='randnum'){p.min=num(p.min,-1000000,1000000,'Minimum');p.max=num(p.max,-1000000,1000000,'Maximum')}
 if(n.type==='caps'){p.percent=num(p.percent,1,100,'Percent');p.min=num(p.min,1,200,'Minimum letters')}
@@ -325,6 +330,7 @@ if(n.type==='shortmsg')return t.length>0&&t.length<=Number(n.p.chars)
 if(n.type==='codeblock')return t.includes('```')
 if(n.type==='hasnumber')return/\d/.test(t)
 if(n.type==='mediaurl')return/https?:\/\/\S+\.(png|jpe?g|gif|webp|mp4|webm|mov)(\?\S*)?(\s|$)|https?:\/\/(www\.)?(tenor|giphy)\.com\/\S+/i.test(t)
+const Tg=TRIG[n.type];if(Tg)return Tg.test(n.p,t)
 if(n.type==='link')return/https?:\/\//i.test(t)
 if(n.type==='image')return(ctx.attachments||0)>0
 if(n.type==='msg'){
@@ -443,7 +449,7 @@ case'combine':if(P.name)log.push({id:n.id,did:'combine',value:setv(P.name,R(P.a)
 case'clock':if(P.name){const w=wall(ctx.at||Date.now(),P.tz||'UTC'),M=['January','February','March','April','May','June','July','August','September','October','November','December'],p2=x=>String(x).padStart(2,'0');const v={unix:String(Math.floor((ctx.at||Date.now())/1000)),date:w.y+'-'+p2(w.mo)+'-'+p2(w.d),time:p2(w.h)+':'+p2(w.mi),hour:String(w.h),minute:String(w.mi),day:String(w.d),month:String(w.mo),monthname:M[w.mo-1],year:String(w.y),weekday:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][w.wd]}[P.what]||'';log.push({id:n.id,did:'clock',value:setv(P.name,v)})}break
 case'userinfo':if(P.name)log.push({id:n.id,did:'userinfo',value:setv(P.name,String(await io.memberInfo(P.what)))});break
 case'serverinfo':if(P.name)log.push({id:n.id,did:'serverinfo',value:setv(P.name,String(await io.serverInfo(P.what)))});break
-case'api':case'http':if(P.name&&calls<3){calls++;const r=n.type==='api'?await io.api(P.kind,R(P.input)):await io.http(R(P.url),R(P.path));const v=r&&r.text?r.text:R(P.fallback);log.push({id:n.id,did:n.type,value:setv(P.name,v)});if(r&&r.extra)for(const[k,x]of Object.entries(r.extra))setv(P.name+'_'+k,x)}break
+case'api':case'http':case'feed':case'preview':if(P.name&&calls<3){calls++;const r=n.type==='api'?await io.api(P.kind,R(P.input)):n.type==='http'?await io.http(R(P.url),R(P.path)):await io.http(R(P.url),n.type==='feed'?'@feed:'+P.item+'.'+P.part:'@page:'+P.part);const v=r&&r.text?r.text:R(P.fallback);log.push({id:n.id,did:n.type,value:setv(P.name,v)});if(r&&r.extra)for(const[k,x]of Object.entries(r.extra))setv(P.name+'_'+k,x)}break
 case'jsonget':if(P.name){let v='';try{const j=JSON.parse(R(P.input));const r=P.path?pathGet(j,P.path):j;v=r===undefined?'':typeof r==='object'?JSON.stringify(r):String(r)}catch{}log.push({id:n.id,did:'jsonget',value:setv(P.name,v)})}break
 case'item':if(P.name){const a=R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean);const v=P.op==='count'?String(a.length):P.op==='random'?(a[Math.floor(rnd()*a.length)]||''):P.op==='last'?(a[a.length-1]||''):(a[Number(P.n)-1]||'');log.push({id:n.id,did:'item',value:setv(P.name,v)})}break
 case'random3':route='c'+(1+Math.floor(rnd()*3));break
@@ -503,7 +509,7 @@ case'math':if(P.name)log.push({id:n.id,did:'math',value:setv(P.name,calc(R(P.a),
 case'text':if(P.name)log.push({id:n.id,did:'text',value:setv(P.name,xform(P.fn,R(P.input),P.arg))});break
 case'randnum':if(P.name){const a=Number(P.min),b=Number(P.max),lo=Math.min(a,b),hi=Math.max(a,b);log.push({id:n.id,did:'randnum',value:setv(P.name,String(lo+Math.floor(rnd()*(hi-lo+1))))})}break
 case'map':if(P.name){const k=R(P.input).trim().toLowerCase();let out=null;for(const line of P.table.split('\n')){const i=line.indexOf('=');if(i>0&&line.slice(0,i).trim().toLowerCase()===k){out=line.slice(i+1).trim();break}}log.push({id:n.id,did:'map',value:setv(P.name,out===null?R(P.fallback):R(out))})}break
-default:{const Lb=LAB[n.type];if(Lb){const r=Lb.fn(P,R,ctx.at||Date.now());if(typeof r==='boolean')branch=r;else{const v=r&&typeof r==='object'?r.v:r;if(P.name)log.push({id:n.id,did:n.type,value:setv(P.name,String(v))});if(r&&r.x&&P.name)for(const[k,x]of Object.entries(r.x))setv(P.name+'_'+k,String(x))}}else if(DEV.test(n.type)&&devs.length<5){const a={};for(const[k,v]of Object.entries(P))a[k]=R(v).slice(0,500);devs.push({k:n.type,a});log.push({id:n.id,did:'device',kind:n.type})}}
+default:{const Lb=LAB[n.type];if(Lb){const r=Lb.fn(P,R,ctx.at||Date.now(),rnd);if(typeof r==='boolean')branch=r;else{const v=r&&typeof r==='object'?r.v:r;if(P.name)log.push({id:n.id,did:n.type,value:setv(P.name,String(v))});if(r&&r.x&&P.name)for(const[k,x]of Object.entries(r.x))setv(P.name+'_'+k,String(x))}}else if(DEV.test(n.type)&&devs.length<5){const a={};for(const[k,v]of Object.entries(P))a[k]=R(v).slice(0,500);devs.push({k:n.type,a});log.push({id:n.id,did:'device',kind:n.type})}}
 }
 if(n.xo&&depth<6)for(let xn=1;xn<=n.xo;xn++){const xs=next(n.id,'x'+xn);if(xs)await chain(xs,depth+1)}
 if(route!==null){log.push({id:n.id,did:route});cur=next(n.id,route)}

@@ -93,3 +93,5 @@ stars:{spec:{name:24,value:10,max:3},def:{name:'stars',value:'{arg1}',max:'5'},f
 zodiac:{spec:{name:24,date:20},def:{name:'sign',date:'{arg1}'},fn:(P,R)=>{const m=R(P.date).trim().match(/^(?:\d{4}-)?(\d{1,2})-(\d{1,2})$/);if(!m)return'';const mo=+m[1],d=+m[2];if(mo<1||mo>12||d<1||d>31)return'';return d<SIGNS[mo-1][1]?SIGNS[mo-1][0]:SIGNS[mo][0]}},
 weekdayof:{spec:{name:24,date:20},def:{name:'weekday',date:'{arg1}'},fn:(P,R)=>{const m=R(P.date).trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(!m)return'';const t=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));return fin(t.getTime())?['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][t.getUTCDay()]:''}}
 }
+import{LAB as M2}from'./labmore2.js'
+Object.assign(LAB,M2)

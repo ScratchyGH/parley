@@ -15,7 +15,7 @@ const walk=id=>{if(reach.has(id))return;reach.add(id);const n=by.get(id);if(n?.t
 for(const n of g.nodes)if(TYPES[n.type].trigger)walk(n.id)
 const set=new Set()
 for(const n of g.nodes){
-if(n.p.name&&(LAB[n.type]||['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','jsonget','item','dd','world','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink','moonphase','distance','unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext','foreach'].includes(n.type)))set.add(n.p.name.toLowerCase())
+if(n.p.name&&(LAB[n.type]||['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','feed','preview','jsonget','item','dd','world','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink','moonphase','distance','unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext','foreach'].includes(n.type)))set.add(n.p.name.toLowerCase())
 for(const r of n.xi||[])set.add(r[0].toLowerCase())
 }
 const cmds=new Map()
@@ -29,7 +29,7 @@ for(const v of Object.values(n.p))for(const m of String(v).matchAll(/\{([a-z0-9_
 }
 if(n.type==='call'&&!subs.has(n.p.name.toLowerCase()))out.push({id:n.id,level:'error',msg:'No subflow is named "'+n.p.name+'".'})
 if(n.type==='sub'&&!g.nodes.some(x=>x.type==='call'&&x.p.name.toLowerCase()===n.p.name.toLowerCase()))out.push({id:n.id,level:'warn',msg:'Nothing calls this subflow.'})
-if(n.type==='api'||n.type==='http'||n.type==='dd'||n.type==='world'||n.type==='ddwebhook'||n.type==='ddembed')out.push({id:n.id,level:'info',msg:'Calls an outside service. A bot can make up to 3 calls per run and 20 per minute, so add a cooldown on busy commands.'})
+if(n.type==='api'||n.type==='http'||n.type==='feed'||n.type==='preview'||n.type==='dd'||n.type==='world'||n.type==='ddwebhook'||n.type==='ddembed')out.push({id:n.id,level:'info',msg:'Calls an outside service. A bot can make up to 3 calls per run and 20 per minute, so add a cooldown on busy commands.'})
 if(/^(dev|bt|serial|usb|nfc)/.test(n.type))out.push({id:n.id,level:'info',msg:'Runs on the member\'s own device after they tap Allow. It needs a supported browser or app, and Bluetooth blocks need Chrome, Edge or the desktop and Android apps.'})
 if(n.type==='ddwebhook'||n.type==='ddembed')out.push({id:n.id,level:'warn',msg:'Anyone who can edit this bot can see its webhook link, so use a webhook made only for this bot.'})
 if(n.type==='cmd'){const k=n.p.prefix+n.p.name.toLowerCase();if(cmds.has(k))out.push({id:n.id,level:'warn',msg:'Another block already listens for '+k+'.'});cmds.set(k,n.id)}
