@@ -1,10 +1,10 @@
 .tu-box{background:radial-gradient(ellipse at 50% 0,#2a1744 0,#120a22 55%,#07040f 100%);overflow:auto;color:#f3ece0;font-family:system-ui,sans-serif}
-.tu-lobby{max-width:980px;margin:0 auto;padding:36px 20px 48px;display:flex;flex-direction:column;gap:26px}
+.tu-lobby{max-width:1180px;margin:0 auto;padding:36px 20px 48px;display:flex;flex-direction:column;gap:26px}
 .tu-head{text-align:center}
 .tu-head h2{margin:0;font:800 clamp(38px,8vw,72px)/1 Georgia,serif;color:#ffb347;text-shadow:0 4px 0 #6a2a0a,0 0 40px rgba(255,150,50,.35);letter-spacing:.01em}
 .tu-head b{display:block;font:700 clamp(18px,3.4vw,28px) Georgia,serif;color:#c9a8ff;margin-top:4px}
 .tu-head p{margin:10px auto 0;max-width:460px;color:#b79ad6;font-size:14px}
-.tu-main{display:grid;grid-template-columns:1.5fr 1fr;gap:22px;align-items:start}
+.tu-main{display:grid;grid-template-columns:1fr 1.15fr .8fr;gap:22px;align-items:start}
 .tu-left,.tu-right{display:flex;flex-direction:column;gap:16px}
 .tu-right{padding:16px;border-radius:16px;background:rgba(14,8,22,.78);border:2px solid #4a2f6a}
 .tu-right h4{margin:4px 0 0;font:700 15px Georgia,serif;color:#e8d6ff}
@@ -54,4 +54,38 @@
 .tu-rows div{display:flex;justify-content:space-between;gap:20px;padding:8px 14px;border-radius:10px;background:rgba(40,24,64,.6)}
 .tu-rows span{color:#b79ad6}
 .tu-inv{position:fixed;right:16px;bottom:16px;z-index:99999;padding:14px 16px;border-radius:14px;background:#1a1220;border:1px solid #ff9d2e;color:#fff;display:flex;flex-direction:column;gap:10px;max-width:300px}
+@media(max-width:980px){.tu-main{grid-template-columns:1fr}.tu-slots{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.tu-main{grid-template-columns:1fr}.tu-slot{min-height:150px}.tu-spr{width:44px}.tu-modes{gap:6px}.tu-mode{padding:10px 8px}}
+
+.tu-left h4,.tu-mid h4{margin:6px 0 0;font:700 15px Georgia,serif;color:#e8d6ff}
+.tu-mid{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:rgba(14,8,22,.78);border:2px solid #4a2f6a}
+.tu-mid h4:first-child{margin-top:0}
+.tu-seg{display:flex;gap:6px;flex-wrap:wrap}
+.tu-seg button{flex:1;min-width:64px;display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:11px;border:2px solid #3a2556;background:rgba(26,14,40,.8);color:#e8d6ff;cursor:pointer;text-align:left;font:inherit}
+.tu-seg button b{font:700 13px Georgia,serif}
+.tu-seg button span{font-size:10px;color:#9a82b8}
+.tu-seg button.on{border-color:#ffb347;background:rgba(255,157,46,.14)}
+.tu-seg button.on b{color:#ffb347}
+.tu-seg button:disabled{opacity:.55;cursor:default}
+.tu-seg button:hover:not(:disabled):not(.on){border-color:#8a5fc0}
+.tu-lens button{text-align:center;min-width:56px}
+.tu-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tu-cards2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tu-mc{display:flex;flex-direction:column;gap:3px;padding:12px;border-radius:12px;border:2px solid #3a2556;background:rgba(26,14,40,.8);color:#e8d6ff;cursor:pointer;text-align:left;font:inherit}
+.tu-mc b{font:800 16px Georgia,serif}
+.tu-mc span{font-size:11px;color:#9a82b8;line-height:1.3}
+.tu-mc.on{border-color:#ffb347;background:rgba(255,157,46,.14)}
+.tu-mc.terror.on{border-color:#ff4a4a;background:rgba(255,40,40,.12)}
+.tu-mc.terror.on b{color:#ff6a6a}
+.tu-mc.on:not(.terror) b{color:#ffb347}
+.tu-mc:disabled{opacity:.6;cursor:default}
+.tu-diffs{display:grid;gap:6px}
+.tu-d{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:11px;border:2px solid #3a2556;background:rgba(26,14,40,.8);color:#e8d6ff;cursor:pointer;font:inherit;text-align:left}
+.tu-d b{font:700 13px Georgia,serif}
+.tu-d span{font-size:11px;color:#9a82b8}
+.tu-d.on{border-color:var(--dc);background:color-mix(in srgb,var(--dc) 14%,transparent)}
+.tu-d.on b{color:var(--dc)}
+.tu-d.d0{--dc:#9be564}.tu-d.d1{--dc:#6ec1ff}.tu-d.d2{--dc:#ffb347}.tu-d.d3{--dc:#ff4a4a}
+.tu-d:disabled{opacity:.6;cursor:default}
+.tu-cin{display:flex;align-items:center;gap:10px;color:#b79ad6;font-size:12px}
+.tu-cin input{width:90px;padding:8px 10px;border-radius:9px;border:2px solid #3a2556;background:#120a22;color:#fff;font:inherit}
