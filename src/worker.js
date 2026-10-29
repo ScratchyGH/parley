@@ -36,7 +36,6 @@ import banhammerRoutes from'./banhammer.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
 import hollowRoutes from'./hollow.js'
-import gameRoutes from'./games.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -78,7 +77,6 @@ legalRoutes(router)
 modaiRoutes(router)
 banhammerRoutes(router)
 hollowRoutes(router)
-gameRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
 voiceRoutes(router)
