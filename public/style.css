@@ -463,3 +463,11 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 .vwrap:hover .vexp,.vwrap:focus-within .vexp{opacity:1}
 .m:hover,.msgs .m:hover{background:transparent}
 .m.hl,.m.hl:hover{background:color-mix(in srgb,var(--hi) 16%,transparent)}
+.slf{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.slt{display:flex;gap:8px;align-items:baseline}
+.slr{display:flex;flex-direction:column;gap:4px}
+.slh{font-weight:600;color:var(--strong)}
+.slcs{display:flex;flex-wrap:wrap;gap:6px}
+.slc{padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--bg2,var(--panel));color:var(--text)}
+.slc:hover{background:var(--sel)}
+.slc.on{background:var(--sel);border-color:var(--strong);color:var(--strong)}
