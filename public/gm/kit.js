@@ -10,12 +10,12 @@ const fit=()=>{const d=dpr();k.W=box.clientWidth||600;k.H=box.clientHeight||400;
 fit()
 const ro=new ResizeObserver(fit)
 ro.observe(box)
-const kd=e=>{const c=e.key.toLowerCase();if(c==='p'){k.paused=!k.paused;return}k.keys[c]=1;if(c.startsWith('arrow')||c===' ')e.preventDefault();k.press&&k.press(c)}
+const kd=e=>{const c=e.key.toLowerCase();if(c==='escape')e.stopPropagation();if(c==='p'){k.paused=!k.paused;return}k.keys[c]=1;if(c.startsWith('arrow')||c===' ')e.preventDefault();k.press&&k.press(c)}
 const ku=e=>{delete k.keys[e.key.toLowerCase()]}
 const pm=e=>{const r=cv.getBoundingClientRect();k.px=e.clientX-r.left;k.py=e.clientY-r.top}
 const pd=e=>{pm(e);k.down=true;cv.focus();k.tap&&k.tap(k.px,k.py)}
 const pu=()=>{k.down=false}
-addEventListener('keydown',kd)
+addEventListener('keydown',kd,true)
 addEventListener('keyup',ku)
 cv.addEventListener('pointermove',pm)
 cv.addEventListener('pointerdown',pd)
@@ -30,7 +30,7 @@ draw(ctx,k)
 if(k.paused){ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,k.W,k.H);ctx.fillStyle='#e8e6df';ctx.font='800 36px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSED',k.W/2,k.H/2);ctx.textAlign='left'}
 }
 raf=requestAnimationFrame(loop)
-k.stop=()=>{cancelAnimationFrame(raf);ro.disconnect();removeEventListener('keydown',kd);removeEventListener('keyup',ku);removeEventListener('pointerup',pu);cv.remove()}
+k.stop=()=>{cancelAnimationFrame(raf);ro.disconnect();removeEventListener('keydown',kd,true);removeEventListener('keyup',ku);removeEventListener('pointerup',pu);cv.remove()}
 return k
 }
 export const txt=(c,s,x,y,sz,col,al)=>{c.font='800 '+sz+'px Figtree,sans-serif';c.fillStyle=col||'#e8e6df';c.textAlign=al||'left';c.fillText(s,x,y);c.textAlign='left'}

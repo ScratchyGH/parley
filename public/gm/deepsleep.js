@@ -27,13 +27,13 @@ if(l)out.push(l)
 return out
 }
 function cap(c,who,s){
-R(c,60,VH-130,VW-120,100,'rgba(8,8,10,.82)')
+R(c,60,VH-98,VW-120,90,'rgba(8,8,10,.86)')
 c.strokeStyle='rgba(201,200,193,.35)'
-c.strokeRect(60.5,VH-129.5,VW-121,99)
+c.strokeRect(60.5,VH-97.5,VW-121,89)
 c.font='700 22px Figtree,sans-serif'
 const ls=wrap(c,s,VW-170)
-if(who)txt(c,who,80,VH-102,16,'#c9c8c1')
-ls.slice(0,3).forEach((l,i)=>txt(c,l,80,VH-76+i*26,22,'#f6f5ef'))
+if(who)txt(c,who,80,VH-78,15,'#c9c8c1')
+ls.slice(0,2).forEach((l,i)=>txt(c,l,80,VH-54+i*26,22,'#f6f5ef'))
 }
 const SEG=[
 {d:4,l:[[0,.5,'You','Goodnight, Mom.'],[.5,1,'Mom','Goodnight, sweetheart. Sleep tight.']],f:(c,p)=>{
