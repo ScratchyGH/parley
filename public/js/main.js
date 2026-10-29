@@ -52,6 +52,7 @@ mount(root,e.status===503?h('div',{class:'auth'},h('div',{class:'card mt'},h('im
 }
 }
 function showAuth(note){
+try{const q=new URLSearchParams(location.search);if(q.get('web')==='1')localStorage.setItem('parley.web','1');if(!note&&!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone&&!localStorage.getItem('parley.web')){location.replace('/get');return}}catch{}
 stopAll()
 booted=false
 cleanup?.();cleanup=null

@@ -49,7 +49,7 @@ if(TR)Object.assign(A,terrorArt(3))
 const BK=TR?'parley.terror.best':'parley.rush.best'
 const LS=(()=>{const mkL=(rgb)=>{const c=el('canvas');c.width=c.height=128;const g=c.getContext('2d');const q=g.createRadialGradient(64,64,0,64,64,64);q.addColorStop(0,'rgba('+rgb+',1)');q.addColorStop(.35,'rgba('+rgb+',.7)');q.addColorStop(1,'rgba('+rgb+',0)');g.fillStyle=q;g.fillRect(0,0,128,128);return c};return{w:mkL('255,255,255'),warm:mkL('255,150,50'),cyan:mkL('90,200,255'),red:mkL('255,60,50'),vio:mkL('170,110,255')}})()
 const flashOf=s=>{if(s.fc)return s.fc;const c=el('canvas');c.width=s.c.width;c.height=s.c.height;const g=c.getContext('2d');g.drawImage(s.c,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);s.fc=c;return c}
-const P={x:0,y:0,hp:TR?110:120,max:TR?110:120,spd:TR?215:150,ab:{dash:1},ward:0,wardT:0,inv:0,dash:0,dx:1,dy:0,slow:0,dmg:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,fx:1,fy:0,face:1,up:{},walk:0}
+const P={x:0,y:0,hp:TR?170:120,max:TR?170:120,spd:TR?200:150,ab:{dash:1},ward:0,wardT:0,inv:0,dash:0,dx:1,dy:0,slow:0,dmg:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,fx:1,fy:0,face:1,up:{},walk:0}
 const E=[],B=[],EB=[],G=[],F=[],X=[],HP=[],FL=[]
 let ACT=[],EYES=[],LBL=[],RF=null,scare=0,beatT=0,bolt=8,whT=4
 const CD={},BS=new Map()
@@ -83,7 +83,7 @@ const say=s=>{note=s;noteT=2.8}
 const spawnE=(k,x,y,sc)=>{const T=TY[k];E.push({id:++id,k,x,y,r:T.r,hp:T.hp*sc,mx:T.hp*sc,sp:T.sp*(.92+R()*.16),dmg:T.dmg,xp:T.xp,fl:0,oc:0,ph:R()*6,ch:0,bs:R()*2,sx:1,kx:0,ky:0})}
 const ring=()=>{const a=R()*TAU,d=Math.max(VW,VH)*.62+30;return[P.x+Math.cos(a)*d,P.y+Math.sin(a)*d]}
 const pick=()=>{
-const sc=1+t/130,p=R()
+const sc=1+t/(TR?240:130),p=R()
 let k='wisp'
 if(TR){
 const pl=['crawler','crawler','wisp','bat']
@@ -97,7 +97,7 @@ if(t>120)pl.push('stitched')
 if(t>150)pl.push('weeper','lurker')
 k=pl[Math.floor(R()*pl.length)]
 const[x,y]=ring()
-if(k==='bat'){for(let i=0;i<5;i++)spawnE('bat',x+(R()-.5)*60,y+(R()-.5)*60,sc)}else spawnE(k,x,y,sc)
+if(k==='bat'){for(let i=0;i<3;i++)spawnE('bat',x+(R()-.5)*60,y+(R()-.5)*60,sc)}else spawnE(k,x,y,sc)
 return
 }
 if(t>120&&p<.045)k='reaper'
@@ -236,7 +236,7 @@ for(const e of E){const ex=e.x-b.x,ey=e.y-b.y,q=ex*ex+ey*ey;if(q<bd){bd=q;n=e}}
 if(n){const a=Math.atan2(n.y-(b.y-70),n.x-b.x);B.push({x:b.x,y:b.y-70,vx:Math.cos(a)*470,vy:Math.sin(a)*470,a,l:1,pr:1,d:P.dmg*1.5,h:[]});b.cd=.8;tone(300,.05,.02,'square',.5)}else b.cd=.2
 }
 }else if(b.k==='crypt'){
-if(!b.dead){b.sp-=dt;if(b.sp<=0&&E.length<140&&d<900){b.sp=6;const sc=1+t/130;for(let j=0;j<3;j++)spawnE(R()<.5?'crawler':'bat',b.x+(R()-.5)*50,b.y+10,sc)}}
+if(!b.dead){b.sp-=dt;if(b.sp<=0&&E.length<140&&d<900){b.sp=9;const sc=1+t/240;for(let j=0;j<2;j++)spawnE('crawler',b.x+(R()-.5)*50,b.y+10,sc)}}
 }else if(b.k==='well'){
 if(!b.used&&d<42){b.used=1;gain(10);text(b.x,b.y-50,'+10 XP','#8fe3ff');burst(b.x,b.y-10,16,'#8fe3ff',140);tone(800,.3,.05,'triangle')}
 }else if(b.k==='shrine'){
@@ -280,7 +280,7 @@ if(P.wardT<=0)P.ward=0
 if(P.dash>0){P.dash-=dt;P.x+=P.dx*640*dt;P.y+=P.dy*640*dt;if(F.length<300)F.push({x:P.x,y:P.y,vx:0,vy:0,l:.25,m:.25,c:'#8fe3ff',s:5})}
 if(TR)terror(dt)
 if(P.reg)P.hp=Math.min(P.max,P.hp+P.reg*dt)
-acc+=dt*Math.min(7,.65+t/40)
+acc+=dt*(TR?Math.min(3.6,.4+t/90):Math.min(7,.65+t/40))
 while(acc>=1){acc--;if(E.length<70+Math.min(190,t*.62))pick()}
 if(bi<BOSS_AT.length&&t>=BOSS_AT[bi]&&!boss){
 const[x,y]=ring()
@@ -302,7 +302,7 @@ for(let i=E.length-1;i>=0;i--){
 const e=E[i]
 if(e.hp<=0){kill(e);continue}
 const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1
-let sp=e.sp*(TR?1.1:1),ux=dx/d,uy=dy/d,wob=.3
+let sp=e.sp*(TR?.92:1),ux=dx/d,uy=dy/d,wob=.3
 if(TR){
 const k=e.k
 if(e.slw>0){e.slw-=dt;sp*=.5}
@@ -337,7 +337,7 @@ if(TR)for(const c of ACT)if(c.k==='barricade')for(const o of[-18,0,18]){const bx
 e.kx*=.86;e.ky*=.86
 if(Math.abs(dx)>3)e.sx=dx>0?1:-1
 e.fl-=dt;e.oc-=dt
-if(d<e.r+9&&!(e.k==='mimic'&&!e.rv))hurt(e.dmg)
+if(d<e.r+9&&!(e.k==='mimic'&&!e.rv))hurt(TR?e.dmg*.65:e.dmg)
 }
 for(let i=0;i<E.length;i++){
 const a=E[i]
