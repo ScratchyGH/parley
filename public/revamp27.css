@@ -137,3 +137,4 @@ html.rv27 .inp,html.rv27 .sel,html.rv27 textarea.inp{border-radius:16px}
 html.rv27 .dlg{border-radius:30px}
 html.rv27 .menu{border-radius:20px}
 }
+html.rv27 .m.hl,html.rv27 .m.hl:hover{background:color-mix(in srgb,var(--hi) 24%,rgba(255,255,255,.05));border-color:color-mix(in srgb,var(--hi) 70%,transparent);box-shadow:inset 3px 0 0 var(--hi)}
