@@ -64,8 +64,9 @@ export async function joinVoice({ch,hub,label,path,stage}){
 if(V.joining)return
 if(V.ch===ch)return
 if(V.ch)await leaveVoice()
-if(!isOpen(hub)){toast('Not connected to the server yet. Try again in a moment.','err');return}
 V.joining=true
+for(let i=0;i<40&&!isOpen(hub);i++)await new Promise(r=>setTimeout(r,150))
+if(!isOpen(hub)){V.joining=false;toast('Not connected to the server yet. Try again in a moment.','err');return}
 try{
 const d=await GET('/api/rtc/ice')
 V.ice=d.iceServers
@@ -405,7 +406,7 @@ setState()
 emit('voice:update')
 emit('voice:streams')
 }
-const RES={'parli':[854,480],'480':[854,480],'720':[1280,720],'1080':[1920,1080],'1440':[2560,1440]}
+const RES={'parli':[854,480],'2160':[3840,2160],'4320':[7680,4320],'8640':[15360,8640],'480':[854,480],'720':[1280,720],'1080':[1920,1080],'1440':[2560,1440]}
 function scrConstraints(pr){
 const r=RES[pr.scrRes]
 const v={frameRate:{ideal:pr.scrFps,max:pr.scrFps}}
@@ -493,6 +494,7 @@ const id=voicePrefs().input
 await switchInput(id)
 if(V.mic&&V.mic.getAudioTracks()[0]?.readyState==='ended')await switchInput('')
 }
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{});const t=V.mic?.getAudioTracks()[0];if(t&&t.readyState==='ended')reviveMic()})
 navigator.mediaDevices?.addEventListener?.('devicechange',()=>{const t=V.mic?.getAudioTracks()[0];if(t&&t.readyState==='ended')reviveMic()})
 export async function switchInput(id){
 const pr=voicePrefs()
@@ -547,10 +549,10 @@ w.an.getByteTimeDomainData(w.buf)
 let sum=0
 for(const v of w.buf){const x=(v-128)/128;sum+=x*x}
 const rms=Math.sqrt(sum/w.buf.length)
-if(id==='me'){const t=V.mic?.getAudioTracks()[0];if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{});if(t&&!V.muted&&!V.deaf){if(t.readyState==='ended')reviveMic();else if(rms<.0003){if((V.dead=(V.dead||0)+1)>50){V.dead=0;reviveMic()}}else V.dead=0}}
+if(id==='me'){const t=V.mic?.getAudioTracks()[0];if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{});if(t&&!V.muted&&!V.deaf){if(t.readyState==='ended')reviveMic();else if(rms<.0003){if((V.dead=(V.dead||0)+1)>30){V.dead=0;reviveMic()}}else V.dead=0}}
 const uid=id==='me'?S.me.id:id
 w.nf=w.nf==null?rms:w.nf*.98+Math.min(rms,w.nf*1.5+.002)*.02
-const thr=Math.max(.008,Math.min(.03,w.nf*2.5+.006))
+const thr=Math.max(.004,Math.min(.02,w.nf*2.2+.003))
 let speaking=rms>thr
 if(id==='me'&&(V.muted||V.deaf)){
 if(rms>0.08&&!V.deaf&&V.mic&&Date.now()-(V.nudge||0)>30000&&(V.loud=(V.loud||0)+1)>12){V.nudge=Date.now();V.loud=0;toast('You are muted. Others cannot hear you.')}
@@ -639,7 +641,7 @@ h('div',{class:'perm'},toggle(pr.noise,v=>save({noise:v}),'Noise suppression'),h
 h('div',{class:'perm'},toggle(pr.agc,v=>save({agc:v}),'Automatic gain'),h('span',null,'Automatic gain control')),
 h('div',{class:'hint'},'Echo, noise and gain changes apply the next time you join a call.'),
 h('h4',{style:{margin:'16px 0 6px'}},'Screen sharing'),
-field('Resolution',h('select',{class:'sel','aria-label':'Screen share resolution',on:{change:e=>{save({scrRes:e.target.value});applyScreenQuality()}}},[['parli','Parli-2K Optimized'],['480','480p'],['720','720p (recommended)'],['1080','1080p'],['1440','1440p'],['native','Source size']].map(([v,l])=>h('option',{value:v,selected:String(pr.scrRes)===v},l)))),
+field('Resolution',h('select',{class:'sel','aria-label':'Screen share resolution',on:{change:e=>{save({scrRes:e.target.value});applyScreenQuality()}}},[['parli','Parli-2K Optimized'],['480','480p'],['720','720p (recommended)'],['1080','1080p'],['1440','1440p'],['2160','4K'],['4320','8K'],['8640','16K HD'],['native','Source size']].map(([v,l])=>h('option',{value:v,selected:String(pr.scrRes)===v},l)))),
 field('Frame rate',h('select',{class:'sel','aria-label':'Screen share frame rate',on:{change:e=>{save({scrFps:+e.target.value});applyScreenQuality()}}},[[5,'5 fps, slides'],[15,'15 fps'],[30,'30 fps'],[60,'60 fps, games']].map(([v,l])=>h('option',{value:v,selected:+pr.scrFps===v},l)))),
 field('Maximum bitrate',h('select',{class:'sel','aria-label':'Screen share bitrate',on:{change:e=>{save({scrKbps:+e.target.value});applyScreenQuality()}}},[[0,'Automatic'],[1500,'1.5 Mbps'],[3000,'3 Mbps'],[6000,'6 Mbps'],[10000,'10 Mbps']].map(([v,l])=>h('option',{value:v,selected:+pr.scrKbps===v},l))),'Calls connect people directly, so each viewer uses this much of your upload. Lower it if the picture stutters.'),
 h('div',{class:'perm'},toggle(pr.scrAudio,v=>save({scrAudio:v}),'Share audio with screen'),h('span',null,'Share sound with my screen')),
@@ -697,9 +699,10 @@ if(opts.stream){
 const v=vidOf(opts.stream,uid===S.me.id)
 tile.append(v)
 if(mega===opts.stream)tile.classList.add('mega')
+const goFull=()=>{const fake=()=>{mega=opts.stream;document.querySelectorAll('.tile.mega').forEach(t=>t.classList.remove('mega'));tile.classList.add('mega')};if(!tile.requestFullscreen)return fake();let r;try{r=tile.requestFullscreen()}catch{return fake()}if(r&&r.catch)r.catch(fake)}
 const eb=h('button',{type:'button',class:'vt',title:'Fill the window',on:{click:e=>{e.stopPropagation();mega=mega===opts.stream?null:opts.stream;document.querySelectorAll('.tile.mega').forEach(t=>t.classList.remove('mega'));if(mega)tile.classList.add('mega');eb.textContent=mega?'Shrink':'Expand'}}},mega===opts.stream?'Shrink':'Expand')
-tile.append(h('div',{class:'vtools'},eb,h('button',{type:'button',class:'vt',title:'Full screen',on:{click:e=>{e.stopPropagation();tile.requestFullscreen?.()}}},'Full screen'),h('button',{type:'button',class:'vt',title:'Reset zoom',on:{click:e=>{e.stopPropagation();v._z=1;v._x=0;v._y=0;place(v)}}},'Reset zoom')))
-tile.addEventListener('dblclick',()=>{if(document.fullscreenElement)document.exitFullscreen();else tile.requestFullscreen?.()})
+tile.append(h('div',{class:'vtools'},eb,h('button',{type:'button',class:'vt',title:'Full screen',on:{click:e=>{e.stopPropagation();goFull()}}},'Full screen'),h('button',{type:'button',class:'vt',title:'Reset zoom',on:{click:e=>{e.stopPropagation();v._z=1;v._x=0;v._y=0;place(v)}}},'Reset zoom')))
+tile.addEventListener('dblclick',()=>{if(document.fullscreenElement)document.exitFullscreen();else if(tile.classList.contains('mega')){mega=null;tile.classList.remove('mega')}else goFull()})
 }else tile.append(avatar(u,'lg'))
 const q=uid!==S.me.id?V.quality[uid]:null
 tile.append(h('div',{class:'nm'},opts.label||u.display_name,st.h&&!opts.stream?h('span',{class:'hand',title:'Hand raised'},icon('hand','s')):null,st.m&&!opts.stream?icon('micoff','s'):null,st.d&&!opts.stream?icon('deaf','s'):null,q&&!opts.stream?h('span',{class:'q '+(q==='fair'?'fair':q==='poor'?'poor':''),title:'Connection: '+q},icon('refresh','s')):null))
