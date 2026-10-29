@@ -268,7 +268,7 @@ if(u.protocol!=='https:'||u.username||u.password||host==='localhost'||host.endsW
 const key=new Request('https://uimg.cache/'+encodeURIComponent(u.href))
 const hit=await caches.default.match(key)
 if(hit)return hit
-const res=await fetch(u.href,{redirect:'follow',headers:{'user-agent':'ParleyLinkPreview/1.0',accept:'image/*'},cf:{cacheTtl:86400}})
+const res=host===c.url.hostname.toLowerCase()?await c.env.ASSETS.fetch(new Request(u.href,{headers:{accept:'image/*'}})):await fetch(u.href,{redirect:'follow',headers:{'user-agent':'ParleyLinkPreview/1.0',accept:'image/*'},cf:{cacheTtl:86400}})
 const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()
 if(!res.ok||!/^image\/(png|jpeg|webp|gif|avif)$/.test(ct))fail(404,'No image')
 const buf=await res.arrayBuffer()
@@ -285,14 +285,15 @@ try{u=new URL(str(c.url.searchParams.get('url'),8,2000,'URL'))}catch{fail(400,'I
 if(!['http:','https:'].includes(u.protocol)||u.username||u.password)fail(400,'Invalid URL')
 const host=u.hostname.toLowerCase()
 if(host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||/^(\d+\.){3}\d+$/.test(host)||host.includes(':')||!host.includes('.'))fail(400,'URL not allowed')
-const cacheKey=new Request('https://unfurl4.cache/'+encodeURIComponent(u.href))
+const cacheKey=new Request('https://unfurl5.cache/'+encodeURIComponent(u.href))
 const hit=await caches.default.match(cacheKey)
 if(hit)return hit
 const ctl=new AbortController()
 const timer=setTimeout(()=>ctl.abort(),8000)
 let out={url:u.href,title:'',description:'',site:host}
 const grab=async ua=>{
-const res=await fetch(u.href,{signal:ctl.signal,redirect:'follow',headers:{'user-agent':ua,'accept':'text/html,application/xhtml+xml','accept-language':'en-US,en;q=0.9'}})
+const hd={'user-agent':ua,'accept':'text/html,application/xhtml+xml','accept-language':'en-US,en;q=0.9'}
+const res=host===c.url.hostname.toLowerCase()?await c.env.ASSETS.fetch(new Request(u.href,{headers:hd})):await fetch(u.href,{signal:ctl.signal,redirect:'follow',headers:hd})
 const ct=res.headers.get('content-type')||''
 if(res.ok&&ct.includes('text/html')){
 const reader=res.body.getReader()
