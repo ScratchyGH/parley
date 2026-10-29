@@ -100,7 +100,35 @@ serverinfo:{out:NX,spec:{name:24,what:['members','channels','roles','name']},def
 api:{out:NX,spec:{kind:['joke','catfact','catpic','dogpic','advice','quote','fact','trivia','weather','define','wiki','crypto','pokemon','time','xkcd','country','github','npm','mcserver','mcuser','exchange','dadjoke','chuck','kanye','fox','meal','cocktail'],input:60,name:24,fallback:100},def:{kind:'joke',input:'',name:'api',fallback:'The service did not answer.'}},
 jsonget:{out:NX,spec:{name:24,input:500,path:100},def:{name:'value',input:'{data}',path:''}},
 item:{out:NX,spec:{name:24,input:500,op:['nth','random','count','last'],n:3},def:{name:'item',input:'{args}',op:'nth',n:'1'}},
-http:{out:NX,spec:{url:300,path:100,name:24,fallback:100},def:{url:'https://',path:'',name:'data',fallback:'No data.'}}
+http:{out:NX,spec:{url:300,path:100,name:24,fallback:100},def:{url:'https://',path:'',name:'data',fallback:'No data.'}},
+question:{out:NX,trigger:true,spec:{},def:{}},
+shortmsg:{out:NX,trigger:true,spec:{chars:4},def:{chars:'5'}},
+codeblock:{out:NX,trigger:true,spec:{},def:{}},
+hasnumber:{out:NX,trigger:true,spec:{},def:{}},
+mediaurl:{out:NX,trigger:true,spec:{},def:{}},
+random3:{out:['c1','c2','c3'],spec:{},def:{}},
+between:{out:YN,spec:{value:100,min:30,max:30},def:{value:'{arg1}',min:'1',max:'10'}},
+evenodd:{out:YN,spec:{value:100},def:{value:'{arg1}'}},
+lengthcheck:{out:YN,spec:{input:300,min:4,max:4},def:{input:'{text}',min:'1',max:'100'}},
+hasargs:{out:YN,spec:{min:2},def:{min:'1'}},
+isnumber:{out:YN,spec:{input:100},def:{input:'{arg1}'}},
+substr:{out:NX,spec:{name:24,input:300,from:4,len:4},def:{name:'part',input:'{text}',from:'1',len:'10'}},
+percent:{out:NX,spec:{name:24,a:100,b:100,decimals:1},def:{name:'percent',a:'1',b:'4',decimals:'0'}},
+stats:{out:NX,spec:{name:24,input:500,what:['sum','average','min','max','median','count']},def:{name:'result',input:'{args}',what:'sum'}},
+sortlist:{out:NX,spec:{name:24,input:500,how:['az','za','num','numdesc','shuffle']},def:{name:'sorted',input:'{args}',how:'az'}},
+joinlist:{out:NX,spec:{name:24,input:500,sep:20},def:{name:'joined',input:'{args}',sep:' | '}},
+unique:{out:NX,spec:{name:24,input:500},def:{name:'unique',input:'{args}'}},
+occurs:{out:NX,spec:{name:24,input:300,find:100},def:{name:'found',input:'{text}',find:'a'}},
+dateadd:{out:NX,spec:{name:24,days:6,tz:40},def:{name:'when',days:'7',tz:'UTC'}},
+daysuntil:{out:NX,spec:{name:24,date:20},def:{name:'days',date:'2027-01-01'}},
+dice:{out:NX,spec:{name:24,notation:14},def:{name:'roll',notation:'2d6'}},
+bar:{out:NX,spec:{name:24,value:30,max:30,width:2},def:{name:'bar',value:'3',max:'10',width:'10'}},
+ordinal:{out:NX,spec:{name:24,input:30},def:{name:'ordinal',input:'{arg1}'}},
+numformat:{out:NX,spec:{name:24,input:30},def:{name:'number',input:'{arg1}'}},
+base:{out:NX,spec:{name:24,input:30,to:['bin','hex','oct','dec']},def:{name:'converted',input:'{arg1}',to:'bin'}},
+urlenc:{out:NX,spec:{name:24,input:300},def:{name:'encoded',input:'{args}'}},
+hashnum:{out:NX,spec:{name:24,input:200,max:9},def:{name:'score',input:'{args}',max:'100'}},
+rps:{out:NX,spec:{name:24,input:30},def:{name:'result',input:'{arg1}'}}
 }
 export const MAX_NODES=200
 const NAMEF=['name']
@@ -137,6 +165,14 @@ if(n.type==='http'&&!/^https:\/\//i.test(p.url))bad('The URL must start with htt
 if(n.type==='item')p.n=num(p.n,1,100,'Item number')
 if(n.type==='randnum'){p.min=num(p.min,-1000000,1000000,'Minimum');p.max=num(p.max,-1000000,1000000,'Maximum')}
 if(n.type==='caps'){p.percent=num(p.percent,1,100,'Percent');p.min=num(p.min,1,200,'Minimum letters')}
+if(n.type==='shortmsg')p.chars=num(p.chars,1,500,'Characters')
+if(n.type==='hasargs')p.min=num(p.min,0,50,'Arguments')
+if(n.type==='lengthcheck'){p.min=num(p.min,0,2000,'Minimum');p.max=num(p.max,0,2000,'Maximum')}
+if(n.type==='substr'){p.from=num(p.from,1,2000,'Start');p.len=num(p.len,0,500,'Length')}
+if(n.type==='percent')p.decimals=num(p.decimals,0,4,'Decimals')
+if(n.type==='dateadd')p.days=num(p.days,-36500,36500,'Days')
+if(n.type==='bar')p.width=num(p.width,3,30,'Width')
+if(n.type==='hashnum')p.max=num(p.max,1,1000000,'Highest')
 if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
 if(n.type==='emojispam'||n.type==='mentionspam')p.count=num(p.count,1,50,'Count')
 if(n.type==='newmember')p.days=num(p.days,1,365,'Days')
@@ -203,6 +239,11 @@ if(n.type==='longmsg')return t.length>=Number(n.p.chars)
 if(n.type==='badword'){const w=n.p.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean),l=t.toLowerCase();return w.some(x=>l.includes(x))}
 if(n.type==='emojispam')return(t.match(/\p{Extended_Pictographic}/gu)||[]).length>=Number(n.p.count)
 if(n.type==='mentionspam')return(t.match(/<@[a-z0-9_]+>/gi)||[]).length>=Number(n.p.count)
+if(n.type==='question')return/\?\s*$/.test(t)
+if(n.type==='shortmsg')return t.length>0&&t.length<=Number(n.p.chars)
+if(n.type==='codeblock')return t.includes('```')
+if(n.type==='hasnumber')return/\d/.test(t)
+if(n.type==='mediaurl')return/https?:\/\/\S+\.(png|jpe?g|gif|webp|mp4|webm|mov)(\?\S*)?(\s|$)|https?:\/\/(www\.)?(tenor|giphy)\.com\/\S+/i.test(t)
 if(n.type==='link')return/https?:\/\//i.test(t)
 if(n.type==='image')return(ctx.attachments||0)>0
 if(n.type==='msg'){
@@ -321,6 +362,29 @@ case'serverinfo':if(P.name)log.push({id:n.id,did:'serverinfo',value:setv(P.name,
 case'api':case'http':if(P.name&&calls<3){calls++;const r=n.type==='api'?await io.api(P.kind,R(P.input)):await io.http(R(P.url),R(P.path));const v=r&&r.text?r.text:R(P.fallback);log.push({id:n.id,did:n.type,value:setv(P.name,v)});if(r&&r.extra)for(const[k,x]of Object.entries(r.extra))setv(P.name+'_'+k,x)}break
 case'jsonget':if(P.name){let v='';try{const j=JSON.parse(R(P.input));const r=P.path?pathGet(j,P.path):j;v=r===undefined?'':typeof r==='object'?JSON.stringify(r):String(r)}catch{}log.push({id:n.id,did:'jsonget',value:setv(P.name,v)})}break
 case'item':if(P.name){const a=R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean);const v=P.op==='count'?String(a.length):P.op==='random'?(a[Math.floor(rnd()*a.length)]||''):P.op==='last'?(a[a.length-1]||''):(a[Number(P.n)-1]||'');log.push({id:n.id,did:'item',value:setv(P.name,v)})}break
+case'random3':route='c'+(1+Math.floor(rnd()*3));break
+case'between':{const v=Number(R(P.value));branch=Number.isFinite(v)&&v>=Math.min(Number(R(P.min)),Number(R(P.max)))&&v<=Math.max(Number(R(P.min)),Number(R(P.max)));break}
+case'evenodd':{const v=Number(R(P.value));branch=Number.isInteger(v)&&v%2===0;break}
+case'lengthcheck':{const l=[...R(P.input)].length;branch=l>=Number(P.min)&&l<=Number(P.max);break}
+case'hasargs':branch=(vars.args?vars.args.trim().split(/\s+/).length:0)>=Number(P.min);break
+case'isnumber':{const v=R(P.input).trim();branch=v!==''&&Number.isFinite(Number(v));break}
+case'substr':if(P.name)log.push({id:n.id,did:'substr',value:setv(P.name,[...R(P.input)].slice(Number(P.from)-1,Number(P.from)-1+Number(P.len)).join(''))});break
+case'percent':if(P.name){const a=Number(R(P.a)),b=Number(R(P.b)),d=Number(P.decimals);log.push({id:n.id,did:'percent',value:setv(P.name,Number.isFinite(a)&&Number.isFinite(b)&&b!==0?(a/b*100).toFixed(d):'')})}break
+case'stats':if(P.name){const a=R(P.input).split(/[\s,;]+/).filter(Boolean).map(Number).filter(Number.isFinite).slice(0,200),sm=a.reduce((x,y)=>x+y,0),so=[...a].sort((x,y)=>x-y);const v=!a.length?(P.what==='count'?'0':''):P.what==='sum'?sm:P.what==='average'?sm/a.length:P.what==='min'?so[0]:P.what==='max'?so[so.length-1]:P.what==='median'?(so.length%2?so[(so.length-1)/2]:(so[so.length/2-1]+so[so.length/2])/2):a.length;log.push({id:n.id,did:'stats',value:setv(P.name,String(typeof v==='number'?Math.round(v*1e6)/1e6:v))})}break
+case'sortlist':if(P.name){const a=R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean).slice(0,100);if(P.how==='shuffle'){for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}else if(P.how==='num'||P.how==='numdesc')a.sort((x,y)=>(Number(x)-Number(y))*(P.how==='num'?1:-1));else{a.sort((x,y)=>x.localeCompare(y));if(P.how==='za')a.reverse()}log.push({id:n.id,did:'sortlist',value:setv(P.name,a.join(', '))})}break
+case'joinlist':if(P.name)log.push({id:n.id,did:'joinlist',value:setv(P.name,R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean).slice(0,100).join(R(P.sep)))});break
+case'unique':if(P.name){const seen=new Set(),o=[];for(const x of R(P.input).split(/[\n,]/).map(x=>x.trim()).filter(Boolean).slice(0,100)){const k=x.toLowerCase();if(!seen.has(k)){seen.add(k);o.push(x)}}log.push({id:n.id,did:'unique',value:setv(P.name,o.join(', '))})}break
+case'occurs':if(P.name){const f=R(P.find).toLowerCase(),t=R(P.input).toLowerCase();log.push({id:n.id,did:'occurs',value:setv(P.name,String(f?t.split(f).length-1:0))})}break
+case'dateadd':if(P.name){const w=wall((ctx.at||Date.now())+Number(P.days)*86400000,P.tz||'UTC'),p2=x=>String(x).padStart(2,'0');log.push({id:n.id,did:'dateadd',value:setv(P.name,w.y+'-'+p2(w.mo)+'-'+p2(w.d))})}break
+case'daysuntil':if(P.name){const m=R(P.date).trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);let v='';if(m){const t=Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])),c=ctx.at||Date.now();v=String(Math.ceil((t-c)/86400000))}log.push({id:n.id,did:'daysuntil',value:setv(P.name,v)})}break
+case'dice':if(P.name){const m=R(P.notation).trim().toLowerCase().match(/^(\d{1,2})d(\d{1,4})([+-]\d{1,5})?$/);let v='';if(m&&Number(m[1])>0&&Number(m[2])>0&&Number(m[1])<=20){let sm=Number(m[3]||0);const r=[];for(let i=0;i<Number(m[1]);i++){const x=1+Math.floor(rnd()*Number(m[2]));r.push(x);sm+=x}v=String(sm);setv(P.name+'_rolls',r.join(', '))}log.push({id:n.id,did:'dice',value:setv(P.name,v)})}break
+case'bar':if(P.name){const a=Number(R(P.value)),b=Number(R(P.max)),w=Number(P.width);let v='';if(Number.isFinite(a)&&Number.isFinite(b)&&b>0){const f=Math.max(0,Math.min(w,Math.round(a/b*w)));v='▰'.repeat(f)+'▱'.repeat(w-f)}log.push({id:n.id,did:'bar',value:setv(P.name,v)})}break
+case'ordinal':if(P.name){const x=Number(R(P.input));let v='';if(Number.isInteger(x)){const a=Math.abs(x),s=a%100>=11&&a%100<=13?'th':['th','st','nd','rd'][a%10<4?a%10:0];v=x+s}log.push({id:n.id,did:'ordinal',value:setv(P.name,v)})}break
+case'numformat':if(P.name){const x=Number(R(P.input));log.push({id:n.id,did:'numformat',value:setv(P.name,Number.isFinite(x)?x.toLocaleString('en-US',{maximumFractionDigits:6}):'')})}break
+case'base':if(P.name){const x=Number(R(P.input));let v='';if(Number.isSafeInteger(x))v=P.to==='bin'?x.toString(2):P.to==='hex'?x.toString(16).toUpperCase():P.to==='oct'?x.toString(8):String(x);log.push({id:n.id,did:'base',value:setv(P.name,v)})}break
+case'urlenc':if(P.name)log.push({id:n.id,did:'urlenc',value:setv(P.name,encodeURIComponent(R(P.input)))});break
+case'hashnum':if(P.name){let hh=2166136261;for(const c of R(P.input).trim().toLowerCase()){hh^=c.codePointAt(0);hh=Math.imul(hh,16777619)>>>0}log.push({id:n.id,did:'hashnum',value:setv(P.name,String(hh%(Number(P.max)+1)))})}break
+case'rps':if(P.name){const o=['rock','paper','scissors'],u=R(P.input).trim().toLowerCase(),b=o[Math.floor(rnd()*3)],i=o.indexOf(u);setv(P.name+'_bot',b);log.push({id:n.id,did:'rps',value:setv(P.name,i<0?'invalid':i===o.indexOf(b)?'tie':(i+1)%3===o.indexOf(b)?'lose':'win')})}break
 case'pick':{const o=P.options.split('\n').map(x=>x.trim()).filter(Boolean);if(o.length&&P.name)log.push({id:n.id,did:'pick',value:setv(P.name,R(o[Math.floor(rnd()*o.length)]))});break}
 case'set':if(P.name)log.push({id:n.id,did:'set',value:setv(P.name,R(P.value))});break
 case'count':if(P.name)log.push({id:n.id,did:'count',value:setv(P.name,String(await io.count(P.name.toLowerCase(),Number(P.by)||0,P.scope)))});break
