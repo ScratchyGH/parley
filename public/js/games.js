@@ -19,7 +19,7 @@ const PK={winter:['Winter games','Snow, gifts and cold air.'],spring:['Spring ga
 let cssOn=false
 const css=()=>{if(cssOn)return;cssOn=true;document.head.append(h('link',{rel:'stylesheet',href:'/games.css'}))}
 export const gamesIcon=s=>svg(s,'0 0 24 24',sv('path',{d:'M7 8h10a5 5 0 0 1 4.8 6.4l-.9 3a2.4 2.4 0 0 1-4 1L15 17H9l-1.9 1.4a2.4 2.4 0 0 1-4-1l-.9-3A5 5 0 0 1 7 8Z',fill:'none',stroke:'currentColor','stroke-width':'1.8','stroke-linejoin':'round'}),sv('path',{d:'M8 11v4M6 13h4',stroke:'currentColor','stroke-width':'1.8','stroke-linecap':'round'}),sv('circle',{cx:'15.5',cy:'12',r:'1',fill:'currentColor'}),sv('circle',{cx:'17.5',cy:'14',r:'1',fill:'currentColor'}))
-async function launch(id){
+async function launch(id,o){
 css()
 const box=h('div',{class:'gm-box'})
 const x=h('button',{class:'btn sm gm-x','aria-label':'Leave the game'},'Leave game')
@@ -29,7 +29,7 @@ gameBar(root,id)
 let stop=null,over=false
 const end=()=>{if(over)return;over=true;try{stop&&stop()}catch{}root.remove();x.remove();document.exitFullscreen?.().catch(()=>{})}
 x.addEventListener('click',end)
-try{const m=await import('/gm/'+(FILE[id]||id)+'.js');if(over)return;stop=m.play(box)}catch(e){end();toast('Could not load the game','err')}
+try{const m=await import('/gm/'+(FILE[id]||id)+'.js');if(over)return;stop=m.play(box,o)}catch(e){end();toast('Could not load the game','err')}
 }
 export function gamesPage(pg){
 css()
@@ -53,7 +53,7 @@ const head=h('div',{class:'row',style:{display:'flex',gap:'10px',alignItems:'cen
 let body
 if(st.tab==='play'){
 const cl=Object.keys(GM).filter(k=>GM[k][2]==='classic'),hr=['deepsleep']
-body=[h('div',{class:'gm-feat'},h('div',null,h('h3',null,'Deep Sleep'),h('p',null,GM.deepsleep[1])),h('button',{class:'btn pri',on:{click:()=>launch('deepsleep')}},'Play Deep Sleep')),h('h3',{class:'gm-sec'},'Classics',h('small',null,'Free. Play any time.')),h('div',{class:'gm-grid'},cl.map(k=>card(k,false))),h('h3',{class:'gm-sec'},'More horror',h('small',null,'Free.')),h('div',{class:'gm-grid'},hr.map(k=>card(k,false)),hwOn()?h('div',{class:'gm-card'},h('h3',null,'Haunted Hollow'),h('p',null,'Gourd Rush, Terror Night and Hollow Siege for the Halloween event.'),h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/hollow')}},'Open the event'))):null)]
+body=[h('div',{class:'gm-feat'},h('div',null,h('h3',null,'Deep Sleep'),h('p',null,GM.deepsleep[1])),h('div',{class:'row'},h('button',{class:'btn pri',on:{click:()=>launch('deepsleep')}},'Play Deep Sleep'),h('button',{class:'btn sm',on:{click:()=>launch('deepsleep',{replay:'intro'})}},'Replay intro'),h('button',{class:'btn sm',on:{click:()=>launch('deepsleep',{replay:'betrayal'})}},'Replay betrayal'),h('button',{class:'btn sm',on:{click:()=>launch('deepsleep',{replay:'death'})}},'Replay Deep Death'))),h('h3',{class:'gm-sec'},'Classics',h('small',null,'Free. Play any time.')),h('div',{class:'gm-grid'},cl.map(k=>card(k,false))),h('h3',{class:'gm-sec'},'More horror',h('small',null,'Free.')),h('div',{class:'gm-grid'},hr.map(k=>card(k,false)),hwOn()?h('div',{class:'gm-card'},h('h3',null,'Haunted Hollow'),h('p',null,'Gourd Rush, Terror Night and Hollow Siege for the Halloween event.'),h('div',{class:'row'},h('button',{class:'btn sm',on:{click:()=>go('/hollow')}},'Open the event'))):null)]
 }else if(st.tab==='seasonal'){
 body=Object.keys(PK).map(p=>{const un=st.d.unlocked.includes(p);return h('div',null,h('h3',{class:'gm-sec'},PK[p][0],h('small',null,un?'Unlocked. '+PK[p][1]:PK[p][1]+' Unlock with Pars.')),h('div',{class:'gm-grid'},Object.keys(GM).filter(k=>GM[k][2]===p).map(k=>card(k,!un,p))))})
 }else{
