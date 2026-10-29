@@ -84,6 +84,7 @@ startDiag()
 startRevamp()
 startUpdates()
 startStreaks(()=>renderCtx())
+{const tc=new URLSearchParams(location.search).get('tu');if(tc&&/^[A-Z0-9]{6}$/.test(tc)){history.replaceState(null,'','/');setTimeout(()=>import('/js/teamup.js').then(x=>x.openTeamup(tc)),900)}}
 setTimeout(whatsNew,1200)
 setTimeout(maybeTour,2600)
 }
@@ -368,6 +369,7 @@ loadServers().then(()=>{if(S.nav.sid===id){toast(m.t==='server.deleted'?'This se
 break
 }
 case'notice':toast(m.text);break
+case'tu.invite':import('/js/teamup.js').then(x=>x.showInvite(m));break
 case'bot.device':deviceRequest(m);break
 case'call.ring':
 if(V.ch){POST(`/api/conversations/${m.room}/ring/decline`,{busy:true}).catch(()=>{});break}
