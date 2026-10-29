@@ -279,7 +279,8 @@ if(res.ok&&ct.includes('text/html')){
 const reader=res.body.getReader()
 let html='',n=0
 const dec=new TextDecoder()
-while(n<200000){const{done,value}=await reader.read();if(done)break;n+=value.length;html+=dec.decode(value,{stream:true});if(html.includes('</head>'))break}
+const itch=/(^|\.)itch\.io$/.test(host)
+while(n<(itch?160000:200000)){const{done,value}=await reader.read();if(done)break;n+=value.length;html+=dec.decode(value,{stream:true});if(itch?/itch\.zone\/html\/[\w\-\/.]+/.test(html):html.includes('</head>'))break}
 reader.cancel().catch(()=>{})
 const meta=(k)=>{const m=html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${k}["'][^>]*content=["']([^"']*)["']`,'i'))||html.match(new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${k}["']`,'i'));return m?m[1]:''}
 const t=html.match(/<title[^>]*>([^<]*)<\/title>/i)
@@ -287,6 +288,7 @@ const dec2=s=>s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').
 out.title=dec2(meta('og:title')||(t?t[1].trim():''))
 out.description=dec2(meta('og:description')||meta('description'))
 out.site=dec2(meta('og:site_name')||host)
+if(itch){const pm=html.match(/https:\/\/[a-z-]+\.itch\.zone\/html\/[\w\-\/.]+/);if(pm)out.play=pm[0]}
 }
 }catch{}finally{clearTimeout(timer)}
 const resp=new Response(JSON.stringify(out),{headers:{'content-type':'application/json','cache-control':'public, max-age=3600'}})
