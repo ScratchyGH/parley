@@ -15,6 +15,7 @@ clover:{name:'Lucky Clover',from:[2,16],to:[3,14]},
 rain:{name:'Rainfall',from:[4,13],to:[6,14]},
 time:{name:'Timeskipper',from:[9,1],to:[9,30]},
 bday13:{name:'Birthday Bomb',from:[10,31],to:[12,31]},
+school:{name:'Back to School',from:[8,15],to:[9,7]},
 ny26:{name:'New Years 2026',from:[12,31],to:[1,1]}
 }
 export function seasonWindow(key,t=Date.now()){
