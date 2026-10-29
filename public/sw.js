@@ -26,4 +26,3 @@ await self.clients.openWindow(url)
 })())
 })
 
-self.addEventListener('fetch',()=>{})
