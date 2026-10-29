@@ -1,3 +1,4 @@
+import'./perf.js'
 import'./halloween.js'
 import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce,fmtStamp}from'./util.js'
 import{render}from'./md.js'
@@ -387,7 +388,7 @@ const room=msg.room
 if(room.startsWith('th_')&&currentRoom()!==room&&!isMention(ev,S.threads[room]?.sid))return
 const own=msg.author.id===S.me.id
 chatEvent(room,ev)
-if(msg.author.username==='ᴄᴀɴᴅʏʏʏ'&&/\bkaboom\b/i.test(msg.content||''))setTimeout(()=>{const l=[...document.querySelectorAll('.av[data-uid="'+msg.author.id+'"]')];const a=l[l.length-1];if(a)import('./cakefx.js').then(m=>m.throwCake(a))},350)
+if(msg.author.username==='ᴄᴀɴᴅʏʏʏ'&&/\bkaboom\b/i.test(msg.content||''))kaboom(msg)
 if(own)return
 cacheUser(msg.author)
 const dm=isDm(room)
@@ -541,3 +542,5 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwa=e})
 addEventListener('appinstalled',()=>{window.__pwa=null})
 if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.t==='goto'&&S.me)go(e.data.url)})
 boot()
+
+function kaboom(msg){let n=0;const t=setInterval(()=>{const vis=e=>{const r=e.getBoundingClientRect();return r.width>=8&&r.height>=8};const w=document.querySelector('.mw[data-id="'+msg.id+'"] .av');let a=w&&vis(w)?w:null;if(!a){const l=[...document.querySelectorAll('.av[data-uid="'+msg.author.id+'"]')].filter(vis);a=l[l.length-1]}if(a){clearInterval(t);import('./cakefx.js').then(m=>m.throwCake(a))}else if(++n>8)clearInterval(t)},200)}

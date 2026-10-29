@@ -442,13 +442,16 @@ for(const p of V.peers.values())await tuneSender(p.senders.scr)
 export async function toggleScreen(){
 if(!V.ch)return
 if(V.scr){stopScreen();return}
-if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){toast(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?'Your phone browser cannot share its screen. You can still watch others share, or share from a computer.':'Screen sharing is not supported in this browser. Try Chrome, Edge, Firefox or Safari on a computer.','err');return}
+const md=navigator.mediaDevices
+if(!md){toast('Sharing needs a secure connection and a modern browser.','err');return}
 const pr=voicePrefs()
-try{
-V.scr=await navigator.mediaDevices.getDisplayMedia({video:scrConstraints(pr),audio:pr.scrAudio?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false})
+if(!md.getDisplayMedia){
+try{V.scr=await md.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:false});toast('This device cannot share its screen, so your camera is being shared instead.')}catch(e){if(e.name!=='NotAllowedError')toast('Could not start sharing: '+e.message,'err');return}
+}else try{
+V.scr=await md.getDisplayMedia({video:scrConstraints(pr),audio:pr.scrAudio?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false})
 }catch(e){
 if(e.name==='NotAllowedError')return
-try{V.scr=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false})}catch(e2){if(e2.name!=='NotAllowedError')toast('Could not start screen share: '+e2.message,'err');return}
+try{V.scr=await md.getDisplayMedia({video:true,audio:false})}catch(e2){if(e2.name!=='NotAllowedError')toast('Could not start screen share: '+e2.message,'err');return}
 }
 const at=V.scr.getAudioTracks()
 if(pr.scrAudio&&!at.length)toast('No audio was shared. In the picker, choose a tab or the entire screen and tick the audio box.','err')

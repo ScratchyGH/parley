@@ -83,6 +83,7 @@ h('div',{class:'hq-art'},q.kind==='night'?h('span',{class:'hq-n'},String(q.seq))
 h('div',{class:'hq-b'},h('h5',null,q.title),h('p',null,q.descr),h('div',{class:'hq-bar'},h('i',{style:{width:pr+'%'}})),h('div',{class:'hq-rw'},h('span',{class:'hq-c'},candySvg(15),String(q.candy)),h('span',null,q.xp+' XP'),h('span',{class:'hq-prog'},metricText(q,q.n)))),
 s==='claimed'?h('button',{class:'btn sm',disabled:true},'Claimed'):s==='lock'?h('button',{class:'btn sm',disabled:true},'Locked'):s==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim'):h('span',{class:'hq-go'},Math.round(pr)+'%'))
 }
+import{gameBar}from'./gamebar.js'
 async function startRush(rerender,mode){
 let run
 try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
@@ -92,6 +93,7 @@ const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the run'},'Leave run')
 const root=h('div',{class:'hw-game hw-rushg',role:'dialog','aria-modal':'true','aria-label':mode==='terror'?'Terror Night':'Gourd Rush'},box,closeBtn)
 document.body.append(root)
+gameBar(root,'parley')
 let stop=null,over=false
 const end=async()=>{
 if(over)return
@@ -120,6 +122,7 @@ const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the shift'},'Leave shift')
 const root=h('div',{class:'hw-game',role:'dialog','aria-modal':'true','aria-label':'Hollow Siege'},box,closeBtn)
 document.body.append(root)
+gameBar(root,'parley')
 let stop=null,over=false
 const end=async()=>{
 if(over)return

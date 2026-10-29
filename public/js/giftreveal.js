@@ -1,4 +1,5 @@
-import{h,GET,POST,icon,sleep}from'./util.js'
+import{h,GET,POST,icon,sleep,toast}from'./util.js'
+import{gaming}from'./gamebar.js'
 import{swatch,parIcon}from'./pars.js'
 import{candySvg}from'./hollow.js'
 import{hwOn}from'./halloween.js'
@@ -94,6 +95,8 @@ if(!gl)start()
 }
 async function run(){
 if(busy)return
+if(gaming()){if(!told){told=true;toast('You got a gift. It will open when you finish playing.')}return}
+told=false
 busy=true
 try{
 for(let n=0;n<10;n++){
@@ -110,7 +113,7 @@ await sleep(250)
 }
 }finally{busy=false}
 }
-let started=false
+let started=false,told=false
 export function checkGifts(){
 setTimeout(run,300)
 if(started)return

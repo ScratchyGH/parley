@@ -16,11 +16,12 @@ import{tweaksPage}from'./tweaks.js'
 import{p2pStats,clearP2PCache,startP2P,stopP2P}from'./p2p/index.js'
 import{nativeSupport}from'./codec.js'
 import{labsPage}from'./labs.js'
+import{LV,cpu,gpu,setLevel}from'./perf.js'
 import{parsPage,loadoutBox}from'./pars.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
-['account','My account'],['profile','Profile'],['appearance','Appearance'],['tweaks','Tweaks'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
+['account','My account'],['profile','Profile'],['appearance','Appearance'],['tweaks','Tweaks'],['performance','Performance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
 ]
 
 async function saveSettings(patch){
@@ -53,7 +54,7 @@ try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 drawNav()
-const fn={apps:appsPage,pars:parsPage,tweaks:tweaksPage,account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
+const fn={apps:appsPage,pars:parsPage,tweaks:tweaksPage,performance:perfPage,account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
 mount(pg)
 fn(pg,{close:()=>go('/')})
 GET('/api/lab/status').then(x=>{if(x.labs){labs=true;drawNav()}}).catch(()=>{})
@@ -431,4 +432,13 @@ dl('Linux','AppImage for most 64-bit distributions. Make it executable (chmod +x
 dl('Android','Debug-signed package for sideloading. Allow installs from your browser or file manager, then open the file.',d.android,'.apk'),
 h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'iPhone and iPad'),h('div',{class:'hint'},ios?(standalone?'You are using the installed app. Push notifications work from here.':'Tap Share in Safari, then Add to Home Screen. Open Parley from the new icon to get the full-screen app. iOS 16.4 or later is needed for push notifications, and they only work from the installed app.'):'Open Parley in Safari on your iPhone or iPad, tap Share, then Add to Home Screen. It runs full screen like an app, and iOS 16.4 or later supports push notifications from it.')),
 h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'Install Parley as its own app'),h('div',{class:'hint'},standalone?'You are using the installed app. It has its own window and shows up as Parley in your task manager.':'Installs Parley in its own window with its own icon, and it shows up as its own app in Task Manager. Chrome and Edge on desktop and Android support this. Safari: Share, then Add to Home Screen.'),standalone?null:h('button',{class:'btn pri',style:{marginTop:'8px'},on:{click:async()=>{const e=window.__pwa;if(!e){toast('Use the install icon in the address bar, or the browser menu and Install Parley.');return}e.prompt();try{await e.userChoice}catch{}window.__pwa=null}}},'Install Parley')))
+}
+
+function perfPage(pg){
+const row=(k,get)=>h('div',{class:'tabs',style:{flexWrap:'wrap'}},LV.map((l,i)=>h('button',{class:get()===i?'on':'','aria-pressed':String(get()===i),on:{click:()=>{setLevel(k,i);perfPage(pg)}}},l)))
+mount(pg,[
+h('h2',null,'Performance'),
+field('CPU usage',row('cpu',cpu),'Lower uses less processing: slower background polling, no link game embeds or extra effects on Low, and lighter game logic. Takes effect right away.'),
+field('GPU usage',row('gpu',gpu),'Lower uses less graphics power: Low turns off blur, shadows and animations, and renders games at a smaller resolution. Max renders games sharper with more particles.')
+])
 }

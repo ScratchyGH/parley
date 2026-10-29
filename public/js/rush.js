@@ -9,7 +9,7 @@ wisp:{r:9,hp:8,sp:112,dmg:5,xp:1,spr:'wisp'},
 ghoul:{r:14,hp:32,sp:52,dmg:9,xp:3,spr:'ghoul'},
 bone:{r:12,hp:22,sp:72,dmg:7,xp:2,spr:'bone'},
 reaper:{r:20,hp:210,sp:62,dmg:16,xp:14,spr:'reaper'},
-boss:{r:56,hp:2600,sp:46,dmg:24,xp:120,spr:'boss'}
+boss:{r:56,hp:1450,sp:40,dmg:14,xp:120,spr:'boss'}
 }
 const UPS=[
 ['dmg','Hotter Wax','Flames hit 25% harder',6,p=>{p.dmg*=1.25}],
@@ -40,7 +40,7 @@ const dk=el('canvas'),dctx=dk.getContext('2d')
 const lite=document.documentElement.classList.contains('perf')
 const calm=matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.classList.contains('rm')
 let W=800,H=500,Z=2,D=1,VW=400,VH=250
-const fit=()=>{D=Math.min(1.5,devicePixelRatio||1);W=box.clientWidth||800;H=box.clientHeight||500;cv.width=Math.round(W*D);cv.height=Math.round(H*D);Z=Math.max(1.5,Math.min(2.6,Math.min(W,H)/270));VW=W/Z;VH=H/Z;const k=lite?.35:.5;dk.width=Math.round(W*k);dk.height=Math.round(H*k)}
+const fit=()=>{D=Math.max(.5,Math.min(1.5,(devicePixelRatio||1)*[.6,.8,1,1.1,1.25][(window.__perf||{gpu:2}).gpu]));W=box.clientWidth||800;H=box.clientHeight||500;cv.width=Math.round(W*D);cv.height=Math.round(H*D);Z=Math.max(1.5,Math.min(2.6,Math.min(W,H)/270));VW=W/Z;VH=H/Z;const k=lite?.35:.5;dk.width=Math.round(W*k);dk.height=Math.round(H*k)}
 fit()
 const ro=new ResizeObserver(fit)
 ro.observe(box)
@@ -55,6 +55,7 @@ let ACT=[],EYES=[],LBL=[],RF=null,scare=0,beatT=0,bolt=8,whT=4
 const CD={},BS=new Map()
 const abBtn=[]
 const CELL=380
+const PC=[60,120,300,450,700][(window.__perf||{gpu:2}).gpu]
 let t=0,kills=0,acc=0,bi=0,phase='menu',paused=false,raf=0,last=0,shake=0,boss=null,orbA=0,note='',noteT=0,id=0,endT=0,won=false,jx=0,jy=0,jo=null,beep=0,clock=0,novaFx=0,cur=[],muted=false,best=0
 try{best=Number(localStorage.getItem(BK))||0}catch{}
 const prev=best
@@ -77,7 +78,7 @@ if(mt++%8===0){const b=ac.createOscillator(),bg=ac.createGain();b.type='triangle
 }catch{}
 }
 const mus=setInterval(music,520)
-const burst=(x,y,n,c,s)=>{for(let i=0;i<n&&F.length<300;i++){const a=R()*TAU,v=(.3+R())*(s||90);F.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.3+R()*.35,m:.65,c,s:1.4+R()*2.2})}}
+const burst=(x,y,n,c,s)=>{for(let i=0;i<n&&F.length<PC;i++){const a=R()*TAU,v=(.3+R())*(s||90);F.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.3+R()*.35,m:.65,c,s:1.4+R()*2.2})}}
 const text=(x,y,v,c,big)=>{if(X.length<40)X.push({x:x+(R()-.5)*10,y,v,c,big,l:.8,m:.8})}
 const say=s=>{note=s;noteT=2.8}
 const spawnE=(k,x,y,sc)=>{const T=TY[k];E.push({id:++id,k,x,y,r:T.r,hp:T.hp*sc,mx:T.hp*sc,sp:T.sp*(.92+R()*.16),dmg:T.dmg,xp:T.xp,fl:0,oc:0,ph:R()*6,ch:0,bs:R()*2,sx:1,kx:0,ky:0})}
@@ -277,14 +278,14 @@ if(m>.05){P.x+=kx*P.spd*sm*dt;P.y+=ky*P.spd*sm*dt;P.fx=kx;P.fy=ky;P.dx=kx/m;P.dy
 P.hit-=dt
 P.slow-=dt;P.inv-=dt;P.wardT-=dt
 if(P.wardT<=0)P.ward=0
-if(P.dash>0){P.dash-=dt;P.x+=P.dx*640*dt;P.y+=P.dy*640*dt;if(F.length<300)F.push({x:P.x,y:P.y,vx:0,vy:0,l:.25,m:.25,c:'#8fe3ff',s:5})}
+if(P.dash>0){P.dash-=dt;P.x+=P.dx*640*dt;P.y+=P.dy*640*dt;if(F.length<PC)F.push({x:P.x,y:P.y,vx:0,vy:0,l:.25,m:.25,c:'#8fe3ff',s:5})}
 if(TR)terror(dt)
 if(P.reg)P.hp=Math.min(P.max,P.hp+P.reg*dt)
 acc+=dt*(TR?Math.min(3.6,.4+t/90):Math.min(7,.65+t/40))
 while(acc>=1){acc--;if(E.length<70+Math.min(190,t*.62))pick()}
 if(bi<BOSS_AT.length&&t>=BOSS_AT[bi]&&!boss){
 const[x,y]=ring()
-spawnE('boss',x,y,1+bi*.85)
+spawnE('boss',x,y,1+bi*.5)
 boss=E[E.length-1]
 boss.name=(TR?['The Gravedigger','The Pale Choir','Mother Night']:['The Hollowgrin','The Hollowgrin Returns','The Last Harvest'])[bi]
 bi++
@@ -318,10 +319,10 @@ else if(k==='weeper'){const lk=(P.fx*-dx+P.fy*-dy)/d;e.fz=lk>.25&&(Math.abs(P.fx
 }
 if(e.k==='boss'){
 e.bs+=dt
-if(e.bs>2.8){e.bs=0;for(let j=0;j<3;j++)spawnE(TR?'crawler':'wisp',e.x+(R()-.5)*100,e.y+(R()-.5)*100,1+t/130)}
+if(e.bs>4.6){e.bs=0;for(let j=0;j<2;j++)spawnE(TR?'crawler':'wisp',e.x+(R()-.5)*100,e.y+(R()-.5)*100,1+t/130)}
 e.ch+=dt
-if(e.ch>6)e.ch=-1
-if(e.ch<0){sp*=3.2;e.ch-=dt;if(e.ch<-1.1)e.ch=0}
+if(e.ch>8.5)e.ch=-1
+if(e.ch<0){sp*=2.2;e.ch-=dt;if(e.ch<-.8)e.ch=0}
 }else if(e.k==='ghoul'){
 e.ch+=dt
 if(e.ch>3.6+e.ph*.2){e.ch=-.45}
@@ -349,7 +350,7 @@ if(d<mm*mm&&d>.01){const q=Math.sqrt(d),f=(mm-q)*.5;if(a.k!=='boss'){a.x-=dx/q*f
 for(let i=B.length-1;i>=0;i--){
 const b=B[i]
 b.x+=b.vx*dt;b.y+=b.vy*dt;b.l-=dt
-if(F.length<300&&R()<.5)F.push({x:b.x,y:b.y,vx:0,vy:0,l:.18,m:.18,c:'#ffb347',s:2})
+if(F.length<PC&&R()<.5)F.push({x:b.x,y:b.y,vx:0,vy:0,l:.18,m:.18,c:'#ffb347',s:2})
 let dead=b.l<=0
 if(!dead)for(const e of E){
 const dx=e.x-b.x,dy=e.y-(b.y+8),mm=e.r+5
