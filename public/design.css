@@ -1448,7 +1448,7 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 @keyframes bdfall{0%{transform:translateY(-130%) rotate(-14deg);opacity:0}12%{opacity:1}100%{transform:translateY(240%) rotate(20deg);opacity:.9}}
 .m:hover,.msgs .m:hover{background:transparent}
 .m.hl,.m.hl:hover{background:color-mix(in srgb,var(--hi) 16%,transparent)}
-.itch{margin:6px 0}.itch-fr{width:min(640px,100%);aspect-ratio:16/10;border:0;border-radius:12px;background:#000;display:block}.itch-bar{margin-top:6px}
+.itch{margin:6px 0;max-width:min(860px,100%)}.itch-fr{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;background:#000;display:block}.itch-bar{margin-top:6px;flex-wrap:wrap;gap:6px}.itch:fullscreen,.itch.itchmax{display:flex;flex-direction:column;width:100%;height:100%;max-width:none;margin:0;background:#000}.itch.itchmax{position:fixed;inset:0;z-index:9999}.itch:fullscreen .itch-fr,.itch.itchmax .itch-fr{flex:1;min-height:0;aspect-ratio:auto;border-radius:0;height:auto}.itch:fullscreen .itch-bar,.itch.itchmax .itch-bar{margin:0;padding:6px;background:#000}html:has(.itch-fr) *,html:has(.itch-fr) *::before,html:has(.itch-fr) *::after{animation-play-state:paused!important}
 @keyframes hzp{0%,100%{opacity:1}45%{opacity:.55}50%{opacity:1}70%{opacity:.7}}
 @keyframes hzg{0%,92%,100%{transform:none}94%{transform:translateX(-2px) skewX(6deg)}96%{transform:translateX(2px) skewX(-6deg)}}
 .fr_horror .frm{border-radius:50%;box-shadow:0 0 0 3px #450a0a,0 0 0 5px #991b1b,0 0 16px 5px rgba(220,38,38,.65);animation:hzp 2.3s steps(1) infinite}
