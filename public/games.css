@@ -1,0 +1,14 @@
+.gm-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.gm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.gm-card{display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:22px;background:var(--panel);border:1px solid var(--border)}
+.gm-card h3{margin:0;font-size:18px;color:var(--strong)}
+.gm-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.5;flex:1}
+.gm-card .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gm-lock{opacity:.9}
+.gm-sec{margin:22px 0 10px;font-size:20px;color:var(--strong)}
+.gm-sec small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:2px}
+.gm-game{position:fixed;inset:0;z-index:2147482000;background:#0b0b0d;display:flex}
+.gm-box{flex:1;position:relative;min-width:0;min-height:0}
+.gm-x{position:fixed;top:12px;right:12px;z-index:2147483000}
+.gm-shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.gm-prev{min-height:60px;display:flex;align-items:center}

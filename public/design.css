@@ -1449,3 +1449,13 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .m:hover,.msgs .m:hover{background:transparent}
 .m.hl,.m.hl:hover{background:color-mix(in srgb,var(--hi) 16%,transparent)}
 .itch{margin:6px 0}.itch-fr{width:min(640px,100%);aspect-ratio:16/10;border:0;border-radius:12px;background:#000;display:block}.itch-bar{margin-top:6px}
+@keyframes hzp{0%,100%{opacity:1}45%{opacity:.55}50%{opacity:1}70%{opacity:.7}}
+@keyframes hzg{0%,92%,100%{transform:none}94%{transform:translateX(-2px) skewX(6deg)}96%{transform:translateX(2px) skewX(-6deg)}}
+.fr_horror .frm{border-radius:50%;box-shadow:0 0 0 3px #450a0a,0 0 0 5px #991b1b,0 0 16px 5px rgba(220,38,38,.65);animation:hzp 2.3s steps(1) infinite}
+.ef_horror::after{inset:-14%;border-radius:calc(var(--avr) + 14%);background:radial-gradient(ellipse at 50% 120%,rgba(0,0,0,.95),transparent 60%),radial-gradient(ellipse at 20% 110%,rgba(127,29,29,.8),transparent 55%),radial-gradient(ellipse at 80% 110%,rgba(127,29,29,.8),transparent 55%);animation:hzp 3s linear infinite}
+.np_horror{background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px),linear-gradient(100deg,#0a0000,#2a0505 60%,#5f1111);color:#fecaca;text-shadow:0 0 6px #b91c1c;animation:hzp 2.7s steps(1) infinite}
+.np_horror::before{display:none}
+.nf_horror{background:linear-gradient(90deg,#fecaca,#dc2626,#fff,#991b1b,#fecaca);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:npshift 4s linear infinite,hzg 3.4s linear infinite}
+.bd_horror{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 12Q12 2 23 12Q12 22 1 12Z' fill='%23f5f0e6' stroke='%23450a0a' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='4.6' fill='%23991b1b'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%23000'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center}
+.ti_horror{color:#fecaca;background:linear-gradient(90deg,rgba(0,0,0,.7),rgba(127,29,29,.55));background-size:200% 100%;animation:npshift 5s linear infinite}.ti_horror::before{content:"Night Shift"}
+.m.bb_horror,.par-msg.bb_horror{border-radius:12px;box-shadow:inset 3px 0 0 #7f1d1d;background-image:linear-gradient(180deg,rgba(0,0,0,.35),rgba(127,29,29,.14)),radial-gradient(3px 12px at 12% 0,#991b1b,transparent 70%),radial-gradient(3px 18px at 47% 0,#7f1d1d,transparent 70%),radial-gradient(3px 9px at 83% 0,#991b1b,transparent 70%)}
