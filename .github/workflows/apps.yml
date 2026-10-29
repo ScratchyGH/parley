@@ -46,7 +46,9 @@ jobs:
           const{app,BrowserWindow,shell,session,dialog,desktopCapturer,ipcMain}=require('electron')
           const{autoUpdater}=require('electron-updater')
           const SITE=process.env.PARLEY_SITE||'__SITE__'
-          let win
+          let win,cache=[],cacheAt=0,busy=false
+          const grab=()=>desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:320,height:200},fetchWindowIcons:false}).then(r=>{cache=r;cacheAt=Date.now();return r})
+          const refresh=()=>{if(busy)return;busy=true;grab().catch(()=>{}).finally(()=>{busy=false})}
           const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
           const pick=(parent,sources)=>new Promise(res=>{
           const p=new BrowserWindow({width:760,height:520,parent,modal:true,show:false,autoHideMenuBar:true,backgroundColor:'#0a0a09',title:'Choose what to share',webPreferences:{contextIsolation:true,sandbox:true,preload:require('path').join(__dirname,'picker.js')}})
@@ -76,7 +78,7 @@ jobs:
           const check=()=>{lastCheck=Date.now();return autoUpdater.checkForUpdates().catch(()=>{})}
           setTimeout(check,5000)
           setInterval(check,3600*1000)
-          app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check()})
+          app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check();refresh()})
           }
           const lock=app.requestSingleInstanceLock()
           if(!lock)app.quit()
@@ -86,7 +88,8 @@ jobs:
           session.defaultSession.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(SITE)&&['media','display-capture','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
           session.defaultSession.setDisplayMediaRequestHandler(async(req,cb)=>{
           try{
-          const src=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:420,height:260}})
+          let src=cache.length&&Date.now()-cacheAt<30000?cache:await grab()
+          refresh()
           if(!src.length)return cb({})
           const id=await pick(win,src)
           const s=src.find(x=>x.id===id)
@@ -99,6 +102,7 @@ jobs:
           win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
           win.webContents.setUserAgent(win.webContents.getUserAgent()+' ParleyDesktop/2')
           win.loadURL(SITE)
+          win.webContents.once('did-finish-load',()=>setTimeout(refresh,1500))
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
           if(app.isPackaged&&process.platform!=='darwin')updates()
           })
