@@ -461,3 +461,5 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 .vwrap video{display:block;max-width:100%}
 .vexp{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .15s}
 .vwrap:hover .vexp,.vwrap:focus-within .vexp{opacity:1}
+.m:hover,.msgs .m:hover{background:transparent}
+.m.hl,.m.hl:hover{background:color-mix(in srgb,var(--hi) 16%,transparent)}

@@ -79,3 +79,6 @@
 .hw-fr{display:grid;grid-template-columns:54px 1fr 24px;align-items:center;gap:8px;font-size:13px}
 .hw-fr input[type=range]{width:100%}
 .hw-fr input[type=checkbox]{justify-self:start}
+.hw-terror{border-color:#5a1414;background:linear-gradient(180deg,#1a0606,#0a0203)}
+.hw-terror .hw-play-t h3{color:#ff4a3a}
+.hw-terror .hw-rec::before{background:#ff1a1a}
