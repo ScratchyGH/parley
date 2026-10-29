@@ -272,7 +272,7 @@ const res=await fetch(u.href,{redirect:'follow',headers:{'user-agent':'ParleyLin
 const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()
 if(!res.ok||!/^image\/(png|jpeg|webp|gif|avif)$/.test(ct))fail(404,'No image')
 const buf=await res.arrayBuffer()
-if(buf.byteLength>2500000)fail(404,'Image too large')
+if(buf.byteLength>6000000)fail(404,'Image too large')
 const out=new Response(buf,{headers:{'content-type':ct,'cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
 c.ec.waitUntil(caches.default.put(key,out.clone()))
 return out
