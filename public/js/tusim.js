@@ -5,9 +5,9 @@ const TAU=Math.PI*2
 const g=D/2
 const hs=(i,j,k)=>{let h=Math.imul(i,73856093)^Math.imul(j,19349663)^Math.imul(k,83492791);h=Math.imul(h^(h>>>15),2246822507);h=Math.imul(h^(h>>>13),3266489909);return(h^(h>>>16))>>>0}
 const rf=(i,j,k)=>hs(i,j,k)/4294967296
-const KB={chapel:[440,320],house:[360,360],armory:[420,300]}
-const SOL={tower:[24,12],crypt:[48,22],well:[28,14],shrine:[20,12]}
-const FORCE={'1,0':'chapel','-1,0':'armory','0,1':'shrine','0,-1':'house','1,1':'crypt','-1,-1':'tower','-1,1':'well'}
+const KB={chapel:[440,320],house:[360,360],armory:[420,300],cabin:[300,240]}
+const SOL={tower:[24,12],crypt:[48,22],well:[28,14],shrine:[20,12],campfire:[18,8],altar:[26,12]}
+const FORCE={'1,0':'chapel','-1,0':'armory','0,1':'campfire','0,-1':'cabin','1,1':'crypt','-1,-1':'tower','-1,1':'well','2,0':'hole','-2,0':'hole','0,2':'altar','1,-1':'house','-1,2':'shrine'}
 const SIDES=['n','s','w','e']
 const NORM={n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}
 const doorOf=b=>{
@@ -33,7 +33,8 @@ const ox=i*CS,oy=j*CS
 const r=rf(i,j,1)
 let k=FORCE[key]||null
 if(!k&&!(i===0&&j===0)){
-if(r<.12)k='chapel';else if(r<.27)k='house';else if(r<.35)k='armory';else if(r<.45)k='tower';else if(r<.57)k='crypt';else if(r<.65)k='well';else if(r<.73)k='shrine'
+const T0=[['chapel',.07],['house',.15],['armory',.2],['cabin',.3],['tower',.37],['crypt',.45],['well',.5],['shrine',.55],['campfire',.62],['altar',.67],['hole',.77],['graveyard',.82]]
+const f=T0.find(q=>r<q[1]);k=f?f[0]:null
 }
 if(k&&KB[k]){
 const[w,h]=KB[k]
@@ -45,9 +46,11 @@ c.b=b
 c.walls.push(...wallsOf(b),b.door.rect)
 }else if(k){
 c.o={id:key,kind:k,x:Math.round(ox+250+rf(i,j,2)*500),y:Math.round(oy+250+rf(i,j,3)*500)}
-const[w,h]=SOL[k]
-c.walls.push({x:c.o.x-w/2,y:c.o.y-h,w,h,cr:k==='crypt'?c.o.id:undefined})
+const sl=SOL[k]
+if(sl)c.walls.push({x:c.o.x-sl[0]/2,y:c.o.y-sl[1],w:sl[0],h:sl[1],cr:k==='crypt'?c.o.id:undefined})
+if(k==='graveyard')c.ch.push({id:key+'g0',x:c.o.x-70,y:c.o.y+30},{id:key+'g1',x:c.o.x+70,y:c.o.y+40})
 }
+if(c.b&&c.b.kind==='cabin')c.ch.push({id:key+'in',x:Math.round(c.b.x+c.b.w/2),y:Math.round(c.b.y+c.b.h/2+26)})
 const n=hs(i,j,5)%3
 for(let q=0;q<n;q++){
 const x=Math.round(ox+80+rf(i,j,10+q)*(CS-160)),y=Math.round(oy+80+rf(i,j,20+q)*(CS-160))
@@ -57,6 +60,16 @@ c.ch.push({id:key+'c'+q,x,y})
 }
 cache.set(key,c)
 return c
+}
+const pc=new Map()
+export function partnerOf(o){
+let r=pc.get(o.id)
+if(r!==undefined)return r
+const[i,j]=o.id.split(',').map(Number)
+r=null
+for(let d=2;d<=5&&!r;d++)for(let dx=-d;dx<=d&&!r;dx++)for(let dy=-d;dy<=d;dy++){if(Math.max(Math.abs(dx),Math.abs(dy))!==d)continue;const q=chunk(i+dx,j+dy).o;if(q&&q.kind==='hole'){r=q;break}}
+pc.set(o.id,r)
+return r
 }
 const nb=new Map()
 export function near(x,y){
@@ -145,15 +158,29 @@ export const UPS=[
 ['a_rift','Grave Rift [R]','Drag every nearby enemy in and crush them',3,ab('rift')],
 ['a_drain','Soul Drain [F]','Rip life out of everything around you',3,ab('drain')]
 ].map(u=>u[0].startsWith('a_')?[u[0],u[1],u[2],u[3],u[4]]:u)
-export const WIN_AT=360
-export const BOSS_AT=[90,200,300]
-export const BOSS_NAMES=['The Hollowgrin','The Hollowgrin Returns','The Last Harvest']
+export const DIFFS=[
+{n:'I dont wanna die',t:'Easy mode',hp:.7,dmg:.6,sp:.65,php:1.35,xp:1.25,spd:.95},
+{n:'Im a man',t:'Neutral',hp:1,dmg:1,sp:1,php:1,xp:1,spd:1},
+{n:'I CAN FUCKING TAKE IT',t:'Hard',hp:1.35,dmg:1.3,sp:1.3,php:1,xp:1,spd:1.04},
+{n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12}
+]
+export const LENS=[1,5,10,30,60,0]
+const BN=[['The Hollowgrin','The Hollowgrin Returns','The Last Harvest'],['The Gravedigger','The Pale Choir','Mother Night']]
 const rnd=(a,b)=>a+Math.random()*(b-a)
-export function createSim(list){
+export function createSim(list,rules){
+const R=Object.assign({mode:'rush',diff:1,len:6,phys:1},rules||{})
+const DF=DIFFS[R.diff]||DIFFS[1]
+const TM=R.mode==='terror'
+const KB2=[0,1,2.2][R.phys]??1
+const PRP=[0,1,2][R.phys]??1
+const dur=R.len>0?R.len*60:0
+const pace=dur?Math.max(.6,Math.min(6,360/dur)):1
 const n=list.length
 const pl=new Map()
-list.forEach((m,i)=>pl.set(m.u,{u:m.u,n:m.n,x:500+(i-(n-1)/2)*44,y:560,r:13,hp:120,max:120,s:'up',ang:0,spd:150,dmg:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,inv:0,tcd:0,ammo:[6,3,4],wood:4,hold:0,held:0,rv:0,rvBy:null,bleed:0,mend:1,up:{},offer:null,ot:0,pend:0,k:i,ar:0,arm:0,arr:0,ahit:0,crit:.12,ls:0,area:1,xm:1,thorn:0,ward:0,wt:0,ab:{dash:1},acd:{}}))
-const S={pl,en:[],pj:[],eb:[],pd:[],pk:[],gm:[],hp:[],bars:{},dead:new Set(),opened:new Set(),bs:new Map(),cr:new Map(),tw:new Map(),ev:[],out:[],st:'run',kills:0,id:1,time:0,acc:0,bi:0,boss:null,orbA:0}
+list.forEach((m,i)=>pl.set(m.u,{u:m.u,n:m.n,x:500+(i-(n-1)/2)*44,y:560,r:13,hp:Math.round((TM?170:120)*DF.php),max:Math.round((TM?170:120)*DF.php),s:'up',ang:0,spd:TM?170:150,dmg:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,inv:0,tcd:0,ammo:[6,3,4],wood:4,hold:0,held:0,rv:0,rvBy:null,bleed:0,mend:1,up:{},offer:null,ot:0,pend:0,k:i,ar:0,arm:0,arr:0,ahit:0,crit:.12,ls:0,area:1,xm:DF.xp,thorn:0,tpc:0,ig:0,ward:0,wt:0,ab:{dash:1},acd:{}}))
+const PR=new Map(),pch=new Set()
+const bt=dur?[.25,.55,.85].map(f=>Math.max(12,Math.floor(dur*f))):[90]
+const S={dur,te:0,nev:55,bm:0,dc:[],pl,en:[],pj:[],eb:[],pd:[],pk:[],gm:[],hp:[],bars:{},dead:new Set(),opened:new Set(),bs:new Map(),cr:new Map(),tw:new Map(),ev:[],out:[],st:'run',kills:0,id:1,time:0,acc:0,bi:0,boss:null,orbA:0}
 const alive=()=>[...pl.values()].filter(p=>p.s==='up')
 const ev=(...a)=>{if(S.ev.length<80)S.ev.push(a)}
 const burst=(x,y,c,k)=>ev('b',Math.round(x),Math.round(y),c,k)
@@ -166,7 +193,7 @@ return true
 }
 const cd=id=>(S.bs.get(id)||0)
 const gain=(p,v)=>{
-p.xp+=v*p.xm
+p.xp+=v*p.xm*(S.bm>0?2:1)
 while(p.xp>=p.next){p.xp-=p.next;p.next=Math.floor(p.next*1.32+4);p.lv++;p.pend++}
 }
 const offer=p=>{
@@ -188,7 +215,8 @@ S.out.push({to:u,m:{k:'lvdone'}})
 }
 const spawnE=(k,x,y,sc,hm)=>{
 const T0=ET[k]
-S.en.push({id:S.id++,k,x,y,r:T0.r,hp:T0.hp*sc*(hm||1),mx:T0.hp*sc*(hm||1),sp:T0.sp*(.92+Math.random()*.16),dmg:T0.dmg,xp:T0.xp,fl:0,oc:0,ph:Math.random()*6,ch:0,bs:Math.random()*2,kx:0,ky:0,sx:1,stun:0})
+const eh=T0.hp*sc*(hm||1)*DF.hp
+S.en.push({id:S.id++,k,x,y,r:T0.r,hp:eh,mx:eh,sp:T0.sp*(.92+Math.random()*.16)*DF.spd,dmg:T0.dmg*DF.dmg,xp:T0.xp,fl:0,oc:0,ph:Math.random()*6,ch:0,bs:Math.random()*2,kx:0,ky:0,sx:1,stun:0})
 }
 const spawnPos=()=>{
 const ps=alive()
@@ -200,10 +228,17 @@ if(!buildingAt({x,y})&&!wall(x,y)&&ps.every(q=>Math.hypot(q.x-x,q.y-y)>380))retu
 }
 return null
 }
-const pickE=()=>{
-const sp=spawnPos()
-if(!sp)return
-const sc=1+S.time/130,r=Math.random(),t=S.time
+const kindNow=()=>{
+const r=Math.random(),t=S.te
+if(TM){
+if(t>110&&r<.03)return'stitched'
+if(t>80&&r<.08)return'wraith'
+if(t>60&&r<.12)return'lurker'
+if(t>40&&r<.2)return'bat'
+if(t>12&&r<.5)return'crawler'
+if(t>30&&r<.6)return'ghoul'
+return r<.8?'wisp':'bone'
+}
 let k='wisp'
 if(t>150&&r<.03)k='stitched'
 else if(t>120&&r<.075)k='reaper'
@@ -213,8 +248,14 @@ else if(t>40&&r<.24)k='bat'
 else if(t>25&&r<.34)k='crawler'
 else if(t>45&&r<.52)k='ghoul'
 else if(t>14&&r<.72)k='bone'
-spawnE(k,sp[0],sp[1],sc,1+.15*(n-1))
+return k
 }
+const pickE=()=>{
+const sp=spawnPos()
+if(!sp)return
+spawnE(kindNow(),sp[0],sp[1],1+S.te/130,1+.15*(n-1))
+}
+const ring=(x,y,c,d)=>{for(let i=0;i<c;i++){const a=i/c*TAU,xx=x+Math.cos(a)*d,yy=y+Math.sin(a)*d;if(!wall(xx,yy)&&!buildingAt({x:xx,y:yy}))spawnE(kindNow(),xx,yy,1+S.te/130,1+.15*(n-1))}}
 const kill=e=>{
 S.kills++
 e.dead=1
@@ -226,9 +267,9 @@ for(let j=0;j<18;j++)S.gm.push({id:S.id++,x:e.x+rnd(-50,50),y:e.y+rnd(-50,50),v:
 S.hp.push({id:S.id++,x:e.x,y:e.y})
 burst(e.x,e.y,'#ffb347',70)
 ev('sh',16)
-if(S.bi>=BOSS_AT.length)S.st='win'
+if(dur&&S.bi>=bt.length)S.st='win'
 }else{
-S.gm.push({id:S.id++,x:e.x,y:e.y,v:e.xp})
+S.gm.push({id:S.id++,x:e.x,y:e.y,v:e.xp,vx:KB2?rnd(-140,140):0,vy:KB2?rnd(-140,140):0})
 if(Math.random()<.035)S.hp.push({id:S.id++,x:e.x+8,y:e.y})
 if(Math.random()<.05)S.pk.push({id:S.id++,k:Math.random()<.5?'a':'w',x:e.x-8,y:e.y,life:20})
 burst(e.x,e.y,e.k==='wisp'?'#8fe3ff':e.k==='ghoul'?'#8fc060':'#e8e2cc',8)
@@ -272,12 +313,29 @@ ev('cd',o.id);ev('sh',10);txt(o.x,o.y-60,'Crypt destroyed','#7dff9a',1)
 const crypts=(x,y,r,d,by)=>{
 for(const c of around(x,y,1))if(c.o&&c.o.kind==='crypt'&&!S.dead.has(c.o.id)&&Math.hypot(c.o.x-x,c.o.y-12-y)<r+34)wreck(c.o,d,by)
 }
+const kbP=(p,vx,vy)=>{if(p.s==='up')S.out.push({to:p.u,m:{k:'kb',vx:Math.round(vx),vy:Math.round(vy)}})}
+const smash=(o,by)=>{
+if(!PR.delete(o.id))return
+if(o.k==='b'){blast(o.x,o.y,80,70,by)}
+else{burst(o.x,o.y-8,'#a8794a',16);for(let j=0;j<3;j++)S.gm.push({id:S.id++,x:o.x+rnd(-14,14),y:o.y+rnd(-10,10),v:3,vx:rnd(-100,100),vy:rnd(-100,100)});if(Math.random()<.5)S.pk.push({id:S.id++,k:Math.random()<.5?'a':'w',x:o.x,y:o.y,life:20})}
+}
+const thrust=(x,y,aoe,dmg,by)=>{
+for(const o of[...PR.values()]){const dx=o.x-x,dy=o.y-y,d=Math.hypot(dx,dy);if(d<aoe+o.r){o.vx+=dx/(d||1)*380*KB2;o.vy+=dy/(d||1)*380*KB2;o.hp-=dmg*.5;if(o.hp<=0)smash(o,by)}}
+}
+const blast=(x,y,aoe,dmg,by)=>{
+ev('x',Math.round(x),Math.round(y),aoe,3);ev('sh',7)
+for(const e of S.en){const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d<aoe+e.r){hit(e,dmg*(1-.5*Math.min(1,d/aoe)),false,by);if(e.k!=='boss'){e.kx+=dx/(d||1)*320*KB2;e.ky+=dy/(d||1)*320*KB2}}}
+for(const p of alive()){const dx=p.x-x,dy=p.y-y,d=Math.hypot(dx,dy);if(d<aoe){hurtP(p,dmg*.3);kbP(p,dx/(d||1)*420*KB2,dy/(d||1)*420*KB2)}}
+thrust(x,y,aoe,dmg,by)
+}
 const boom=(x,y,w,p)=>{
 const s=WP[w],aoe=s.aoe*(p?p.area:1)
 ev('x',Math.round(x),Math.round(y),aoe,w)
 const k=p?p.dmg/12:1
-for(const e of S.en){const d=Math.hypot(e.x-x,e.y-y);if(d<aoe+e.r&&s.dmg)hit(e,s.dmg*k*(1-.4*Math.min(1,d/aoe)),false,p&&p.u)}
+for(const e of S.en){const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d<aoe+e.r){if(s.dmg)hit(e,s.dmg*k*(1-.4*Math.min(1,d/aoe)),false,p&&p.u);if(e.k!=='boss'){e.kx+=dx/(d||1)*260*KB2;e.ky+=dy/(d||1)*260*KB2}}}
 if(s.dmg)crypts(x,y,aoe,s.dmg*k)
+thrust(x,y,aoe,s.dmg*k,p&&p.u)
+if(p&&KB2){const dx=p.x-x,dy=p.y-y,d=Math.hypot(dx,dy);if(d<aoe*.9)kbP(p,dx/(d||1)*300*KB2,dy/(d||1)*300*KB2)}
 if(s.pud)S.pd.push({x,y,r:aoe,life:s.pud,k,by:p&&p.u})
 }
 S.throw=(u,w,tx,ty)=>{
@@ -292,7 +350,7 @@ S.pj.push({id:S.id++,k:w,x:p.x+Math.cos(a)*16,y:p.y+Math.sin(a)*16,vx:Math.cos(a
 }
 S.input=(u,x,y,a,dash)=>{
 const p=pl.get(u)
-if(!p||p.s!=='up'||!isFinite(x)||!isFinite(y))return
+if(!p||p.s!=='up'||p.ig>0||!isFinite(x)||!isFinite(y))return
 p.x=x;p.y=y;p.ang=a
 if(dash)p.inv=Math.max(p.inv,.3)
 }
@@ -320,6 +378,21 @@ const h=Math.min(12+lv*10,c*3)
 for(const q of alive())if(Math.hypot(q.x-p.x,q.y-p.y)<260){q.hp=Math.min(q.max,q.hp+(q===p?h:h/2));txt(q.x,q.y-44,'+'+Math.round(q===p?h:h/2),'#7dff9a')}
 }
 }
+const seedProps=p=>{
+if(!PRP)return
+for(const c of around(p.x,p.y,1)){
+if(pch.has(c.id))continue
+pch.add(c.id)
+const k0=hs(c.i,c.j,30)%(PRP>1?7:3)
+for(let q=0;q<k0;q++){
+const x=c.i*CS+80+rf(c.i,c.j,31+q)*(CS-160),y=c.j*CS+80+rf(c.i,c.j,41+q)*(CS-160)
+if(c.b&&x>c.b.x-30&&x<c.b.x+c.b.w+30&&y>c.b.y-30&&y<c.b.y+c.b.h+30)continue
+if(c.o&&Math.hypot(x-c.o.x,y-c.o.y)<80)continue
+const k=rf(c.i,c.j,51+q)<.5?'b':'c'
+PR.set(S.id,{id:S.id++,k,x,y,vx:0,vy:0,hp:k==='b'?30:24,r:12})
+}
+}
+}
 const doors=p=>{
 let best=null,bd=75
 for(const c of around(p.x,p.y,1))if(c.b){const d=c.b.door,k=Math.hypot(d.cx-p.x,d.cy-p.y);if(k<bd){bd=k;best=c.b}}
@@ -338,6 +411,7 @@ return false
 }
 const loot=(p,ch)=>{
 S.opened.add(ch.id);ev('o',ch.id)
+S.dc=S.dc.filter(d=>d.id!==ch.id)
 burst(ch.x,ch.y-10,'#ffd93b',24)
 for(let j=0;j<4;j++)S.gm.push({id:S.id++,x:ch.x+rnd(-30,30),y:ch.y+rnd(-20,20),v:3})
 const r=Math.random()
@@ -350,13 +424,40 @@ else{p.pend++;txt(p.x,p.y-52,'Free level','#ffb347',1)}
 tone9()
 }
 const tone9=()=>ev('sh',3)
+const open=(p,ch)=>{
+if(TM&&!ch.rich&&((ch.id.length*7+ch.x)|0)%6===0){S.opened.add(ch.id);ev('o',ch.id);ev('n','It was a mimic');ev('sh',10);ring(ch.x,ch.y,5,26);spawnE('lurker',ch.x,ch.y,1+S.te/130,1);return}
+loot(p,ch)
+if(ch.rich)loot(p,{id:ch.id,x:ch.x,y:ch.y})
+}
 const chest=p=>{
-for(const c of around(p.x,p.y,1))for(const ch of c.ch)if(!S.opened.has(ch.id)&&Math.hypot(ch.x-p.x,ch.y-p.y)<56){loot(p,ch);return true}
+for(const c of around(p.x,p.y,1))for(const ch of c.ch)if(!S.opened.has(ch.id)&&Math.hypot(ch.x-p.x,ch.y-p.y)<56){open(p,ch);return true}
+for(const d of S.dc)if(!S.opened.has(d.id)&&Math.hypot(d.x-p.x,d.y-p.y)<60){open(p,d);return true}
+return false
+}
+const altar=p=>{
+for(const c of around(p.x,p.y,1)){
+const o=c.o
+if(!o||o.kind!=='altar'||cd(o.id)>0||Math.hypot(o.x-p.x,o.y-p.y)>64)continue
+S.bs.set(o.id,120)
+const r=Math.random()
+ev('sh',6);burst(o.x,o.y-14,'#b48aff',30)
+if(r<.15){p.dmg*=1.25;txt(p.x,p.y-52,'Power surges','#ffb347',1)}
+else if(r<.3){p.max+=40;p.hp=p.max;txt(p.x,p.y-52,'Vitality','#7dff9a',1)}
+else if(r<.45){p.arm=Math.max(p.arm,50);p.ar=p.arm;txt(p.x,p.y-52,'Armor of the dead','#9ab4d8',1)}
+else if(r<.6){p.pend++;txt(p.x,p.y-52,'Free level','#ffb347',1)}
+else{txt(p.x,p.y-52,'Cursed','#ff6a5a',1);p.hp=Math.max(1,p.hp-25);ring(o.x,o.y,8,150);ev('n','The altar bites back')}
+return true
+}
 return false
 }
 const structs=(p,seen,dt)=>{
 for(const c of around(p.x,p.y,1)){
 const o=c.o,b=c.b
+if(o&&o.kind==='campfire'&&Math.hypot(p.x-o.x,p.y-o.y)<95){p.hp=Math.min(p.max,p.hp+4*dt)}
+if(o&&o.kind==='hole'&&p.tpc<=0&&Math.hypot(p.x-o.x,p.y-o.y)<26){
+const q=partnerOf(o)
+if(q){p.tpc=4;p.x=q.x;p.y=q.y+44;p.ig=.7;p.inv=Math.max(p.inv,1.5);S.out.push({to:p.u,m:{k:'tp',x:Math.round(p.x),y:Math.round(p.y)}});ev('tp',Math.round(o.x),Math.round(o.y));ev('tp',Math.round(q.x),Math.round(q.y));txt(p.x,p.y-48,'Through the tunnel','#c9a8ff',1)}
+}
 if(o&&!seen.has(o.id)){
 seen.add(o.id)
 const dd=Math.hypot(p.x-o.x,p.y-o.y)
@@ -383,10 +484,12 @@ if(b.kind==='house'&&cd(b.id)<=0&&Math.hypot(b.x+b.w/2-p.x,b.y+b.h/2-p.y)<600){S
 S.step=dt=>{
 if(S.st!=='run')return
 S.time+=dt
+S.te=S.time*pace
 S.orbA+=dt*2.7
+if(S.bm>0)S.bm-=dt
 for(const[k,v]of S.bs)if(v>0)S.bs.set(k,Math.max(0,v-dt))
 for(const p of pl.values()){
-p.cd-=dt;p.tcd=Math.max(0,p.tcd-dt);p.hit-=dt;p.inv-=dt;p.ahit+=dt
+p.cd-=dt;p.tcd=Math.max(0,p.tcd-dt);p.hit-=dt;p.inv-=dt;p.ahit+=dt;p.tpc-=dt;p.ig-=dt
 for(const k in p.acd)p.acd[k]=Math.max(0,p.acd[k]-dt)
 if(p.wt>0){p.wt-=dt;if(p.wt<=0)p.ward=0}
 if(p.s==='down'){p.bleed-=dt;if(p.bleed<=0)p.s='dead'}
@@ -401,25 +504,37 @@ if(p.s!=='up'){p.held=p.hold;continue}
 let nr=null
 for(const q of pl.values())if(q.s==='down'&&Math.hypot(q.x-p.x,q.y-p.y)<56)nr=q
 if(p.hold&&nr){nr.rv+=dt/p.mend;nr.rvBy=p.u;if(nr.rv>=2.5){nr.s='up';nr.hp=nr.max*.4;nr.rv=0;nr.inv=1.5;txt(nr.x,nr.y-44,'Revived','#7dff9a',1)}}
-else if(p.hold&&!p.held){if(!chest(p)&&!doors(p))crate(p)}
+else if(p.hold&&!p.held){if(!chest(p)&&!altar(p)&&!doors(p))crate(p)}
 p.held=p.hold
 }
 for(const q of pl.values())if(q.s==='down'){const r=q.rvBy&&pl.get(q.rvBy);if(!(r&&r.hold&&r.s==='up'&&Math.hypot(r.x-q.x,r.y-q.y)<56))q.rv=Math.max(0,q.rv-dt*2)}
 const ps=alive()
 const seen=new Set()
-for(const p of ps)structs(p,seen,dt)
-S.acc+=dt*Math.min(7,.65+S.time/40)*(1+.5*(n-1))
-const cap=Math.min(230,70+Math.min(190,S.time*.62))*(1+.35*(n-1))
+for(const p of ps){structs(p,seen,dt);seedProps(p)}
+if(S.time>=S.nev&&ps.length){
+S.nev=S.time+rnd(70,110)
+const r=Math.random(),p=ps[Math.floor(Math.random()*ps.length)]
+if(r<.34){S.bm=40;ev('n','Blood moon rises');ev('sh',8)}
+else if(r<.68){
+const a=Math.random()*TAU,d=320+Math.random()*130,x=p.x+Math.cos(a)*d,y=p.y+Math.sin(a)*d
+if(!wall(x,y)&&!buildingAt({x,y})){S.dc.push({id:'d'+S.id++,x:Math.round(x),y:Math.round(y),rich:1});ev('n','Supply drop landed')}
+}else{ev('n','A horde approaches');ring(p.x,p.y,22,480)}
+}
+S.acc+=dt*Math.min(7,.65+S.te/40)*(1+.5*(n-1))*DF.sp*(S.bm>0?1.8:1)*(TM?1.15:1)
+const cap=Math.min(230,70+Math.min(190,S.te*.62))*(1+.35*(n-1))
 while(S.acc>=1){S.acc--;if(S.en.length<Math.min(210,cap)&&ps.length)pickE()}
-if(S.bi<BOSS_AT.length&&S.time>=BOSS_AT[S.bi]&&!S.boss&&ps.length){
+if(!dur&&S.bi>=bt.length)bt.push(bt[bt.length-1]+110)
+if(S.bi<bt.length&&S.time>=bt[S.bi]&&!S.boss&&ps.length){
 const sp=spawnPos()
 if(sp){
-spawnE('boss',sp[0],sp[1],1+S.bi*.5,1+.6*(n-1))
-S.boss=S.en[S.en.length-1];S.boss.name=BOSS_NAMES[S.bi];S.bi++
+const bh=dur?Math.max(.35,Math.min(1,dur/360)):1+S.bi*.25
+spawnE('boss',sp[0],sp[1],1+S.bi*.5,(1+.6*(n-1))*bh)
+const nm=BN[TM?1:0]
+S.boss=S.en[S.en.length-1];S.boss.name=nm[S.bi%3]+(S.bi>=3?' '+(Math.floor(S.bi/3)+1):'');S.bi++
 ev('n',S.boss.name)
 }
 }
-if(S.time>=WIN_AT&&S.st==='run')S.st='win'
+if(dur&&S.time>=dur&&S.st==='run')S.st='win'
 for(const p of ps){
 if(p.cd<=0){
 let t=null,bd=420*420
@@ -458,7 +573,7 @@ const cx=t.x-e.x,cy=t.y-e.y,dp=Math.hypot(cx,cy)||1
 if(eb&&eb.kind==='chapel')sp*=.5
 if(e.k==='boss'){
 e.bs+=dt
-if(e.bs>4.6){e.bs=0;for(let j=0;j<2;j++)spawnE('wisp',e.x+rnd(-50,50),e.y+rnd(-50,50),1+S.time/130)}
+if(e.bs>4.6){e.bs=0;for(let j=0;j<2;j++)spawnE('wisp',e.x+rnd(-50,50),e.y+rnd(-50,50),1+S.te/130)}
 e.ch+=dt
 if(e.ch>8.5)e.ch=-1
 if(e.ch<0){sp*=2.2;e.ch-=dt;if(e.ch<-.8)e.ch=0}
@@ -487,6 +602,17 @@ push(e,rs,S)
 }else e.sc=Math.max(0,(e.sc||0)-dt)
 if(bd<e.r+9&&hurtP(t,e.dmg)&&t.thorn)hit(e,t.thorn,false,t.u)
 }
+for(const o of PR.values()){
+if(!ps.some(p=>Math.abs(p.x-o.x)<900&&Math.abs(p.y-o.y)<700))continue
+if(o.vx*o.vx+o.vy*o.vy>.5){o.x+=o.vx*dt;o.y+=o.vy*dt;const f=Math.pow(.04,dt);o.vx*=f;o.vy*=f}
+for(const p of ps){const dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy),m=o.r+p.r;if(d<m&&d>.01){o.x+=dx/d*(m-d);o.y+=dy/d*(m-d);o.vx+=dx/d*30*KB2;o.vy+=dy/d*30*KB2}}
+for(const e of S.en){const dx=o.x-e.x;if(dx>60||dx<-60)continue;const dy=o.y-e.y,d=Math.hypot(dx,dy),m=o.r+e.r;if(d<m&&d>.01){o.x+=dx/d*(m-d)*.6;o.y+=dy/d*(m-d)*.6;o.vx+=dx/d*(e.k==='boss'?160:40)*KB2;o.vy+=dy/d*(e.k==='boss'?160:40)*KB2;if(o.vx*o.vx+o.vy*o.vy>40000&&e.k!=='boss')hit(e,o.k==='b'?8:5,false,null)}}
+const q=push(o,near(o.x,o.y),S)
+if(q){if(q.w>q.h)o.vy*=-.4;else o.vx*=-.4}
+}
+for(const g2 of S.gm){
+if(g2.vx||g2.vy){const nx=g2.x+g2.vx*dt,ny=g2.y+g2.vy*dt;if(wall(nx,g2.y))g2.vx*=-.5;else g2.x=nx;if(wall(g2.x,ny))g2.vy*=-.5;else g2.y=ny;const f=Math.pow(.02,dt);g2.vx*=f;g2.vy*=f;if(Math.abs(g2.vx)+Math.abs(g2.vy)<5)g2.vx=g2.vy=0}
+}
 for(let i=0;i<S.en.length;i++){
 const a=S.en[i]
 for(let j=i+1;j<S.en.length&&j<i+9;j++){
@@ -503,6 +629,7 @@ if(wall(p.x,p.y)||p.life<=0){p.dead=1;continue}
 const own=pl.get(p.own),dm=s?s.dmg*(own?own.dmg/12:1):p.d
 const cc=own?own.crit:.12
 for(const c of around(p.x,p.y,0))if(c.o&&c.o.kind==='crypt'&&!S.dead.has(c.o.id)&&Math.hypot(c.o.x-p.x,c.o.y-12-p.y)<34&&p.own!==null){wreck(c.o,dm,p.own);p.dead=1}
+for(const o of PR.values()){if(Math.abs(o.x-p.x)<o.r+8&&Math.abs(o.y-p.y)<o.r+8){o.hp-=dm;o.vx+=p.vx*.18*KB2;o.vy+=p.vy*.18*KB2;burst(p.x,p.y,'#ffd27a',3);p.dead=1;if(o.hp<=0)smash(o,p.own);break}}
 if(p.dead)continue
 for(const e of S.en){
 if(e.dead||p.hit.has(e.id))continue
@@ -556,7 +683,7 @@ d:S.pd.map(d=>[r(d.x),r(d.y),r(d.r)]),
 c:S.pk.map(k=>[k.id,k.k,r(k.x),r(k.y)]),
 b:Object.entries(S.bars).filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
 z:[...S.bs].filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
-bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
+pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
 v:S.ev}
 S.ev=[]
 return o
