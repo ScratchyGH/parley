@@ -479,3 +479,9 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 .tile.mega{position:fixed;inset:0;z-index:400;border-radius:0;border:0;background:#000;min-height:0}
 .tile:fullscreen{border-radius:0;background:#000}
 .tile video{touch-action:none}
+.appnotice{position:fixed;right:16px;bottom:16px;z-index:900;width:300px;padding:14px 16px;background:#141414;border:1px solid #333;border-radius:10px;color:#e6e6e6;box-shadow:0 8px 30px #000a}
+.appnotice b{display:block;margin-bottom:4px}
+.appnotice p{margin:0 0 12px;font-size:13px;color:#aaa}
+.appnotice .an-row{display:flex;gap:8px}
+.appnotice .an-dl{flex:1;text-align:center;padding:8px;background:#e6e6e6;color:#111;border-radius:6px;text-decoration:none;font-weight:600}
+.appnotice .an-x{padding:8px 12px;background:#222;color:#ccc;border:1px solid #333;border-radius:6px;cursor:pointer}
