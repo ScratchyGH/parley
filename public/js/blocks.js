@@ -101,8 +101,66 @@ DESC.item='Splits a list and saves one item, a random item, the last item or the
 DESC.jsonget='Reads one value out of JSON text, for example from a variable another block saved.'
 DESC.api='Calls a free public service and saves the answer. Weather takes a city, define takes a word, wiki takes a topic, crypto takes a coin id like bitcoin, pokemon takes a name and time takes a zone like America/New_York. Some also save extras like {name_temp} or {name_answer}. Also: xkcd, country, github, npm, mcserver (Minecraft server address), mcuser, exchange (USD EUR), dadjoke, chuck, kanye, fox, meal and cocktail.'
 DESC.http='Reads one value from any public HTTPS address that returns JSON. Enter a path like data.0.name to pick the value. Up to 3 calls per run.'
+Object.assign(DEFS,{
+question:{title:'When a message is a question',tone:'trig',out:['next'],fields:[],init:{}},
+shortmsg:{title:'When a message is very short',tone:'trig',out:['next'],fields:[['chars','At most this many characters','text']],init:{chars:'5'}},
+codeblock:{title:'When a message has a code block',tone:'trig',out:['next'],fields:[],init:{}},
+hasnumber:{title:'When a message has a number',tone:'trig',out:['next'],fields:[],init:{}},
+mediaurl:{title:'When a message links to a picture, GIF or video',tone:'trig',out:['next'],fields:[],init:{}},
+random3:{title:'Random path of three',tone:'logic',out:['c1','c2','c3'],fields:[],init:{}},
+between:{title:'Is the number between?',tone:'logic',out:['yes','no'],fields:[['value','Number','text'],['min','At least','text'],['max','At most','text']],init:{value:'{arg1}',min:'1',max:'10'}},
+evenodd:{title:'Is the number even?',tone:'logic',out:['yes','no'],fields:[['value','Number','text']],init:{value:'{arg1}'}},
+lengthcheck:{title:'Is the text length in range?',tone:'logic',out:['yes','no'],fields:[['input','Text','text'],['min','At least this many characters','text'],['max','At most this many characters','text']],init:{input:'{text}',min:'1',max:'100'}},
+hasargs:{title:'Did they add extra words?',tone:'logic',out:['yes','no'],fields:[['min','At least this many words after the command','text']],init:{min:'1'}},
+isnumber:{title:'Is it a number?',tone:'logic',out:['yes','no'],fields:[['input','Value','text']],init:{input:'{arg1}'}},
+substr:{title:'Cut part of a text',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['from','Start at character','text'],['len','How many characters','text']],init:{name:'part',input:'{text}',from:'1',len:'10'}},
+percent:{title:'Work out a percentage',tone:'data',out:['next'],fields:[['name','Save as','text'],['a','Part','text'],['b','Whole','text'],['decimals','Decimal places','text']],init:{name:'percent',a:'1',b:'4',decimals:'0'}},
+stats:{title:'Add up or average numbers',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Numbers (separated by spaces or commas)','text'],['what','Get','select',[['sum','total'],['average','average'],['min','smallest'],['max','largest'],['median','middle value'],['count','how many']]]],init:{name:'result',input:'{args}',what:'sum'}},
+sortlist:{title:'Sort a list',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','List (separated by commas or new lines)','text'],['how','Order','select',[['az','A to Z'],['za','Z to A'],['num','smallest number first'],['numdesc','largest number first'],['shuffle','random order']]]],init:{name:'sorted',input:'{args}',how:'az'}},
+joinlist:{title:'Join a list with a separator',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','List (separated by commas or new lines)','text'],['sep','Put between','text']],init:{name:'joined',input:'{args}',sep:' | '}},
+unique:{title:'Remove repeated items',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','List (separated by commas or new lines)','text']],init:{name:'unique',input:'{args}'}},
+occurs:{title:'Count how often text appears',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Look in','text'],['find','Count this','text']],init:{name:'found',input:'{text}',find:'a'}},
+dateadd:{title:'Get a date days from now',tone:'data',out:['next'],fields:[['name','Save as','text'],['days','Days from now (negative for the past)','text'],['tz','Time zone','select',ZONES]],init:{name:'when',days:'7',tz:'UTC'}},
+daysuntil:{title:'Days until a date',tone:'data',out:['next'],fields:[['name','Save as','text'],['date','Date (YYYY-MM-DD)','text']],init:{name:'days',date:'2027-01-01'}},
+dice:{title:'Roll dice',tone:'data',out:['next'],fields:[['name','Save as','text'],['notation','Dice like 2d6 or 1d20+3','text']],init:{name:'roll',notation:'2d6'}},
+bar:{title:'Make a progress bar',tone:'data',out:['next'],fields:[['name','Save as','text'],['value','Value','text'],['max','Out of','text'],['width','Bar length (3 to 30)','text']],init:{name:'bar',value:'3',max:'10',width:'10'}},
+ordinal:{title:'Turn a number into 1st, 2nd, 3rd',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Number','text']],init:{name:'ordinal',input:'{arg1}'}},
+numformat:{title:'Add commas to a number',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Number','text']],init:{name:'number',input:'{arg1}'}},
+base:{title:'Convert a number system',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Whole number','text'],['to','Convert to','select',[['bin','binary'],['hex','hexadecimal'],['oct','octal'],['dec','plain number']]]],init:{name:'converted',input:'{arg1}',to:'bin'}},
+urlenc:{title:'Make text safe for a web address',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text']],init:{name:'encoded',input:'{args}'}},
+hashnum:{title:'Same text, same number',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Text','text'],['max','Highest number','text']],init:{name:'score',input:'{args}',max:'100'}},
+rps:{title:'Rock paper scissors',tone:'data',out:['next'],fields:[['name','Save as','text'],['input','Their choice (rock, paper or scissors)','text']],init:{name:'result',input:'{arg1}'}}
+})
+DESC.question='Starts when a message ends with a question mark.'
+DESC.shortmsg='Starts when a message is short, like a single word or a lone emoji.'
+DESC.codeblock='Starts when a message contains a triple backtick code block.'
+DESC.hasnumber='Starts when a message contains any digit.'
+DESC.mediaurl='Starts when a message has a direct link to an image, GIF or video, or a Tenor or Giphy link.'
+DESC.random3='Randomly follows path 1, 2 or 3 with equal chance.'
+DESC.between='Follows yes when the number is between two numbers, including both ends.'
+DESC.evenodd='Follows yes for even whole numbers and no for odd or non-numbers.'
+DESC.lengthcheck='Follows yes when the text has a length inside the range.'
+DESC.hasargs='Follows yes when the message has enough words after the command, for example !say hello.'
+DESC.isnumber='Follows yes when the value is a valid number.'
+DESC.substr='Saves a slice of the text, starting at a character number.'
+DESC.percent='Saves part divided by whole as a percentage number, without the percent sign.'
+DESC.stats='Reads a list of numbers and saves their total, average, smallest, largest, middle value or count.'
+DESC.sortlist='Sorts or shuffles a list and saves it as comma separated text.'
+DESC.joinlist='Turns a list into one line with your own separator.'
+DESC.unique='Removes repeated items from a list and saves the rest.'
+DESC.occurs='Counts how many times some text appears, ignoring capital letters.'
+DESC.dateadd='Saves the date a number of days from today as YYYY-MM-DD.'
+DESC.daysuntil='Saves how many days remain until a date. It is negative if the date has passed.'
+DESC.dice='Rolls dice written like 2d6 or 1d20+3 and saves the total. The single rolls go in name_rolls.'
+DESC.bar='Saves a bar like ▰▰▰▱▱▱▱▱▱▱ showing how full something is.'
+DESC.ordinal='Saves a whole number with its ending, like 22nd.'
+DESC.numformat='Saves a number written like 1,234,567.'
+DESC.base='Converts a whole number to binary, hexadecimal or octal.'
+DESC.urlenc='Encodes text so it can go inside a web address, for example in an HTTP block.'
+DESC.hashnum='Turns text into a steady number from 0 up to your highest. The same text always gives the same number, great for rate or ship commands.'
+DESC.rps='Picks a random move for the bot and saves win, lose, tie or invalid from the member’s side. The bot move goes in name_bot.'
 const OUTL={next:'then',yes:'yes',no:'no',c1:'path 1',c2:'path 2',c3:'path 3',c4:'path 4',else:'otherwise',x1:'then 2',x2:'then 3',x3:'then 4'}
-const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['APIs',['api','http','jsonget']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','item','clock','userinfo','serverinfo']]]
+const GROUPS=[['Triggers',['msg','cmd','mention','join','link','image','hook','reply','everyone','usermention','invite','caps','longmsg','badword','emojispam','mentionspam','question','shortmsg','codeblock','hasnumber','mediaurl']],['Logic',['if','if2','gate','switch','chance','ismod','isowner','hasrole','newmember','channelis','weekday','time','wordlist','cooldown','once','stop','random3','between','evenodd','lengthcheck','hasargs','isnumber']],['Subflows and notes',['sub','call','note']],['Actions',['say','sayto','log','react','wait']],['Moderation',['delete','purge','pin','unpin','warn','timeout','untimeout','kick','ban','slowmode','setnick','notice','addrole','removerole']],['APIs',['api','http','jsonget']],['Data',['pick','set','count','setcount','getcount','save','load','math','text','word','combine','randnum','map','item','clock','userinfo','serverinfo','substr','percent','stats','sortlist','joinlist','unique','occurs','dateadd','daysuntil','dice','bar','ordinal','numformat','base','urlenc','hashnum','rps']]]
 const T=(nodes,edges)=>({nodes,edges})
 const N=(id,type,x,y,p)=>({id,type,x,y,p:{...DEFS[type].init,...p}})
 const E=(f,o,t)=>({f,o,t})
