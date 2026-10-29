@@ -336,16 +336,12 @@ else if(h==='youtube.com'||h==='music.youtube.com')id=x.pathname==='/watch'?x.se
 return/^[A-Za-z0-9_-]{11}$/.test(id)?id:''
 }catch{return''}
 }
-function itchPlay(d){
-const box=h('div',{class:'itch'})
-const btn=h('button',{type:'button',class:'btn pri',on:{click:()=>{
-const fr=h('iframe',{src:'https://itch.io/embed-upload/'+d.play.match(/\/html\/(\d+)/)[1]+'?color=1a1a1a',class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
-box.replaceChildren(fr,h('div',{class:'row itch-bar'},h('button',{type:'button',class:'btn sm',on:{click:()=>fr.requestFullscreen?.()}},'Fullscreen'),h('button',{type:'button',class:'btn sm',on:{click:()=>itchPlay.close(box,d)}},'Close')))
-}}},'Play '+(d.title||'game')+' here')
-box.append(btn)
+function itchFrame(d,thumb){
+const id=d.play.match(/\/html\/(\d+)/)[1]
+const fr=h('iframe',{src:'https://itch.io/embed-upload/'+id+'?color=1a1a1a',class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
+const box=h('div',{class:'itch'},fr,h('div',{class:'row itch-bar'},h('button',{type:'button',class:'btn sm',on:{click:()=>fr.requestFullscreen?.()}},'Fullscreen'),h('button',{type:'button',class:'btn sm',on:{click:()=>box.replaceWith(thumb)}},'Close'),h('a',{class:'btn sm',href:d.url,target:'_blank',rel:'noopener noreferrer nofollow'},'Open on itch.io')))
 return box
 }
-itchPlay.close=(box,d)=>box.replaceWith(itchPlay(d))
 function unfurlSlot(url){
 const slot=h('div',{class:'unf-slot'})
 const go=async()=>{
@@ -356,7 +352,19 @@ unfurlCache.set(url,null)
 try{d=await GET('/api/unfurl?url='+encodeURIComponent(url));unfurlCache.set(url,d)}catch{}
 }
 const yt=ytId(url)
-if(d&&(d.title||d.description))slot.append(h('div',{class:'unf'},d.play&&/^https:\/\/[a-z-]+\.itch\.zone\//.test(d.play)?itchPlay(d):null,yt?h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow',class:'unf-th'},h('img',{src:'/api/yt-thumb/'+yt,alt:'Video thumbnail',loading:'lazy',width:320,height:180}),h('span',{class:'unf-play','aria-hidden':'true'})):null,h('span',null,d.site||''),h('b',null,h('a',{href:d.url||url,target:'_blank',rel:'noopener noreferrer nofollow'},d.title||url)),d.description?h('span',null,d.description.slice(0,200)):null))
+if(d&&(d.title||d.description)){
+const play=d.play&&/^https:\/\/[a-z-]+\.itch\.zone\//.test(d.play)
+const href=d.url||url
+const img=yt?'/api/yt-thumb/'+yt:d.image?'/api/unfurl-img?url='+encodeURIComponent(d.image):null
+let th=null
+if(img){
+const pic=h('img',{src:img,alt:'',loading:'lazy',decoding:'async'})
+pic.addEventListener('error',()=>th.remove())
+th=play?h('button',{type:'button',class:'unf-th',title:'Play here',on:{click:()=>th.replaceWith(itchFrame(d,th))}},pic,h('span',{class:'unf-go'},'Play')):h('a',{href,target:'_blank',rel:'noopener noreferrer nofollow',class:'unf-th'},pic,yt?h('span',{class:'unf-play','aria-hidden':'true'}):null)
+}
+const card=h('div',{class:'unf'},th,h('span',{class:'unf-site'},d.site||''),h('b',null,h('a',{href,target:'_blank',rel:'noopener noreferrer nofollow'},d.title||url)),d.description?h('span',{class:'unf-d'},d.description.slice(0,200)):null)
+slot.append(card)
+}
 }
 if(unfurlCache.has(url)){const d=unfurlCache.get(url);if(d)go();return slot}
 unfurlObs||=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){unfurlObs.unobserve(e.target);e.target.__go()}},{rootMargin:'100px'})
