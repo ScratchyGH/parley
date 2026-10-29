@@ -1,0 +1,1 @@
+try{const q=new URLSearchParams(location.search);if(q.get('web')==='1')localStorage.setItem('parley.web','1');if(!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone&&!localStorage.getItem('parley.web')&&!/Electron/.test(navigator.userAgent))location.replace('/get/')}catch{}
