@@ -91,17 +91,25 @@ if(!c.url.searchParams.has('lite'))await c.env.DB.prepare('select 1').first()
 return{ok:true,time:now(),build:(c.env.CF_VERSION_METADATA&&c.env.CF_VERSION_METADATA.id)||null}
 },{auth:false})
 
+router.add('GET','/api/get/parley.mobileconfig',async c=>{
+const o=c.url.origin
+const ic=await c.env.ASSETS.fetch(new Request(o+'/apple-touch-icon.png'))
+const b=new Uint8Array(await ic.arrayBuffer());let t='';for(let i=0;i<b.length;i+=8192)t+=String.fromCharCode(...b.subarray(i,i+8192))
+const x='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>PayloadContent</key><array><dict><key>FullScreen</key><true/><key>IsRemovable</key><true/><key>Icon</key><data>'+btoa(t)+'</data><key>Label</key><string>Parley</string><key>PayloadDisplayName</key><string>Parley</string><key>PayloadIdentifier</key><string>app.parley.webclip</string><key>PayloadType</key><string>com.apple.webClip.managed</string><key>PayloadUUID</key><string>7B1D6A52-3C0E-4F7A-9A44-5D2E8B1C9F01</string><key>PayloadVersion</key><integer>1</integer><key>URL</key><string>'+o+'/?web=1</string></dict></array><key>PayloadDescription</key><string>Adds Parley to your Home Screen.</string><key>PayloadDisplayName</key><string>Parley</string><key>PayloadIdentifier</key><string>app.parley.profile</string><key>PayloadOrganization</key><string>Parley</string><key>PayloadType</key><string>Configuration</string><key>PayloadUUID</key><string>2C9E4F10-8A3B-4D65-B7E2-91F0A6D3C805</string><key>PayloadVersion</key><integer>1</integer></dict></plist>'
+return new Response(x,{headers:{'content-type':'application/x-apple-aspen-config','content-disposition':'attachment; filename="Parley.mobileconfig"','cache-control':'public,max-age=3600'}})
+},{auth:false})
+
 router.add('GET','/api/rtc/ice',async c=>{
 limit('ice:'+c.user.id,30,60000)
 const fallback=[{urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:global.stun.twilio.com:3478','stun:stun2.l.google.com:19302','stun:stun3.l.google.com:19302','stun:stun.stunprotocol.org:3478','stun:stun.services.mozilla.com:3478']}]
-const relay=[]
+const relay=[{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'},{urls:['turn:numb.viagenie.ca'],username:'webrtc@live.com',credential:'muazkh'},{urls:['turn:192.158.29.39:3478?transport=udp','turn:192.158.29.39:3478?transport=tcp'],username:'28224511:1379330808',credential:'JZEOEt2V3Qb0y27GRntt2u2PAYA='},{urls:['turn:turn.bistri.com:80'],username:'homeo',credential:'homeo'},{urls:['turn:turn.anyfirewall.com:443?transport=tcp'],username:'webrtc',credential:'webrtc'}]
 if(!c.env.TURN_KEY_ID||!c.env.TURN_API_TOKEN)return{iceServers:[...fallback,...relay],turn:true}
 try{
 const res=await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${c.env.TURN_KEY_ID}/credentials/generate-ice-servers`,{method:'POST',headers:{authorization:'Bearer '+c.env.TURN_API_TOKEN,'content-type':'application/json'},body:JSON.stringify({ttl:43200})})
 if(!res.ok)return{iceServers:[...fallback,...relay],turn:true}
 const d=await res.json()
 const list=Array.isArray(d.iceServers)?d.iceServers:d.iceServers?[d.iceServers]:[]
-return{iceServers:[...fallback,...list.filter(s=>s.username)],turn:true}
+return{iceServers:[...fallback,...list.filter(s=>s.username),...relay],turn:true}
 }catch{return{iceServers:[...fallback,...relay],turn:true}}
 })
 
