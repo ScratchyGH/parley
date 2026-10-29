@@ -3,6 +3,10 @@ import{h,dialog,toast}from'./util.js'
 const KEY='parley.devblock'
 const blocked=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
 const block=id=>{try{localStorage.setItem(KEY,JSON.stringify([...new Set([...blocked(),id])].slice(-200)))}catch{}}
+const TK='parley.devsound'
+const SOUND=new Set(['devtone','devspeak','devmelody'])
+const trusted=()=>{try{return JSON.parse(localStorage.getItem(TK)||'[]')}catch{return[]}}
+const trust=id=>{try{localStorage.setItem(TK,JSON.stringify([...new Set([...trusted(),id])].slice(-200)))}catch{}}
 const sid=x=>/^[0-9a-f]{4}$/i.test(x)?parseInt(x,16):String(x).toLowerCase()
 const bytes=dv=>[...new Uint8Array(dv.buffer,dv.byteOffset,dv.byteLength)]
 const hex=dv=>bytes(dv).map(x=>x.toString(16).padStart(2,'0')).join('')
@@ -278,15 +282,23 @@ const open=new Set()
 export function deviceRequest(m){
 const acts=(Array.isArray(m.acts)?m.acts:[]).filter(x=>x&&NAMES[x.k]&&x.a&&typeof x.a==='object').slice(0,5)
 if(!acts.length||blocked().includes(m.bot)||open.has(m.bot))return
+if(acts.every(x=>SOUND.has(x.k))&&trusted().includes(m.bot)){
+acts.forEach(x=>{Promise.resolve().then(()=>RUN[x.k](x.a,()=>{})).catch(()=>{})})
+return
+}
 open.add(m.bot)
 const res=acts.map(()=>h('li',{class:'dv-r'},'Waiting'))
 const list=h('ul',{class:'dv-l'},acts.map((x,i)=>h('li',null,h('b',null,NAMES[x.k](x.a)),res[i])))
 const body=h('div',{class:'bd dv'},h('p',null,h('b',null,String(m.name||'A bot')),' started this when you used it. It only runs if you tap Allow.'),list)
 let ran=false
+const soundOnly=acts.every(x=>SOUND.has(x.k))
+const always=h('input',{type:'checkbox'})
+if(soundOnly)body.append(h('label',{class:'dv-a'},always,' Always allow sound from this bot'))
 dialog('Allow device actions?',body,{onclose:()=>open.delete(m.bot),footer:close=>{
 const allow=h('button',{class:'btn pri',on:{click:async()=>{
 if(ran){close();return}
 ran=true
+if(soundOnly&&always.checked)trust(m.bot)
 allow.disabled=true
 for(let i=0;i<acts.length;i++){
 res[i].textContent='Working'
