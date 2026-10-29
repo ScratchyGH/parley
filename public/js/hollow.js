@@ -9,7 +9,7 @@ export const hollowData=()=>st.d
 export const onHollow=fn=>{st.subs.add(fn);return()=>st.subs.delete(fn)}
 export function loadHollow(){
 if(st.loading)return st.loading
-st.loading=GET(API).then(d=>{st.d=d;st.subs.forEach(f=>f(d));return d}).catch(()=>null).finally(()=>{st.loading=null})
+st.loading=GET(API).then(d=>{st.d=d;st.err=false;st.subs.forEach(f=>f(d));return d}).catch(()=>{st.err=true;return null}).finally(()=>{st.loading=null})
 return st.loading
 }
 export const readyCount=d=>d?d.quests.filter(q=>!q.claimed&&!q.locked&&q.n>=q.target).length+d.tiers.filter(t=>!t.claimed&&d.wallet.xp>=t.xp).length:0
@@ -207,7 +207,7 @@ const view=h('div',{class:'hw-view'})
 pg.append(hero,tabs,view)
 const fill=()=>{
 const d=st.d
-if(!d){view.replaceChildren(h('p',{class:'hw-note'},'Loading the Hollow...'));return}
+if(!d){view.replaceChildren(h('p',{class:'hw-note'},st.err?'The Hollow could not load. Check your connection and sign in, then try again.':'Loading the Hollow...'),...(st.err?[h('button',{class:'btn',on:{click:()=>{st.err=false;fill();loadHollow().then(()=>{if(pg.isConnected)fill()})}}},'Try again')]:[]));return}
 const xp=d.wallet.xp,cur=d.wallet.tier
 hero.replaceChildren(h('div',{class:'hw-hero-l'},h('span',{class:'hw-rec'},'REC  HAUNTED HOLLOW'),h('h2',null,'Haunted Hollow'),h('p',null,'Work the night shift. Every quest pays candy and XP toward 24 tiers of rewards.'),h('div',{class:'hw-cd'},d.season.live?'Ends in '+fmtLeft(d.season.end-Date.now()):d.season.grace?'Event over. Claim your rewards today.':'Event over')),h('div',{class:'hw-hero-r'},h('div',{class:'hw-stat'},candySvg(26),h('b',null,String(d.wallet.candy)),h('span',null,'candy')),h('div',{class:'hw-stat'},pumpkinSvg(26),h('b',null,d.pumpkins.found+'/'+d.pumpkins.total),h('span',null,'pumpkins')),h('div',{class:'hw-tier'},h('div',{class:'hw-tier-t'},h('b',null,'Tier '+cur),h('span',null,xp+' / 2400 XP')),h('div',{class:'hq-bar'},h('i',{style:{width:Math.min(100,xp%100)+'%'}})))))
 tabs.replaceChildren(...TABS.map(([k,n])=>h('button',{class:'hw-tab'+(st.tab===k?' on':''),role:'tab','aria-selected':st.tab===k?'true':'false',on:{click:()=>{st.tab=k;fill()}}},n)))
