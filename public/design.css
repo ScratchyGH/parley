@@ -1481,3 +1481,5 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .devflash{position:fixed;inset:0;z-index:99999;pointer-events:none}
 .dv-l{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}.dv-l li{background:var(--surf2);border:1px solid var(--border);border-radius:9px;padding:8px 10px;display:grid;gap:2px}.dv-r{font-size:12.5px;color:var(--muted)}
 .wn-img{float:right;width:84px;height:84px;border-radius:18px;margin:0 0 8px 14px;background:#000;object-fit:cover}
+.devemo{position:fixed;top:-40px;font-size:30px;z-index:99999;pointer-events:none;animation:devfall 2.6s linear forwards}@keyframes devfall{to{transform:translateY(115vh) rotate(360deg)}}
+.devflash{transition:opacity .05s}
