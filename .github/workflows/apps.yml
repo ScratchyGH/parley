@@ -36,13 +36,29 @@ jobs:
           mkdir build
           cp ../public/logo-512.png build/icon.png
           cat > package.json <<EOF
-          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":["nsis","portable"],"icon":"build/icon.png"},"portable":{"artifactName":"Parley-Portable.exe"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"artifactName":"Parley-Setup.exe"},"mac":{"target":["dmg","zip"],"icon":"build/icon.png","category":"public.app-category.social-networking","identity":null,"artifactName":"Parley.\${ext}"},"linux":{"target":["AppImage","deb"],"icon":"build/icon.png","category":"Network","executableArgs":["--no-sandbox"],"artifactName":"Parley.\${ext}"}}}
+          {"name":"parley-desktop","version":"1.${{ github.run_number }}.0","description":"Parley desktop app","author":"Parley <parley@example.com>","homepage":"${SITE}","main":"main.js","build":{"appId":"app.parley.desktop","productName":"Parley","directories":{"buildResources":"build"},"files":["main.js","picker.js","package.json"],"publish":[{"provider":"generic","url":"${FEED}"}],"win":{"target":["nsis","portable"],"icon":"build/icon.png"},"portable":{"artifactName":"Parley-Portable.exe"},"nsis":{"oneClick":true,"perMachine":false,"runAfterFinish":true,"deleteAppDataOnUninstall":false,"artifactName":"Parley-Setup.exe"},"mac":{"target":["dmg","zip"],"icon":"build/icon.png","category":"public.app-category.social-networking","identity":null,"artifactName":"Parley.\${ext}"},"linux":{"target":["AppImage","deb"],"icon":"build/icon.png","category":"Network","executableArgs":["--no-sandbox"],"artifactName":"Parley.\${ext}"}}}
+          EOF
+          cat > picker.js <<'EOF'
+          const{contextBridge,ipcRenderer}=require('electron')
+          contextBridge.exposeInMainWorld('pickSource',id=>ipcRenderer.send('pick-source',id))
           EOF
           cat > main.js <<'EOF'
-          const{app,BrowserWindow,shell,session,dialog}=require('electron')
+          const{app,BrowserWindow,shell,session,dialog,desktopCapturer,ipcMain}=require('electron')
           const{autoUpdater}=require('electron-updater')
           const SITE=process.env.PARLEY_SITE||'__SITE__'
           let win
+          const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+          const pick=(parent,sources)=>new Promise(res=>{
+          const p=new BrowserWindow({width:760,height:520,parent,modal:true,show:false,autoHideMenuBar:true,backgroundColor:'#0a0a09',title:'Choose what to share',webPreferences:{contextIsolation:true,sandbox:true,preload:require('path').join(__dirname,'picker.js')}})
+          const html='<!doctype html><meta charset=utf-8><style>body{margin:0;background:#0a0a09;color:#eee;font:13px system-ui;padding:14px}h1{font-size:16px;margin:0 0 12px}div{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}button{background:#17171a;border:2px solid #2a2a30;border-radius:10px;color:#eee;padding:8px;cursor:pointer;text-align:left}button:hover{border-color:#8a8aa0}img{width:100%;border-radius:6px;display:block;margin-bottom:6px}span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}</style><h1>Choose what to share</h1><div>'+sources.map(s=>'<button data-id="'+esc(s.id)+'"><img src="'+s.thumbnail.toDataURL()+'"><span>'+esc(s.name)+'</span></button>').join('')+'</div><script>document.querySelectorAll("button").forEach(b=>b.onclick=()=>window.pickSource(b.dataset.id))</script>'
+          let done=false
+          const h=(e,id)=>{if(e.sender===p.webContents)fin(id)}
+          const fin=id=>{if(done)return;done=true;ipcMain.removeListener('pick-source',h);if(!p.isDestroyed())p.destroy();res(id)}
+          ipcMain.on('pick-source',h)
+          p.on('closed',()=>fin(null))
+          p.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent(html))
+          p.once('ready-to-show',()=>p.show())
+          })
           function updates(){
           autoUpdater.autoDownload=true
           autoUpdater.autoInstallOnAppQuit=true
@@ -66,7 +82,20 @@ jobs:
           if(!lock)app.quit()
           app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus()}})
           app.whenReady().then(()=>{
-          session.defaultSession.setPermissionRequestHandler((wc,perm,cb)=>cb(['media','notifications','display-capture','clipboard-sanitized-write'].includes(perm)&&new URL(wc.getURL()).origin===new URL(SITE).origin))
+          session.defaultSession.setPermissionRequestHandler((wc,perm,cb)=>cb(['media','notifications','display-capture','fullscreen','clipboard-sanitized-write'].includes(perm)&&new URL(wc.getURL()).origin===new URL(SITE).origin))
+          session.defaultSession.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(SITE)&&['media','display-capture','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
+          session.defaultSession.setDisplayMediaRequestHandler(async(req,cb)=>{
+          try{
+          const src=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:420,height:260}})
+          if(!src.length)return cb({})
+          const id=await pick(win,src)
+          const s=src.find(x=>x.id===id)
+          if(!s)return cb({})
+          const r={video:s}
+          if(req.audioRequested&&process.platform==='win32')r.audio='loopback'
+          cb(r)
+          }catch{cb({})}
+          })
           win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
           win.loadURL(SITE)
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
