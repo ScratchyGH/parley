@@ -83,14 +83,14 @@ h('div',{class:'hq-art'},q.kind==='night'?h('span',{class:'hq-n'},String(q.seq))
 h('div',{class:'hq-b'},h('h5',null,q.title),h('p',null,q.descr),h('div',{class:'hq-bar'},h('i',{style:{width:pr+'%'}})),h('div',{class:'hq-rw'},h('span',{class:'hq-c'},candySvg(15),String(q.candy)),h('span',null,q.xp+' XP'),h('span',{class:'hq-prog'},metricText(q,q.n)))),
 s==='claimed'?h('button',{class:'btn sm',disabled:true},'Claimed'):s==='lock'?h('button',{class:'btn sm',disabled:true},'Locked'):s==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim'):h('span',{class:'hq-go'},Math.round(pr)+'%'))
 }
-async function startRush(rerender){
+async function startRush(rerender,mode){
 let run
 try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
 const{playRush}=await import('/js/rush.js')
 const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the run'},'Leave run')
-const root=h('div',{class:'hw-game hw-rushg',role:'dialog','aria-modal':'true','aria-label':'Gourd Rush'},box,closeBtn)
+const root=h('div',{class:'hw-game hw-rushg',role:'dialog','aria-modal':'true','aria-label':mode==='terror'?'Terror Night':'Gourd Rush'},box,closeBtn)
 document.body.append(root)
 let stop=null,over=false
 const end=async()=>{
@@ -109,7 +109,7 @@ const x=await POST(API+'/rush/finish',{run,ok:!!r.ok,secs:r.secs,kills:r.kills})
 toast(x.candy?'Run paid '+x.candy+' candy.':x.left===0?'Daily candy limit reached for runs.':'Survive 20 seconds to earn candy.',x.candy?'ok':undefined)
 }catch(e){toast(e.message||'Could not save the result','err')}
 setTimeout(end,600)
-})
+},mode)
 }
 async function startNight(night,rerender,fp){
 let run
@@ -149,8 +149,9 @@ const play=h('div',{class:'hw-play hw-scan'},h('div',{class:'hw-play-t'},h('span
 const fv={g:10,p:10,j:10,inf:false}
 const sl=(k,n)=>{const o=h('output',null,String(fv[k])),i=h('input',{type:'range',min:'0',max:'20',value:String(fv[k]),on:{input:()=>{fv[k]=Number(i.value);o.textContent=i.value}}});return h('label',{class:'hw-fr'},h('span',null,n),i,o)}
 const free=h('div',{class:'hw-play hw-scan hw-free'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'FREEPLAY'),h('h3',null,'Custom Siege'),h('p',null,'Set how many crawlers, screamers and brutes spawn, from 0 to 20. Endless never stops and they get worse the longer you last. Freeplay pays no candy.')),h('div',{class:'hw-play-b hw-fb'},sl('g','Crawlers'),sl('p','Screamers'),sl('j','Brutes'),h('label',{class:'hw-fr'},h('span',null,'Endless'),h('input',{type:'checkbox',on:{change:e=>{fv.inf=e.target.checked}}})),h('button',{class:'btn pri',on:{click:()=>startNight(5,rerender,{g:fv.g,p:fv.p,j:fv.j,inf:fv.inf})}},'Start freeplay')))
+const terror=h('div',{class:'hw-play hw-rush hw-terror'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'LIVE  ARENA'),h('h3',null,'Terror Night'),h('p',null,'Gourd Rush with the lights almost out. Eleven new monsters, five abilities on E Q R F and space, six buildings to use or burn, and you move faster. Same candy payout, up to 8 runs a day.')),h('div',{class:'hw-play-b'},h('button',{class:'btn pri',on:{click:()=>startRush(rerender,'terror')}},'Play Terror Night')))
 const rush=h('div',{class:'hw-play hw-rush'},h('div',{class:'hw-play-t'},h('span',{class:'hw-rec'},'LIVE  ARENA'),h('h3',null,'Gourd Rush'),h('p',null,'Hold out in the dark until dawn. Move with WASD or the arrow keys, your lantern fires on its own. Level up, grab upgrades and take down the Hollowgrin. Runs pay candy, up to 8 a day.')),h('div',{class:'hw-play-b'},h('button',{class:'btn pri',on:{click:()=>startRush(rerender)}},'Play Gourd Rush')))
-return h('div',null,rush,play,free,row)
+return h('div',null,rush,terror,play,free,row)
 }
 function questsView(d,rerender){
 const part=(t,k)=>h('section',null,h('h4',{class:'hw-h'},t),h('div',{class:'hq-list'},...d.quests.filter(q=>q.kind===k).map(q=>questCard(q,rerender))))
