@@ -339,8 +339,17 @@ return/^[A-Za-z0-9_-]{11}$/.test(id)?id:''
 }
 function itchFrame(d,thumb){
 const id=d.play.match(/\/html\/(\d+)/)[1]
-const fr=h('iframe',{src:'https://itch.io/embed-upload/'+id+'?color=1a1a1a',class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
-const box=h('div',{class:'itch'},fr,h('div',{class:'row itch-bar'},h('button',{type:'button',class:'btn sm',on:{click:()=>fr.requestFullscreen?.()}},'Fullscreen'),h('button',{type:'button',class:'btn sm',on:{click:()=>box.replaceWith(thumb)}},'Close'),h('a',{class:'btn sm',href:d.url,target:'_blank',rel:'noopener noreferrer nofollow'},'Open on itch.io')))
+const src='https://itch.io/embed-upload/'+id+'?color=1a1a1a'
+const fr=h('iframe',{src,class:'itch-fr',allow:'fullscreen; autoplay; gamepad; pointer-lock; clipboard-write',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads allow-modals',referrerpolicy:'no-referrer',title:d.title||'Game'})
+const off=()=>document.removeEventListener('keydown',esc)
+const esc=e=>{if(e.key==='Escape'&&box.classList.contains('itchmax'))box.classList.remove('itchmax')}
+const full=async()=>{
+if(document.fullscreenElement===box){await document.exitFullscreen();return}
+if(box.classList.contains('itchmax')){box.classList.remove('itchmax');return}
+try{await box.requestFullscreen()}catch{box.classList.add('itchmax')}
+}
+const box=h('div',{class:'itch'},fr,h('div',{class:'row itch-bar'},h('button',{type:'button',class:'btn sm',on:{click:full}},'Fullscreen'),h('button',{type:'button',class:'btn sm',on:{click:()=>{fr.src=src}}},'Reload'),h('button',{type:'button',class:'btn sm',on:{click:()=>{off();box.replaceWith(thumb)}}},'Close'),h('a',{class:'btn sm',href:d.url,target:'_blank',rel:'noopener noreferrer nofollow'},'Open on itch.io')))
+document.addEventListener('keydown',esc)
 return box
 }
 function unfurlSlot(url){

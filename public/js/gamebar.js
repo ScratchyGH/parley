@@ -27,4 +27,4 @@ h('button',{class:'btn sm','aria-label':'Save a screenshot',on:{click:shot}},'Sc
 h('button',{class:'btn sm','aria-label':'Toggle fullscreen',on:{click:fs}},'Fullscreen'))
 root.append(bar)
 }
-export const gaming=()=>!!document.querySelector('.hw-game,.gm-game')
+export const gaming=()=>!!document.querySelector('.hw-game,.gm-game,.itch-fr')
