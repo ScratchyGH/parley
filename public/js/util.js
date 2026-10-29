@@ -357,10 +357,8 @@ el.setAttribute('title',text)
 el.setAttribute('aria-label',text)
 return el
 }
-export function lightbox(src){
-const l=h('div',{class:'lbox',tabindex:'0',on:{click:()=>l.remove(),keydown:e=>{if(e.key==='Escape')l.remove()}}},h('img',{src,alt:''}))
-document.getElementById('layer').append(l)
-l.focus()
+export function lightbox(src,list,index){
+import('./mediaviewer.js').then(m=>m.openMedia(list||[{src,type:'image',name:''}],index||0))
 }
 export function saveBlob(blob,name){
 const a=h('a',{href:URL.createObjectURL(blob),download:name})

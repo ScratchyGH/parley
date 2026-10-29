@@ -66,9 +66,10 @@ const c=cv.getContext('2d')
 c.scale(dpr,dpr)
 const cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width/2
 const fromLeft=cx>W/2
-const sx=fromLeft?cx-Math.min(cx,520):cx+Math.min(W-cx,520),sy=cy-Math.min(cy,260)
-const floor=cy+R*1.9+30
-const FL=0.62
+const dist=Math.min(R*5.5,230)
+const sx=fromLeft?cx-Math.min(cx,dist):cx+Math.min(W-cx,dist),sy=cy-Math.min(cy,dist*.55)
+const floor=cy+R*1.5+14
+const FL=0.5
 let parts=[],blobs=[],drips=[],puddles=[],ring=null,hit=false,t0=performance.now(),last=t0
 const sc=Math.max(0.8,R/26)
 function splat(){
@@ -76,15 +77,15 @@ hit=true
 ring={r:R*.4,a:.9}
 host.animate([{transform:'none'},{transform:'scale(.82,1.1)'},{transform:'scale(1.12,.92)'},{transform:'none'}],{duration:420})
 for(let i=0;i<70;i++){
-const a=rnd(0,Math.PI*2),sp=rnd(120,620)
+const a=rnd(0,Math.PI*2),sp=rnd(70,360)
 parts.push({k:'c',x:cx+Math.cos(a)*R*.3,y:cy+Math.sin(a)*R*.3,vx:Math.cos(a)*sp+(fromLeft?-1:1)*-80,vy:Math.sin(a)*sp-rnd(80,260),r:rnd(2.5,9)*Math.max(.7,sc*.7),life:rnd(1.6,2.6),age:0})
 }
 for(let i=0;i<46;i++){
-const a=rnd(0,Math.PI*2),sp=rnd(160,560)
+const a=rnd(0,Math.PI*2),sp=rnd(90,340)
 parts.push({k:'o',x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-rnd(120,300),r:rnd(1.8,4.6)*Math.max(.7,sc*.7),rot:rnd(0,6),vr:rnd(-14,14),life:rnd(1.8,2.8),age:0,b:0})
 }
 for(let i=0;i<10;i++){
-const a=rnd(0,Math.PI*2),sp=rnd(200,500)
+const a=rnd(0,Math.PI*2),sp=rnd(100,300)
 parts.push({k:'s',x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-200,r:rnd(1.5,2.6),col:['#f472b6','#fbbf24','#38bdf8','#34d399'][i%4],life:2,age:0})
 }
 blobs.push({x:0,y:0,r:R*.52,c:'#fffaf0'})
@@ -109,14 +110,14 @@ c.clearRect(0,0,W,H)
 if(!hit){
 const p=Math.min(1,T/FL)
 const e=p*p*(3-2*p)*.35+p*.65
-const x=sx+(cx-sx)*e,y=sy+(cy-sy)*e-Math.sin(Math.PI*p)*R*1.6
+const x=sx+(cx-sx)*e,y=sy+(cy-sy)*e-Math.sin(Math.PI*p)*R*.9
 cakePath(c,x,y,sc*(.6+.55*p),-.8+p*Math.PI*5,p)
 c.strokeStyle='rgba(255,255,255,.35)'
 c.lineWidth=2
 c.beginPath()
 for(let i=1;i<6;i++){
 const q=Math.max(0,p-i*.05),eq=q*q*(3-2*q)*.35+q*.65
-c.lineTo(sx+(cx-sx)*eq,sy+(cy-sy)*eq-Math.sin(Math.PI*q)*R*1.6)
+c.lineTo(sx+(cx-sx)*eq,sy+(cy-sy)*eq-Math.sin(Math.PI*q)*R*.9)
 }
 c.stroke()
 if(p>=1)splat()

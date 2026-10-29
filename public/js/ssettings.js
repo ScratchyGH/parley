@@ -72,6 +72,7 @@ items.push('-')
 if(can(sid,P.KICK))items.push({icon:'leave',label:'Kick',danger:true,fn:()=>reasonDialog('Kick '+m.display_name,'They can rejoin with a new invite.','Kick',async r=>{await POST(`/api/servers/${sid}/members/${m.id}/kick`,{reason:r});await loadMembers(sid,true)})})
 if(can(sid,P.BAN))items.push({icon:'ban',label:'Ban',danger:true,fn:()=>reasonDialog('Ban '+m.display_name,'They will be removed and cannot rejoin until unbanned.','Ban',async r=>{await POST(`/api/servers/${sid}/members/${m.id}/ban`,{reason:r});await loadMembers(sid,true)})})
 items.push({icon:'flag',label:'Report user',fn:()=>emit('ui:report',{type:'user',id:m.id})})
+if(['parleyofficial','ᴄᴀɴᴅʏʏʏ'].includes(String(S.me.username||'').toLowerCase())){items.push('-');items.push({icon:'flag',label:'Use ban hammer',fn:()=>import('./dialogs.js').then(d=>d.banhammerDialog({id:m.id,username:m.username,display_name:m.display_name||m.username}))})}
 return items
 }
 

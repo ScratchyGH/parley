@@ -87,7 +87,7 @@ async function startRush(rerender){
 let run
 try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
-const{playRush}=await import('/g3d/gourd2d.js')
+const{playRush}=await import('/js/rush.js')
 const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the run'},'Leave run')
 const root=h('div',{class:'hw-game hw-rushg',role:'dialog','aria-modal':'true','aria-label':'Gourd Rush'},box,closeBtn)

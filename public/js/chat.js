@@ -374,6 +374,7 @@ if(perms&P.REACT)items.push({icon:'smile',label:'Add reaction',fn:()=>emojiPicke
 if(info&&!C.room.startsWith('th_')&&info.ch.type!=='forum'&&(perms&P.SEND)&&!m.thread)items.push({icon:'chat',label:'Start thread',fn:()=>threadDialog(info.sid,C.room,m)})
 if((m.content||m.attachments?.length)&&!m.poll)items.push({icon:'forward',label:'Forward message',fn:()=>forwardDialog(m)})
 if(own&&perms&P.SEND)items.push({icon:'edit',label:'Edit message',fn:()=>startEdit(m)})
+if(!own&&['parleyofficial','ᴄᴀɴᴅʏʏʏ'].includes(String(S.me.username||'').toLowerCase()))items.push({icon:'flag',label:'Use ban hammer on '+(m.author.display_name||m.author.username),fn:()=>import('./dialogs.js').then(d=>d.banhammerDialog({id:m.author.id,username:m.author.username,display_name:m.author.display_name||m.author.username}))})
 const canPin=isDm(C.room)||(perms&P.MANAGE_MESSAGES)
 if(canPin)items.push({icon:'pin',label:m.pinned?'Unpin message':'Pin message',fn:async()=>{try{if(m.pinned)await DEL(`/api/rooms/${C.room}/pins/${m.id}`);else await PUT(`/api/rooms/${C.room}/pins/${m.id}`)}catch(e){fail(e)}}})
 items.push('-')
@@ -621,7 +622,7 @@ if(!C.ac){C.ac=h('div',{class:'ac',role:'listbox'});C.compWrap.append(C.ac)}
 drawAc()
 return
 }
-const m=before.match(/(?:^|\s)@([a-zA-Z0-9_.-]{0,24})$/)
+const m=before.match(/(?:^|\s)@([\p{L}\p{M}\p{N}_.-]{0,24})$/u)
 if(!m){closeAc();return}
 const q=m[1].toLowerCase()
 let pool=[]
@@ -645,7 +646,7 @@ function pickMention(u){
 const t=C.ta
 const pos=t.selectionStart
 const sig=u.chan?'#':'@'
-const before=t.value.slice(0,pos).replace(u.chan?/#[a-zA-Z0-9_-]{0,40}$/:/@[a-zA-Z0-9_.-]{0,24}$/,'')
+const before=t.value.slice(0,pos).replace(u.chan?/#[a-zA-Z0-9_-]{0,40}$/:/@[\p{L}\p{M}\p{N}_.-]{0,24}$/u,'')
 t.value=before+sig+u.username+' '+t.value.slice(pos)
 const np=(before+sig+u.username+' ').length
 t.setSelectionRange(np,np)

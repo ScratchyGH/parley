@@ -65,7 +65,7 @@ codeScreen(un.value.trim(),d.recovery_code,()=>{tab='login';draw()})
 }
 }catch(x){if(x.data?.need_totp){totBox.hidden=false;tot.focus()}err.textContent=x.message;submit.disabled=false}
 }}},
-field('Username',un,tab==='register'?'3 to 24 letters, numbers, dots, dashes or underscores':null),
+field('Username',un,tab==='register'?'3 to 24 letters (any language), numbers, dots, dashes or underscores':null),
 tab==='register'?field('Display name (optional)',dn):null,
 tab==='recover'?field('Recovery code',rc):null,
 field(tab==='recover'?'New password':'Password',pw,tab!=='login'?'At least 10 characters':null),

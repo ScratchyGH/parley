@@ -249,7 +249,7 @@ else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await
 else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()}))
 act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()}))
 act.append(btn('Send a birthday cake',async()=>{await POST('/api/banhammer/cake',{to:u.username});toast('Cake sent','ok')}))
-act.append(btn('Swing ban hammer',()=>{closeMenu();banhammerDialog(u)},'dng'))
+if(canHammer())act.append(btn('Use ban hammer',()=>{closeMenu();banhammerDialog(u)},'dng'))
 }
 const hero=heroBox(u.accent,u.banner_id)
 const BADGE={owner:'Owner',staff:'Staff',experimental:'Experimental',bot:'Bot'}
@@ -275,7 +275,8 @@ note,act,
 popup(el,Math.min(x,innerWidth-400),Math.min(y,innerHeight-460),'')
 }
 
-function banhammerDialog(u){
+export const canHammer=()=>['parleyofficial','ᴄᴀɴᴅʏʏʏ'].includes(String(S.me?.username||'').toLowerCase())
+export function banhammerDialog(u){
 const err=errBox()
 const reason=h('textarea',{class:'inp',rows:3,maxLength:300,autofocus:true,placeholder:'Why should '+u.display_name+' be banned? The hammer checks this against their recent activity.'})
 const go=h('button',{class:'btn dng',type:'submit'},'Swing')

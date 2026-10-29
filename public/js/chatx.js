@@ -63,14 +63,16 @@ return box
 }
 export function renderAttachments(m){
 const a=h('div',{class:'att'})
+const media=m.attachments.filter(f=>(f.mime.startsWith('image/')&&f.mime!=='image/svg+xml')||f.mime.startsWith('video/'))
+const mlist=()=>media.map(f=>({src:fileUrl(f.id),type:f.mime.startsWith('video/')?'video':'image',name:f.name}))
 for(const f of m.attachments){
 const u=fileUrl(f.id)
 if(f.mime.startsWith('image/')&&f.mime!=='image/svg+xml'){
-const img=h('img',{alt:f.name,loading:'lazy',decoding:'async',title:f.name,on:{click:()=>lightbox(img.currentSrc||img.src)}})
+const img=h('img',{alt:f.name,loading:'lazy',decoding:'async',title:f.name,on:{click:()=>lightbox(img.currentSrc||img.src,mlist(),media.indexOf(f))}})
 setImg(img,f,m)
 a.append(img)
 }
-else if(f.mime.startsWith('video/'))a.append(h('video',{src:u,controls:true,preload:'metadata','aria-label':f.name}))
+else if(f.mime.startsWith('video/')){const v=h('video',{src:u,controls:true,preload:'metadata','aria-label':f.name});a.append(h('div',{class:'vwrap'},v,h('button',{class:'btn sm vexp',title:'Open in viewer','aria-label':'Open video in viewer',on:{click:()=>{v.pause();lightbox(u,mlist(),media.indexOf(f))}}},'Expand')))}
 else if(f.mime.startsWith('audio/')){const vc=/^voice-clip/i.test(f.name);a.append(h('div',{class:vc?'vclip':null},vc?null:h('div',{class:'hint'},f.name),h('audio',{src:u,controls:true,preload:vc?'metadata':'none'}),vc?h('div',{class:'vsub','aria-label':'Subtitles'},f.transcript||'Transcribing…'):null))}
 else if(f.mime.startsWith('text/plain')&&f.size<=262144)a.append(textFile(f,m))
 else a.append(fileLink(f,m))

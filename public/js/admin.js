@@ -250,6 +250,8 @@ h('p',{class:'muted'},'Hidden from the shop for everyone except admins until Oct
 h('div',{class:'row',style:{alignItems:'center',gap:'16px',flexWrap:'wrap'}},
 av,
 h('button',{class:'btn pri',on:{click:()=>import('./cakefx.js').then(m=>m.throwCake(av))}},'Throw the cake'),
+h('button',{class:'btn',on:{click:()=>import('./giftreveal.js').then(m=>m.previewGift({from_name:S.me.display_name,kind:'bundle',label:'Birthday Bomb'}))}},'Preview present'),
+h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/admin/pars/resend-gift',{username:'ᴄᴀɴᴅʏʏʏ',from:'Ethan',label:'Birthday Bomb'});toast('Present sent to ᴄᴀɴᴅʏʏʏ','ok')}catch(e){fail(e)}}}},'Resend present to ᴄᴀɴᴅʏʏʏ'),
 h('button',{class:'btn',on:{click:()=>import('./banhammerfx.js').then(m=>m.banhammerHit(S.me.id,'You'))}},'Preview ban hammer'),
 h('div',{class:'np par-np np_bday'},nm),
 h('b',null,nm,h('span',{class:'bdg-i bd_bday'}),h('span',{class:'ttl ti_bday'}))))

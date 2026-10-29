@@ -537,5 +537,7 @@ if(m)document.title=`(${m}) ${document.title}`
 addEventListener('beforeunload',()=>{})
 
 startP2P()
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwa=e})
+addEventListener('appinstalled',()=>{window.__pwa=null})
 if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.t==='goto'&&S.me)go(e.data.url)})
 boot()
