@@ -471,3 +471,11 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 .slc{padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--bg2,var(--panel));color:var(--text)}
 .slc:hover{background:var(--sel)}
 .slc.on{background:var(--sel);border-color:var(--strong);color:var(--strong)}
+
+.tile .vtools{position:absolute;top:8px;right:8px;display:flex;gap:6px;opacity:0;transition:opacity .15s;z-index:2}
+.tile:hover .vtools,.tile:focus-within .vtools,.tile.mega .vtools{opacity:1}
+.tile .vt{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:rgba(1,4,9,.78);color:#e6edf3;font:inherit;font-size:12px;cursor:pointer}
+.tile .vt:hover{border-color:var(--hi)}
+.tile.mega{position:fixed;inset:0;z-index:400;border-radius:0;border:0;background:#000;min-height:0}
+.tile:fullscreen{border-radius:0;background:#000}
+.tile video{touch-action:none}
