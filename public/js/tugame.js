@@ -582,6 +582,7 @@ for(let q=0;q<5;q++){const rr=12+q*12,a2=clock*(1.4+q*.3);ctx.beginPath();ctx.el
 lights.push([o.x,o.y,130,.6,'vio'])
 }else if(o.kind==='lair'){
 ctx.fillStyle='#07040c';ctx.fillRect(o.x-34,o.y-12,68,34)
+if(SG&&SG[0]===0){ctx.save();ctx.globalCompositeOperation='lighter';const bg=ctx.createLinearGradient(0,o.y-700,0,o.y);bg.addColorStop(0,'rgba(255,60,100,0)');bg.addColorStop(1,'rgba(255,60,100,'+(.45+Math.sin(clock*4)*.15)+')');ctx.fillStyle=bg;ctx.fillRect(o.x-14,o.y-700,28,700);ctx.strokeStyle='rgba(255,90,120,.8)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(o.x,o.y+6,40+Math.sin(clock*5)*6,14,0,0,TAU);ctx.stroke();ctx.restore();lights.push([o.x,o.y-20,170,.9,'warm'])}
 for(let q=0;q<4;q++){ctx.fillStyle=['#5a4478','#46345e','#34264a','#1a1028'][q];ctx.fillRect(o.x-28+q*3,o.y-8+q*6,56-q*6,6)}
 ctx.fillStyle='#ff4a6a';ctx.fillRect(o.x-30,o.y-30,4,18);ctx.fillRect(o.x+26,o.y-30,4,18)
 lights.push([o.x,o.y,110,.8,'red'])
@@ -797,6 +798,7 @@ if(o&&!(o.kind==='crypt'&&V.dead.has(o.id))){ctx.fillStyle=MK[o.kind];ctx.beginP
 for(const ch of c.ch)if(!V.opened.has(ch.id)){ctx.fillStyle='#ffd93b';ctx.fillRect(cx+(ch.x-p.x)*sc-1.5,cy+(ch.y-p.y)*sc-1.5,3,3)}
 }
 for(const d of V.dc){if(V.opened.has(d[0]))continue;ctx.fillStyle='#ffe27a';ctx.beginPath();ctx.arc(cx+Math.max(-r+4,Math.min(r-4,(d[1]-p.x)*sc)),cy+Math.max(-r+4,Math.min(r-4,(d[2]-p.y)*sc)),4+Math.sin(clock*6)*1.2,0,TAU);ctx.fill()}
+if(V.labO&&SG&&SG[0]===0&&!V.labSeen){const ex=(V.labO.x-p.x)*sc,ey=(V.labO.y-p.y)*sc,m=Math.hypot(ex,ey),k=m>r-9?(r-9)/m:1;ctx.fillStyle='#ff4a6a';ctx.strokeStyle='#07040c';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx+ex*k,cy+ey*k,6+Math.sin(clock*6)*1.5,0,TAU);ctx.fill();ctx.stroke();ctx.font='800 9px '+FONT;ctx.textAlign='center';ctx.fillStyle='#ffd0d8';ctx.fillText('LAB',cx+ex*k,cy+ey*k-9)}
 for(const o of V.pl.values()){if(o.u===me||o.s==='dead')continue;const ex=(o.x-p.x)*sc,ey=(o.y-p.y)*sc,m=Math.hypot(ex,ey),k=m>r-5?(r-5)/m:1;ctx.fillStyle=COL[(idx.get(o.u)||0)%3];ctx.beginPath();ctx.arc(cx+ex*k,cy+ey*k,4.5,0,TAU);ctx.fill();ctx.strokeStyle='#07040c';ctx.lineWidth=1.5;ctx.stroke()}
 ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,3,0,TAU);ctx.fill()
 ctx.restore()
@@ -912,6 +914,7 @@ let o=null,bd0=1e18
 const ci=Math.floor(p.x/CS),cj=Math.floor(p.y/CS)
 for(let i=ci-4;i<=ci+4;i++)for(let j=cj-4;j<=cj+4;j++){const c=chunk(i,j),q=c&&c.o;if(q&&q.kind==='lair'){const d2=(q.x-p.x)**2+(q.y-p.y)**2;if(d2<bd0){bd0=d2;o=q}}}
 if(!o)o={x:500,y:CS+500}
+V.labO=o
 if(o){
 const dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy)
 if(d>140){
