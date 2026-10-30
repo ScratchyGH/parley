@@ -1,4 +1,4 @@
-name: Build kids apps
+name: Build kids and parent apps
 on:
   workflow_dispatch:
   push:
@@ -11,6 +11,22 @@ permissions:
   contents: write
 jobs:
   windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: kids
+            path: kids
+            name: Parley Kids
+            id: app.parley.kids
+            art: ParleyKids-Setup
+            bg: '#dff3ff'
+          - key: connect
+            path: connect
+            name: PK Connect
+            id: app.parley.connect
+            art: PKConnect-Setup
+            bg: '#f3f5fa'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +38,7 @@ jobs:
           mkdir kd && cd kd && mkdir build
           cp ../public/logo-512.png build/icon.png
           cat > package.json <<EOF
-          {"name":"parley-kids","version":"1.${{ github.run_number }}.0","description":"Parley Kids","author":"Parley <parley@example.com>","homepage":"${SITE}/kids/","main":"main.js","build":{"appId":"app.parley.kids","productName":"Parley Kids","directories":{"buildResources":"build"},"files":["main.js","package.json"],"win":{"target":["nsis"],"icon":"build/icon.png"},"nsis":{"oneClick":true,"perMachine":false,"runAfterFinish":true,"artifactName":"ParleyKids-Setup.exe"}}}
+          {"name":"parley-${{ matrix.key }}","version":"1.${{ github.run_number }}.0","description":"${{ matrix.name }}","author":"Parley <parley@example.com>","homepage":"${SITE}/${{ matrix.path }}/","main":"main.js","build":{"appId":"${{ matrix.id }}","productName":"${{ matrix.name }}","directories":{"buildResources":"build"},"files":["main.js","package.json"],"win":{"target":["nsis"],"icon":"build/icon.png"},"nsis":{"oneClick":true,"perMachine":false,"runAfterFinish":true,"artifactName":"${{ matrix.art }}.exe"}}}
           EOF
           cat > main.js <<'EOF'
           const{app,BrowserWindow,shell,session}=require('electron')
@@ -31,22 +47,36 @@ jobs:
           app.whenReady().then(()=>{
           session.defaultSession.setPermissionRequestHandler((wc,p,cb)=>cb(false))
           session.defaultSession.setPermissionCheckHandler(()=>false)
-          const w=new BrowserWindow({width:1000,height:760,backgroundColor:'#dff3ff',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
-          w.loadURL(SITE+'/kids/')
-          w.webContents.on('will-navigate',(e,u)=>{if(!u.startsWith(SITE+'/kids/')){e.preventDefault()}})
+          const w=new BrowserWindow({width:1000,height:760,backgroundColor:'__BG__',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
+          w.loadURL(SITE+'/__PATH__/')
+          w.webContents.on('will-navigate',(e,u)=>{if(!u.startsWith(SITE+'/__PATH__/')){e.preventDefault()}})
           w.webContents.setWindowOpenHandler(()=>({action:'deny'}))
           })
           app.on('window-all-closed',()=>app.quit())
           EOF
-          sed -i "s#__SITE__#${SITE}#g" main.js
+          sed -i "s|__SITE__|${SITE}|g;s|__PATH__|${{ matrix.path }}|g;s|__BG__|${{ matrix.bg }}|g" main.js
           npm i --save-dev electron@33 electron-builder@25
           npx electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
         with:
-          name: kwin
-          path: kd/dist/ParleyKids-Setup.exe
+          name: win-${{ matrix.key }}
+          path: kd/dist/${{ matrix.art }}.exe
           if-no-files-found: error
   android:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: kids
+            path: kids
+            name: Parley Kids
+            id: app.parley.kids
+            art: ParleyKids
+          - key: connect
+            path: connect
+            name: PK Connect
+            id: app.parley.connect
+            art: PKConnect
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,20 +93,20 @@ jobs:
           npm init -y
           npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           mkdir www
-          echo '<!doctype html><title>Parley Kids</title>' > www/index.html
+          echo '<!doctype html><title>${{ matrix.name }}</title>' > www/index.html
           cat > capacitor.config.json <<EOF
-          {"appId":"app.parley.kids","appName":"Parley Kids","webDir":"www","server":{"url":"${SITE}/kids/","androidScheme":"https","allowNavigation":[]}}
+          {"appId":"${{ matrix.id }}","appName":"${{ matrix.name }}","webDir":"www","server":{"url":"${SITE}/${{ matrix.path }}/","androidScheme":"https","allowNavigation":[]}}
           EOF
           npx cap add android
           for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do n=${d%%:*}; s=${d##*:}; mkdir -p android/app/src/main/res/mipmap-$n; for f in ic_launcher ic_launcher_round ic_launcher_foreground; do convert ../public/logo-512.png -resize ${s}x${s} android/app/src/main/res/mipmap-$n/$f.png; done; done
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           npx cap sync android
           cd android && ./gradlew assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk ../../ParleyKids.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../../${{ matrix.art }}.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: kandroid
-          path: ParleyKids.apk
+          name: apk-${{ matrix.key }}
+          path: ${{ matrix.art }}.apk
           if-no-files-found: error
   publish:
     needs: [windows, android]
@@ -89,5 +119,5 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create kids --repo "$GITHUB_REPOSITORY" --title "Parley Kids apps" --notes "Parley Kids for Windows and Android." 2>/dev/null || true
+          gh release create kids --repo "$GITHUB_REPOSITORY" --title "Parley Kids apps" --notes "Parley Kids and PK Connect for Windows and Android." 2>/dev/null || true
           gh release upload kids out/* --clobber --repo "$GITHUB_REPOSITORY"
