@@ -38,6 +38,7 @@ import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
 import hollowRoutes from'./hollow.js'
 import teamupRoutes from'./teamup.js'
+import gamepackRoutes from'./gamepack.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -80,6 +81,7 @@ modaiRoutes(router)
 banhammerRoutes(router)
 hollowRoutes(router)
 teamupRoutes(router)
+gamepackRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
 voiceRoutes(router)
