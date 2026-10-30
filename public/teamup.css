@@ -141,3 +141,27 @@
 @keyframes csgl{0%{filter:none;transform:translateX(0)}20%{filter:hue-rotate(140deg) saturate(2.4);transform:translateX(-14px)}40%{filter:invert(.25) hue-rotate(260deg);transform:translateX(12px) skewX(4deg)}60%{filter:hue-rotate(60deg) contrast(1.6);transform:translateX(-8px)}80%{filter:saturate(3);transform:translateX(6px) skewX(-3deg)}100%{filter:none;transform:none}}
 .tes-ar .rs-cv{animation:tesar 6s linear infinite}
 @keyframes tesar{0%,100%{filter:hue-rotate(0deg) saturate(1.2)}50%{filter:hue-rotate(25deg) saturate(1.5)}}
+.cs-stage{position:absolute;inset:0;width:100%;height:100%;z-index:29;pointer-events:none}
+.cs-p.np .cs-pt{display:none}
+.cs-p.big .cs-t{font:900 clamp(26px,5vw,54px)/1.1 system-ui,sans-serif;text-align:center;letter-spacing:.04em;color:#fff;text-shadow:0 0 18px #58ffd0,3px 0 #ff3a8a,-3px 0 #3affff}
+.cs-p.big{justify-content:center;text-align:center}
+.tcur{position:fixed;left:0;top:0;width:22px;height:32px;z-index:99999;pointer-events:none;background:#fff;clip-path:polygon(0 0,0 80%,28% 62%,50% 100%,66% 92%,44% 58%,84% 58%);filter:drop-shadow(0 0 6px #58ffd0)}
+.tcur-h,.tcur-h *{cursor:none!important}
+.tes-frz .rs-cv{filter:grayscale(1) contrast(1.15) brightness(.85)}
+.tes-frz::after{content:'';position:absolute;inset:0;background:rgba(120,170,255,.12);pointer-events:none;z-index:25}
+.tes-crk{position:absolute;inset:0;width:100%;height:100%;z-index:28;pointer-events:none}
+.tes-crk polyline{fill:none;stroke:#fff;stroke-width:.6;filter:drop-shadow(0 0 1px #58ffd0)}
+.tes-sh{position:absolute;z-index:27;pointer-events:none;will-change:transform}
+.tes-void{opacity:0!important}
+.tes-fl{animation:tesfl 3.2s ease-in-out infinite}
+@keyframes tesfl{0%,100%{margin-top:0}50%{margin-top:-14px}}
+html.tes-bug #app{animation:tesbug .22s steps(2) infinite}
+@keyframes tesbug{0%{filter:hue-rotate(0) contrast(1.2);transform:translate(0,0) skewX(0)}25%{filter:hue-rotate(90deg) contrast(1.6);transform:translate(-6px,3px) skewX(2deg)}50%{filter:invert(.15) hue-rotate(200deg);transform:translate(7px,-4px) skewX(-3deg)}75%{filter:saturate(3) hue-rotate(300deg);transform:translate(-3px,-2px) skewX(1deg)}100%{filter:none;transform:translate(0,0)}}
+.p10{position:absolute;inset:0;z-index:40;background:rgba(6,2,16,.93);display:flex;flex-direction:column;align-items:center;padding:20px 14px;overflow:auto;color:#f1ecff}
+.p10 h3{margin:0 0 4px;font:900 26px system-ui,sans-serif;color:#58ffd0;text-shadow:0 0 14px #58ffd0}
+.p10 p{margin:0 0 8px;color:#bdb2dc;font:600 13px system-ui,sans-serif}
+.p10-c{font:800 18px system-ui,sans-serif;margin-bottom:12px;color:#ffe27a}
+.p10-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;width:min(980px,100%)}
+.p10-b{background:#1b1230;border:1px solid #4a3f66;color:#e8e0ff;padding:10px 8px;font:700 12px system-ui,sans-serif;cursor:pointer;text-align:left}
+.p10-b:hover{border-color:#58ffd0;background:#26194a}
+.p10-b.on{border-color:#ffe27a;color:#ffe27a;background:#2e2410}
