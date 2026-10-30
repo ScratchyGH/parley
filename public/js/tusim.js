@@ -334,9 +334,9 @@ txt(p.x,p.y-40,'-'+Math.round(d),'#ff6a5a')
 ev('hurt',p.u)
 if(p.hp<=0){
 p.hp=0
-if((n>1&&alive().length>1)||cmOf(p.u)){p.s='down';p.bleed=25;p.rv=0;ev('down',p.u);const cc=cmOf(p.u);if(cc){cc.rv=1;cc.rt=0;const rs=cc.w==='brit'?'revive2':'revive';ev('cs',rs,'',cc.own);S.ts=Math.max(S.ts,CSD[rs]-1)}}
+if((n>1&&alive().length>1)||cmOf(p.u)){p.s='down';p.bleed=45;p.rv=0;ev('down',p.u);const cc=cmOf(p.u);if(cc){cc.rv=1;cc.rt=0;const rs=cc.w==='brit'?'revive2':'revive';ev('cs',rs,'',cc.own);S.ts=Math.max(S.ts,CSD[rs]-1)}}
 else p.s=n>1?'down':'dead'
-if(p.s==='down')p.bleed=25
+if(p.s==='down')p.bleed=45
 }
 return true
 }
@@ -685,7 +685,7 @@ if(k.os){k.os.t-=dt;if(k.os.t<=0){for(const e of near2(k.os,150))hit(e,D*8,1,o.u
 if(o.hp<o.max*(br?.35:.3)&&k.hc<=0){k.hc=br?12:14;o.hp=Math.min(o.max,o.hp+(br?22:12));txt(o.x,o.y-44,'+'+(br?22:12),F.c);cl(k.w,F.heal,1)}
 k.dn=0;k.rv=0;k.rt=0
 }else if(o&&o.s==='down'){
-if(k.rv){k.rt+=dt;o.bleed=25;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}
+if(k.rv){k.rt+=dt;o.bleed=45;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}
 if(k.rt>=F.rt){k.rv=0;k.rt=0;k.rc=F.rcd;o.s='up';o.hp=o.max*(br?.65:.55);o.rv=0;o.inv=3;txt(o.x,o.y-44,'Revived',F.c,1);burst(o.x,o.y-10,F.c,40);ev('x',rd(o.x),rd(o.y),220,12);ev('sh',8)}}
 else if(!k.dn){k.dn=1;cl(k.w,F.down,1)}
 }

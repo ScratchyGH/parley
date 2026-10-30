@@ -370,7 +370,7 @@ if(f[0]>0&&F.length<200&&R()<.5)F.push({x:o.x-(o.face||1)*8,y:o.y-8,vx:0,vy:0,l:
 if(f[3]>0){ctx.strokeStyle='rgba(255,50,90,'+(.45+Math.sin(clock*7)*.2)+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(o.x,o.y,20,7,0,0,TAU);ctx.stroke()}
 }
 const person0=(o,self)=>{
-if(o.s==='dead')return
+if(o.s==='dead'){ctx.save();ctx.globalAlpha=.55;ctx.fillStyle='#9a9aa6';ctx.fillRect(o.x-7,o.y-20,14,18);ctx.beginPath();ctx.arc(o.x,o.y-20,7,Math.PI,0);ctx.fill();ctx.globalAlpha=.8;ctx.fillStyle='#fff';ctx.font='700 10px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText((names.get(o.u)||'').slice(0,10),o.x,o.y+12);ctx.restore();return}
 const i=idx.get(o.u)||0
 ctx.save()
 ctx.strokeStyle=COL[i%3];ctx.globalAlpha=.8;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(o.x,o.y,15,5.5,0,0,TAU);ctx.stroke();ctx.globalAlpha=1
@@ -511,7 +511,8 @@ const OSP={tower:['tower',1.3],crypt:['crypt',1.4],well:['well',1.5],shrine:['sh
 const world=(dt)=>{
 const p=mine()
 const sx=calm?0:(R()-.5)*shake,sy=calm?0:(R()-.5)*shake
-const cx=(p?p.x:500)-VW/2+sx,cy=(p?p.y-8:560)-VH/2+sy
+const cp=p&&p.s==='dead'?([...V.pl.values()].find(o=>o.s==='up')||[...V.pl.values()].find(o=>o.s==='down')||p):p
+const cx=(cp?cp.x:500)-VW/2+sx,cy=(cp?cp.y-8:560)-VH/2+sy
 L.cx=cx-sx;L.cy=cy-sy
 ctx.setTransform(D*Z,0,0,D*Z,-cx*D*Z,-cy*D*Z)
 const inl=!!(p&&p.x>=LI*CS)
@@ -910,6 +911,7 @@ if(p&&!SG&&!p.lair&&p.x<LI*CS&&!V.labSeen){
 let o=null,bd0=1e18
 const ci=Math.floor(p.x/CS),cj=Math.floor(p.y/CS)
 for(let i=ci-4;i<=ci+4;i++)for(let j=cj-4;j<=cj+4;j++){const c=chunk(i,j),q=c&&c.o;if(q&&q.kind==='lair'){const d2=(q.x-p.x)**2+(q.y-p.y)**2;if(d2<bd0){bd0=d2;o=q}}}
+if(!o)o={x:500,y:CS+500}
 if(o){
 const dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy)
 if(d>140){

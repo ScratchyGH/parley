@@ -78,7 +78,7 @@ const boundTo=(o,r)=>{o.x=Math.max(r.x+30,Math.min(r.x+r.w-30,o.x));o.y=Math.max
 const step=dt=>{
 if(st.ph>=1&&st.ph<=11)S.acc=0
 if(st.ph>=1&&st.ph<=11)S.nev=S.time+999
-if(st.ph===0&&st.tv&&S.time>(test===2?6:120)&&(test===2||(!S.boss&&S.ts<=0&&S.st==='run'))){const p=pic();if(p)start(p,LI+1234)}
+if(test===2&&st.ph===0&&st.tv&&S.time>6){const p=pic();if(p)start(p,LI+1234)}
 st.t+=dt
 const tv=st.tv
 if(!tv)return
