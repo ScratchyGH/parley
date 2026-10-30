@@ -32,8 +32,8 @@ const orb=(col,em,r)=>{
 const g=new T.Group()
 const core=new T.Mesh(new T.SphereGeometry(r,48,32),new T.MeshStandardMaterial({color:0x110000,emissive:em,emissiveIntensity:1.6,roughness:.25,metalness:.1}))
 g.add(core)
-g.add(sprite(col,r*5.2,.85))
-const sh=pts(700,shellF(r*1.55),col,r*.16,.9);g.add(sh)
+g.add(sprite(col,r*4,.5))
+const sh=pts(600,shellF(r*1.55),col,r*.1,.7);g.add(sh)
 const r1=ring(r*1.9,r*.03,col),r2=ring(r*2.3,r*.02,col);r1.rotation.x=1.2;r2.rotation.y=1.1;g.add(r1,r2)
 g.userData={sh,r1,r2,core}
 return g
@@ -42,12 +42,12 @@ const purple=r=>{
 const g=new T.Group()
 g.add(new T.Mesh(new T.SphereGeometry(r,64,48),new T.MeshBasicMaterial({color:0x040008})))
 g.add(new T.Mesh(new T.SphereGeometry(r*1.045,64,48),RIM()))
-g.add(sprite(0xb060ff,r*9,.7))
+g.add(sprite(0xb060ff,r*7,.3))
 const disk=new T.Group()
-const d1=pts(4200,diskF(r*1.5,r*3.6,r*.1),0xd49aff,r*.1,.9),d2=pts(2400,diskF(r*1.3,r*2.4,r*.06),0xffffff,r*.07,.8)
+const d1=pts(4200,diskF(r*1.5,r*3.6,r*.1),0xb070ff,r*.07,.55),d2=pts(2400,diskF(r*1.3,r*2.4,r*.06),0xe8c8ff,r*.05,.5)
 disk.add(d1,d2);disk.rotation.x=.42;disk.rotation.z=.18
 g.add(disk)
-const jets=pts(1200,()=>{const s=Math.random()<.5?1:-1,y=r*(1.1+Math.pow(Math.random(),1.6)*6.5),k=r*.22*(1-y/(r*8));return[(Math.random()-.5)*k*2,s*y,(Math.random()-.5)*k*2]},0xb070ff,r*.09,.7)
+const jets=pts(1200,()=>{const s=Math.random()<.5?1:-1,y=r*(1.1+Math.pow(Math.random(),1.6)*6.5),k=r*.22*(1-y/(r*8));return[(Math.random()-.5)*k*2,s*y,(Math.random()-.5)*k*2]},0xa060ff,r*.06,.35)
 g.add(jets)
 g.userData={disk,d1,d2,jets}
 return g
@@ -62,7 +62,7 @@ const sc=new T.Scene(),cam=new T.PerspectiveCamera(52,W/H,.1,300)
 sc.add(new T.AmbientLight(0x404060,1.2))
 const L1=new T.PointLight(0xffffff,40,40);L1.position.set(0,3,6);sc.add(L1)
 const comp=new EffectComposer(R);comp.addPass(new RenderPass(sc,cam))
-const bl=new UnrealBloomPass(new T.Vector2(W,H),1.25,.75,.02);comp.addPass(bl);comp.addPass(new OutputPass())
+const bl=new UnrealBloomPass(new T.Vector2(W,H),.55,.55,.38);comp.addPass(bl);comp.addPass(new OutputPass())
 const red=orb(0xff3a2a,0xff2010,.8),blue=orb(0x3a7bff,0x1a50ff,.8)
 sc.add(red,blue)
 const pu=purple(1);pu.visible=false;sc.add(pu)
@@ -72,7 +72,7 @@ const sg=new T.BufferGeometry();sg.setAttribute('position',new T.BufferAttribute
 const stars=new T.LineSegments(sg,new T.LineBasicMaterial({color:0x7a5aff,transparent:true,opacity:.55,blending:T.AdditiveBlending}))
 sc.add(stars)
 const waves=[]
-const flash=sprite(0xffffff,30,0);flash.position.set(0,0,0);sc.add(flash)
+const flash=sprite(0xffffff,14,0);flash.position.set(0,0,0);sc.add(flash)
 const boom=()=>{for(let i=0;i<3;i++){const w=ring(1,.05+i*.03,i===0?0xffffff:0xc58aff);w.userData.t=-i*.09;w.rotation.x=1.2+i*.3;waves.push(w);sc.add(w)}}
 const T0=performance.now()
 const now=()=>o&&o.t?o.t():(performance.now()-T0)/1000
@@ -101,18 +101,18 @@ red.position.set(-sx,wy,Math.sin(t*2)*.8);blue.position.set(sx,-wy,-Math.sin(t*2
 const spin=t*2.6,pl=1+Math.sin(t*14)*.05
 for(const[g,s]of[[red,1],[blue,-1]]){g.userData.sh.rotation.y=spin*s;g.userData.sh.rotation.x=t*.9*s;g.userData.r1.rotation.z=t*3*s;g.userData.r2.rotation.x=t*2.4*s;g.scale.setScalar(pl*(1+e*.35))}
 cam.position.set(Math.sin(t*.5)*1.6+sh,.5+Math.cos(t*.6)*.3+sh,9.5-e*2.2);cam.lookAt(0,0,0)
-flash.material.opacity=e>.9?(e-.9)*5:0
+flash.material.opacity=e>.9?(e-.9)*2.5:0
 }else{
 const u=t-3.05
 if(!bo){bo=1;red.visible=blue.visible=false;pu.visible=true;boom();flash.material.opacity=1}
-flash.material.opacity=Math.max(0,1-u/.5)
+flash.material.opacity=Math.max(0,.9-u/.45)
 const gr=1-Math.pow(1-Math.min(1,u/1),3),r=.25+gr*1.25
 pu.scale.setScalar(r)
 const ud=pu.userData
 ud.disk.rotation.y=u*2.2;ud.d2.rotation.y=-u*1.1;ud.jets.rotation.y=u*.8
 pu.rotation.y=u*.3
 const fire=u>3.2?Math.min(1,(u-3.2)/1.35):0
-cam.position.set(Math.sin(u*.45)*2.4,1.1+Math.sin(u*.35)*.5,8.2-gr*1.2-fire*fire*7.4)
+cam.position.set(Math.sin(u*.45)*2.4,1.5+Math.sin(u*.35)*.5,11.5-gr*.8-fire*fire*10.2)
 cam.lookAt(0,0,0)
 cv.style.filter=fire>0?'brightness('+(1+fire*fire*7)+')':''
 if(fire>.7)cv.style.opacity=String(Math.max(0,1-(fire-.7)/.3)*fo)
