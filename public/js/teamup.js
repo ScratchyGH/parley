@@ -58,7 +58,7 @@ const send=(d,to)=>{if(net)net.send(d,to)}
 const close=()=>{
 if(closed)return
 closed=true
-clearTimeout(joinTimer)
+clearInterval(joinTimer)
 try{game&&game.stop()}catch{}
 try{net&&net.close()}catch{}
 root.remove()
@@ -139,7 +139,7 @@ else if(game)game.msg(f,d)
 return
 }
 if(d.k==='ros'){
-clearTimeout(joinTimer)
+clearInterval(joinTimer)
 hostUid=f;roster=d.list;mode=d.mode;if(d.rules)rl=d.rules
 if(!roster.some(x=>x.u===S.me.id)){toast('You were removed from the party','err');close();return}
 if(phase==='lobby')lobby()
@@ -152,8 +152,10 @@ net=connectParty({code,create:isHost,me:S.me.id,on:{
 open(){
 online=true;status='Party code'
 if(isHost){lobby();return}
-send({k:'hi',n:myName,un:S.me.username})
-joinTimer=setTimeout(()=>{toast('That party is not open','err');close()},6000)
+let hn=0
+const hi=()=>send({k:'hi',n:myName,un:S.me.username})
+hi()
+joinTimer=setInterval(()=>{hn++;if(hn>8){clearInterval(joinTimer);toast('That party is not open','err');close()}else hi()},2000)
 },
 fail(t){
 if(isHost){online=false;status='Offline, solo only';net=null;toast(t,'err');lobby();return}

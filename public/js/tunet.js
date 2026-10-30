@@ -18,7 +18,9 @@ else c.joinRoom(room)
 }else if(s===ST.Error||s===ST.Disconnected){if(!dead){dead=true;on.close(joined)}}
 }
 c.onJoinRoom=()=>{joined=true;on.open()}
+let tr=0
 c.onOperationResponse=(err,msg)=>{
+if(err===32758&&!create&&!joined&&!dead&&tr<6){tr++;setTimeout(()=>{if(!dead&&!joined)try{c.joinRoom(room)}catch{}},1500);return}
 if(err&&!joined)fail(err===32758?'That party is not open':err===32765?'That party is full':err===32766?'Try again, that code is taken':'Could not join the party')
 }
 c.onError=(code,msg)=>{if(!joined)fail('Could not reach the game servers')}
