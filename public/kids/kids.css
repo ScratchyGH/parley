@@ -37,3 +37,5 @@ input.code{font:800 30px Bricolage,Figtree,sans-serif;letter-spacing:.2em;text-a
 .steps{margin:0;padding-left:22px;color:var(--soft);display:flex;flex-direction:column;gap:6px}
 .tag{align-self:flex-start;background:#eaf9f3;color:#16805c;border-radius:99px;padding:4px 14px;font-weight:800;font-size:15px}
 @media(prefers-reduced-motion:reduce){.dots i{animation:none}.btn{transition:none}}
+
+.pv{align-self:center;color:var(--soft);font-weight:700;font-size:15px}

@@ -25,7 +25,7 @@ if(name==='fox'||name==='cat')g.push(sv('circle',{cx:50,cy:62,r:3.5,fill:'#17254
 return sv('svg',{viewBox:'0 0 100 100',width:size||100,height:size||100,'aria-hidden':'true'},...g)
 }
 const logo=()=>h('div',{class:'brand'},h('i',null,sv('svg',{viewBox:'0 0 24 24'},sv('path',{d:'M4 6a3 3 0 013-3h10a3 3 0 013 3v8a3 3 0 01-3 3h-5l-5 4v-4a3 3 0 01-3-3z',fill:'#fff'}))),'Parley Kids')
-const shell=(...k)=>mount(root,h('main',{class:'wrap'},logo(),...k))
+const shell=(...k)=>mount(root,h('main',{class:'wrap'},logo(),...k,h('a',{class:'pv',href:'/kids/privacy.html',target:'_blank',rel:'noopener'},'Privacy notice for parents')))
 const waiting=(t)=>h('div',{class:'dots','aria-label':t||'Waiting'},h('i'),h('i'),h('i'))
 const wipe=async()=>{await kclear();ls.del('pk.dev');ls.del('pk.tok');ls.del('pk.pair');boot()}
 let timer=0

@@ -1,0 +1,10 @@
+@font-face{font-family:"Bricolage";src:url(/fonts/bricolage.woff2) format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Figtree";src:url(/fonts/figtree.woff2) format("woff2");font-weight:300 900;font-display:swap}
+body{margin:0;background:#f3f5fa;color:#16203d;font:16px/1.6 Figtree,system-ui,sans-serif}
+main{max-width:680px;margin:0 auto;padding:36px 20px 60px}
+h1,h2{font-family:Bricolage,Figtree,sans-serif;letter-spacing:-.015em;line-height:1.15}
+h1{font-size:30px;margin:0 0 8px}
+h2{font-size:20px;margin:28px 0 8px}
+.d{color:#5a6685}
+ul{padding-left:22px}
+li{margin:6px 0}
