@@ -1,3 +1,4 @@
+import{makeSaga,SGD}from'./tusaga.js'
 export const CS=1000
 export const T=20
 export const D=80
@@ -186,7 +187,7 @@ export const DIFFS=[
 {n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12}
 ]
 export const LENS=[1,5,10,30,60,0]
-export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20,revive:13}
+export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20,revive:13,tlab:SGD.lab,tworld:SGD.world,tcheat:SGD.cheat,tfair:SGD.fair,tbrit:SGD.brit}
 export const POT={speed:['Speed','#4aff9a'],reverse:['Reverse','#7dff7a'],bluelock:['Blue Lock','#3a8aff'],purple:['Hollow Purple','#b04aff'],giant:['Giant','#ff9a3a'],timestop:['Time Stop','#c8d8ff'],vamp:['Vampire','#ff3a5a'],blackhole:['Black Hole','#2a1a3a']}
 const PW=[['speed',20],['reverse',14],['bluelock',14],['purple',9],['giant',13],['timestop',10],['vamp',14]]
 const rollPot=()=>{
@@ -209,7 +210,7 @@ const dur=R.len>0?R.len*60:0
 const pace=dur?Math.max(.6,Math.min(6,360/dur)):1
 const n=list.length
 const pl=new Map()
-list.forEach((m,i)=>pl.set(m.u,{u:m.u,n:m.n,x:500+(i-(n-1)/2)*44,y:560,r:13,hp:Math.round((TM?170:120)*DF.php),max:Math.round((TM?170:120)*DF.php),s:'up',ang:0,spd:TM?170:150,dmg:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,inv:0,tcd:0,ammo:[6,3,4],wood:4,hold:0,held:0,rv:0,rvBy:null,bleed:0,mend:1,up:{},offer:null,ot:0,pend:0,k:i,ar:0,arm:0,arr:0,ahit:0,crit:.12,ls:0,area:1,xm:DF.xp,thorn:0,tpc:0,ig:0,ward:0,wt:0,ab:{dash:1},acd:{},lair:0,ret:null,lt:0,sp:0,bl:0,gi:0,vm:0,bh:test?9999:0,hpt:0,bk:0,cmb:0}))
+list.forEach((m,i)=>pl.set(m.u,{u:m.u,n:m.n,x:500+(i-(n-1)/2)*44,y:560,r:13,hp:Math.round((TM?170:120)*DF.php*(test===2?5:1)),max:Math.round((TM?170:120)*DF.php*(test===2?5:1)),s:'up',ang:0,spd:TM?170:150,dmg:test===2?45:12,rate:.5,count:1,pierce:0,mag:72,orb:0,nova:0,reg:0,lv:1,xp:0,next:6,cd:0,nv:0,hit:0,inv:0,tcd:0,ammo:[6,3,4],wood:4,hold:0,held:0,rv:0,rvBy:null,bleed:0,mend:1,up:{},offer:null,ot:0,pend:0,k:i,ar:0,arm:0,arr:0,ahit:0,crit:.12,ls:0,area:1,xm:DF.xp,thorn:0,tpc:0,ig:0,ward:0,wt:0,ab:{dash:1},acd:{},lair:0,ret:null,lt:0,sp:0,bl:0,gi:0,vm:0,bh:test?9999:0,hpt:0,bk:0,cmb:0}))
 const PR=new Map(),pch=new Set()
 const bt=dur?[.25,.55,.85].map(f=>Math.max(12,Math.floor(dur*f))):[90]
 const S={pt:[],lr:new Set(),ms:new Set(),ts:0,fast:0,dur,te:0,nev:55,bm:0,dc:[],pl,en:[],pj:[],eb:[],pd:[],pk:[],gm:[],hp:[],bars:{},dead:new Set(),opened:new Set(),bs:new Map(),cr:new Map(),tw:new Map(),ev:[],out:[],st:'run',kills:0,id:1,time:0,acc:0,bi:0,boss:null,orbA:0}
@@ -238,6 +239,7 @@ while(ids.length<3&&pool.length)ids.push(pool.splice(Math.floor(Math.random()*po
 p.offer=ids;p.ot=16
 S.out.push({to:p.u,m:{k:'lv',ids,lv:p.lv}})
 }
+S.p10=(u,ids)=>S.sg&&S.sg.p10(u,ids)
 S.pick=(u,id)=>{
 const p=pl.get(u)
 if(!p||!p.offer||!p.offer.includes(id))return
@@ -301,7 +303,7 @@ if(e.pot||e.k==='gmimic'||e.k==='boss')S.pt.push({id:S.id++,k:rollPot(),x:e.x,y:
 if(e.k==='gmimic'&&by&&by.s==='up')loot(by,{id:'gm'+e.id,x:e.x,y:e.y})
 if(e.k==='boss'){
 S.boss=null
-if(e.tes){S.arena=0;S.arT=0;ev('ar',0);ev('cs','tes3');S.ts=Math.max(S.ts,CSD.tes3);kl('We just beat a TV. Brit is going to write a paper on this.',1)}else{ev('cs','bossend');S.ts=Math.max(S.ts,CSD.bossend)}
+if(e.tes){S.sg.end();S.arena=0;S.arT=0;ev('cs','tes3');S.ts=Math.max(S.ts,CSD.tes3);kl('We just beat a TV. Brit is going to write a paper on this.',1)}else{ev('cs','bossend');S.ts=Math.max(S.ts,CSD.bossend)}
 for(let j=0;j<18;j++)S.gm.push({id:S.id++,x:e.x+rnd(-50,50),y:e.y+rnd(-50,50),v:8})
 S.hp.push({id:S.id++,x:e.x,y:e.y})
 burst(e.x,e.y,'#ffb347',70)
@@ -315,7 +317,7 @@ burst(e.x,e.y,e.k==='wisp'?'#8fe3ff':e.k==='ghoul'?'#8fc060':'#e8e2cc',8)
 }
 }
 const hit=(e,d,crit,by)=>{
-if(e.dead||e.al)return
+if(e.dead||e.al||(S.ts>0&&e.k==='boss'))return
 e.hp-=d;e.fl=.09;if(by){e.last=by;const q=pl.get(by);if(q&&q.vm>0&&q.s==='up')q.hp=Math.min(q.max,q.hp+d*.12)}
 txt(e.x,e.y-e.r-24,Math.round(d),crit?'#ffe27a':'#ffffff',crit)
 if(e.hp<=0)kill(e)
@@ -390,6 +392,8 @@ S.pj.push({id:S.id++,k:w,x:p.x+Math.cos(a)*16,y:p.y+Math.sin(a)*16,vx:Math.cos(a
 S.input=(u,x,y,a,dash)=>{
 const p=pl.get(u)
 if(!p||p.s!=='up'||p.ig>0||!isFinite(x)||!isFinite(y))return
+if(dash&&!p.dh)p.dp=1
+p.dh=dash
 p.x=x;p.y=y;p.ang=a
 if(dash)p.inv=Math.max(p.inv,.3)
 }
@@ -442,6 +446,7 @@ const idx=LI+hs(i,j,77)%2500,ox=idx*CS
 p.ret=ret;p.lair=idx;p.lt=100;p.tpc=3;p.x=ox+500;p.y=700;p.ig=.7;p.inv=Math.max(p.inv,1.5)
 S.out.push({to:p.u,m:{k:'tp',x:p.x,y:p.y}})
 txt(p.x,p.y-50,'Underground lair','#c9a8ff',1)
+if(S.sg.enter(p,idx))return
 if(!S.lcs){S.lcs=1;ev('cs','lair');S.ts=Math.max(S.ts,CSD.lair);kl('Stairs under a graveyard. Sure. Why not.')}
 if(S.lr.has(idx))return
 S.lr.add(idx)
@@ -575,6 +580,7 @@ return false
 }
 const structs=(p,seen,dt)=>{
 if(p.lair){
+if(S.sg.st.lk){p.lt=1e9;return}
 p.lt-=dt
 if(Math.hypot(p.x-(p.lair*CS+500),p.y-290)<40||p.lt<=0)leave(p)
 return
@@ -645,6 +651,7 @@ else if(a==='pull'){for(const p of alive())if(!p.lair){const dx=e.x-p.x,dy=e.y-p
 e.at=0;e.bs=0
 }
 const kl=(t,f)=>{const k=S.kn;if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',t)}
+S.sg=makeSaga({S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl})
 S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,sb:3,nv:7,hc:0,dn:0,lo:0,rc:0,rv:0,rt:0,ia:rnd(25,40)}:null
 const QUIPS=['Psst. Look how well I am doing over here.','Just a reminder that I am carrying this team.','You did notice that one was mine, right?','Eyes up, I am the best support in this whole hollow.','I will take a thank you in snacks.','Hey. Hey. Watch this.']
 S.step=dt=>{
@@ -656,13 +663,14 @@ if(S.kn){const k=S.kn,o=pl.get(R.kan);k.cd-=dt;k.sh-=dt;k.hc-=dt
 if(o&&o.s==='up'&&!o.lair){const dx=o.x-40-k.x,dy=o.y+10-k.y,d=Math.hypot(dx,dy);if(d>520){k.x=o.x-40;k.y=o.y+10}else if(d>16){const sp=Math.min(d*4,230)*dt;k.x+=dx/d*sp;k.y+=dy/d*sp}
 k.sb-=dt;k.nv-=dt
 const D=o.dmg*.8+S.te*.07
-if(k.sh<=0){let t=null,bd=560*560;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey-(e.k==='boss'?9e4:0);if(dd<bd){bd=dd;t=e}}if(t){k.sh=.38;const a=Math.atan2(t.y-k.y,t.x-k.x),m=t.k==='boss'?3:1;for(let i=0;i<m;i++){const q=a+(i-(m-1)/2)*.16;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*520,vy:Math.sin(q)*520,life:1.1,pr:1,hit:new Set(),a:q,own:o.u,d:D,h:0})}}}
+if(k.sh<=0){let t=null,bd=560*560;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey-(e.k==='boss'?9e4:0);if(dd<bd){bd=dd;t=e}}if(t){k.sh=.38;const a=Math.atan2(t.y-k.y,t.x-k.x),m=t.k==='boss'?3:1;for(let i=0;i<m;i++){const q=a+(i-(m-1)/2)*.16;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*520,vy:Math.sin(q)*520,life:1.1,pr:1,hit:new Set(),a:q,own:o.u,d:D*(m>1?.6:1),h:0})}}}
 if(k.sb<=0){let c=0;for(const e of S.en)if(!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<190+e.r)c++;if(c){k.sb=6;for(const e of S.en)if(!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<190+e.r)hit(e,D*3.2,1,o.u);ev('x',rd(k.x),rd(k.y),190,12);burst(k.x,k.y,'#ff9ac2',30);ev('sh',5);kl('Sweet Burst!')}}
 if(k.nv<=0&&S.en.some(e=>!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<460)){k.nv=13;for(let i=0;i<14;i++){const q=i/14*TAU;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*400,vy:Math.sin(q)*400,life:1.2,pr:2,hit:new Set(),a:q,own:o.u,d:D*1.6,h:0})}burst(k.x,k.y,'#ff9ac2',24);kl('Heart Nova, incoming!')}
 if(o.hp<o.max*.3&&k.hc<=0){k.hc=14;o.hp=Math.min(o.max,o.hp+12);txt(o.x,o.y-44,'+12','#ff9ac2');kl('Hey, you are not allowed to fall over. Heal up.',1)}
 k.dn=0;k.rv=0;k.rt=0
 }else if(o&&o.s==='down'){if(k.rv){k.rt+=dt;o.bleed=25;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}if(k.rt>=11){k.rv=0;k.rt=0;k.rc=75;o.s='up';o.hp=o.max*.55;o.rv=0;o.inv=3;txt(o.x,o.y-44,'Revived','#ff9ac2',1);burst(o.x,o.y-10,'#ff9ac2',40);ev('x',rd(o.x),rd(o.y),220,12);ev('sh',8)}}else if(!k.dn){k.dn=1;kl('No no no, stay with me!',1)}}
 k.rc-=dt;k.ia-=dt;if(k.ia<=0&&k.cd<=0&&!k.rv){k.ia=rnd(32,58);kl(QUIPS[Math.floor(Math.random()*QUIPS.length)])}}
+S.sg.step(dt)
 S.te=S.time*pace
 S.orbA+=dt*2.7
 if(S.bm>0)S.bm-=dt
@@ -696,8 +704,8 @@ if(S.ts>0)S.ts-=dt
 if(S.fast>0)S.fast-=dt
 const seen=new Set()
 for(const p of ps){structs(p,seen,dt);if(!p.lair)seedProps(p)}
-if(test&&S.en.length<70&&sf.length&&Math.floor(S.time*3)!==Math.floor((S.time-dt)*3))pickE()
-if(S.time>=S.nev&&sf.length&&!test){
+if(test&&!S.sg.st.lk&&S.en.length<70&&sf.length&&Math.floor(S.time*3)!==Math.floor((S.time-dt)*3))pickE()
+if(S.time>=S.nev&&sf.length&&!test&&!S.sg.st.lk){
 S.nev=S.time+rnd(70,110)
 const r=Math.random(),p=sf[Math.floor(Math.random()*sf.length)]
 if(r<.34){S.bm=40;ev('n','Blood moon rises');ev('sh',8);if(!S.mcs){S.mcs=1;ev('cs','moon');S.ts=Math.max(S.ts,CSD.moon)}}
@@ -706,15 +714,15 @@ const a=Math.random()*TAU,d=320+Math.random()*130,x=p.x+Math.cos(a)*d,y=p.y+Math
 if(!wall(x,y)&&!buildingAt({x,y})){S.dc.push({id:'d'+S.id++,x:Math.round(x),y:Math.round(y),rich:1});ev('n','Supply drop landed')}
 }else{ev('n','A horde approaches');ring(p.x,p.y,22,480)}
 }
-if(S.ts<=0)S.acc+=dt*Math.min(7,.65+S.te/40)*(1+.5*(n-1))*DF.sp*(S.bm>0?1.8:1)*(TM?1.15:1)
+if(S.ts<=0&&!S.sg.st.lk)S.acc+=dt*Math.min(7,.65+S.te/40)*(1+.5*(n-1))*DF.sp*(S.bm>0?1.8:1)*(TM?1.15:1)
 const cap=Math.min(230,70+Math.min(190,S.te*.62))*(1+.35*(n-1))
 while(S.acc>=1){S.acc--;if(S.en.length<Math.min(210,cap)&&sf.length)pickE()}
 if(!dur&&S.bi>=bt.length)bt.push(bt[bt.length-1]+110)
-if(S.bi<bt.length&&(S.time>=bt[S.bi]||(test===2&&S.time>2))&&!S.boss&&sf.length&&(!test||(test===2&&!S.tsd))){
+if(S.bi<bt.length&&S.time>=bt[S.bi]&&!S.boss&&sf.length&&!S.sg.st.lk&&!test){
 const sp=spawnPos()
 if(sp){
 const bh=dur?Math.max(.35,Math.min(1,dur/360)):1+S.bi*.25
-const tes=test===2||Math.random()<.28
+const tes=0
 S.tsd=1
 spawnE('boss',sp[0],sp[1],1+S.bi*.5,(1+.6*(n-1))*bh*(tes?1.4:1))
 const nm=BN[TM?1:0]
@@ -878,7 +886,7 @@ for(const b of S.eb){
 if(S.ts>0)continue
 b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.a+=dt*14
 if(wall(b.x,b.y)){b.life=0;continue}
-for(const p of ps)if(Math.hypot(p.x-b.x,p.y-b.y)<14){hurtP(p,b.d);b.life=0;break}
+for(const p of ps)if(Math.hypot(p.x-b.x,p.y-b.y)<(b.rr||14)){hurtP(p,b.d);if(!b.kd||b.kd!==7)b.life=0;else b.life=Math.min(b.life,.12);break}
 }
 for(const d of S.pd){d.life-=dt;for(const e of S.en)if(Math.hypot(e.x-d.x,e.y-d.y)<d.r+e.r)hit(e,14*d.k*dt,false,d.by)}
 for(const g2 of S.gm){
@@ -918,7 +926,7 @@ d:S.pd.map(d=>[r(d.x),r(d.y),r(d.r)]),
 c:S.pk.map(k=>[k.id,k.k,r(k.x),r(k.y)]),
 b:Object.entries(S.bars).filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
 z:[...S.bs].filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
-pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,kn:S.kn?[r(S.kn.x),r(S.kn.y),S.kn.rv?1:0,r2(S.kn.rt)]:0,bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
+pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,sg:S.sg.snap(),kn:S.kn?[r(S.kn.x),r(S.kn.y),S.kn.rv?1:0,r2(S.kn.rt)]:0,bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
 v:S.ev}
 S.ev=[]
 return o

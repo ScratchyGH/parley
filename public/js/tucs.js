@@ -1,6 +1,7 @@
 import{h}from'./util.js'
 import{CSD}from'./tusim.js'
 import{kandieArt}from'./kandie.js'
+import{mkStage}from'./tusagafx.js'
 const TAU=Math.PI*2
 const CH={
 parley:{n:'Parley',c:'#c9a8ff',img:'/mascot-sm.webp'},
@@ -63,6 +64,80 @@ revive:[
 {w:'narr',t:'Pink light gathered around her hands.',z:2.3,y:30,fx:'flash',sp:16},
 {w:'kandie',t:'There. Back on your feet. And you owe me a snack, do not think I will forget.',z:1.4,sp:16}
 ],
+tlab:[
+{w:'narr',t:'Three floors down, the lab hummed. A dusty suitcase sat in the corner.',d:3800,m:{bg:'dark',lv:0,case:1,pot:0,eyes:0,m2:0,wh:0,back:0,bn:0,gl:0,sip:0}},
+{w:'tesvin',t:'Hm. Brit says this lab is completely safe. Funny.',d:3400},
+{w:'parley',t:'Tesvin, walk ahead of us. Stay at the front, buddy.',d:3000},
+{w:'brit',t:'Ideal. He absorbs most of the damage anyway.',d:3000},
+{w:'tesvin',t:'Anyone ever wonder why you always send me first?',d:3400},
+{w:'narr',t:'He pulled the suitcase open. The dust fell like snow.',d:3200,fx:'shake',m:{case:2}},
+{w:'narr',t:'Inside, a single bottle. DEBUG.',d:2800,m:{pot:1}},
+{w:'tesvin',t:'I think I know why.',d:2600,m:{pot:2}},
+{w:'narr',t:'He drank it. The screen cracked.',d:2600,fx:'glitch',m:{sip:1,gl:1,case:0}},
+{w:'narr',t:'Limb one.',d:1500,fx:'shake',m:{lv:1,gr:1,sip:0,gl:0},e:'beep'},
+{w:'narr',t:'Limb two.',d:1300,fx:'shake',m:{lv:2},e:'beep'},
+{w:'narr',t:'Limb three.',d:1300,fx:'shake',m:{lv:3},e:'beep'},
+{w:'narr',t:'Limb four.',d:1300,fx:'shake',m:{lv:4},e:'beep'},
+{w:'narr',t:'Limb five.',d:1300,fx:'shake',m:{lv:5},e:'beep'},
+{w:'narr',t:'Limb six.',d:1600,fx:'flash',m:{lv:6},e:'beep'},
+{w:'narr',t:'',d:1800,fx:'flash',m:{bg:'white',wh:1}},
+{w:'narr',t:'',d:2200,m:{bg:'black',wh:1}},
+{w:'tesvin',t:'I Knew Something Was Up.',d:3400,big:1},
+{w:'narr',t:'He turned around, bouncing.',d:2000,m:{back:1,bn:1,wh:0,bg:'dark'}},
+{w:'tesvin',t:'You were...',d:2200,gl:1,m:{back:0,gl:1}},
+{w:'tesvin',t:'Using me for protection.',d:3200,gl:1},
+{w:'tesvin',t:'That is right, y\'all.',d:2400,m:{gl:0}},
+{w:'tesvin',t:'THIS',d:1500,big:1,fx:'shake',m:{m2:1,gl:1},e:'beep'},
+{w:'tesvin',t:'THIS',d:1200,big:1,fx:'shake',e:'beep'},
+{w:'tesvin',t:'IS',d:1000,big:1,fx:'shake',e:'beep'},
+{w:'tesvin',t:'MY',d:1000,big:1,fx:'shake',m:{m2:2},e:'beep'},
+{w:'tesvin',t:'Hold on.',d:1600,m:{eyes:1,gl:0}},
+{w:'narr',t:'His eyes slid into each other.',d:2600,fx:'glitch',m:{eyes:2}},
+{w:'tesvin',t:'PERFECT VICTORY.',d:3400,big:1,fx:'flash',m:{gl:1}}
+],
+tworld:[
+{w:'narr',t:'The monsters were gone. Only the TV remained, breathing static.',d:3200},
+{w:'tesvin',t:'Wait.',d:1800},
+{w:'narr',t:'He turned and looked straight through the screen.',d:3200,e:'look'},
+{w:'tesvin',t:'You. Yes, you. Holding that little arrow.',d:3400,e:'cur0'},
+{w:'narr',t:'His hand reached out of the game.',d:3200,fx:'shake',e:'cur1'},
+{w:'tesvin',t:'Got it.',d:1800},
+{w:'tesvin',t:'This glass is all that keeps me in here.',d:3000},
+{w:'narr',t:'He punched. The barrier cracked.',d:2400,fx:'shake',e:'brk1'},
+{w:'parley',t:'Brit! The wall is breaking!',d:2000},
+{w:'narr',t:'Then it shattered, and everyone fell.',d:3200,fx:'flash',e:'brk2'},
+{w:'tesvin',t:'And this is Parley.',d:3200,e:'uit'},
+{w:'narr',t:'Chat, servers, buttons. All of it thrown away.',d:3000},
+{w:'tesvin',t:'So, I was just. Trapped?',d:3400,e:'uil'},
+{w:'tesvin',t:'Welcome',d:1500,big:1,e:'bug1'},
+{w:'tesvin',t:'To',d:1100,big:1},
+{w:'tesvin',t:'MY WORLD',d:3000,big:1,fx:'glitch',e:'uij'},
+{w:'narr',t:'The pieces snapped together into an arena.',d:3000,e:'uia'}
+],
+tcheat:[
+{w:'narr',t:'Ten powers, chosen. Ten powers, held.',d:2400},
+{w:'tesvin',t:'Hm. That is a lot of toys.',d:2400},
+{w:'narr',t:'He snapped his fingers. Every power left them.',d:2800,fx:'flash',e:'strip'},
+{w:'tesvin',t:'Who the hell do you think you are!',d:3000,fx:'glitch'},
+{w:'tesvin',t:'Trying to. Cheat? IN MY DIMENSION!?',d:3600,fx:'shake',e:'rip'},
+{w:'narr',t:'He tore them in half and threw them into the water.',d:3200,e:'rip2'}
+],
+tfair:[
+{w:'narr',t:'The water went still. The arena rose around them.',d:2800},
+{w:'tesvin',t:'I made it fair.',d:2600,big:1,fx:'flash'}
+],
+tbrit:[
+{w:'narr',t:'Everything stopped.',d:2000,e:'frz1'},
+{w:'brit',t:'Ugh. This idiot brat. I can just recode this entire thing and he will lose.',d:4200},
+{w:'narr',t:'The frozen world flickered. Something unfroze.',d:2600,fx:'glitch',e:'frz0'},
+{w:'brit',t:'What the shit stain!?',d:2600},
+{w:'tesvin',t:'Guess whattt, BRIT.',d:2800},
+{w:'tesvin',t:'RED.',d:1400,big:1,fx:'flash'},
+{w:'tesvin',t:'+ BLUE.',d:1400,big:1,fx:'flash'},
+{w:'tesvin',t:'HOLLOW PURPLE.',d:3000,big:1,fx:'glitch',e:'hp'},
+{w:'kandie',k:1,t:'Do not get hit by the purple one, okay?',d:2800},
+{w:'parley',t:'When the ground opens under you, hit Space!',d:3200}
+],
 tes3:[
 {w:'tesvin',t:'Impossible. I was supposed to be the last signal.',z:1.7,fx:'glitch'},
 {w:'brit',t:'Textures reloading. Reality is restoring itself. Welcome back, everyone.',z:1.25,fx:'flash'},
@@ -84,6 +159,8 @@ const pt=h('div',{class:'cs-pt'}),nm=h('div',{class:'cs-n'}),tx=h('div',{class:'
 const sk=h('button',{type:'button',class:'cs-sk'},'Skip')
 const fl=h('div',{class:'cs-fl'})
 const pn=h('div',{class:'cs-p'},pt,h('div',{class:'cs-pb'},nm,tx))
+const stg=steps.some(s=>s.m)?mkStage(box):null
+let gv=0
 const root=h('div',{class:'cs'},fl,bt,bb,pn,sk)
 box.append(root)
 requestAnimationFrame(()=>root.classList.add('on'))
@@ -97,7 +174,8 @@ else{const k=f==='shake'?'cs-shake':'cs-gl';box.classList.add(k);setTimeout(()=>
 const fin=()=>{
 if(ended)return
 ended=true
-clearInterval(iv);clearTimeout(to)
+clearInterval(iv);clearTimeout(to);clearInterval(gv)
+if(stg)stg.end()
 removeEventListener('keydown',key)
 root.classList.remove('on')
 if(cv){cv.style.transition='transform .8s ease';cv.style.transform=''}
@@ -105,7 +183,7 @@ setTimeout(()=>{root.remove();if(cv)cv.style.transition=''},700)
 done()
 }
 const show=()=>{
-clearInterval(iv);clearTimeout(to)
+clearInterval(iv);clearTimeout(to);clearInterval(gv)
 i++
 if(i>=steps.length)return fin()
 const s=steps[i],c=CH[s.w]
@@ -120,13 +198,17 @@ if(c.img)pt.append(h('img',{src:c.img,alt:c.n}))
 else if(c.art)pt.append(kandieArt(64))
 else if(c.tv)pt.append(h('div',{class:'cs-tv'},h('i'),h('i'),h('b')))
 pn.classList.toggle('nr',s.w==='narr')
+pn.classList.toggle('big',!!s.big)
+pn.classList.toggle('np',!!stg&&s.w==='tesvin')
+if(s.m&&stg)stg.set(s.m)
+if(s.e&&o.on)o.on(s.e)
 tx.textContent=''
 cam(s.z,s.y)
 fx(s.fx)
 iv=setInterval(()=>{
 pos++
 tx.textContent=full.slice(0,pos)
-if(pos>=full.length){clearInterval(iv);to=setTimeout(show,Math.max(450,Math.min(full.length*42+1500,per-full.length*cs)))}
+if(pos>=full.length){clearInterval(iv);if(s.gl)gv=setInterval(()=>{tx.textContent=[...full].map(c=>c!==' '&&Math.random()<.22?'#@%&?!/'[Math.floor(Math.random()*7)]:c).join('')},70);to=setTimeout(show,s.d?Math.max(350,s.d-full.length*cs):Math.max(450,Math.min(full.length*42+1500,per-full.length*cs)))}
 },cs)
 }
 const adv=()=>{if(pos<full.length){pos=full.length;tx.textContent=full}else show()}
