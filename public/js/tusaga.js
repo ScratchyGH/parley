@@ -1,7 +1,7 @@
 const TAU=Math.PI*2
 const AW=['Hi! I am Tesvin. I help!','I am always at the front. Funny.','You all stand behind me a lot.','Nobody has asked how I am doing.','Why do monsters always hit the TV first?','You keep walking me toward the danger.','I am counting how many times you hid behind me.','Something is wrong. I can feel it.']
 const BL=new Set(['x','y','hp','s','ang','cd','nv','hit','inv','tcd','rv','rvBy','bleed','hold','held','offer','ot','pend','lv','xp','next','lair','ret','lt','tpc','ig','ahit','sp','bl','gi','vm','bh','hpt','bk','cmb','fl','wc','k','u','n','r','dp','dh','sf'])
-export const SGD={lab:70,world:52,cheat:20,fair:9,brit:28}
+export const SGD={lab:92,world:60,cheat:20,fair:9,brit:30}
 export function makeSaga(X){
 const{S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl}=X
 const st={ph:0,t:0,lk:0,tv:null,a:null,idx:0,pi:0,pr:new Map(),base:new Map(),po:[],sk:[],hs:0,ad:0,dm:0,qt:0,qi:0,hc:0,tc:0,pd:test===2?35:300}
@@ -62,6 +62,7 @@ ev('sg','strip')
 const ally=dt=>{
 const tv=st.tv,l=alive().filter(p=>!p.lair)
 if(!l.length)return
+if(!st.tj){st.tj=1;tv.x=l[0].x+40;tv.y=l[0].y-30}
 let t=null,bd=1e9
 for(const p of l){const d=Math.hypot(p.x-tv.x,p.y-tv.y);if(d<bd){bd=d;t=p}}
 const ox=Math.sin(S.time*.7)*90,oy=Math.cos(S.time*.9)*70

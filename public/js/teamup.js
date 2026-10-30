@@ -16,7 +16,7 @@ const mkCode=()=>Array.from({length:6},()=>AL[Math.floor(Math.random()*AL.length
 let active=null,art=null
 const css=()=>{
 if(!document.getElementById('hwcss2'))document.head.append(h('link',{id:'hwcss2',rel:'stylesheet',href:'/hollow.css'}))
-if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=9'}))
+if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=10'}))
 if(!document.getElementById('rscss'))document.head.append(h('link',{id:'rscss',rel:'stylesheet',href:'/rush.css'}))
 }
 const sprite=(i,dim)=>{
@@ -121,7 +121,7 @@ phase='game'
 box.replaceChildren()
 import('/js/tugame.js').then(({playTeamup})=>{
 if(closed)return
-game=playTeamup({box,me:S.me.id,list:list.map(m=>({u:m.u,n:m.n})),host:isHost,hostUid,send,rules:Object.assign({},rl,{gfx},S.me.admin&&isHost?{kan:S.me.id,brt:S.me.id}:{},tst?{test:tst,mode:'terror'}:{}),onEnd:()=>{
+game=playTeamup({box,me:S.me.id,list:list.map(m=>({u:m.u,n:m.n})),host:isHost,hostUid,send,rules:Object.assign({},rl,{gfx},{},tst?{test:tst,mode:'terror'}:{}),onEnd:()=>{
 try{game.stop()}catch{}
 game=null
 phase='lobby'

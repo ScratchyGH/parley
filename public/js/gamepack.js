@@ -28,10 +28,9 @@ playLocal(t[0],n)
 })
 return b
 }))
-const dl=h('a',{class:'btn',href:'/api/games/download?pack='+p.id,download:'parley-games-'+p.id+'.html'},'Download offline file')
-return h('section',{class:'gp-card'+(p.owned?' own':'')},h('div',{class:'gp-h'},h('h3',null,p.name),h('span',{class:'gp-st'},p.owned?'Owned':p.live?'In season now':'Out of season')),h('p',null,p.desc),h('div',{class:'gp-row'},p.owned?h('span',{class:'gp-ok'},'Unlocked for good'):buy,p.owned?dl:null),tiles)
+return h('section',{class:'gp-card'+(p.owned?' own':'')},h('div',{class:'gp-h'},h('h3',null,p.name),h('span',{class:'gp-st'},p.owned?'Owned':p.live?'In season now':'Out of season')),h('p',null,p.desc),h('div',{class:'gp-row'},p.owned?h('span',{class:'gp-ok'},'Unlocked for good'):buy,null),tiles)
 })
-mount(page,h('div',{class:'gp-head'},h('h2',null,'Game Library'),h('p',null,'Seasonal games leave the event page when the season ends. Pay once and keep them: play in the app any time or save a single file to play offline.'),h('div',{class:'gp-bal'},'Your Pars: ',h('b',null,String(d.pars)))),...cards)
+mount(page,h('div',{class:'gp-head'},h('h2',null,'Game Library'),h('p',null,'Seasonal games leave the event page when the season ends. Pay once and keep them: play in the app any time.'),h('div',{class:'gp-bal'},'Your Pars: ',h('b',null,String(d.pars)))),...cards)
 }
 draw()
 return{nodes:[bar,page],title:'Games • Parley',cleanup:null,ready:Promise.resolve()}

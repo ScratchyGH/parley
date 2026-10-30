@@ -119,7 +119,7 @@ const mine=()=>V.pl.get(me)
 const apply=sn=>{
 const t0=performance.now()
 SG=sn.sg||null;V.tm=sn.tm;V.st=sn.st;V.kl=sn.kl;V.bars=Object.fromEntries(sn.b);V.bz=new Map(sn.z);V.bo=sn.bo;V.bm=sn.bm;V.dc=sn.dc;V.sn=t0
-if(sn.cm){const sw=new Set();for(const c of sn.cm){const w=c[0]?'brit':'kandie';sw.add(w);let k=kns.get(w);if(!k){k={w,x:c[1],y:c[2],say:'',t:0,art:c[0]?britArt(26):kandieArt(26)};kns.set(w,k)}k.tx=c[1];k.ty=c[2];k.rv=c[3];k.rt=c[4];k.own=c[5]}for(const w of[...kns.keys()])if(!sw.has(w))kns.delete(w)}else kns.clear()
+if(sn.cm){const sw=new Set();for(const c of sn.cm){const w=c[0]?'brit':'kandie';sw.add(w);let k=kns.get(w);if(!k){k={w,x:c[1],y:c[2],say:'',t:0,art:c[0]?britArt(34):kandieArt(34)};kns.set(w,k)}k.tx=c[1];k.ty=c[2];k.rv=c[3];k.rt=c[4];k.own=c[5]}for(const w of[...kns.keys()])if(!sw.has(w))kns.delete(w)}else kns.clear()
 const pids=new Set()
 for(const[id,k,x,y]of sn.pr){pids.add(id);let o=V.pr.get(id);if(!o){o={id,k,x,y};V.pr.set(id,o)};o.tx=x;o.ty=y}
 for(const k of[...V.pr.keys()])if(!pids.has(k))V.pr.delete(k)
@@ -159,7 +159,7 @@ else if(e[0]==='sh')shake=Math.max(shake,e[1])
 else if(e[0]==='n'){say(e[1]);tone(70,1,.09,'sawtooth',.6)}
 else if(e[0]==='gl')glitchT=Math.max(glitchT,e[1])
 else if(e[0]==='sg')sgEv(e)
-else if(e[0]==='cs'){if(!csOn&&((e[1]!=='revive'&&e[1]!=='revive2')||e[3]===me)){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],pname:e[3]?names.get(e[3]):(names.get(RU.kan)||names.get(RU.brt)||names.get(me)),qname:names.get(RU.brt)||names.get(RU.kan)||names.get(me),cv,on:sceneOn}).then(()=>{csOn=0})}}
+else if(e[0]==='cs'){if(!csOn&&((e[1]!=='revive'&&e[1]!=='revive2')||e[3]===me)){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],pname:e[3]?names.get(e[3]):(names.get(RU.kan)||names.get(RU.brt)||names.get(me)),me:names.get(me),qname:names.get(RU.brt)||names.get(RU.kan)||names.get(me),cv,on:sceneOn}).then(()=>{csOn=0})}}
 else if(e[0]==='ar'){arenaOn=e[1];rip(!!e[1],box);if(e[1]){shake=Math.max(shake,16);glitchT=Math.max(glitchT,3);tone(60,2,.1,'sawtooth',.3)}}
 else if(e[0]==='bm'){BMS.push({o:e[1],v:e[2],l:e[3],m:e[3]});tone(300,.4,.04,'square',2)}
 else if(e[0]==='kl'){const k=kns.get(e[3]);if(k){k.say=e[2];k.t=5}}
@@ -661,7 +661,7 @@ ctx.drawImage(bb.c,-bb.ax*sw,-bb.ay*sw+4,bb.w*sw,bb.h*sw)
 ctx.restore();ctx.globalAlpha=1
 }
 for(const d of V.pd){ctx.fillStyle='rgba(255,217,59,.2)';ctx.beginPath();ctx.arc(d[0],d[1],d[2],0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,217,59,.55)';ctx.lineWidth=2;ctx.stroke();lights.push([d[0],d[1],d[2]*1.4,.7,'warm'])}
-for(const kn of kns.values()){const KS=kn.art,br=kn.w==='brit',CC=br?'122,215,255':'255,154,194',CR=br?'210,240,255':'255,230,240';kn.x+=(kn.tx-kn.x)*(kn.rv?.5:.25);kn.y+=(kn.ty-kn.y)*(kn.rv?.5:.25);if(kn.rv){let dn=null,bd=1e9;for(const q of V.pl.values())if(q.s==='down'){const d=Math.hypot(q.x-kn.x,q.y-kn.y);if(d<bd){bd=d;dn=q}}if(dn){const k=Math.min(1,kn.rt/(br?8:11));ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<3;i++){const ph=(clock*.9+i/3)%1;ctx.strokeStyle='rgba('+CC+','+((1-ph)*.7)+')';ctx.lineWidth=2+k*3;ctx.beginPath();ctx.ellipse(dn.x,dn.y,10+ph*(34+k*40),(10+ph*(34+k*40))*.38,0,0,TAU);ctx.stroke()}for(let i=0;i<7;i++){const a=clock*2+i*.9,rr=14+k*14,py=dn.y-((clock*38+i*17)%46);ctx.fillStyle='rgba('+CR+','+(.5+.4*Math.sin(clock*8+i))+')';ctx.beginPath();ctx.arc(dn.x+Math.cos(a)*rr,py,1.8,0,TAU);ctx.fill()}const gr=ctx.createRadialGradient(dn.x,dn.y-10,0,dn.x,dn.y-10,60+k*50);gr.addColorStop(0,'rgba('+CC+','+(.35+k*.35)+')');gr.addColorStop(1,'rgba('+CC+',0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(dn.x,dn.y-10,60+k*50,0,TAU);ctx.fill();ctx.restore();lights.push([dn.x,dn.y-10,120+k*60,.9,'warm'])}ctx.save();ctx.translate(kn.x,kn.y);ctx.scale(1,.78);kandieDraw(ctx,KS,0,0,clock*.3);ctx.restore()}else kandieDraw(ctx,KS,kn.x,kn.y,clock);if(kn.t>0)bubble(ctx,kn.x,kn.y-KS.height-4,kn.say,kn.t,br?'#7ad7ff':'#ff9ac2')}
+for(const kn of kns.values()){const KS=kn.art,br=kn.w==='brit',CC=br?'122,215,255':'255,154,194',CR=br?'210,240,255':'255,230,240';kn.x+=(kn.tx-kn.x)*(kn.rv?.5:.25);kn.y+=(kn.ty-kn.y)*(kn.rv?.5:.25);if(kn.rv){let dn=null,bd=1e9;for(const q of V.pl.values())if(q.s==='down'){const d=Math.hypot(q.x-kn.x,q.y-kn.y);if(d<bd){bd=d;dn=q}}if(dn){const k=Math.min(1,kn.rt/(br?8:11));ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<3;i++){const ph=(clock*.9+i/3)%1;ctx.strokeStyle='rgba('+CC+','+((1-ph)*.7)+')';ctx.lineWidth=2+k*3;ctx.beginPath();ctx.ellipse(dn.x,dn.y,10+ph*(34+k*40),(10+ph*(34+k*40))*.38,0,0,TAU);ctx.stroke()}for(let i=0;i<7;i++){const a=clock*2+i*.9,rr=14+k*14,py=dn.y-((clock*38+i*17)%46);ctx.fillStyle='rgba('+CR+','+(.5+.4*Math.sin(clock*8+i))+')';ctx.beginPath();ctx.arc(dn.x+Math.cos(a)*rr,py,1.8,0,TAU);ctx.fill()}const gr=ctx.createRadialGradient(dn.x,dn.y-10,0,dn.x,dn.y-10,60+k*50);gr.addColorStop(0,'rgba('+CC+','+(.35+k*.35)+')');gr.addColorStop(1,'rgba('+CC+',0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(dn.x,dn.y-10,60+k*50,0,TAU);ctx.fill();ctx.restore();lights.push([dn.x,dn.y-10,120+k*60,.9,'warm'])}ctx.save();ctx.translate(kn.x,kn.y);ctx.scale(1,.78);kandieDraw(ctx,KS,0,0,clock*.3);ctx.restore()}else kandieDraw(ctx,KS,kn.x,kn.y,clock);if(kn.t>0)bubble(ctx,kn.x,kn.y-(KS.lh||KS.height)-4,kn.say,kn.t,br?'#7ad7ff':'#ff9ac2')}
 if(SG){
 for(const s of SG[5])sinkDraw(ctx,s,clock)
 const T=SG[1]

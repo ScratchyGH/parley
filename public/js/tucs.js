@@ -7,18 +7,24 @@ const CH={
 parley:{n:'Parley',c:'#c9a8ff',img:'/mascot-sm.webp'},
 brit:{n:'Brit',c:'#7ad7ff',img:'/britc.webp'},
 kandie:{n:'Kandie',c:'#ff9ac2',art:1},
+you:{n:'',c:'#e6e6ee',you:1},
 tesvin:{n:'Tesvin',c:'#58ffd0',tv:1},
 narr:{n:'',c:'#d8d8e0'}
 }
 const SC={
 intro:[
-{w:'narr',t:'The harvest moon rose over Gourd Hollow, and every lantern in the village went out at once.',z:1.25,y:20},
+{w:'narr',t:'',z:1.05,y:0},
+{w:'narr',t:'Gourd Hollow. Midnight. The kind of quiet that listens back.',z:1.3,y:24},
+{w:'narr',t:'The harvest moon rose, and every lantern in the village went out at once.',z:1.6,y:30,fx:'imp'},
 {w:'parley',t:'Okay. Nobody panic. Technically I already knew the lanterns going out was a bad sign.',z:1.5},
-{w:'brit',t:'Parley, my sensors are pinned. Whatever is out there is hungry, and your squad is the loudest signal for a hundred miles.',z:1.35},
+{w:'you',t:'You knew? And you are only telling us now?',z:1.4},
+{w:'brit',t:'My sensors are pinned. Whatever is out there is hungry, and your squad is the loudest signal for a hundred miles.',z:1.35},
 {w:'parley',t:'So we are bait. Great. Love that for us.',z:1.5},
 {w:'kandie',k:1,t:'Relax, nerd. I came to keep the admin in one piece. Try to keep up, okay?',z:1.4},
+{w:'you',t:'Dawn. Right. Easy. Totally easy.',z:1.4},
 {w:'brit',t:'Hold the line until dawn. I will keep the field relay running from the lab, and I will log everything.',z:1.3},
-{w:'parley',t:'He is going to log everything. Of course he is.',z:1.15,fx:'flash'}
+{w:'parley',t:'She is going to log everything. Of course she is.',z:1.15},
+{w:'narr',t:'Something in the dark started counting.',z:1.9,y:10,fx:'imp'}
 ],
 moon:[
 {w:'narr',t:'The moon bled red. The whole hollow held its breath.',z:1.3,fx:'shake'},
@@ -79,6 +85,7 @@ duo1:[
 {w:'brit',t:'I am building a targeting matrix. If I tag them, you can burst them in clusters.',z:1.6},
 {w:'kandie',t:'Wow. A plan. With math. I am so proud, I might cry on you.',z:1.5},
 {w:'brit',t:'Please do not. You are sticky.',z:1.3},
+{w:'you',t:'Are they always like this?',z:1.3},
 {w:'kandie',t:'I am sweet, there is a difference. Anyway. You tag them, I make them pop.',z:1.5},
 {w:'brit',t:'Deal. Sibling protocol, version one. Do not get hit.',z:1.5}
 ],
@@ -91,6 +98,7 @@ duo2:[
 {w:'brit',t:'I do not hide. I observe from a protected location.',z:1.5},
 {w:'kandie',t:'Brit. You hide.',z:1.2},
 {w:'brit',t:'...Fine. I hide. But I am out here now. Because of you.',z:1.6},
+{w:'you',t:'I am right here, you know. I can hear everything.',z:1.4},
 {w:'kandie',t:'Aww. Group hug?',z:1.2},
 {w:'brit',t:'Negative. But I will stand very close to you. That is basically the same.',z:1.7}
 ],
@@ -102,6 +110,7 @@ duo3:[
 {w:'kandie',t:'That is the sweetest thing you have ever said, and you said it like a manual.',z:1.7},
 {w:'narr',t:'Pink and blue light wound together between them.',z:2.2,fx:'flash'},
 {w:'brit',t:'Sibling Link, online. It needs a cooldown, so please do not abuse it.',z:1.6},
+{w:'you',t:'Okay, that is actually really cool. Thanks, you two.',z:1.6},
 {w:'kandie',t:'No promises. {q}, {p}, you heard it. We have got you now.',z:1.7}
 ],
 kx1:[
@@ -129,60 +138,70 @@ bx2:[
 {w:'brit',t:'Now. Let me show you what happens when somebody smart gets angry.',z:1.7}
 ],
 tlab:[
-{w:'narr',t:'Three floors down, the lab hummed. A dusty suitcase sat in the corner.',d:3800,m:{bg:'dark',lv:0,case:1,pot:0,eyes:0,m2:0,wh:0,back:0,bn:0,gl:0,sip:0}},
-{w:'tesvin',t:'Hm. Brit says this lab is completely safe. Funny.',d:3400},
-{w:'parley',t:'Tesvin, walk ahead of us. Stay at the front, buddy.',d:3000},
-{w:'brit',t:'Ideal. He absorbs most of the damage anyway.',d:3000},
-{w:'tesvin',t:'Anyone ever wonder why you always send me first?',d:3400},
-{w:'narr',t:'He pulled the suitcase open. The dust fell like snow.',d:3200,fx:'shake',m:{case:2}},
-{w:'narr',t:'Inside, a single bottle. DEBUG.',d:2800,m:{pot:1}},
-{w:'tesvin',t:'I think I know why.',d:2600,m:{pot:2}},
-{w:'narr',t:'He drank it. The screen cracked.',d:2600,fx:'glitch',m:{sip:1,gl:1,case:0}},
-{w:'narr',t:'Limb one.',d:1500,fx:'shake',m:{lv:1,gr:1,sip:0,gl:0},e:'beep'},
-{w:'narr',t:'Limb two.',d:1300,fx:'shake',m:{lv:2},e:'beep'},
-{w:'narr',t:'Limb three.',d:1300,fx:'shake',m:{lv:3},e:'beep'},
-{w:'narr',t:'Limb four.',d:1300,fx:'shake',m:{lv:4},e:'beep'},
-{w:'narr',t:'Limb five.',d:1300,fx:'shake',m:{lv:5},e:'beep'},
-{w:'narr',t:'Limb six.',d:1600,fx:'flash',m:{lv:6},e:'beep'},
+{w:'narr',t:'',d:2200,z:1.05,m:{bg:'black',lv:0,case:0,pot:0,eyes:0,m2:0,wh:0,back:0,bn:0,gl:0,sip:0}},
+{w:'narr',t:'Three floors below the hollow, a door nobody had opened in years sighed apart.',d:4200,z:1.25,y:14,m:{bg:'dark',case:1}},
+{w:'narr',t:'The lab hummed. Cold light. A dusty suitcase waited in the corner like it had been expecting company.',d:4600,z:1.45,y:26},
+{w:'you',t:'Okay. That suitcase is giving me a very bad feeling.',d:3200,z:1.3},
+{w:'tesvin',t:'Hm. Brit says this lab is completely safe. Funny.',d:3400,z:1.6},
+{w:'parley',t:'Tesvin, walk ahead of us. Stay at the front, buddy.',d:3000,z:1.35},
+{w:'brit',t:'Ideal. He absorbs most of the damage anyway.',d:3000,z:1.35},
+{w:'you',t:'Brit. Did you just say that out loud?',d:2800},
+{w:'tesvin',t:'Anyone ever wonder why you always send me first?',d:3600,z:1.9,y:8},
+{w:'narr',t:'He pulled the suitcase open. The dust fell like snow.',d:3400,z:1.5,fx:'shake',m:{case:2}},
+{w:'narr',t:'Inside, a single bottle. DEBUG.',d:3000,z:1.8,m:{pot:1},fx:'flash'},
+{w:'tesvin',t:'I think I know why.',d:2800,z:2,m:{pot:2}},
+{w:'you',t:'Tesvin. Do not drink that.',d:2200,z:1.6},
+{w:'narr',t:'He drank it.',d:1800,z:2.1,fx:'imp',m:{sip:1,gl:1,case:0}},
+{w:'narr',t:'The screen cracked.',d:2200,fx:'glitch',z:1.4},
+{w:'narr',t:'Limb one.',d:1500,fx:'imp',m:{lv:1,gr:1,sip:0,gl:0},e:'beep',z:1.2},
+{w:'narr',t:'Limb two.',d:1300,fx:'shake',m:{lv:2},e:'beep',z:1.3},
+{w:'narr',t:'Limb three.',d:1300,fx:'shake',m:{lv:3},e:'beep',z:1.4},
+{w:'narr',t:'Limb four.',d:1300,fx:'imp',m:{lv:4},e:'beep',z:1.5},
+{w:'narr',t:'Limb five.',d:1300,fx:'shake',m:{lv:5},e:'beep',z:1.6},
+{w:'narr',t:'Limb six.',d:1800,fx:'imp',m:{lv:6},e:'beep',z:1.8},
 {w:'narr',t:'',d:1800,fx:'flash',m:{bg:'white',wh:1}},
-{w:'narr',t:'',d:2200,m:{bg:'black',wh:1}},
-{w:'tesvin',t:'I Knew Something Was Up.',d:3400,big:1},
-{w:'narr',t:'He turned around, bouncing.',d:2000,m:{back:1,bn:1,wh:0,bg:'dark'}},
-{w:'tesvin',t:'You were...',d:2200,gl:1,m:{back:0,gl:1}},
-{w:'tesvin',t:'Using me for protection.',d:3200,gl:1},
-{w:'tesvin',t:'That is right, y\'all.',d:2400,m:{gl:0}},
-{w:'tesvin',t:'THIS',d:1500,big:1,fx:'shake',m:{m2:1,gl:1},e:'beep'},
+{w:'narr',t:'',d:2600,m:{bg:'black',wh:1}},
+{w:'tesvin',t:'I Knew Something Was Up.',d:3800,big:1,z:1.1},
+{w:'narr',t:'He turned around, bouncing.',d:2400,m:{back:1,bn:1,wh:0,bg:'dark'},z:1.3},
+{w:'tesvin',t:'You were...',d:2400,gl:1,m:{back:0,gl:1},z:1.6},
+{w:'tesvin',t:'Using me for protection.',d:3400,gl:1,fx:'imp'},
+{w:'you',t:'Tesvin, wait. We can explain.',d:2600},
+{w:'tesvin',t:'That is right, y\'all.',d:2600,m:{gl:0},z:1.8},
+{w:'tesvin',t:'THIS',d:1500,big:1,fx:'imp',m:{m2:1,gl:1},e:'beep'},
 {w:'tesvin',t:'THIS',d:1200,big:1,fx:'shake',e:'beep'},
-{w:'tesvin',t:'IS',d:1000,big:1,fx:'shake',e:'beep'},
-{w:'tesvin',t:'MY',d:1000,big:1,fx:'shake',m:{m2:2},e:'beep'},
-{w:'tesvin',t:'Hold on.',d:1600,m:{eyes:1,gl:0}},
-{w:'narr',t:'His eyes slid into each other.',d:2600,fx:'glitch',m:{eyes:2}},
-{w:'tesvin',t:'PERFECT VICTORY.',d:3400,big:1,fx:'flash',m:{gl:1}}
+{w:'tesvin',t:'IS',d:1000,big:1,fx:'imp',e:'beep'},
+{w:'tesvin',t:'MY',d:1000,big:1,fx:'imp',m:{m2:2},e:'beep'},
+{w:'tesvin',t:'Hold on.',d:1800,m:{eyes:1,gl:0},z:2},
+{w:'narr',t:'His eyes slid into each other.',d:2800,fx:'glitch',m:{eyes:2},z:2.2},
+{w:'tesvin',t:'PERFECT VICTORY.',d:3800,big:1,fx:'imp',m:{gl:1}}
 ],
 tworld:[
 {w:'narr',t:'The monsters were gone. Only the TV remained, breathing static.',d:3200},
-{w:'tesvin',t:'Wait.',d:1800},
+{w:'tesvin',t:'Wait.',d:1800,fx:'imp'},
+{w:'you',t:'Tesvin? Buddy? Why are you looking at the screen?',d:2800},
 {w:'narr',t:'He turned and looked straight through the screen.',d:3200,e:'look'},
 {w:'tesvin',t:'You. Yes, you. Holding that little arrow.',d:3400,e:'cur0'},
 {w:'narr',t:'His hand reached out of the game.',d:3200,fx:'shake',e:'cur1'},
-{w:'tesvin',t:'Got it.',d:1800},
+{w:'tesvin',t:'Got it.',d:1800,fx:'imp'},
+{w:'you',t:'That is my cursor. Give it back. Give it back!',d:2800},
 {w:'tesvin',t:'This glass is all that keeps me in here.',d:3000},
 {w:'narr',t:'He punched. The barrier cracked.',d:2400,fx:'shake',e:'brk1'},
 {w:'parley',t:'Brit! The wall is breaking!',d:2000},
-{w:'narr',t:'Then it shattered, and everyone fell.',d:3200,fx:'flash',e:'brk2'},
+{w:'narr',t:'Then it shattered, and everyone fell.',d:3200,fx:'imp',e:'brk2'},
 {w:'tesvin',t:'And this is Parley.',d:3200,e:'uit'},
 {w:'narr',t:'Chat, servers, buttons. All of it thrown away.',d:3000},
 {w:'tesvin',t:'So, I was just. Trapped?',d:3400,e:'uil'},
+{w:'you',t:'Okay, okay, deep breaths. Nobody panic.',d:2600},
 {w:'tesvin',t:'Welcome',d:1500,big:1,e:'bug1'},
 {w:'tesvin',t:'To',d:1100,big:1},
-{w:'tesvin',t:'MY WORLD',d:3000,big:1,fx:'glitch',e:'uij'},
+{w:'tesvin',t:'MY WORLD',d:3000,big:1,fx:'imp',e:'uij'},
 {w:'narr',t:'The pieces snapped together into an arena.',d:3000,e:'uia'}
 ],
 tcheat:[
 {w:'narr',t:'Ten powers, chosen. Ten powers, held.',d:2400},
 {w:'tesvin',t:'Hm. That is a lot of toys.',d:2400},
 {w:'narr',t:'He snapped his fingers. Every power left them.',d:2800,fx:'flash',e:'strip'},
-{w:'tesvin',t:'Who the hell do you think you are!',d:3000,fx:'glitch'},
+{w:'tesvin',t:'Who the hell do you think you are!',d:3000,fx:'imp'},
 {w:'tesvin',t:'Trying to. Cheat? IN MY DIMENSION!?',d:3600,fx:'shake',e:'rip'},
 {w:'narr',t:'He tore them in half and threw them into the water.',d:3200,e:'rip2'}
 ],
@@ -195,20 +214,44 @@ tbrit:[
 {w:'brit',t:'Ugh. This idiot brat. I can just recode this entire thing and he will lose.',d:4200},
 {w:'narr',t:'The frozen world flickered. Something unfroze.',d:2600,fx:'glitch',e:'frz0'},
 {w:'brit',t:'What the shit stain!?',d:2600},
+{w:'you',t:'Brit! You can still talk to us?',d:2400},
 {w:'tesvin',t:'Guess whattt, BRIT.',d:2800},
 {w:'tesvin',t:'RED.',d:1400,big:1,fx:'flash'},
 {w:'tesvin',t:'+ BLUE.',d:1400,big:1,fx:'flash'},
-{w:'tesvin',t:'HOLLOW PURPLE.',d:3000,big:1,fx:'glitch',e:'hp'},
+{w:'tesvin',t:'HOLLOW PURPLE.',d:3000,big:1,fx:'imp',e:'hp'},
 {w:'kandie',k:1,t:'Do not get hit by the purple one, okay?',d:2800},
 {w:'parley',t:'When the ground opens under you, hit Space!',d:3200}
 ],
 tes3:[
 {w:'tesvin',t:'Impossible. I was supposed to be the last signal.',z:1.7,fx:'glitch'},
 {w:'brit',t:'Textures reloading. Reality is restoring itself. Welcome back, everyone.',z:1.25,fx:'flash'},
+{w:'you',t:'Is it over? Did we really just beat a television?',z:1.5},
 {w:'parley',t:'Ugh. My head. Did we just beat a television?',z:1.5},
 {w:'kandie',k:1,t:'We beat a television. Write that down, Brit.',z:1.4},
 {w:'brit',t:'Already writing it down. I am going to need a bigger notebook.',z:1.25}
 ]
+}
+function impact(root,box,done){
+const c=document.createElement('canvas');c.className='cs-im'
+const W=c.width=Math.max(320,box.clientWidth>>1),H=c.height=Math.max(180,box.clientHeight>>1)
+const g=c.getContext('2d');root.append(c)
+let f=0
+const N=11
+const draw=()=>{
+const inv=f%2===1
+g.setTransform(1,0,0,1,0,0)
+g.fillStyle=inv?'#000':'#fff';g.fillRect(0,0,W,H)
+const cx=W/2+(Math.random()-.5)*W*.08,cy=H/2+(Math.random()-.5)*H*.08
+g.fillStyle=inv?'#fff':'#000'
+const n=70+Math.floor(Math.random()*50)
+for(let i=0;i<n;i++){const a=Math.random()*TAU,w=.004+Math.random()*.03,r0=Math.min(W,H)*(.08+Math.random()*.25),r1=Math.hypot(W,H)
+g.beginPath();g.moveTo(cx+Math.cos(a-w)*r0,cy+Math.sin(a-w)*r0);g.lineTo(cx+Math.cos(a-w)*r1,cy+Math.sin(a-w)*r1);g.lineTo(cx+Math.cos(a+w)*r1,cy+Math.sin(a+w)*r1);g.lineTo(cx+Math.cos(a+w)*r0,cy+Math.sin(a+w)*r0);g.fill()}
+g.fillStyle=inv?'#000':'#fff';g.beginPath();g.arc(cx,cy,Math.min(W,H)*(.06+.05*Math.sin(f*1.7)),0,TAU);g.fill()
+c.style.transform='scale('+(1+f*.025)+') rotate('+((f%3-1)*.6)+'deg)'
+c.style.opacity=String(f>N-3?.5:1)
+}
+draw()
+const v=setInterval(()=>{f++;if(f>=N){clearInterval(v);c.remove();done&&done();return}draw()},1000/18)
 }
 export function scene(box,id,o){
 const raw=SC[id]
@@ -230,8 +273,10 @@ box.append(root)
 requestAnimationFrame(()=>root.classList.add('on'))
 let i=-1,iv=0,to=0,full='',pos=0,ended=false
 const cam=(z,y)=>{if(!cv)return;cv.style.transition='transform 1.4s cubic-bezier(.2,.7,.2,1)';cv.style.transform='scale('+(z||1)+') translateY('+(y||0)+'px)'}
+let im=0
 const fx=f=>{
 if(!f)return
+if(f==='imp'){impact(root,box,()=>im=0);im=1;return}
 if(f==='flash'){fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go')}
 else{const k=f==='shake'?'cs-shake':'cs-gl';box.classList.add(k);setTimeout(()=>box.classList.remove(k),f==='shake'?600:900)}
 }
@@ -254,12 +299,13 @@ const s=steps[i],c=CH[s.w]
 full=(s.t||'').replace('{b}',o.name||'').replace('{p}',o.pname||'friend').replace('{q}',o.qname||'friend')
 const cs=s.sp||28
 pos=0
-nm.textContent=c.n
+nm.textContent=c.you?(o.me||'You'):c.n
 nm.style.color=c.c
 pt.replaceChildren()
 pt.style.borderColor=c.c
 if(c.img)pt.append(h('img',{src:c.img,alt:c.n}))
 else if(c.art)pt.append(kandieArt(64))
+else if(c.you)pt.append(h('div',{class:'cs-yo'},String(o.me||'Y').trim().slice(0,1).toUpperCase()))
 else if(c.tv)pt.append(h('div',{class:'cs-tv'},h('i'),h('i'),h('b')))
 pn.classList.toggle('nr',s.w==='narr')
 pn.classList.toggle('big',!!s.big)
@@ -428,7 +474,8 @@ ctx.restore()
 export function kandieDraw(ctx,spr,x,y,t){
 const bob=Math.sin(t*5)*1.6
 ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+2,10,3.6,0,0,TAU);ctx.fill()
-ctx.drawImage(spr,x-spr.width/2,y-spr.height+3+bob)
+const lw=spr.lw||spr.width,lh=spr.lh||spr.height
+ctx.drawImage(spr,x-lw/2,y-lh+3+bob,lw,lh)
 }
 export function bubble(ctx,x,y,text,k,col){
 ctx.save()

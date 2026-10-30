@@ -715,6 +715,7 @@ if(S.st!=='run')return
 S.time+=dt
 if(S.arT>0){S.arT-=dt;if(S.arT<=0){S.arena=1;ev('ar',1);ev('cs','tes2')}}
 if(!S.intro&&S.time>.8&&!test){S.intro=1;ev('cs','intro');S.ts=Math.max(S.ts,CSD.intro)}
+S.sg.step(dt)
 for(const k of S.cm)cmStep(k,dt)
 cmScenes(dt)
 link(dt)
