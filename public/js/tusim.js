@@ -187,6 +187,7 @@ export const DIFFS=[
 {n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12}
 ]
 export const LENS=[1,5,10,30,60,0]
+export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20}
 export const POT={speed:['Speed','#4aff9a'],reverse:['Reverse','#7dff7a'],bluelock:['Blue Lock','#3a8aff'],purple:['Hollow Purple','#b04aff'],giant:['Giant','#ff9a3a'],timestop:['Time Stop','#c8d8ff'],vamp:['Vampire','#ff3a5a'],blackhole:['Black Hole','#2a1a3a']}
 const PW=[['speed',20],['reverse',14],['bluelock',14],['purple',9],['giant',13],['timestop',10],['vamp',14]]
 const rollPot=()=>{
@@ -195,7 +196,7 @@ let r=Math.random()*94
 for(const[k,w]of PW){r-=w;if(r<0)return k}
 return'speed'
 }
-const AT={slam:1,volley:2,summon:3,leap:4,pull:5}
+const AT={slam:1,volley:2,summon:3,leap:4,pull:5,atom:6,beam:7,warp:4,glitch:8}
 const BN=[['The Hollowgrin','The Hollowgrin Returns','The Last Harvest'],['The Gravedigger','The Pale Choir','Mother Night']]
 const rnd=(a,b)=>a+Math.random()*(b-a)
 export function createSim(list,rules){
@@ -303,6 +304,7 @@ if(e.pot||e.k==='gmimic'||e.k==='boss'||(e.k==='dzom'&&Math.random()<.5))S.pt.pu
 if(e.k==='gmimic'&&by&&by.s==='up')loot(by,{id:'gm'+e.id,x:e.x,y:e.y})
 if(e.k==='boss'){
 S.boss=null
+if(e.tes){S.arena=0;S.arT=0;ev('ar',0);ev('cs','tes3');S.ts=Math.max(S.ts,CSD.tes3);kl('We just beat a TV. Brit is going to write a paper on this.',1)}else{ev('cs','bossend');S.ts=Math.max(S.ts,CSD.bossend)}
 for(let j=0;j<18;j++)S.gm.push({id:S.id++,x:e.x+rnd(-50,50),y:e.y+rnd(-50,50),v:8})
 S.hp.push({id:S.id++,x:e.x,y:e.y})
 burst(e.x,e.y,'#ffb347',70)
@@ -421,7 +423,7 @@ for(const q of alive())if(Math.hypot(q.x-p.x,q.y-p.y)<260){q.hp=Math.min(q.max,q
 }
 }
 const drink=(p,k)=>{
-ev('x',rd(p.x),rd(p.y),130,10);txt(p.x,p.y-56,POT[k][0],POT[k][1],1);burst(p.x,p.y-10,POT[k][1],26);ev('sh',6)
+ev('x',rd(p.x),rd(p.y),130,10);txt(p.x,p.y-56,POT[k][0],POT[k][1],1);if(S.kn&&p.u===R.kan)kl('Ooh, '+POT[k][0]+'. Good pick.');burst(p.x,p.y-10,POT[k][1],26);ev('sh',6)
 if(k==='speed')p.sp=20
 else if(k==='bluelock'){p.bl=18;p.cmb=0;p.ds=0;const F=['Emperor','Prodigy','Wild Card','Awakened Genius','Demon Wings'];p.fl=F[Math.floor(Math.random()*5)];p.wc=p.fl==='Wild Card'?(Math.random()<.12?7:1<<Math.floor(Math.random()*3)):0;txt(p.x,p.y-76,'Flow: '+p.fl+(p.wc===7?' jackpot':''),'#6ec1ff',1);if(p.fl==='Awakened Genius')for(const q of alive())if(q!==p&&Math.hypot(q.x-p.x,q.y-p.y)<700){q.bl=Math.max(q.bl||0,12);q.fl='Awakened Genius';q.wc=0;q.ds=0}}
 else if(k==='giant'){p.gi=20;p.arm=Math.max(p.arm,40);p.ar=p.arm}
@@ -443,6 +445,7 @@ const idx=LI+hs(i,j,77)%2500,ox=idx*CS
 p.ret=ret;p.lair=idx;p.lt=100;p.tpc=3;p.x=ox+500;p.y=700;p.ig=.7;p.inv=Math.max(p.inv,1.5)
 S.out.push({to:p.u,m:{k:'tp',x:p.x,y:p.y}})
 txt(p.x,p.y-50,'Underground lair','#c9a8ff',1)
+if(!S.lcs){S.lcs=1;ev('cs','lair');S.ts=Math.max(S.ts,CSD.lair);kl('Stairs under a graveyard. Sure. Why not.')}
 if(S.lr.has(idx))return
 S.lr.add(idx)
 for(const[k,x]of[[rollPot(),280],[rollPot(),500],[rollPot(),720]])S.pt.push({id:S.id++,k,x:ox+x,y:540,lg:idx})
@@ -637,12 +640,26 @@ if(a==='slam')slam(e.x,e.y,190)
 else if(a==='leap'){e.x=e.ax;e.y=e.ay;slam(e.x,e.y,150)}
 else if(a==='volley'){const n=ph===1?12:ph===2?18:26,o=Math.random()*TAU;for(let i=0;i<n;i++){const q=o+i/n*TAU;S.eb.push({x:e.x,y:e.y,vx:Math.cos(q)*210,vy:Math.sin(q)*210,life:4,a:0,d:e.dmg*.8,id:S.id++,kd:3})}ev('sh',6)}
 else if(a==='summon'){ring(e.x,e.y,ph*4,150);for(let i=0;i<2;i++)spawnE('xbow',e.x+rnd(-90,90),e.y+rnd(-90,90),1+S.te/130,1);ev('x',rd(e.x),rd(e.y),160,5)}
+else if(a==='atom'){for(let i=0;i<4;i++){const q=i/4*TAU+Math.random();S.eb.push({x:e.x,y:e.y,vx:Math.cos(q)*170,vy:Math.sin(q)*170,life:1.2,a:0,d:e.dmg*.7,id:S.id++,kd:4})}ev('sh',5)}
+else if(a==='beam'){for(const[o2,v]of e.bl||[])for(const p of alive())if(!p.lair&&Math.abs((o2?p.y:p.x)-v)<34){hurtP(p,e.dmg*2.4*f)}ev('sh',12)}
+else if(a==='warp'){e.x=e.ax+60;e.y=e.ay;ev('gl',1);slam(e.x,e.y,170);for(let i=0;i<8;i++){const q=i/8*TAU;S.eb.push({x:e.x,y:e.y,vx:Math.cos(q)*190,vy:Math.sin(q)*190,life:3,a:0,d:e.dmg*.6,id:S.id++,kd:3})}}
+else if(a==='glitch'){for(const p of alive())S.out.push({to:p.u,m:{k:'ctl',t:4}});ev('gl',3);ring(e.x,e.y,5,160)}
 else if(a==='pull'){for(const p of alive())if(!p.lair){const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy);if(d<460)kbP(p,dx/(d||1)*480,dy/(d||1)*480)}ev('x',rd(e.x),rd(e.y),460,5);e.at='slam';e.tg=.8;return}
 e.at=0;e.bs=0
 }
+const kl=(t,f)=>{const k=S.kn;if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',t)}
+S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,hc:0,dn:0,lo:0}:null
 S.step=dt=>{
 if(S.st!=='run')return
 S.time+=dt
+if(S.arT>0){S.arT-=dt;if(S.arT<=0){S.arena=1;ev('ar',1);ev('cs','tes2')}}
+if(!S.intro&&S.time>.8&&!test){S.intro=1;ev('cs','intro');S.ts=Math.max(S.ts,CSD.intro)}
+if(S.kn){const k=S.kn,o=pl.get(R.kan);k.cd-=dt;k.sh-=dt;k.hc-=dt
+if(o&&o.s==='up'&&!o.lair){const dx=o.x-40-k.x,dy=o.y+10-k.y,d=Math.hypot(dx,dy);if(d>520){k.x=o.x-40;k.y=o.y+10}else if(d>16){const sp=Math.min(d*4,230)*dt;k.x+=dx/d*sp;k.y+=dy/d*sp}
+if(k.sh<=0){let t=null,bd=330*330;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey;if(dd<bd){bd=dd;t=e}}if(t){k.sh=.9;const a=Math.atan2(t.y-k.y,t.x-k.x);S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(a)*430,vy:Math.sin(a)*430,life:.9,pr:0,hit:new Set(),a,own:o.u,d:10+S.te*.05,h:0})}}
+if(o.hp<o.max*.3&&k.hc<=0){k.hc=14;o.hp=Math.min(o.max,o.hp+12);txt(o.x,o.y-44,'+12','#ff9ac2');kl('Hey, you are not allowed to fall over. Heal up.',1)}
+k.dn=0
+}else if(o&&o.s==='down'&&!k.dn){k.dn=1;kl('No no no, stay with me!',1)}}
 S.te=S.time*pace
 S.orbA+=dt*2.7
 if(S.bm>0)S.bm-=dt
@@ -680,7 +697,7 @@ if(test&&S.en.length<70&&sf.length&&Math.floor(S.time*3)!==Math.floor((S.time-dt
 if(S.time>=S.nev&&sf.length&&!test){
 S.nev=S.time+rnd(70,110)
 const r=Math.random(),p=sf[Math.floor(Math.random()*sf.length)]
-if(r<.34){S.bm=40;ev('n','Blood moon rises');ev('sh',8)}
+if(r<.34){S.bm=40;ev('n','Blood moon rises');ev('sh',8);if(!S.mcs){S.mcs=1;ev('cs','moon');S.ts=Math.max(S.ts,CSD.moon)}}
 else if(r<.68){
 const a=Math.random()*TAU,d=320+Math.random()*130,x=p.x+Math.cos(a)*d,y=p.y+Math.sin(a)*d
 if(!wall(x,y)&&!buildingAt({x,y})){S.dc.push({id:'d'+S.id++,x:Math.round(x),y:Math.round(y),rich:1});ev('n','Supply drop landed')}
@@ -690,14 +707,17 @@ if(S.ts<=0)S.acc+=dt*Math.min(7,.65+S.te/40)*(1+.5*(n-1))*DF.sp*(S.bm>0?1.8:1)*(
 const cap=Math.min(230,70+Math.min(190,S.te*.62))*(1+.35*(n-1))
 while(S.acc>=1){S.acc--;if(S.en.length<Math.min(210,cap)&&sf.length)pickE()}
 if(!dur&&S.bi>=bt.length)bt.push(bt[bt.length-1]+110)
-if(S.bi<bt.length&&S.time>=bt[S.bi]&&!S.boss&&sf.length&&!test){
+if(S.bi<bt.length&&(S.time>=bt[S.bi]||(test===2&&S.time>2))&&!S.boss&&sf.length&&(!test||(test===2&&!S.tsd))){
 const sp=spawnPos()
 if(sp){
 const bh=dur?Math.max(.35,Math.min(1,dur/360)):1+S.bi*.25
-spawnE('boss',sp[0],sp[1],1+S.bi*.5,(1+.6*(n-1))*bh)
+const tes=test===2||Math.random()<.28
+S.tsd=1
+spawnE('boss',sp[0],sp[1],1+S.bi*.5,(1+.6*(n-1))*bh*(tes?1.4:1))
 const nm=BN[TM?1:0]
-S.boss=S.en[S.en.length-1];S.boss.name=nm[S.bi%3]+(S.bi>=3?' '+(Math.floor(S.bi/3)+1):'');S.bi++
+S.boss=S.en[S.en.length-1];S.boss.name=tes?'Tesvin':nm[S.bi%3]+(S.bi>=3?' '+(Math.floor(S.bi/3)+1):'');S.boss.tes=tes?1:0;S.bi++
 ev('n',S.boss.name)
+if(tes){ev('cs','tes1');S.ts=Math.max(S.ts,CSD.tes1);S.arT=CSD.tes1-3;kl('A television. Of course it is a television.')}else{ev('cs','boss',S.boss.name);S.ts=Math.max(S.ts,CSD.boss);kl('Big one incoming. I have your back.')}
 }
 }
 if(dur&&S.time>=dur&&S.st==='run')S.st='win'
@@ -764,8 +784,9 @@ if(e.at){e.tg-=dt;sp=0;if(e.tg<=0)bossAtk(e,ph)}
 else{
 e.bs+=dt*(ph===3?1.5:1)
 if(e.bs>(ph===1?4.2:3.2)){
-const o=ph===1?['slam','volley','summon']:['slam','volley','summon','leap','pull']
-e.at=o[Math.floor(Math.random()*o.length)];e.tg=e.at==='volley'?.6:1;e.ax=t.x;e.ay=t.y;e.bs=0
+const o=e.tes?(ph===1?['atom','beam','warp']:['atom','beam','warp','volley','glitch','pull']):ph===1?['slam','volley','summon']:['slam','volley','summon','leap','pull']
+e.at=o[Math.floor(Math.random()*o.length)];e.tg=e.at==='volley'?.6:e.at==='beam'?1.2:e.at==='glitch'?.8:1;e.ax=t.x;e.ay=t.y;e.bs=0
+if(e.at==='beam'){e.bl=alive().filter(q=>!q.lair).slice(0,4).map(q=>{const o2=Math.random()<.5?1:0;return[o2,Math.round(o2?q.y:q.x)]});for(const b of e.bl)ev('bm',b[0],b[1],1.2)}
 ev('x',rd(e.x),rd(e.y),e.at==='slam'?190:130,7)
 }
 if(ph>1){e.ch+=dt;if(e.ch>8.5)e.ch=-1;if(e.ch<0){sp*=2.2;e.ch-=dt;if(e.ch<-.8)e.ch=0}}
@@ -872,6 +893,7 @@ for(const h2 of S.hp)for(const p of ps)if(!h2.got&&Math.hypot(p.x-h2.x,p.y-h2.y)
 for(const k of S.pk){k.life-=dt;for(const p of ps)if(!k.got&&Math.hypot(p.x-k.x,p.y-k.y)<24){k.got=1;if(k.k==='w')p.wood=Math.min(12,p.wood+2);else{const i=Math.floor(Math.random()*3);p.ammo[i]=Math.min(14,p.ammo[i]+3)}}}
 S.en=S.en.filter(e=>!e.dead)
 S.pj=S.pj.filter(p=>!p.dead)
+for(const b of S.eb)if(b.life<=0&&b.kd===4&&!b.sp){b.sp=1;ev('x',rd(b.x),rd(b.y),70,12);for(let i=0;i<6;i++){const q=i/6*TAU+b.a;S.eb.push({x:b.x,y:b.y,vx:Math.cos(q)*210,vy:Math.sin(q)*210,life:2.2,a:0,d:b.d*.7,id:S.id++,kd:3})}}
 S.eb=S.eb.filter(b=>b.life>0)
 S.pd=S.pd.filter(d=>d.life>0)
 S.gm=S.gm.filter(g2=>!g2.got)
@@ -886,7 +908,7 @@ const all=[...pl.values()]
 const nr=o=>all.some(p=>Math.abs(p.x-o.x)<760&&Math.abs(p.y-o.y)<520)
 const o={k:'s',tm:r2(S.time),st:S.st,kl:S.kills,
 p:all.map(p=>[p.u,r(p.x),r(p.y),r(p.hp),r(p.max),p.s,r2(p.ang),p.lv,r(p.xp),p.next,p.orb,p.ammo,p.wood,r2(p.rv),p.inv>0?1:0,p.hit>0?1:0,p.offer?1:0,r(p.ar),r(p.arm),ABN.map(k=>[p.ab[k]||0,Math.ceil(p.acd[k]||0)]),r(p.ward),r(p.spd*(p.sp>0?1.7:1)*(p.bl>0?1.25*(p.fl==='Emperor'||p.fl==='Prodigy'||p.wc&4?1.15:1):1)*(p.gi>0?.85:1)*(p.bh>0?1.4:1)),[r(p.sp),r(p.bl),r(p.gi),r(p.vm),r(p.bh)],p.lair?1:0,r2(p.hpt)]),
-e:S.en.filter(nr).map(e=>[e.id,e.k,r(e.x),r(e.y),r(e.hp),r(e.mx),e.ch<0?1:0,r(e.ph*10),e.sx,e.fl>0?1:0,e.stun>0?1:0,e.al?1:0,e.tg>0?r2(e.tg):0,e.pop>0?r2(e.pop):0,e.pp||0,AT[e.at]||0,e.at==='leap'?r(e.ax):0,e.at==='leap'?r(e.ay):0]),
+e:S.en.filter(nr).map(e=>[e.id,e.k,r(e.x),r(e.y),r(e.hp),r(e.mx),e.ch<0?1:0,r(e.ph*10),e.sx,e.fl>0?1:0,e.stun>0?1:0,e.al?1:0,e.tg>0?r2(e.tg):0,e.pop>0?r2(e.pop):0,e.pp||0,AT[e.at]||0,(e.at==='leap'||e.at==='warp')?r(e.ax):0,(e.at==='leap'||e.at==='warp')?r(e.ay):0,e.tes?1:0]),
 j:S.pj.filter(nr).map(p=>[p.id,p.k,r(p.x),r(p.y),r(p.vx),r(p.vy),r2(p.a)]),
 q:S.eb.filter(nr).map(b=>[b.id,r(b.x),r(b.y),r(b.vx),r(b.vy),b.kd||0]),
 pt:S.pt.filter(nr).map(q=>[q.id,q.k,r(q.x),r(q.y)]),ts:Math.ceil(Math.max(0,S.ts)),
@@ -896,7 +918,7 @@ d:S.pd.map(d=>[r(d.x),r(d.y),r(d.r)]),
 c:S.pk.map(k=>[k.id,k.k,r(k.x),r(k.y)]),
 b:Object.entries(S.bars).filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
 z:[...S.bs].filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
-pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
+pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,kn:S.kn?[r(S.kn.x),r(S.kn.y)]:0,bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
 v:S.ev}
 S.ev=[]
 return o

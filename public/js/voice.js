@@ -406,7 +406,7 @@ setState()
 emit('voice:update')
 emit('voice:streams')
 }
-const RES={'parli':[854,480],'2160':[3840,2160],'4320':[7680,4320],'8640':[15360,8640],'480':[854,480],'720':[1280,720],'1080':[1920,1080],'1440':[2560,1440]}
+const RES={'2160':[3840,2160],'4320':[7680,4320],'8640':[15360,8640],'480':[854,480],'720':[1280,720],'1080':[1920,1080],'1440':[2560,1440]}
 function scrConstraints(pr){
 const r=RES[pr.scrRes]
 const v={frameRate:{ideal:pr.scrFps,max:pr.scrFps}}
@@ -437,7 +437,7 @@ if(!V.scr)return
 const pr=voicePrefs()
 const vt=V.scr.getVideoTracks()[0]
 try{await vt.applyConstraints(scrConstraints(pr))}catch{}
-try{vt.contentHint=pr.scrRes==='parli'?'detail':pr.scrFps>=30?'motion':'detail'}catch{}
+try{vt.contentHint=pr.scrFps>=30?'motion':'detail'}catch{}
 for(const p of V.peers.values())await tuneSender(p.senders.scr)
 }
 export async function toggleScreen(){
@@ -462,7 +462,7 @@ try{V.scr=await md.getDisplayMedia({video:true,audio:false})}catch(e2){if(e2.nam
 const at=V.scr.getAudioTracks()
 if(pr.scrAudio&&!at.length)toast('No audio was shared. In the picker, choose a tab or the entire screen and tick the audio box.','err')
 V.scrA=at.length?new MediaStream(at):null
-try{V.scr.getVideoTracks()[0].contentHint=pr.scrRes==='parli'?'detail':pr.scrFps>=30?'motion':'detail'}catch{}
+try{V.scr.getVideoTracks()[0].contentHint=pr.scrFps>=30?'motion':'detail'}catch{}
 V.scr.getVideoTracks()[0].onended=()=>stopScreen()
 for(const uid of V.peers.keys())sendKinds(uid)
 for(const p of V.peers.values()){
@@ -641,7 +641,7 @@ h('div',{class:'perm'},toggle(pr.noise,v=>save({noise:v}),'Noise suppression'),h
 h('div',{class:'perm'},toggle(pr.agc,v=>save({agc:v}),'Automatic gain'),h('span',null,'Automatic gain control')),
 h('div',{class:'hint'},'Echo, noise and gain changes apply the next time you join a call.'),
 h('h4',{style:{margin:'16px 0 6px'}},'Screen sharing'),
-field('Resolution',h('select',{class:'sel','aria-label':'Screen share resolution',on:{change:e=>{save({scrRes:e.target.value});applyScreenQuality()}}},[['parli','Parli-2K Optimized'],['480','480p'],['720','720p (recommended)'],['1080','1080p'],['1440','1440p'],['2160','4K'],['4320','8K'],['8640','16K HD'],['native','Source size']].map(([v,l])=>h('option',{value:v,selected:String(pr.scrRes)===v},l)))),
+field('Resolution',h('select',{class:'sel','aria-label':'Screen share resolution',on:{change:e=>{save({scrRes:e.target.value});applyScreenQuality()}}},[['480','480p'],['720','720p (recommended)'],['1080','1080p'],['1440','1440p'],['2160','4K'],['4320','8K'],['8640','16K HD'],['native','Source size']].map(([v,l])=>h('option',{value:v,selected:String(pr.scrRes)===v},l)))),
 field('Frame rate',h('select',{class:'sel','aria-label':'Screen share frame rate',on:{change:e=>{save({scrFps:+e.target.value});applyScreenQuality()}}},[[5,'5 fps, slides'],[15,'15 fps'],[30,'30 fps'],[60,'60 fps, games']].map(([v,l])=>h('option',{value:v,selected:+pr.scrFps===v},l)))),
 field('Maximum bitrate',h('select',{class:'sel','aria-label':'Screen share bitrate',on:{change:e=>{save({scrKbps:+e.target.value});applyScreenQuality()}}},[[0,'Automatic'],[1500,'1.5 Mbps'],[3000,'3 Mbps'],[6000,'6 Mbps'],[10000,'10 Mbps']].map(([v,l])=>h('option',{value:v,selected:+pr.scrKbps===v},l))),'Calls connect people directly, so each viewer uses this much of your upload. Lower it if the picture stutters.'),
 h('div',{class:'perm'},toggle(pr.scrAudio,v=>save({scrAudio:v}),'Share audio with screen'),h('span',null,'Share sound with my screen')),
@@ -661,7 +661,6 @@ return field('Push-to-talk key',b,'Push to talk only works while this tab is foc
 return wrap
 }
 
-import{upscale}from'./upscale.js'
 const vids=new WeakMap()
 let mega=null
 const place=v=>{v.style.transform='translate('+v._x+'px,'+v._y+'px) scale('+v._z+')';v.style.cursor=v._z>1?'grab':'zoom-in'}
@@ -671,7 +670,6 @@ if(v)return v
 const vd=h('video',{autoplay:true,playsInline:true,muted:mute})
 vd.srcObject=stream
 v=h('div',{class:'vw'},vd)
-upscale(vd,v)
 v._z=1;v._x=0;v._y=0;v._d=null
 v.addEventListener('wheel',e=>{e.preventDefault();v._z=Math.max(1,Math.min(8,v._z*(e.deltaY<0?1.2:1/1.2)));if(v._z===1){v._x=0;v._y=0}place(v)},{passive:false})
 v.addEventListener('pointerdown',e=>{if(v._z<=1)return;v.setPointerCapture(e.pointerId);v._d=[e.clientX,e.clientY,v._x,v._y]})

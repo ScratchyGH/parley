@@ -16,7 +16,7 @@ const mkCode=()=>Array.from({length:6},()=>AL[Math.floor(Math.random()*AL.length
 let active=null,art=null
 const css=()=>{
 if(!document.getElementById('hwcss2'))document.head.append(h('link',{id:'hwcss2',rel:'stylesheet',href:'/hollow.css'}))
-if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=7'}))
+if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=8'}))
 if(!document.getElementById('rscss'))document.head.append(h('link',{id:'rscss',rel:'stylesheet',href:'/rush.css'}))
 }
 const sprite=(i,dim)=>{
@@ -106,7 +106,7 @@ h('div',{class:'tu-moon'}),
 h('div',{class:'tu-head'},h('h2',null,'Gourd Rush'),h('b',null,'Teamup'),h('p',null,'Hold the hollow until dawn. Board up doors, throw candy bombs, revive your squad.')),
 h('div',{class:'tu-main'},
 h('div',{class:'tu-left'},
-h('div',{class:'tu-startrow'},start,h('div',{class:'tu-stack'},h('h4',null,'Squad size'),sq,h('button',{class:'tu-pill',type:'button',on:{click:close}},'Leave'),S.me.admin&&isHost&&roster.length===1?h('button',{class:'tu-pill',type:'button',on:{click:()=>{phase='game';launch(roster,null,1)}}},'Blackhole test'):null)),
+h('div',{class:'tu-startrow'},start,h('div',{class:'tu-stack'},h('h4',null,'Squad size'),sq,h('button',{class:'tu-pill',type:'button',on:{click:close}},'Leave'),S.me.admin&&isHost&&roster.length===1?h('button',{class:'tu-pill',type:'button',on:{click:()=>{phase='game';launch(roster,null,1)}}},'Blackhole test'):null,S.me.admin&&isHost&&roster.length===1?h('button',{class:'tu-pill',type:'button',on:{click:()=>{phase='game';launch(roster,null,2)}}},'Tesvin test'):null)),
 h('div',{class:'jag'},h('div',{class:'tu-slots'},slots))),
 h('div',{class:'tu-mid jag'},h('h4',null,'Mode'),modeCards,h('h4',null,'Difficulty'),diffs,h('h4',null,'Length'),lens,cin,h('h4',null,'Physics'),phys,h('h4',null,'Graphics'),h('div',{class:'tu-two'},gl,gs)),
 h('div',{class:'tu-right'},
@@ -119,7 +119,7 @@ phase='game'
 box.replaceChildren()
 import('/js/tugame.js').then(({playTeamup})=>{
 if(closed)return
-game=playTeamup({box,me:S.me.id,list:list.map(m=>({u:m.u,n:m.n})),host:isHost,hostUid,send,rules:Object.assign({},rl,{gfx},tst?{test:1,mode:'terror'}:{}),onEnd:()=>{
+game=playTeamup({box,me:S.me.id,list:list.map(m=>({u:m.u,n:m.n})),host:isHost,hostUid,send,rules:Object.assign({},rl,{gfx},S.me.admin&&isHost?{kan:S.me.id}:{},tst?{test:tst,mode:'terror'}:{}),onEnd:()=>{
 try{game.stop()}catch{}
 game=null
 phase='lobby'

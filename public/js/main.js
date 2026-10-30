@@ -154,6 +154,15 @@ showOverlay('settings','Settings',icon('sliders'),p.nodes[1],closeOv)
 document.title=p.title
 return
 }
+if(r.name==='docs'){
+S.nav={kind:'docs'}
+syncChrome()
+const{docsPage}=await import('./docs.js')
+const p=docsPage(r)
+layoutMain(...p.nodes)
+document.title=p.title
+return
+}
 if(r.name==='bots'||r.name==='lab'){
 S.nav={kind:r.name}
 syncChrome()

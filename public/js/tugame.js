@@ -3,6 +3,8 @@ import{buildArt}from'./rushart.js'
 import{terrorArt}from'./rushterror.js'
 import{createSim,CS,LI,POT,chunk,near,around,buildingAt,push,UPS,ET,ABN,ABI}from'./tusim.js'
 import{V as VC,setPeerVolume,toggleMute}from'./voice.js'
+import{scene,rip,arenaFx,tesvin,kandieDraw,bubble}from'./tucs.js'
+import{kandieArt}from'./kandie.js'
 const TAU=Math.PI*2
 const R=Math.random
 const COL=['#ff9d2e','#6ec1ff','#9be564']
@@ -99,6 +101,8 @@ const ro=new ResizeObserver(fit);ro.observe(box)
 const V={pt:[],ts:0,pl:new Map(),en:new Map(),pj:new Map(),eb:new Map(),gm:[],hp:[],pd:[],pk:[],bars:{},dead:new Set(),opened:new Set(),bz:new Map(),pr:new Map(),dc:[],bm:0,tm:0,st:'run',kl:0,bo:0,sn:performance.now()}
 const F=[],X=[],RG=[]
 const L={inv:0,keys:new Set(),mx:0,my:0,fire:false,aid:null,jid:null,jx:0,jy:0,jdx:0,jdy:0,slot:1,dash:0,dcd:0,dx:1,dy:0,sent:0,hold:0,tcd:0,walk:0,face:1,ang:0,offer:null,cx:0,cy:0,kx:0,ky:0}
+let csOn=0,arenaOn=0,arenaK=0,kn=null,knSay='',knT=0,KS=null
+const BMS=[]
 let glitchT=0,pxT=0,proxOn=true,fpsT=60,beatT=1,bolt=8,whT=4,scare=0,clock=0,shake=0,note='',noteT=0,done=false,raf=0,last=performance.now(),acc=0,snapAcc=0,muted=false,ac=null,mg=null,mt=0,pg=false,over=null,beep=0,hurtT=0,mus=0
 const lights=[],items=[],abBtn=[]
 const audio=()=>{try{if(!ac){ac=new AudioContext();mg=ac.createGain();mg.gain.value=muted?0:1;mg.connect(ac.destination)}if(ac.state==='suspended')ac.resume()}catch{}}
@@ -113,6 +117,7 @@ const mine=()=>V.pl.get(me)
 const apply=sn=>{
 const t0=performance.now()
 V.tm=sn.tm;V.st=sn.st;V.kl=sn.kl;V.bars=Object.fromEntries(sn.b);V.bz=new Map(sn.z);V.bo=sn.bo;V.bm=sn.bm;V.dc=sn.dc;V.sn=t0
+if(sn.kn){if(!kn)kn={x:sn.kn[0],y:sn.kn[1],tx:sn.kn[0],ty:sn.kn[1]};kn.tx=sn.kn[0];kn.ty=sn.kn[1]}else kn=null
 const pids=new Set()
 for(const[id,k,x,y]of sn.pr){pids.add(id);let o=V.pr.get(id);if(!o){o={id,k,x,y};V.pr.set(id,o)};o.tx=x;o.ty=y}
 for(const k of[...V.pr.keys()])if(!pids.has(k))V.pr.delete(k)
@@ -127,11 +132,11 @@ o.tx=x;o.ty=y;o.hp=hp;o.max=max;o.s=s;o.lv=lv;o.xp=xp;o.next=next;o.orb=orb;o.am
 if(u!==me)o.ang=ang
 }
 const ids=new Set()
-for(const[id,k,x,y,hp,mx,ch,ph,sx,fl,st,al,tg,pop,pp,at,lax,lay]of sn.e){
+for(const[id,k,x,y,hp,mx,ch,ph,sx,fl,st,al,tg,pop,pp,at,lax,lay,tes]of sn.e){
 ids.add(id)
 let o=V.en.get(id)
 if(!o){o={id,k,x,y,r:ET[k].r,ph:ph/10,fl:0};V.en.set(id,o)}
-o.tx=x;o.ty=y;o.hp=hp;o.mx=mx;o.ch=ch;o.sx=sx;o.st=st;o.al=al;o.tg=tg;o.pop=pop;o.pp=pp;o.at=at;o.lax=lax;o.lay=lay;o.tt=t0;if(fl)o.fl=.09
+o.tx=x;o.ty=y;o.hp=hp;o.mx=mx;o.ch=ch;o.sx=sx;o.st=st;o.al=al;o.tg=tg;o.pop=pop;o.pp=pp;o.at=at;o.lax=lax;o.lay=lay;o.tes=tes;o.tt=t0;if(fl)o.fl=.09
 }
 for(const k of[...V.en.keys()])if(!ids.has(k))V.en.delete(k)
 const pj=new Set()
@@ -151,6 +156,10 @@ else if(e[0]==='cd'){V.dead.add(e[1]);tone(70,.6,.09,'sawtooth',.4)}
 else if(e[0]==='sh')shake=Math.max(shake,e[1])
 else if(e[0]==='n'){say(e[1]);tone(70,1,.09,'sawtooth',.6)}
 else if(e[0]==='gl')glitchT=Math.max(glitchT,e[1])
+else if(e[0]==='cs'){if(!csOn){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],cv}).then(()=>{csOn=0})}}
+else if(e[0]==='ar'){arenaOn=e[1];rip(!!e[1],box);if(e[1]){shake=Math.max(shake,16);glitchT=Math.max(glitchT,3);tone(60,2,.1,'sawtooth',.3)}}
+else if(e[0]==='bm'){BMS.push({o:e[1],v:e[2],l:e[3],m:e[3]});tone(300,.4,.04,'square',2)}
+else if(e[0]==='kl'){if(RU.kan===me){knSay=e[1];knT=5}}
 else if(e[0]==='hurt'&&e[1]===me){hurtT=.5;shake=Math.max(shake,7);tone(120,.16,.07,'sawtooth',.6)}
 else if(e[0]==='down')say((names.get(e[1])||'A teammate')+' is down')
 }
@@ -426,6 +435,7 @@ ctx.fillStyle='#ffd27a';ctx.fillRect(4,-1,16,2)
 ctx.restore()
 }
 const enemy=e=>{
+if(e.k==='boss'&&e.tes){shadow(e.x,e.y,e.r*1.05);bossFx(e);const tg=Math.max(0,(e.tg||0)-(performance.now()-(e.tt||0))/1000);tesvin(ctx,e,clock,e.pp||1,tg);lights.push([e.x,e.y-40,200,.9,'cyan']);return}
 if(e.k==='mimic'||e.k==='gmimic'||e.k==='smimic'||e.k==='bmimic')return mimic(e)
 if(e.k==='dzom')return dzom(e)
 const sp=A[e.k]
@@ -600,8 +610,11 @@ ctx.drawImage(bb.c,-bb.ax*sw,-bb.ay*sw+4,bb.w*sw,bb.h*sw)
 ctx.restore();ctx.globalAlpha=1
 }
 for(const d of V.pd){ctx.fillStyle='rgba(255,217,59,.2)';ctx.beginPath();ctx.arc(d[0],d[1],d[2],0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,217,59,.55)';ctx.lineWidth=2;ctx.stroke();lights.push([d[0],d[1],d[2]*1.4,.7,'warm'])}
+if(kn){if(!KS)KS=kandieArt(26);kn.x+=(kn.tx-kn.x)*.25;kn.y+=(kn.ty-kn.y)*.25;kandieDraw(ctx,KS,kn.x,kn.y,clock);if(knT>0)bubble(ctx,kn.x,kn.y-KS.height-4,knSay,knT)}
+for(const b of BMS){const k=Math.max(0,b.l/b.m);ctx.save();ctx.globalCompositeOperation='lighter';const R0=2000;if(b.l>0){ctx.strokeStyle='rgba(255,60,200,'+(.35+Math.sin(clock*40)*.25)+')';ctx.lineWidth=2+(1-k)*4}else{ctx.strokeStyle='rgba(120,255,235,'+Math.max(0,1+b.l*5)+')';ctx.lineWidth=34}ctx.beginPath();if(b.o){ctx.moveTo(L.cx-R0,b.v);ctx.lineTo(L.cx+R0,b.v)}else{ctx.moveTo(b.v,L.cy-R0);ctx.lineTo(b.v,L.cy+R0)}ctx.stroke();ctx.restore()}
 for(const b of V.eb.values()){
 ctx.save();ctx.translate(b.x,b.y-10)
+if(b.kd===4){ctx.strokeStyle='rgba(120,255,235,.9)';ctx.lineWidth=1.4;for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(0,0,12,4.5,j*Math.PI/3+clock*4,0,TAU);ctx.stroke()}ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,0,3.4,0,TAU);ctx.fill();ctx.fillStyle='#ff5ae0';ctx.beginPath();ctx.arc(Math.cos(clock*9)*12,Math.sin(clock*9)*4.5,2,0,TAU);ctx.fill();lights.push([b.x,b.y-10,60,.8,'cyan']);ctx.restore();continue}
 if(b.kd===1){ctx.rotate(Math.atan2(b.vy,b.vx));ctx.fillStyle='#07040c';ctx.fillRect(-14,-2.5,30,5);ctx.fillStyle='#d8d0b0';ctx.fillRect(-12,-1,26,2);ctx.fillStyle='#ff8a3a';ctx.beginPath();ctx.moveTo(16,-4);ctx.lineTo(24,0);ctx.lineTo(16,4);ctx.fill();lights.push([b.x,b.y-10,50,.6,'warm'])}
 else if(b.kd===2){ctx.fillStyle='#07040c';ctx.beginPath();ctx.arc(0,0,7,0,TAU);ctx.fill();ctx.fillStyle='#ffd93b';ctx.beginPath();ctx.arc(0,0,5,0,TAU);ctx.fill();ctx.fillStyle='#fff6b0';ctx.fillRect(-1,-3,2,6);lights.push([b.x,b.y-10,50,.7,'warm'])}
 else if(b.kd===3){ctx.fillStyle='#07040c';ctx.beginPath();ctx.arc(0,0,9,0,TAU);ctx.fill();ctx.fillStyle='#ff6a2a';ctx.beginPath();ctx.arc(0,0,6.5,0,TAU);ctx.fill();ctx.fillStyle='#ffd93b';ctx.beginPath();ctx.arc(0,0,3,0,TAU);ctx.fill();lights.push([b.x,b.y-10,64,.8,'warm'])}
@@ -891,7 +904,7 @@ const fxs=p&&p.fx
 if(fxs){let cyy=by-22;[['SPEED','speed'],['BLUE LOCK','bluelock'],['GIANT','giant'],['VAMPIRE','vamp'],['BLACK HOLE','blackhole']].forEach((q,i)=>{if(fxs[i]>0){ctext(q[0]+' '+fxs[i]+'s',Wd/2,cyy,'800 12px system-ui,sans-serif',POT[q[1]][1]==='#2a1a3a'?'#b48aff':POT[q[1]][1],3);cyy-=16}})}
 if(V.ts>0)ctext('TIME STOPPED '+V.ts,Wd/2,Hd*.28,'800 26px '+FONT,'#c8d8ff',5)
 if(L.inv>0)ctext('CONTROLS INVERTED',Wd/2,Hd*.36,'800 18px system-ui,sans-serif','#ff6ad0',4)
-if(RU.test)ctext('ADMIN TEST: BLACK HOLE   '+Math.round(1/Math.max(.001,ft))+' fps',Wd/2,Hd*.14,'800 16px system-ui,sans-serif','#b48aff',4)
+if(RU.test)ctext((RU.test===2?'ADMIN TEST: TESVIN   ':'ADMIN TEST: BLACK HOLE   ')+Math.round(1/Math.max(.001,ft))+' fps',Wd/2,Hd*.14,'800 16px system-ui,sans-serif','#b48aff',4)
 ctx.font='600 11px system-ui,sans-serif';ctx.textAlign='left';ctx.fillStyle='rgba(220,200,240,.55)'
 ctx.fillText(VC.ch?'Voice: '+(proxOn?'proximity':'everyone')+' (V)   Mic '+(VC.muted?'off':'on')+' (B)':'Join a voice channel to talk',16,Hd-32)
 if(!coarse){
@@ -944,17 +957,18 @@ for(const b of V.eb.values()){b.x+=b.vx*dt;b.y+=b.vy*dt;b.a+=dt*14}
 for(let i=F.length-1;i>=0;i--){const f=F[i];f.l-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.94;f.vy*=.94;if(f.l<=0){F[i]=F[F.length-1];F.pop()}}
 for(let i=X.length-1;i>=0;i--){const x=X[i];x.l-=dt;x.y-=dt*34;if(x.l<=0){X[i]=X[X.length-1];X.pop()}}
 for(let i=RG.length-1;i>=0;i--){RG[i].l-=dt;if(RG[i].l<=0)RG.splice(i,1)}
-shake=Math.max(0,shake-dt*30);noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
+shake=Math.max(0,shake-dt*30);knT-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
 pxT+=dt
 if(pxT>.25){pxT=0;prox()}
 const p=mine()
 ctx.setTransform(D,0,0,D,0,0)
 const w=world(dt)
 for(const o of V.pl.values())if(o.fx&&o.fx[4]>0&&o.s!=='dead')blackhole(o)
+if(arenaK>0)arenaFx(ctx,cv,Wd,Hd,D,Z,w.cx,w.cy,clock,arenaK,lite)
 lighting(w.cx,w.cy)
 overlays(w.cx,w.cy,w.inb)
 vignette()
-if(V.ts>0)stopFx()
+if(V.ts>0&&!csOn)stopFx()
 if(glitchT>0)glitch()
 hud()
 if(V.st==='win'||V.st==='lose')finish()
@@ -976,7 +990,7 @@ if(!host&&u===hostUid&&!done){V.st='lose';say('The host left the match');finish(
 },
 stop(){
 cancelAnimationFrame(raf);clearInterval(mus);ro.disconnect();restoreVol()
-removeEventListener('keydown',kd);removeEventListener('keyup',ku)
+removeEventListener('keydown',kd);removeEventListener('keyup',ku);rip(false,box)
 try{ac&&ac.close()}catch{}
 box.classList.remove('rs','tu-play')
 box.replaceChildren()
