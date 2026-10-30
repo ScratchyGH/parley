@@ -17,10 +17,24 @@ const SQL=[
 'create index if not exists kp_log_p on kp_log(parent_id,at)'
 ]
 let ready=null
+const ALT=['alter table kp_devices add column consent_at integer','alter table kp_devices add column consent_ver text']
 const ensure=env=>{
-if(!ready)ready=env.DB.batch(SQL.map(s=>env.DB.prepare(s))).catch(e=>{ready=null;throw e})
+if(!ready)ready=(async()=>{
+await env.DB.batch(SQL.map(s=>env.DB.prepare(s)))
+for(const a of ALT)try{await env.DB.prepare(a).run()}catch{}
+const t=Date.now(),d=86400000
+await env.DB.batch([
+env.DB.prepare('delete from kp_log where at<?').bind(t-90*d),
+env.DB.prepare('delete from kp_codes where exp<?').bind(t-7*d),
+env.DB.prepare('delete from kp_ksess where exp<?').bind(t),
+env.DB.prepare('delete from kp_chal where exp<?').bind(t),
+env.DB.prepare('delete from kp_devices where status=\'new\' and paired_exp<?').bind(t-d),
+env.DB.prepare('delete from kp_children where status=\'rejected\' and created_at<?').bind(t-30*d)
+])
+})().catch(e=>{ready=null;throw e})
 return ready
 }
+const NOTICE='2026-10-30'
 const AL='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const pick=n=>{const b=crypto.getRandomValues(new Uint8Array(n));let s='';for(const x of b)s+=AL[x%32];return s}
 const ip=c=>c.req.headers.get('cf-connecting-ip')||'local'
@@ -46,7 +60,7 @@ await ensure(c.env)
 const t=bearer(c)
 if(!t||!t.startsWith('kt_'))fail(401,'This device is not signed in')
 const h=await sha(t)
-const r=await c.env.DB.prepare('select d.id,d.status,d.parent_id,d.child_id,d.label from kp_ksess s join kp_devices d on d.id=s.device_id where s.hash=? and s.exp>?').bind(h,now()).first()
+const r=await c.env.DB.prepare('select d.id,d.status,d.parent_id,d.child_id,d.label,d.consent_at from kp_ksess s join kp_devices d on d.id=s.device_id where s.hash=? and s.exp>?').bind(h,now()).first()
 if(!r)fail(401,'This device is not signed in')
 if(r.status!=='active'){await c.env.DB.prepare('delete from kp_ksess where hash=?').bind(h).run();fail(403,'This device is not authorized')}
 limit('kpk:'+r.id,300,60000)
@@ -179,6 +193,7 @@ return{device:{id:d.id,label:d.label},child:childOut(ch)}
 P('POST','/api/kids/account',async c=>{
 const d=await deviceOf(c)
 limit('kpn:'+d.id,10,600000)
+if(!d.consent_at)fail(403,'A parent has to give consent before an account can be made')
 if(d.child_id){
 const ex=await c.env.DB.prepare('select * from kp_children where id=?').bind(d.child_id).first()
 if(ex&&ex.status!=='rejected')fail(409,'This device already has an account')
@@ -279,6 +294,7 @@ P('POST','/api/connect/devices/:id/code',async c=>{
 const p=await parentOf(c)
 limit('kpo:'+p.id,10,600000)
 const b=await body(c.req,300)
+if(b.consent!==true)fail(400,'Read the privacy notice and tick the consent box first')
 const mins=int(b.minutes??10,2,60,'Minutes')
 const d=await c.env.DB.prepare('select * from kp_devices where id=? and parent_id=?').bind(c.p.id,p.id).first()
 if(!d)fail(404,'No such device')
@@ -291,7 +307,9 @@ if(!child)fail(404,'No such child')
 const code=pick(8),id=newId('cd'),t=now()
 await c.env.DB.batch([
 c.env.DB.prepare('update kp_codes set revoked=1 where device_id=? and used_at is null').bind(d.id),
+c.env.DB.prepare('update kp_devices set consent_at=?,consent_ver=? where id=?').bind(t,NOTICE,d.id),
 c.env.DB.prepare('insert into kp_codes(id,parent_id,device_id,child_id,code_hash,exp,created_at) values(?,?,?,?,?,?,?)').bind(id,p.id,d.id,child?child.id:null,await sha(d.id+'|'+code+'|'+id),t+mins*60000,t),
+logp(c.env,p.id,'consent','Consent recorded for '+(d.label||'a device')+' under privacy notice '+NOTICE),
 logp(c.env,p.id,'code','Activation code created for '+(d.label||'a device'))
 ])
 return{code:code.slice(0,4)+'-'+code.slice(4),exp:t+mins*60000,id}
@@ -355,7 +373,7 @@ const p=await parentOf(c)
 const db=c.env.DB
 const[ch,dv,lg]=await Promise.all([
 db.prepare('select id,username,display_name,avatar,status,consent_at,created_at from kp_children where parent_id=?').bind(p.id).all(),
-db.prepare('select id,label,status,child_id,created_at,last_seen from kp_devices where parent_id=?').bind(p.id).all(),
+db.prepare('select id,label,status,child_id,created_at,last_seen,consent_at,consent_ver from kp_devices where parent_id=?').bind(p.id).all(),
 db.prepare('select kind,detail,at from kp_log where parent_id=? order by at').bind(p.id).all()
 ])
 return{parent:{username:p.username},children:ch.results,devices:dv.results,activity:lg.results}

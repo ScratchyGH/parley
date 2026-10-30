@@ -115,6 +115,14 @@ const x='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple/
 return new Response(x,{headers:{'content-type':'application/x-apple-aspen-config','content-disposition':'attachment; filename="ParleyKids.mobileconfig"','cache-control':'public,max-age=3600'}})
 },{auth:false})
 
+router.add('GET','/api/get/parley-connect.mobileconfig',async c=>{
+const o=c.url.origin
+const ic=await c.env.ASSETS.fetch(new Request(o+'/apple-touch-icon.png'))
+const b=new Uint8Array(await ic.arrayBuffer());let t='';for(let i=0;i<b.length;i+=8192)t+=String.fromCharCode(...b.subarray(i,i+8192))
+const x='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>PayloadContent</key><array><dict><key>FullScreen</key><true/><key>IsRemovable</key><true/><key>Icon</key><data>'+btoa(t)+'</data><key>Label</key><string>PK Connect</string><key>PayloadDisplayName</key><string>PK Connect</string><key>PayloadIdentifier</key><string>app.parley.connect.webclip</string><key>PayloadType</key><string>com.apple.webClip.managed</string><key>PayloadUUID</key><string>7B1D6A52-3C0E-4F7A-9A44-5D2E8B1C9F03</string><key>PayloadVersion</key><integer>1</integer><key>URL</key><string>'+o+'/connect/</string></dict></array><key>PayloadDescription</key><string>Adds PK Connect to your Home Screen.</string><key>PayloadDisplayName</key><string>PK Connect</string><key>PayloadIdentifier</key><string>app.parley.connect.profile</string><key>PayloadOrganization</key><string>PK Connect</string><key>PayloadType</key><string>Configuration</string><key>PayloadUUID</key><string>2C9E4F10-8A3B-4D65-B7E2-91F0A6D3C807</string><key>PayloadVersion</key><integer>1</integer></dict></plist>'
+return new Response(x,{headers:{'content-type':'application/x-apple-aspen-config','content-disposition':'attachment; filename="PKConnect.mobileconfig"','cache-control':'public,max-age=3600'}})
+},{auth:false})
+
 router.add('GET','/api/rtc/ice',async c=>{
 limit('ice:'+c.user.id,30,60000)
 const fallback=[{urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:global.stun.twilio.com:3478','stun:stun2.l.google.com:19302','stun:stun3.l.google.com:19302','stun:stun.stunprotocol.org:3478','stun:stun.services.mozilla.com:3478']}]
