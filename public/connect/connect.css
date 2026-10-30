@@ -1,0 +1,56 @@
+@font-face{font-family:"Bricolage";src:url(/fonts/bricolage.woff2) format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Figtree";src:url(/fonts/figtree.woff2) format("woff2");font-weight:300 900;font-display:swap}
+:root{--bg:#f3f5fa;--ink:#16203d;--soft:#5a6685;--card:#fff;--line:#dde2ee;--blue:#2f5bd8;--blue2:#e8eefc;--red:#c8372d;--redbg:#fdecea;--grn:#14815a;--grnbg:#e5f6ee;--amb:#9a6200;--ambbg:#fff3dc}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100%}
+h1,h2,h3{font-family:Bricolage,Figtree,sans-serif;margin:0;letter-spacing:-.015em;line-height:1.15}
+h1{font-size:28px}h2{font-size:21px}h3{font-size:16px}
+p{margin:0;color:var(--soft)}
+.auth{max-width:420px;margin:0 auto;padding:max(40px,env(safe-area-inset-top)) 20px;display:flex;flex-direction:column;gap:20px;min-height:100vh;justify-content:center}
+.brand{display:flex;align-items:center;gap:10px;font:800 22px Bricolage,Figtree,sans-serif}
+.brand i{width:34px;height:34px;border-radius:10px;background:var(--blue);display:grid;place-items:center}
+.brand i svg{width:20px;height:20px}
+.brand small{font:600 13px Figtree,sans-serif;color:var(--soft);margin-left:2px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
+label{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:14px}
+input,select{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+input:focus-visible,select:focus-visible,.btn:focus-visible,.nav button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.chk{flex-direction:row;align-items:flex-start;gap:10px;font-weight:500}
+.chk input{margin-top:3px;width:18px;height:18px}
+.btn{appearance:none;border:0;border-radius:10px;padding:10px 16px;font:700 15px Figtree,sans-serif;color:#fff;background:var(--blue);cursor:pointer}
+.btn:hover{background:#2449b3}
+.btn.sec{background:var(--blue2);color:var(--blue)}
+.btn.sec:hover{background:#d8e3fb}
+.btn.bad{background:var(--redbg);color:var(--red)}
+.btn.bad:hover{background:#fbd9d5}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.sm{padding:6px 12px;font-size:13px}
+.msg{border-radius:10px;padding:9px 12px;font-weight:600;font-size:14px}
+.msg.e{background:var(--redbg);color:var(--red)}
+.msg.o{background:var(--grnbg);color:var(--grn)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{background:#fff;border-right:1px solid var(--line);padding:max(18px,env(safe-area-inset-top)) 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{appearance:none;border:0;background:none;text-align:left;font:600 15px Figtree,sans-serif;color:var(--soft);padding:9px 12px;border-radius:9px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.nav button:hover{background:var(--bg)}
+.nav button[aria-current=page]{background:var(--blue2);color:var(--blue)}
+.nav b{background:var(--red);color:#fff;border-radius:99px;font-size:12px;padding:1px 7px}
+.who{margin-top:auto;font-size:13px;color:var(--soft)}
+.main{padding:28px;max-width:900px;display:flex;flex-direction:column;gap:20px;width:100%}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .grow{flex:1;min-width:160px;display:flex;flex-direction:column}
+.row .grow b{font-weight:700}
+.row .grow span{color:var(--soft);font-size:13px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.pill{border-radius:99px;padding:2px 10px;font-size:12px;font-weight:800;background:var(--bg);color:var(--soft)}
+.pill.g{background:var(--grnbg);color:var(--grn)}
+.pill.a{background:var(--ambbg);color:var(--amb)}
+.pill.r{background:var(--redbg);color:var(--red)}
+.code{font:800 34px Bricolage,Figtree,sans-serif;letter-spacing:.18em;color:var(--blue);background:var(--blue2);border-radius:12px;padding:14px;text-align:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.empty{color:var(--soft);padding:6px 0}
+.log{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);align-items:baseline}
+.log:first-child{border-top:0}
+.log time{color:var(--soft);font-size:12px;min-width:110px}
+@media(max-width:760px){.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;align-items:center;flex-wrap:wrap;padding:12px}.nav{flex-direction:row;flex-wrap:wrap}.who{margin:0 0 0 auto}.main{padding:16px}.two{grid-template-columns:1fr}}
