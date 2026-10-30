@@ -27,7 +27,7 @@ else{const r=await api('/api/connect/recover',{username:un.value,password:pw.val
 go.addEventListener('click',run)
 for(const i of[un,pw,rc])i.addEventListener('keydown',e=>{if(e.key==='Enter')run()})
 const sw=(m,t)=>h('button',{class:'btn sec sm',type:'button',on:{click:()=>authView(m)}},t)
-mount(root,h('main',{class:'auth'},logo(),h('section',{class:'panel'},h('h1',null,mode==='login'?'Sign in':mode==='signup'?'Create your parent account':'Reset your password'),h('p',null,mode==='signup'?'PK Connect is where you approve your child\'s device and account for Parley Kids.':mode==='login'?'Manage your children\'s devices and accounts.':'Use the recovery code you saved when you made your account.'),h('label',null,'Username',un),mode==='recover'?h('label',null,'Recovery code',rc):null,h('label',null,mode==='recover'?'New password':'Password',pw),mode==='signup'?h('p',null,'Use at least 10 characters.'):null,mode==='signup'?h('label',{class:'chk'},terms,h('span',null,'I am a parent or legal guardian of the children I will add.')):null,err,go),h('div',{class:'acts'},mode!=='login'?sw('login','Sign in'):null,mode!=='signup'?sw('signup','New parent account'):null,mode==='login'?sw('recover','Forgot password'):null)))
+mount(root,h('main',{class:'auth'},logo(),h('section',{class:'panel'},h('h1',null,mode==='login'?'Sign in':mode==='signup'?'Create your parent account':'Reset your password'),h('p',null,mode==='signup'?'PK Connect is where you approve your child\'s device and account for Parley Kids.':mode==='login'?'Manage your children\'s devices and accounts.':'Use the recovery code you saved when you made your account.'),h('label',null,'Username',un),mode==='recover'?h('label',null,'Recovery code',rc):null,h('label',null,mode==='recover'?'New password':'Password',pw),mode==='signup'?h('p',null,'Use at least 10 characters.'):null,mode==='signup'?h('label',{class:'chk'},terms,h('span',null,'I am a parent or legal guardian of the children I will add. I read the ',h('a',{href:'/kids/privacy.html',target:'_blank',rel:'noopener'},'privacy notice'),'.')):null,err,go),h('div',{class:'acts'},mode!=='login'?sw('login','Sign in'):null,mode!=='signup'?sw('signup','New parent account'):null,mode==='login'?sw('recover','Forgot password'):null)))
 }
 function recoveryView(rec,reset){
 const ok=h('input',{type:'checkbox'})
@@ -59,12 +59,13 @@ return h('section',{class:'panel'},h('h2',null,'Add child device'),h('p',null,'O
 function deviceRow(d){
 const mins=h('select',{'aria-label':'Code lifetime'},[5,10,15,30,60].map(m=>h('option',{value:m,selected:m===10},m+' min')))
 const kid=h('select',{'aria-label':'Child account'},h('option',{value:''},'New child account'),D.children.filter(c=>c.status==='active').map(c=>h('option',{value:c.id},c.display_name)))
+const cons=h('input',{type:'checkbox','aria-label':'Parental consent'})
 const mk=h('button',{class:'btn sm',type:'button'},'Make activation code'),rv=h('button',{class:'btn bad sm',type:'button'},'Revoke')
-act(mk,async()=>{const r=await call('/api/connect/devices/'+d.id+'/code',{minutes:Number(mins.value),child:kid.value||undefined});code={id:r.id,dev:d.id,code:r.code,exp:r.exp};say('Code created. Type it on the child device.','o')})
+act(mk,async()=>{if(!cons.checked)throw new Error('Tick the consent box to make a code');const r=await call('/api/connect/devices/'+d.id+'/code',{minutes:Number(mins.value),child:kid.value||undefined,consent:true});code={id:r.id,dev:d.id,code:r.code,exp:r.exp};say('Code created. Type it on the child device.','o')})
 act(rv,async()=>{if(!confirm('Revoke '+d.label+'? It will lose access immediately.'))throw new Error('Cancelled');await call('/api/connect/devices/'+d.id+'/revoke',{});say('Device revoked','o')})
 const shown=code&&code.dev===d.id&&code.exp>Date.now()
 const cc=shown?h('div',null,h('div',{class:'code'},code.code),h('p',null,'Expires '+new Date(code.exp).toLocaleTimeString()+'. Works once, only on '+d.label+'.')):null
-return h('div',{class:'row'},h('div',{class:'grow'},h('b',null,d.label),h('span',null,(d.child_id?childName(d.child_id)||'Child':'No child yet')+' / seen '+ago(d.last_seen))),pill(d.status),d.status==='paired'?h('div',{class:'acts'},mins,kid,mk):null,d.status!=='revoked'?rv:null,cc?h('div',{class:'grow'},cc):null)
+return h('div',{class:'row'},h('div',{class:'grow'},h('b',null,d.label),h('span',null,(d.child_id?childName(d.child_id)||'Child':'No child yet')+' / seen '+ago(d.last_seen))),pill(d.status),d.status==='paired'?h('div',{class:'grow'},h('label',{class:'chk'},cons,h('span',null,'I am this child\'s parent or legal guardian. I read the ',h('a',{href:'/kids/privacy.html',target:'_blank',rel:'noopener'},'privacy notice'),' and consent to Parley Kids collecting the details described in it.')),h('div',{class:'acts'},mins,kid,mk)):null,d.status!=='revoked'?rv:null,cc?h('div',{class:'grow'},cc):null)
 }
 function view(){
 const pend=D.children.filter(c=>c.status==='pending')
