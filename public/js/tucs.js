@@ -56,6 +56,13 @@ tes2:[
 {w:'parley',t:'Brit, the whole site is getting pulled in!',z:1.4,fx:'shake'},
 {w:'brit',t:'He is ripping it into his dimension. Hold on to something solid and keep moving!',z:1.3}
 ],
+revive:[
+{w:'kandie',t:'{p}! Hey, hey, eyes on me. You do not get to quit on me.',z:1.8,y:10,fx:'shake',sp:16},
+{w:'narr',t:'Kandie hit the dirt on her knees and did not look back.',z:2,y:30,sp:16},
+{w:'kandie',t:'I did not sit through all those first aid slides for nothing. Breathe!',z:2.1,y:30,sp:16},
+{w:'narr',t:'Pink light gathered around her hands.',z:2.3,y:30,fx:'flash',sp:16},
+{w:'kandie',t:'There. Back on your feet. And you owe me a snack, do not think I will forget.',z:1.4,sp:16}
+],
 tes3:[
 {w:'tesvin',t:'Impossible. I was supposed to be the last signal.',z:1.7,fx:'glitch'},
 {w:'brit',t:'Textures reloading. Reality is restoring itself. Welcome back, everyone.',z:1.25,fx:'flash'},
@@ -102,7 +109,8 @@ clearInterval(iv);clearTimeout(to)
 i++
 if(i>=steps.length)return fin()
 const s=steps[i],c=CH[s.w]
-full=(s.t||'').replace('{b}',o.name||'')
+full=(s.t||'').replace('{b}',o.name||'').replace('{p}',o.pname||'friend')
+const cs=s.sp||28
 pos=0
 nm.textContent=c.n
 nm.style.color=c.c
@@ -118,8 +126,8 @@ fx(s.fx)
 iv=setInterval(()=>{
 pos++
 tx.textContent=full.slice(0,pos)
-if(pos>=full.length){clearInterval(iv);to=setTimeout(show,Math.min(per,full.length*42+1500))}
-},28)
+if(pos>=full.length){clearInterval(iv);to=setTimeout(show,Math.max(450,Math.min(full.length*42+1500,per-full.length*cs)))}
+},cs)
 }
 const adv=()=>{if(pos<full.length){pos=full.length;tx.textContent=full}else show()}
 const key=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();adv()}else if(e.key==='Escape')fin()}

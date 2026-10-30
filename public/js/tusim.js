@@ -187,7 +187,7 @@ export const DIFFS=[
 {n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12}
 ]
 export const LENS=[1,5,10,30,60,0]
-export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20}
+export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20,revive:13}
 export const POT={speed:['Speed','#4aff9a'],reverse:['Reverse','#7dff7a'],bluelock:['Blue Lock','#3a8aff'],purple:['Hollow Purple','#b04aff'],giant:['Giant','#ff9a3a'],timestop:['Time Stop','#c8d8ff'],vamp:['Vampire','#ff3a5a'],blackhole:['Black Hole','#2a1a3a']}
 const PW=[['speed',20],['reverse',14],['bluelock',14],['purple',9],['giant',13],['timestop',10],['vamp',14]]
 const rollPot=()=>{
@@ -335,7 +335,7 @@ txt(p.x,p.y-40,'-'+Math.round(d),'#ff6a5a')
 ev('hurt',p.u)
 if(p.hp<=0){
 p.hp=0
-if(n>1&&alive().length>1){p.s='down';p.bleed=25;p.rv=0;ev('down',p.u)}
+if((n>1&&alive().length>1)||(S.kn&&p.u===R.kan&&S.kn.rc<=0&&!S.kn.rv)){p.s='down';p.bleed=25;p.rv=0;ev('down',p.u);if(S.kn&&p.u===R.kan&&S.kn.rc<=0){S.kn.rv=1;S.kn.rt=0;ev('cs','revive');S.ts=Math.max(S.ts,CSD.revive-1)}}
 else p.s=n>1?'down':'dead'
 if(p.s==='down')p.bleed=25
 }
@@ -648,7 +648,8 @@ else if(a==='pull'){for(const p of alive())if(!p.lair){const dx=e.x-p.x,dy=e.y-p
 e.at=0;e.bs=0
 }
 const kl=(t,f)=>{const k=S.kn;if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',t)}
-S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,hc:0,dn:0,lo:0}:null
+S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,hc:0,dn:0,lo:0,rc:0,rv:0,rt:0,ia:rnd(25,40)}:null
+const QUIPS=['Psst. Look how well I am doing over here.','Just a reminder that I am carrying this team.','You did notice that one was mine, right?','Eyes up, I am the best support in this whole hollow.','I will take a thank you in snacks.','Hey. Hey. Watch this.']
 S.step=dt=>{
 if(S.st!=='run')return
 S.time+=dt
@@ -658,8 +659,9 @@ if(S.kn){const k=S.kn,o=pl.get(R.kan);k.cd-=dt;k.sh-=dt;k.hc-=dt
 if(o&&o.s==='up'&&!o.lair){const dx=o.x-40-k.x,dy=o.y+10-k.y,d=Math.hypot(dx,dy);if(d>520){k.x=o.x-40;k.y=o.y+10}else if(d>16){const sp=Math.min(d*4,230)*dt;k.x+=dx/d*sp;k.y+=dy/d*sp}
 if(k.sh<=0){let t=null,bd=330*330;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey;if(dd<bd){bd=dd;t=e}}if(t){k.sh=.9;const a=Math.atan2(t.y-k.y,t.x-k.x);S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(a)*430,vy:Math.sin(a)*430,life:.9,pr:0,hit:new Set(),a,own:o.u,d:10+S.te*.05,h:0})}}
 if(o.hp<o.max*.3&&k.hc<=0){k.hc=14;o.hp=Math.min(o.max,o.hp+12);txt(o.x,o.y-44,'+12','#ff9ac2');kl('Hey, you are not allowed to fall over. Heal up.',1)}
-k.dn=0
-}else if(o&&o.s==='down'&&!k.dn){k.dn=1;kl('No no no, stay with me!',1)}}
+k.dn=0;k.rv=0;k.rt=0
+}else if(o&&o.s==='down'){if(k.rv){k.rt+=dt;o.bleed=25;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}if(k.rt>=11){k.rv=0;k.rt=0;k.rc=75;o.s='up';o.hp=o.max*.55;o.rv=0;o.inv=3;txt(o.x,o.y-44,'Revived','#ff9ac2',1);burst(o.x,o.y-10,'#ff9ac2',40);ev('x',rd(o.x),rd(o.y),220,12);ev('sh',8)}}else if(!k.dn){k.dn=1;kl('No no no, stay with me!',1)}}
+k.rc-=dt;k.ia-=dt;if(k.ia<=0&&k.cd<=0&&!k.rv){k.ia=rnd(32,58);kl(QUIPS[Math.floor(Math.random()*QUIPS.length)])}}
 S.te=S.time*pace
 S.orbA+=dt*2.7
 if(S.bm>0)S.bm-=dt
@@ -900,7 +902,7 @@ S.gm=S.gm.filter(g2=>!g2.got)
 S.hp=S.hp.filter(h2=>!h2.got)
 S.pt=S.pt.filter(q=>!q.got)
 S.pk=S.pk.filter(k=>k.life>0&&!k.got)
-if(!alive().length)S.st='lose'
+if(!alive().length&&!(S.kn&&S.kn.rv))S.st='lose'
 }
 S.snap=()=>{
 const r=Math.round,r2=x=>Math.round(x*100)/100
@@ -918,7 +920,7 @@ d:S.pd.map(d=>[r(d.x),r(d.y),r(d.r)]),
 c:S.pk.map(k=>[k.id,k.k,r(k.x),r(k.y)]),
 b:Object.entries(S.bars).filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
 z:[...S.bs].filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
-pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,kn:S.kn?[r(S.kn.x),r(S.kn.y)]:0,bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
+pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,kn:S.kn?[r(S.kn.x),r(S.kn.y),S.kn.rv?1:0,r2(S.kn.rt)]:0,bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
 v:S.ev}
 S.ev=[]
 return o
