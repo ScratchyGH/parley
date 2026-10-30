@@ -648,7 +648,7 @@ else if(a==='pull'){for(const p of alive())if(!p.lair){const dx=e.x-p.x,dy=e.y-p
 e.at=0;e.bs=0
 }
 const kl=(t,f)=>{const k=S.kn;if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',t)}
-S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,hc:0,dn:0,lo:0,rc:0,rv:0,rt:0,ia:rnd(25,40)}:null
+S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,sb:3,nv:7,hc:0,dn:0,lo:0,rc:0,rv:0,rt:0,ia:rnd(25,40)}:null
 const QUIPS=['Psst. Look how well I am doing over here.','Just a reminder that I am carrying this team.','You did notice that one was mine, right?','Eyes up, I am the best support in this whole hollow.','I will take a thank you in snacks.','Hey. Hey. Watch this.']
 S.step=dt=>{
 if(S.st!=='run')return
@@ -657,7 +657,11 @@ if(S.arT>0){S.arT-=dt;if(S.arT<=0){S.arena=1;ev('ar',1);ev('cs','tes2')}}
 if(!S.intro&&S.time>.8&&!test){S.intro=1;ev('cs','intro');S.ts=Math.max(S.ts,CSD.intro)}
 if(S.kn){const k=S.kn,o=pl.get(R.kan);k.cd-=dt;k.sh-=dt;k.hc-=dt
 if(o&&o.s==='up'&&!o.lair){const dx=o.x-40-k.x,dy=o.y+10-k.y,d=Math.hypot(dx,dy);if(d>520){k.x=o.x-40;k.y=o.y+10}else if(d>16){const sp=Math.min(d*4,230)*dt;k.x+=dx/d*sp;k.y+=dy/d*sp}
-if(k.sh<=0){let t=null,bd=330*330;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey;if(dd<bd){bd=dd;t=e}}if(t){k.sh=.9;const a=Math.atan2(t.y-k.y,t.x-k.x);S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(a)*430,vy:Math.sin(a)*430,life:.9,pr:0,hit:new Set(),a,own:o.u,d:10+S.te*.05,h:0})}}
+k.sb-=dt;k.nv-=dt
+const D=o.dmg*.8+S.te*.07
+if(k.sh<=0){let t=null,bd=560*560;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey-(e.k==='boss'?9e4:0);if(dd<bd){bd=dd;t=e}}if(t){k.sh=.38;const a=Math.atan2(t.y-k.y,t.x-k.x),m=t.k==='boss'?3:1;for(let i=0;i<m;i++){const q=a+(i-(m-1)/2)*.16;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*520,vy:Math.sin(q)*520,life:1.1,pr:1,hit:new Set(),a:q,own:o.u,d:D,h:0})}}}
+if(k.sb<=0){let c=0;for(const e of S.en)if(!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<190+e.r)c++;if(c){k.sb=6;for(const e of S.en)if(!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<190+e.r)hit(e,D*3.2,1,o.u);ev('x',rd(k.x),rd(k.y),190,12);burst(k.x,k.y,'#ff9ac2',30);ev('sh',5);kl('Sweet Burst!')}}
+if(k.nv<=0&&S.en.some(e=>!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<460)){k.nv=13;for(let i=0;i<14;i++){const q=i/14*TAU;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*400,vy:Math.sin(q)*400,life:1.2,pr:2,hit:new Set(),a:q,own:o.u,d:D*1.6,h:0})}burst(k.x,k.y,'#ff9ac2',24);kl('Heart Nova, incoming!')}
 if(o.hp<o.max*.3&&k.hc<=0){k.hc=14;o.hp=Math.min(o.max,o.hp+12);txt(o.x,o.y-44,'+12','#ff9ac2');kl('Hey, you are not allowed to fall over. Heal up.',1)}
 k.dn=0;k.rv=0;k.rt=0
 }else if(o&&o.s==='down'){if(k.rv){k.rt+=dt;o.bleed=25;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}if(k.rt>=11){k.rv=0;k.rt=0;k.rc=75;o.s='up';o.hp=o.max*.55;o.rv=0;o.inv=3;txt(o.x,o.y-44,'Revived','#ff9ac2',1);burst(o.x,o.y-10,'#ff9ac2',40);ev('x',rd(o.x),rd(o.y),220,12);ev('sh',8)}}else if(!k.dn){k.dn=1;kl('No no no, stay with me!',1)}}
