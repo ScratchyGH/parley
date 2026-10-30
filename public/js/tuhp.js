@@ -40,7 +40,7 @@ return g
 }
 const purple=r=>{
 const g=new T.Group()
-g.add(new T.Mesh(new T.SphereGeometry(r,64,48),new T.MeshBasicMaterial({color:0x040008})))
+g.add(new T.Mesh(new T.SphereGeometry(r,64,48),new T.MeshBasicMaterial({color:0x000000})))
 g.add(new T.Mesh(new T.SphereGeometry(r*1.045,64,48),RIM()))
 g.add(sprite(0xb060ff,r*7,.3))
 const disk=new T.Group()
@@ -112,7 +112,7 @@ const ud=pu.userData
 ud.disk.rotation.y=u*2.2;ud.d2.rotation.y=-u*1.1;ud.jets.rotation.y=u*.8
 pu.rotation.y=u*.3
 const fire=u>3.2?Math.min(1,(u-3.2)/1.35):0
-cam.position.set(Math.sin(u*.45)*2.4,1.5+Math.sin(u*.35)*.5,11.5-gr*.8-fire*fire*10.2)
+cam.position.set(Math.sin(u*.45)*2.4,1.5+Math.sin(u*.35)*.5,8.4-gr*.9-fire*fire*7.6)
 cam.lookAt(0,0,0)
 cv.style.filter=fire>0?'brightness('+(1+fire*fire*7)+')':''
 if(fire>.7)cv.style.opacity=String(Math.max(0,1-(fire-.7)/.3)*fo)
