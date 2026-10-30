@@ -5,7 +5,7 @@ export const SGD={lab:92,world:60,cheat:20,fair:9,brit:30}
 export function makeSaga(X){
 const{S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl}=X
 const st={ph:0,t:0,lk:0,tv:null,a:null,idx:0,pi:0,pr:new Map(),base:new Map(),po:[],sk:[],hs:0,ad:0,dm:0,qt:0,qi:0,hc:0,tc:0,pd:test===2?35:300}
-st.tv=(test===2||Math.random()<.01)?{x:500,y:520,m:0,cd:1,hop:0,sx:1}:null
+st.tv=true?{x:500,y:520,m:0,cd:1,hop:0,sx:1}:null
 const RM=i=>{const ox=i*CS;return{x:ox+120,y:240,w:760,h:520,ox}}
 const cp=b=>({...b,ammo:[...b.ammo],up:{...b.up},ab:{...b.ab},acd:{...b.acd}})
 const tp=(p,x,y)=>{p.x=x;p.y=y;p.ig=.6;p.inv=Math.max(p.inv,1.5);S.out.push({to:p.u,m:{k:'tp',x:Math.round(x),y:Math.round(y)}})}

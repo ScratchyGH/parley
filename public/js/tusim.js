@@ -10,7 +10,7 @@ export const LI=5000
 const rd=Math.round
 const KB={chapel:[440,320],house:[360,360],armory:[420,300],cabin:[300,240],barn:[460,300],tavern:[380,300],mansion:[520,380],bunker:[320,260],mill:[300,300]}
 const SOL={tower:[24,12],crypt:[48,22],well:[28,14],shrine:[20,12],campfire:[18,8],altar:[26,12],obelisk:[22,10],scarecrow:[16,8],ruins:[40,14],fountain:[32,14],mausoleum:[44,22]}
-const FORCE={'1,0':'chapel','-1,0':'armory','0,1':'campfire','0,-1':'cabin','1,1':'crypt','-1,-1':'tower','-1,1':'well','2,0':'hole','-2,0':'hole','0,2':'altar','1,-1':'house','-1,2':'shrine','-1,-2':'fountain','2,1':'barn','2,-1':'tavern','-2,1':'sinkhole','-2,-1':'lair','1,2':'obelisk','0,-2':'mansion','-3,0':'bunker','3,0':'mill','1,-2':'ruins','-1,3':'scarecrow','2,2':'mausoleum'}
+const FORCE={'1,0':'chapel','-1,0':'armory','0,1':'lair','0,-1':'cabin','1,1':'crypt','-1,-1':'tower','-1,1':'well','2,0':'hole','-2,0':'hole','0,2':'altar','1,-1':'house','-1,2':'shrine','-1,-2':'fountain','2,1':'barn','2,-1':'tavern','-2,1':'sinkhole','-2,-1':'lair','1,2':'obelisk','0,-2':'mansion','-3,0':'bunker','3,0':'mill','1,-2':'ruins','-1,3':'scarecrow','2,2':'mausoleum'}
 const SIDES=['n','s','w','e']
 const NORM={n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}
 const doorOf=b=>{

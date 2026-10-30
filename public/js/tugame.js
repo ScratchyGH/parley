@@ -907,8 +907,10 @@ const sgHud=p=>{
 if(SG&&SG[0]===7){const s=SG[3];ctext('Pulled out in '+mmss(s),Wd/2,Hd*.14,'800 22px '+FONT,'#bfeaff',4)}
 if(SG){const f=SG[6].find(a=>a[0]===me);if(f){bar(Wd/2-90,Hd*.2,180,12,f[1],'#ffb0ff','#b04aff');ctext('SPACE! Dash out of the hole',Wd/2,Hd*.2-14,'800 15px '+FONT,'#ffe0ff',4)}}
 if(p&&!SG&&!p.lair&&p.x<LI*CS&&!V.labSeen){
-const c=chunk(-2,-1),o=c&&c.o
-if(o&&o.kind==='lair'){
+let o=null,bd0=1e18
+const ci=Math.floor(p.x/CS),cj=Math.floor(p.y/CS)
+for(let i=ci-4;i<=ci+4;i++)for(let j=cj-4;j<=cj+4;j++){const c=chunk(i,j),q=c&&c.o;if(q&&q.kind==='lair'){const d2=(q.x-p.x)**2+(q.y-p.y)**2;if(d2<bd0){bd0=d2;o=q}}}
+if(o){
 const dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy)
 if(d>140){
 const a=Math.atan2(dy,dx),m=48,ex=Math.max(m,Math.min(Wd-m,Wd/2+Math.cos(a)*Wd)),ey=Math.max(m+60,Math.min(Hd-m,Hd/2+Math.sin(a)*Hd))
