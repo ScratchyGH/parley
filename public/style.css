@@ -487,3 +487,26 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 .appnotice .an-x{padding:8px 12px;background:#222;color:#ccc;border:1px solid #333;border-radius:6px;cursor:pointer}
 
 .vw{position:absolute;inset:0;background:#000;touch-action:none}.vw video,.vw canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}.vw canvas{display:none;pointer-events:none}.vw.up canvas{display:block}.vw.up video{opacity:0}
+
+.kd-rail canvas{width:26px;height:36px;image-rendering:pixelated;display:block;margin:auto}
+.kd-ci{display:inline-grid;width:20px;height:20px;place-items:center;overflow:hidden}
+.kd-ci canvas{width:14px;height:20px;image-rendering:pixelated}
+.kd-page{padding:24px;max-width:980px;margin:0 auto;width:100%;box-sizing:border-box}
+.kd-hero{display:flex;gap:20px;align-items:flex-start;padding:20px;border:1px solid var(--border,#2a2a30);border-radius:12px;background:var(--panel,#17171a);margin-bottom:20px}
+.kd-av{flex:0 0 88px;height:110px;display:grid;place-items:center;background:#120d1c;border:2px solid #ff9ac2;border-radius:10px;overflow:hidden}
+.kd-av canvas{width:64px;height:90px;image-rendering:pixelated}
+.kd-hero h2{margin:0 0 6px}
+.kd-hero p{margin:0 0 12px;color:var(--muted,#9a9aa5);line-height:1.5}
+.kd-q{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#2a2a30);background:var(--bg,#0e0e10);color:inherit;font:inherit}
+.kd-body{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:start}
+.kd-toc{position:sticky;top:0;display:flex;flex-direction:column;gap:2px}
+.kd-toc a{padding:7px 10px;border-radius:6px;color:var(--muted,#9a9aa5);text-decoration:none;font-size:14px}
+.kd-toc a:hover{background:var(--panel,#17171a);color:inherit}
+.kd-s{margin-bottom:28px}
+.kd-s h3{margin:0 0 10px;font-size:20px}
+.kd-s p{margin:0 0 12px;line-height:1.6}
+.kd-code{position:relative;margin:0 0 14px}
+.kd-code pre{margin:0;padding:14px 16px;background:#0b0b0d;border:1px solid var(--border,#2a2a30);border-radius:8px;overflow:auto;font:13px/1.5 ui-monospace,Consolas,monospace}
+.kd-cp{position:absolute;right:8px;top:8px;padding:4px 10px;border-radius:6px;border:1px solid var(--border,#2a2a30);background:#17171a;color:inherit;cursor:pointer;font-size:12px}
+.kd-none{padding:20px;color:var(--muted,#9a9aa5)}
+@media(max-width:760px){.kd-body{grid-template-columns:1fr}.kd-toc{position:static;flex-direction:row;flex-wrap:wrap}.kd-hero{flex-direction:column}}

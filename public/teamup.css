@@ -109,3 +109,35 @@
 .tu-cards .rs-card span{font-size:12px;line-height:1.35;color:#a39cc0}
 .tu-cards .rs-card .rs-k{position:absolute;top:10px;right:12px;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;background:#6a3be0;color:#fff;font:800 11px Figtree,sans-serif;font-style:normal}
 @media(max-width:620px){.tu-cards .rs-row{grid-template-columns:1fr}.tu-cards{bottom:96px}.tu-cards .rs-card{min-height:70px}}
+
+.cs{position:absolute;inset:0;z-index:30;opacity:0;transition:opacity .5s;pointer-events:auto;cursor:pointer;overflow:hidden}
+.cs.on{opacity:1}
+.cs-bar{position:absolute;left:0;right:0;height:0;background:#000;transition:height .8s cubic-bezier(.2,.7,.2,1)}
+.cs-bar.t{top:0}.cs-bar.b{bottom:0}
+.cs.on .cs-bar{height:11%}
+.cs-fl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.cs-fl.go{animation:csfl .7s ease-out}
+@keyframes csfl{0%{opacity:.85}100%{opacity:0}}
+.cs-p{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:min(760px,92%);display:flex;gap:16px;align-items:flex-end;background:linear-gradient(180deg,rgba(14,10,22,.78),rgba(8,6,14,.92));border:1px solid #3a2f55;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));padding:16px 20px;transition:transform .5s,opacity .5s}
+.cs-p.nr{text-align:center;justify-content:center}
+.cs-p.nr .cs-pt{display:none}
+.cs-pt{flex:0 0 76px;height:76px;border:2px solid #fff;background:#120d1c;display:grid;place-items:center;overflow:hidden}
+.cs-pt img,.cs-pt canvas{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+.cs-pt canvas{object-fit:contain;image-rendering:pixelated}
+.cs-pb{flex:1;min-height:70px}
+.cs-n{font:800 14px system-ui,sans-serif;letter-spacing:.04em;margin-bottom:4px}
+.cs-t{font:600 16px/1.45 Georgia,serif;color:#f1ecff;min-height:46px}
+.cs-sk{position:absolute;right:16px;top:calc(11% + 12px);background:rgba(0,0,0,.6);border:1px solid #4a3f66;color:#cfc8e6;padding:6px 14px;font:700 12px system-ui,sans-serif;cursor:pointer}
+.cs-sk:hover{border-color:#b48aff;color:#fff}
+.cs-tv{position:relative;width:100%;height:100%;background:linear-gradient(180deg,#1affd0,#0a6a8a)}
+.cs-tv i{position:absolute;top:30%;width:18%;height:20%;background:#04141c;animation:cstvb 3.4s infinite}
+.cs-tv i:nth-child(1){left:22%}.cs-tv i:nth-child(2){right:22%}
+.cs-tv b{position:absolute;left:25%;right:25%;bottom:20%;height:10%;background:#04141c;animation:cstvm .4s infinite alternate}
+@keyframes cstvb{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes cstvm{from{transform:scaleY(.4)}to{transform:scaleY(1.6)}}
+.cs-shake{animation:csshk .6s}
+@keyframes csshk{0%,100%{transform:translate(0,0)}15%{transform:translate(-9px,5px)}30%{transform:translate(8px,-6px)}45%{transform:translate(-6px,-4px)}60%{transform:translate(5px,6px)}80%{transform:translate(-3px,2px)}}
+.cs-gl .rs-cv{animation:csgl .9s steps(9)}
+@keyframes csgl{0%{filter:none;transform:translateX(0)}20%{filter:hue-rotate(140deg) saturate(2.4);transform:translateX(-14px)}40%{filter:invert(.25) hue-rotate(260deg);transform:translateX(12px) skewX(4deg)}60%{filter:hue-rotate(60deg) contrast(1.6);transform:translateX(-8px)}80%{filter:saturate(3);transform:translateX(6px) skewX(-3deg)}100%{filter:none;transform:none}}
+.tes-ar .rs-cv{animation:tesar 6s linear infinite}
+@keyframes tesar{0%,100%{filter:hue-rotate(0deg) saturate(1.2)}50%{filter:hue-rotate(25deg) saturate(1.5)}}
