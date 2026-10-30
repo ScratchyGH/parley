@@ -161,3 +161,9 @@ h2{font-size:clamp(28px,4vw,44px);line-height:1.08;margin:0 0 28px}
 .vh b{font:800 18px Bricolage,Figtree,sans-serif;color:var(--strong)}
 .vs .fine{font-size:13px;color:var(--muted);margin-top:12px}
 @media(max-width:700px){.vr{grid-template-columns:1fr 1fr;gap:6px 14px}.vr span{grid-column:1/-1}.vh span{display:none}}
+
+.seg{display:inline-flex;gap:4px;padding:4px;border-radius:99px;background:var(--sel);margin:0 0 18px}
+.seg button{appearance:none;border:0;background:none;color:var(--muted);font:700 15px Figtree,sans-serif;padding:9px 18px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--strong);color:var(--bg)}
+#kids .sub{max-width:62ch;margin:0 0 16px}
+#kids[hidden],#pt[hidden]{display:none}

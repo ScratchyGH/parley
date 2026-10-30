@@ -46,3 +46,9 @@ if(x.size){const s=document.createElement('small');s.textContent=kb(x).trim();a.
 }
 if(names[p]){const x=d[key[p]];if(x&&x.url)go.href=x.url}
 }).catch(()=>{})
+
+const sp=document.getElementById('seg-p'),sk=document.getElementById('seg-k'),kd=document.getElementById('kids'),pt=document.getElementById('pt')
+const mode=k=>{sp.setAttribute('aria-pressed',String(!k));sk.setAttribute('aria-pressed',String(k));kd.hidden=!k;pt.hidden=k;steps.hidden=true}
+sp.addEventListener('click',()=>mode(false))
+sk.addEventListener('click',()=>mode(true))
+if(location.hash==='#kids'||new URLSearchParams(location.search).has('kids'))mode(true)

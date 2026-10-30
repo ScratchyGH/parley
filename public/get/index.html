@@ -130,8 +130,18 @@
 <section id="devices" class="dev">
 <h2>Get Parley on your device</h2>
 <p class="sub">Every app opens the same Parley and stays current. Pick the one that fits.</p>
-<div id="steps" class="steps" hidden></div>
+<div class="seg" role="group" aria-label="Which Parley"><button id="seg-p" type="button" aria-pressed="true">Parley</button><button id="seg-k" type="button" aria-pressed="false">Parley Kids, for parents</button></div>
+<div id="kids" hidden>
+<p class="sub">Parley Kids is a separate app for children 10 and under. A parent sets it up first in PK Connect, then the child enters a code from the parent. Without that code the app does not open.</p>
 <div class="tiles">
+<article data-k="win"><h3>Windows</h3><p>Windows 10 and 11. Windows may warn that the app is unsigned.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/ParleyKids-Setup.exe">Installer (.exe)</a></div></article>
+<article data-k="android"><h3>Android</h3><p>Sideload the package on your child's phone or tablet.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/ParleyKids.apk">APK</a></div></article>
+<article data-k="ios"><h3>iPhone and iPad</h3><p>Open this page in Safari on the child's device and install the profile, or open Parley Kids and use Add to Home Screen.</p><div class="dls"><a href="/api/get/parley-kids.mobileconfig">Profile</a><a href="/kids/">Open Parley Kids</a></div></article>
+<article data-k="pc"><h3>PK Connect</h3><p>For parents, in any browser. Add your child's device, make activation codes, approve accounts.</p><div class="dls"><a href="/connect/">Open PK Connect</a></div></article>
+</div>
+</div>
+<div id="steps" class="steps" hidden></div>
+<div class="tiles" id="pt">
 <article data-p="win"><h3>Windows</h3><p>Windows 10 and 11. Windows may warn that the app is unsigned.</p><div class="dls"><a data-dl="windows" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley-Setup.exe">Installer</a><a data-dl="portable" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley-Portable.exe">Portable</a></div></article>
 <article data-p="mac"><h3>Mac</h3><p>Intel and Apple silicon. Not signed by Apple, so right-click the app and choose Open the first time.</p><div class="dls"><a data-dl="mac" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.dmg">Disk image</a></div></article>
 <article data-p="linux"><h3>Linux</h3><p>AppImage runs on most distributions and updates itself. A .deb is there for Debian, Ubuntu and Mint.</p><div class="dls"><a data-dl="linux" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.AppImage">AppImage</a><a data-dl="deb" href="https://github.com/ScratchyGH/parley/releases/download/apps/Parley.deb">.deb</a></div></article>
