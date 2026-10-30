@@ -158,7 +158,7 @@ let it=items.get(c)
 if(!it){it=mkCast();sc.add(it.tr);items.set(c,it)}
 const fz=sz=>{it.g.traverse(m=>{if(m.isPoints&&m.userData.bs&&m!==it.tr)m.material.size=m.userData.bs*sz})}
 const k=Math.min(1.2,c.t/c.d),ch=.38
-const R0=17,s0=P(c.sx0,c.sy0,0)
+const R0=28,s0=P(c.sx0,c.sy0,0)
 if(k<ch){
 const cc=k/ch,rad=70*(1-cc*cc)+6,an=c.t*13,z=Math.sin(c.t*9)*30
 it.a.visible=it.b.visible=true;it.p.visible=false
@@ -182,6 +182,7 @@ if(c.t>c.d)it.p.visible=false
 const tp=it.tr.geometry.attributes.position.array
 if(it.p.visible){for(let i=tp.length/3-1;i>0;i--){tp[i*3]=tp[(i-1)*3];tp[i*3+1]=tp[(i-1)*3+1];tp[i*3+2]=tp[(i-1)*3+2]}tp[0]=it.p.position.x+(Math.random()-.5)*14;tp[1]=it.p.position.y+(Math.random()-.5)*14;tp[2]=(Math.random()-.5)*14}else for(let i=0;i<tp.length;i++)tp[i]=0
 it.tr.geometry.attributes.position.needsUpdate=true
+it.tr.visible=it.p.visible
 }
 for(const[c,it]of items)if(!seen.has(c)){sc.remove(it.g);sc.remove(it.tr);items.delete(c)}
 for(let i=booms.length-1;i>=0;i--){const m=booms[i];m.userData.t+=1/60;const k=m.userData.t;if(k<0){m.visible=false;continue}m.visible=true;m.scale.setScalar(20+k*520);m.material.opacity=Math.max(0,.9-k*1.6);if(k>.6){sc.remove(m);booms.splice(i,1)}}
