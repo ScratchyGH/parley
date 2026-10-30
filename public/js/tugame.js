@@ -83,7 +83,6 @@ const A=buildArt(4)
 Object.assign(A,terrorArt(3))
 const CHEST=chestArt()
 A.xbow=A.bone
-A.dzom=A.ghoul.map(s=>{const c=el('canvas');c.width=s.c.width;c.height=s.c.height;const g=c.getContext('2d');g.filter='hue-rotate(205deg) saturate(1.6)';g.drawImage(s.c,0,0);return{c,w:s.w,h:s.h,ax:s.ax,ay:s.ay}})
 const fade=new Map()
 const PS=[0,1,2].map(i=>A.player.map(s=>{if(!i)return s;const c=el('canvas');c.width=s.c.width;c.height=s.c.height;const g=c.getContext('2d');g.filter='hue-rotate('+[0,175,70][i]+'deg)';g.drawImage(s.c,0,0);return{c,w:s.w,h:s.h,ax:s.ax,ay:s.ay}}))
 let Q=GF.light,ft=.016,qt=0
@@ -384,23 +383,6 @@ if(e.hp<e.mx){const bw=30;ctx.fillStyle='rgba(8,4,14,.85)';ctx.fillRect(e.x-bw/2
 if(k==='gmimic')lights.push([e.x,e.y-20,90,.8,'warm'])
 else if(k!=='smimic')lights.push([e.x,e.y-14,44,.4,'red'])
 }
-const dzom=e=>{
-const s=A.dzom[Math.floor(clock*6+e.ph)%2],sc=1.3,n=14,hh=s.h*sc/n,sh=s.c.height/n
-shadow(e.x,e.y,e.r*1.1)
-ctx.save()
-ctx.translate(e.x,e.y)
-ctx.scale(e.sx<0?-1:1,1)
-for(let i=0;i<n;i++){
-const k=1+Math.sin(clock*7+i*1.7+e.ph)*.3*(i%3===0?1.7:1)
-const jx=R()<.04?(R()-.5)*30:0
-ctx.drawImage(s.c,0,i*sh,s.c.width,sh,-s.ax*sc*k+jx,-s.ay*sc+i*hh,s.w*sc*k,hh+.6)
-}
-for(let i=0;i<4;i++){ctx.fillStyle=['#ff3aff','#3affff','#ffffff','#9a5aff'][i];ctx.fillRect((R()-.5)*60,-R()*s.h*sc,2+R()*5,2+R()*3)}
-ctx.restore()
-ctx.font='700 8px monospace';ctx.textAlign='center';ctx.fillStyle='#c9a8ff';ctx.fillText(R()<.1?'0xDEAD':'DEBUG',e.x+(R()<.1?3:0),e.y-s.h*sc-4)
-if(e.hp<e.mx){const bw=e.r*2+4;ctx.fillStyle='rgba(8,4,14,.85)';ctx.fillRect(e.x-bw/2,e.y-s.h*sc-14,bw,4);ctx.fillStyle='#c9a8ff';ctx.fillRect(e.x-bw/2+.5,e.y-s.h*sc-13.5,(bw-1)*Math.max(0,e.hp/e.mx),3)}
-lights.push([e.x,e.y-26,100,.7,'vio'])
-}
 const bossFx=e=>{
 const tg=Math.max(0,(e.tg||0)-(performance.now()-(e.tt||0))/1000),ph=e.pp||1,a=e.at
 const sc=1+(ph-1)*.08+Math.sin(clock*3)*.02
@@ -437,7 +419,6 @@ ctx.restore()
 const enemy=e=>{
 if(e.k==='boss'&&e.tes){shadow(e.x,e.y,e.r*1.05);bossFx(e);const tg=Math.max(0,(e.tg||0)-(performance.now()-(e.tt||0))/1000);tesvin(ctx,e,clock,e.pp||1,tg);lights.push([e.x,e.y-40,200,.9,'cyan']);return}
 if(e.k==='mimic'||e.k==='gmimic'||e.k==='smimic'||e.k==='bmimic')return mimic(e)
-if(e.k==='dzom')return dzom(e)
 const sp=A[e.k]
 const s=sp[Math.floor(clock*6+e.ph)%2]
 const bob=e.k==='wisp'||e.k==='bat'?Math.sin(clock*5+e.ph)*3-8:e.k==='reaper'||e.k==='wraith'?Math.sin(clock*3+e.ph)*3-6:0

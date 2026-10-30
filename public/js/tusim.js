@@ -133,7 +133,6 @@ bone:{r:12,hp:22,sp:72,dmg:7,xp:2},
 reaper:{r:20,hp:210,sp:62,dmg:16,xp:14},
 boss:{r:56,hp:1900,sp:40,dmg:14,xp:120},
 xbow:{r:12,hp:30,sp:68,dmg:16,xp:4},
-dzom:{r:19,hp:280,sp:46,dmg:18,xp:18},
 mimic:{r:12,hp:60,sp:98,dmg:14,xp:6},
 gmimic:{r:14,hp:190,sp:74,dmg:18,xp:20},
 smimic:{r:12,hp:50,sp:135,dmg:22,xp:9},
@@ -264,7 +263,6 @@ return null
 const kindNow=()=>{
 const r=Math.random(),t=S.te
 if(TM){
-if(t>60&&r<.025)return'dzom'
 if(t>30&&r<.08)return'xbow'
 if(t>110&&r<.03)return'stitched'
 if(t>80&&r<.08)return'wraith'
@@ -275,8 +273,7 @@ if(t>30&&r<.6)return'ghoul'
 return r<.8?'wisp':'bone'
 }
 let k='wisp'
-if(t>60&&r<.02)k='dzom'
-else if(t>30&&r<.07)k='xbow'
+if(t>30&&r<.07)k='xbow'
 else if(t>150&&r<.03)k='stitched'
 else if(t>120&&r<.075)k='reaper'
 else if(t>90&&r<.12)k='lurker'
@@ -300,7 +297,7 @@ const by=pl.get(e.last)
 if(by&&by.ls&&by.s==='up')by.hp=Math.min(by.max,by.hp+by.ls)
 if(by&&by.bl>0){by.cmb++;if(by.cmb%8===0){txt(by.x,by.y-60,'GOAL!','#6ec1ff',1);for(let j=0;j<5;j++)S.gm.push({id:S.id++,x:by.x+rnd(-40,40),y:by.y+rnd(-40,40),v:4})}}
 if(e.k==='bmimic'){ev('x',rd(e.x),rd(e.y),100,3);ev('sh',8);for(const q of alive())if(Math.hypot(q.x-e.x,q.y-e.y)<100)hurtP(q,e.dmg*2)}
-if(e.pot||e.k==='gmimic'||e.k==='boss'||(e.k==='dzom'&&Math.random()<.5))S.pt.push({id:S.id++,k:rollPot(),x:e.x,y:e.y+10,lg:0})
+if(e.pot||e.k==='gmimic'||e.k==='boss')S.pt.push({id:S.id++,k:rollPot(),x:e.x,y:e.y+10,lg:0})
 if(e.k==='gmimic'&&by&&by.s==='up')loot(by,{id:'gm'+e.id,x:e.x,y:e.y})
 if(e.k==='boss'){
 S.boss=null
@@ -807,9 +804,6 @@ if(e.bs>2.4&&dp<460&&dp>80&&los(e.x,e.y,t.x,t.y)){e.bs=0;e.tg=.65;e.ax=t.x;e.ay=
 }else if(e.k==='gmimic'){
 e.bs+=dt
 if(dp<380&&dp>90&&e.bs>2.8){e.bs=0;const a0=Math.atan2(cy,cx);for(let i=-1;i<=1;i++){const a=a0+i*.22;S.eb.push({x:e.x,y:e.y,vx:Math.cos(a)*220,vy:Math.sin(a)*220,life:2.6,a:0,d:e.dmg*.6,id:S.id++,kd:2})}}
-}else if(e.k==='dzom'){
-e.bs+=dt
-if(e.bs>4){e.bs=0;if(Math.random()<.25)dbg(e);else{txt(e.x,e.y-e.r*2-30,'ERR '+Math.floor(Math.random()*9000+1000),'#9a7ad0');ev('gl',.35)}}
 }else if(e.k==='ghoul'||e.k==='lurker'||e.k==='mimic'||e.k==='smimic'){
 e.ch+=dt
 if(e.ch>3.6+e.ph*.2)e.ch=-.45
