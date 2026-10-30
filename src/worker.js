@@ -39,6 +39,7 @@ import streakRoutes from'./streaks.js'
 import hollowRoutes from'./hollow.js'
 import teamupRoutes from'./teamup.js'
 import gamepackRoutes from'./gamepack.js'
+import kidsRoutes from'./kids.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -82,6 +83,7 @@ banhammerRoutes(router)
 hollowRoutes(router)
 teamupRoutes(router)
 gamepackRoutes(router)
+kidsRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
 voiceRoutes(router)
@@ -103,6 +105,14 @@ const ic=await c.env.ASSETS.fetch(new Request(o+'/apple-touch-icon.png'))
 const b=new Uint8Array(await ic.arrayBuffer());let t='';for(let i=0;i<b.length;i+=8192)t+=String.fromCharCode(...b.subarray(i,i+8192))
 const x='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>PayloadContent</key><array><dict><key>FullScreen</key><true/><key>IsRemovable</key><true/><key>Icon</key><data>'+btoa(t)+'</data><key>Label</key><string>Parley</string><key>PayloadDisplayName</key><string>Parley</string><key>PayloadIdentifier</key><string>app.parley.webclip</string><key>PayloadType</key><string>com.apple.webClip.managed</string><key>PayloadUUID</key><string>7B1D6A52-3C0E-4F7A-9A44-5D2E8B1C9F01</string><key>PayloadVersion</key><integer>1</integer><key>URL</key><string>'+o+'/?web=1</string></dict></array><key>PayloadDescription</key><string>Adds Parley to your Home Screen.</string><key>PayloadDisplayName</key><string>Parley</string><key>PayloadIdentifier</key><string>app.parley.profile</string><key>PayloadOrganization</key><string>Parley</string><key>PayloadType</key><string>Configuration</string><key>PayloadUUID</key><string>2C9E4F10-8A3B-4D65-B7E2-91F0A6D3C805</string><key>PayloadVersion</key><integer>1</integer></dict></plist>'
 return new Response(x,{headers:{'content-type':'application/x-apple-aspen-config','content-disposition':'attachment; filename="Parley.mobileconfig"','cache-control':'public,max-age=3600'}})
+},{auth:false})
+
+router.add('GET','/api/get/parley-kids.mobileconfig',async c=>{
+const o=c.url.origin
+const ic=await c.env.ASSETS.fetch(new Request(o+'/apple-touch-icon.png'))
+const b=new Uint8Array(await ic.arrayBuffer());let t='';for(let i=0;i<b.length;i+=8192)t+=String.fromCharCode(...b.subarray(i,i+8192))
+const x='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>PayloadContent</key><array><dict><key>FullScreen</key><true/><key>IsRemovable</key><true/><key>Icon</key><data>'+btoa(t)+'</data><key>Label</key><string>Parley Kids</string><key>PayloadDisplayName</key><string>Parley Kids</string><key>PayloadIdentifier</key><string>app.parley.kids.webclip</string><key>PayloadType</key><string>com.apple.webClip.managed</string><key>PayloadUUID</key><string>7B1D6A52-3C0E-4F7A-9A44-5D2E8B1C9F02</string><key>PayloadVersion</key><integer>1</integer><key>URL</key><string>'+o+'/kids/</string></dict></array><key>PayloadDescription</key><string>Adds Parley Kids to your Home Screen.</string><key>PayloadDisplayName</key><string>Parley Kids</string><key>PayloadIdentifier</key><string>app.parley.kids.profile</string><key>PayloadOrganization</key><string>Parley Kids</string><key>PayloadType</key><string>Configuration</string><key>PayloadUUID</key><string>2C9E4F10-8A3B-4D65-B7E2-91F0A6D3C806</string><key>PayloadVersion</key><integer>1</integer></dict></plist>'
+return new Response(x,{headers:{'content-type':'application/x-apple-aspen-config','content-disposition':'attachment; filename="ParleyKids.mobileconfig"','cache-control':'public,max-age=3600'}})
 },{auth:false})
 
 router.add('GET','/api/rtc/ice',async c=>{
