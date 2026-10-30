@@ -5,6 +5,7 @@ import{createSim,CS,LI,POT,chunk,near,around,buildingAt,push,UPS,ET,ABN,ABI}from
 import{V as VC,setPeerVolume,toggleMute}from'./voice.js'
 import{scene,rip,arenaFx,tesvin,kandieDraw,bubble}from'./tucs.js'
 import{kandieArt,britArt}from'./kandie.js'
+import{hp3d}from'./tuhp.js'
 import{limbs,FC,curOn,curGrab,curOff,curFrame,cursorGlyph,uiFx,shatter,arenaWorld,pondDraw,sinkDraw,pick10,bugOn,bugOff}from'./tusagafx.js'
 const TAU=Math.PI*2
 const R=Math.random
@@ -191,6 +192,7 @@ else if(n==='frz0'){box.classList.remove('tes-frz');L.frz=0;glitchT=Math.max(gli
 else if(n==='hp'){hpF=1.4;shake=Math.max(shake,16);tone(55,2,.12,'sawtooth',.5)}
 else if(n==='strip'){hpF=.5;glitchT=Math.max(glitchT,1.2);tone(120,.9,.08,'sawtooth',.3)}
 else if(n==='rip')ripT=3
+else if(n==='hp3d'){tone(40,6,.09,'sawtooth',.2);hp3d(box)}
 }
 const sgEv=e=>{
 const k=e[1]

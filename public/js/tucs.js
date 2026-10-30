@@ -203,22 +203,23 @@ tcheat:[
 {w:'narr',t:'He snapped his fingers. Every power left them.',d:2800,fx:'flash',e:'strip'},
 {w:'tesvin',t:'Who the hell do you think you are!',d:3000,fx:'imp'},
 {w:'tesvin',t:'Trying to. Cheat? IN MY DIMENSION!?',d:3600,fx:'shake',e:'rip'},
-{w:'narr',t:'He tore them in half and threw them into the water.',d:3200,e:'rip2'}
+{w:'narr',t:'He tore them in half and threw them into the water.',d:3200,fx:'imp',e:'rip2'}
 ],
 tfair:[
 {w:'narr',t:'The water went still. The arena rose around them.',d:2800},
-{w:'tesvin',t:'I made it fair.',d:2600,big:1,fx:'flash'}
+{w:'tesvin',t:'I made it fair.',d:2600,big:1,fx:'imp'}
 ],
 tbrit:[
-{w:'narr',t:'Everything stopped.',d:2000,e:'frz1'},
-{w:'brit',t:'Ugh. This idiot brat. I can just recode this entire thing and he will lose.',d:4200},
-{w:'narr',t:'The frozen world flickered. Something unfroze.',d:2600,fx:'glitch',e:'frz0'},
-{w:'brit',t:'What the shit stain!?',d:2600},
+{w:'narr',t:'Everything stopped.',d:2000,e:'frz1',z:1.1},
+{w:'brit',t:'Ugh. This idiot brat. I can just recode this entire thing and he will lose.',d:4200,z:1.3},
+{w:'narr',t:'The frozen world flickered. Something unfroze.',d:2600,fx:'glitch',e:'frz0',z:1.5},
+{w:'brit',t:'What the shit stain!?',d:2600,fx:'imp'},
 {w:'you',t:'Brit! You can still talk to us?',d:2400},
-{w:'tesvin',t:'Guess whattt, BRIT.',d:2800},
-{w:'tesvin',t:'RED.',d:1400,big:1,fx:'flash'},
-{w:'tesvin',t:'+ BLUE.',d:1400,big:1,fx:'flash'},
-{w:'tesvin',t:'HOLLOW PURPLE.',d:3000,big:1,fx:'imp',e:'hp'},
+{w:'tesvin',t:'Guess whattt, BRIT.',d:2800,z:1.4},
+{w:'tesvin',t:'RED.',d:1500,big:1,e:'hp3d',fx:'flash'},
+{w:'tesvin',t:'+ BLUE.',d:1500,big:1,fx:'flash'},
+{w:'tesvin',t:'HOLLOW PURPLE.',d:4600,big:1,fx:'imp',e:'hp'},
+{w:'narr',t:'The sky tore open.',d:2000,fx:'imp'},
 {w:'kandie',k:1,t:'Do not get hit by the purple one, okay?',d:2800},
 {w:'parley',t:'When the ground opens under you, hit Space!',d:3200}
 ],

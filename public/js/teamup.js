@@ -16,7 +16,7 @@ const mkCode=()=>Array.from({length:6},()=>AL[Math.floor(Math.random()*AL.length
 let active=null,art=null
 const css=()=>{
 if(!document.getElementById('hwcss2'))document.head.append(h('link',{id:'hwcss2',rel:'stylesheet',href:'/hollow.css'}))
-if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=10'}))
+if(!document.getElementById('tucss'))document.head.append(h('link',{id:'tucss',rel:'stylesheet',href:'/teamup.css?v=11'}))
 if(!document.getElementById('rscss'))document.head.append(h('link',{id:'rscss',rel:'stylesheet',href:'/rush.css'}))
 }
 const sprite=(i,dim)=>{

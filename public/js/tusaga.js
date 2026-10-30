@@ -1,7 +1,7 @@
 const TAU=Math.PI*2
 const AW=['Hi! I am Tesvin. I help!','I am always at the front. Funny.','You all stand behind me a lot.','Nobody has asked how I am doing.','Why do monsters always hit the TV first?','You keep walking me toward the danger.','I am counting how many times you hid behind me.','Something is wrong. I can feel it.']
 const BL=new Set(['x','y','hp','s','ang','cd','nv','hit','inv','tcd','rv','rvBy','bleed','hold','held','offer','ot','pend','lv','xp','next','lair','ret','lt','tpc','ig','ahit','sp','bl','gi','vm','bh','hpt','bk','cmb','fl','wc','k','u','n','r','dp','dh','sf'])
-export const SGD={lab:92,world:60,cheat:20,fair:9,brit:30}
+export const SGD={lab:90,world:55,cheat:20,fair:7,brit:34}
 export function makeSaga(X){
 const{S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl}=X
 const st={ph:0,t:0,lk:0,tv:null,a:null,idx:0,pi:0,pr:new Map(),base:new Map(),po:[],sk:[],hs:0,ad:0,dm:0,qt:0,qi:0,hc:0,tc:0,pd:test===2?35:300}
@@ -70,7 +70,10 @@ const dx=t.x+ox-tv.x,dy=t.y+oy-tv.y,d=Math.hypot(dx,dy)
 if(d>520){tv.x=t.x+ox;tv.y=t.y+oy}else if(d>22){const sp=Math.min(d*3,210)*dt;tv.x+=dx/d*sp;tv.y+=dy/d*sp;if(Math.abs(dx)>2)tv.sx=dx>0?1:-1}
 tv.cd-=dt
 if(tv.cd<=0){let e0=null,b2=520*520;for(const e of S.en){if(e.al)continue;const q=(e.x-tv.x)**2+(e.y-tv.y)**2;if(q<b2){b2=q;e0=e}}
-if(e0){tv.cd=.6;const a=Math.atan2(e0.y-tv.y,e0.x-tv.x);S.pj.push({id:S.id++,k:0,x:tv.x,y:tv.y-10,vx:Math.cos(a)*470,vy:Math.sin(a)*470,life:1.1,pr:1,hit:new Set(),a,own:t.u,d:t.dmg*1.1+S.te*.08,h:0})}}
+if(e0){tv.cd=.4;const a=Math.atan2(e0.y-tv.y,e0.x-tv.x);S.pj.push({id:S.id++,k:0,x:tv.x,y:tv.y-10,vx:Math.cos(a)*470,vy:Math.sin(a)*470,life:1.1,pr:1,hit:new Set(),a,own:t.u,d:t.dmg*1.1+S.te*.08,h:0})}}
+tv.sl=(tv.sl??6)-dt;tv.hl=(tv.hl??15)-dt;tv.dsh=(tv.dsh||0)-dt
+if(tv.sl<=0){let c=0;for(const e of S.en)if(!e.al&&Math.hypot(e.x-tv.x,e.y-tv.y)<420)c++;if(c>=2){tv.sl=11;for(let i=0;i<14;i++){const q=i/14*Math.PI*2;S.pj.push({id:S.id++,k:0,x:tv.x,y:tv.y-10,vx:Math.cos(q)*430,vy:Math.sin(q)*430,life:1,pr:2,hit:new Set(),a:q,own:t.u,d:t.dmg*2.2+S.te*.1,h:0})}ev('x',Math.round(tv.x),Math.round(tv.y),200,10);ev('sh',6);ev('sg','q','Glitch slam!',0)}else tv.sl=2}
+if(tv.hl<=0){const w=l.filter(p=>p.hp<p.max*.6).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];if(w){tv.hl=22;w.hp=Math.min(w.max,w.hp+w.max*.3);txt(w.x,w.y-46,'+Patch','#58ffd0',1);ev('sg','q','Hot patch. You are welcome.',0)}else tv.hl=3}
 st.qt-=dt
 if(st.qt<=0){st.qt=24;const i=Math.min(AW.length-1,Math.floor(S.time/42));ev('sg','q',AW[i],i)}
 }
