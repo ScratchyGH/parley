@@ -6,7 +6,8 @@ import{V as VC,setPeerVolume,toggleMute}from'./voice.js'
 import{scene,rip,arenaFx,tesvin,kandieDraw,bubble}from'./tucs.js'
 import{kandieArt,britArt}from'./kandie.js'
 import{hp3d,hpLive}from'./tuhp.js'
-import{limbs,FC,curOn,curGrab,curOff,curFrame,cursorGlyph,uiFx,shatter,arenaWorld,pondDraw,sinkDraw,pick10,bugOn,bugOff}from'./tusagafx.js'
+import{term2d}from'./tuterm.js'
+import{limbs,FC,curOn,curGrab,curOff,curFrame,cursorGlyph,uiFx,shatter,arenaWorld,pondDraw,sinkDraw,labDraw,pick10,bugOn,bugOff}from'./tusagafx.js'
 const TAU=Math.PI*2
 const R=Math.random
 const COL=['#ff9d2e','#6ec1ff','#9be564']
@@ -103,7 +104,7 @@ const V={pt:[],ts:0,pl:new Map(),en:new Map(),pj:new Map(),eb:new Map(),gm:[],hp
 const F=[],X=[],RG=[]
 const L={inv:0,keys:new Set(),mx:0,my:0,fire:false,aid:null,jid:null,jx:0,jy:0,jdx:0,jdy:0,slot:1,dash:0,dcd:0,dx:1,dy:0,sent:0,hold:0,tcd:0,walk:0,face:1,ang:0,offer:null,cx:0,cy:0,kx:0,ky:0}
 let csOn=0,arenaOn=0,arenaK=0,kns=new Map()
-let SG=null,sgA=null,sgK=0,fallT=0,ripT=0,tvSay='',tvSayT=0,hpF=0,lookT=0,done10=null
+let trm=null,SG=null,sgA=null,sgK=0,fallT=0,ripT=0,tvSay='',tvSayT=0,hpF=0,lookT=0,done10=null
 const orbF=[],hpcs=[]
 let HL=null
 const BMS=[]
@@ -132,7 +133,7 @@ seen.add(u)
 let o=V.pl.get(u)
 if(!o){o={u,x,y,tx:x,ty:y,face:1,walk:0,hit:0};V.pl.set(u,o)}
 if(u===me&&Math.hypot(o.x-x,o.y-y)>140){o.x=x;o.y=y}
-o.tx=x;o.ty=y;o.hp=hp;o.max=max;o.s=s;o.lv=lv;o.xp=xp;o.next=next;o.orb=orb;o.ammo=ammo;o.wood=wood;o.rv=rv;o.inv=inv;o.hurt=hit;o.ar=ar;o.arm=arm;o.ab=abl;o.ward=ward;o.spd=spd;o.fx=fxs;o.lair=lair;o.hpt=hpt
+o.tx=x;o.ty=y;o.hp=hp;o.max=max;o.s=s;o.lv=lv;o.xp=xp;o.next=next;o.orb=orb;o.ammo=ammo;o.wood=wood;o.rv=rv;o.inv=inv;o.hurt=hit;o.ar=ar;o.arm=arm;o.ab=abl;o.ward=ward;o.spd=spd;o.fx=fxs;o.lair=lair;if(hpt>0&&!(o.hpt>0)){if(HL===null)HL=hpLive(box)||0;hpcs.push({pu:u,x0:x,y0:y,x1:x,y1:y,t:0,d:3.4})};o.hpt=hpt
 if(u!==me)o.ang=ang
 }
 const ids=new Set()
@@ -198,6 +199,8 @@ else if(n==='hp3d'){tone(40,6,.09,'sawtooth',.2);hp3d(box)}
 const sgEv=e=>{
 const k=e[1]
 if(k==='q'){tvSay=e[2];tvSayT=5}
+else if(k==='term'){if(e[2]===me){if(trm)trm.stop();trm=term2d(box,()=>{trm=null})}else say('A teammate is on the terminal.')}
+else if(k==='termx'){if(trm)trm.stop()}
 else if(k==='gb')orbF.push({x:e[2],y:e[3],t:0})
 else if(k==='chase'){shake=Math.max(shake,12);tone(70,1.2,.1,'sawtooth',.5)}
 else if(k==='a'){sgA={x:e[2],y:e[3],r:e[4]};uiFx('hide',box,tone);bugOff();glitchT=Math.max(glitchT,2)}
@@ -358,15 +361,6 @@ setPeerVolume(o.u,base[o.u]*f*f)
 const nearP=(x,y)=>{let b=null,bd=1e9;for(const o of V.pl.values()){if(o.s!=='up')continue;const d=Math.hypot(o.x-x,o.y-y);if(d<bd){bd=d;b=o}}return b}
 const auras=o=>{
 const f=o.fx
-if(o.hpt>0){
-const t=1-o.hpt/1.3,sep=(1-t)*64,a=o.ang||0,fx=o.x+Math.cos(a)*44,fy=o.y-14+Math.sin(a)*44,px=-Math.sin(a),py=Math.cos(a)
-for(const q of[[1,'255,60,60'],[-1,'60,120,255']]){
-const x=fx+px*sep*q[0],y=fy+py*sep*q[0]
-const g=ctx.createRadialGradient(x,y,0,x,y,22);g.addColorStop(0,'rgba('+q[1]+',1)');g.addColorStop(1,'rgba('+q[1]+',0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,22,0,TAU);ctx.fill()
-lights.push([x,y,90,1,q[0]>0?'red':'cyan'])
-}
-if(t>.8){ctx.fillStyle='rgba(190,90,255,'+(t-.8)*4+')';ctx.beginPath();ctx.arc(fx,fy,14+Math.sin(clock*40)*3,0,TAU);ctx.fill()}
-}
 if(!f)return
 if(f[1]>0){ctx.strokeStyle='rgba(90,160,255,'+(.55+Math.sin(clock*12)*.25)+')';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(o.x,o.y,24+Math.sin(clock*9)*3,9,0,0,TAU);ctx.stroke();lights.push([o.x,o.y-12,90,.9,'cyan'])}
 if(f[0]>0&&F.length<200&&R()<.5)F.push({x:o.x-(o.face||1)*8,y:o.y-8,vx:0,vy:0,l:.3,m:.3,c:'#4aff9a',s:4})
@@ -1058,7 +1052,7 @@ for(const b of V.eb.values()){b.x+=b.vx*dt;b.y+=b.vy*dt;b.a+=dt*14}
 for(let i=F.length-1;i>=0;i--){const f=F[i];f.l-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.94;f.vy*=.94;if(f.l<=0){F[i]=F[F.length-1];F.pop()}}
 for(let i=X.length-1;i>=0;i--){const x=X[i];x.l-=dt;x.y-=dt*34;if(x.l<=0){X[i]=X[X.length-1];X.pop()}}
 for(let i=RG.length-1;i>=0;i--){RG[i].l-=dt;if(RG[i].l<=0)RG.splice(i,1)}
-shake=Math.max(0,shake-dt*30);for(const k of kns.values())k.t-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));sgK=Math.max(0,Math.min(1,sgK+dt*(sgA?.7:-.9)));fallT-=dt;ripT-=dt;tvSayT-=dt;hpF-=dt;lookT-=dt;for(let i=orbF.length-1;i>=0;i--){orbF[i].t+=dt;if(orbF[i].t>.5){burst(orbF[i].x,orbF[i].y,'#58ffd0',6);orbF.splice(i,1)}}for(let i=hpcs.length-1;i>=0;i--){hpcs[i].t+=dt;if(hpcs[i].t>hpcs[i].d&&!hpcs[i].z){const c=hpcs[i];c.z=1;RG.push({x:c.x1,y:c.y1,r:150,w:9,l:.6,m:.6});shake=Math.max(shake,14);tone(50,.8,.12,'sawtooth',.4)}if(hpcs[i].t>hpcs[i].d+.7)hpcs.splice(i,1)};if(HL){for(const c of hpcs){c.sx0=(c.x0-L.cx)*Z;c.sy0=(c.y0-L.cy)*Z-26;c.sx1=(c.x1-L.cx)*Z;c.sy1=(c.y1-L.cy)*Z;c.arc=160*Z}HL.frame(hpcs)};noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
+shake=Math.max(0,shake-dt*30);for(const k of kns.values())k.t-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));sgK=Math.max(0,Math.min(1,sgK+dt*(sgA?.7:-.9)));fallT-=dt;ripT-=dt;tvSayT-=dt;hpF-=dt;lookT-=dt;for(let i=orbF.length-1;i>=0;i--){orbF[i].t+=dt;if(orbF[i].t>.5){burst(orbF[i].x,orbF[i].y,'#58ffd0',6);orbF.splice(i,1)}}for(let i=hpcs.length-1;i>=0;i--){hpcs[i].t+=dt;if(hpcs[i].pu&&hpcs[i].t<1.3){const c=hpcs[i],q=V.pl.get(c.pu);if(q){const an=q.ang||0;c.x0=q.x+Math.cos(an)*44;c.y0=q.y+Math.sin(an)*44;c.x1=c.x0+Math.cos(an)*900;c.y1=c.y0+Math.sin(an)*900}};if(hpcs[i].t>hpcs[i].d&&!hpcs[i].z){const c=hpcs[i];c.z=1;RG.push({x:c.x1,y:c.y1,r:150,w:9,l:.6,m:.6});shake=Math.max(shake,14);tone(50,.8,.12,'sawtooth',.4)}if(hpcs[i].t>hpcs[i].d+.7)hpcs.splice(i,1)};if(HL){for(const c of hpcs){c.sx0=(c.x0-L.cx)*Z;c.sy0=(c.y0-L.cy)*Z-26;c.sx1=(c.x1-L.cx)*Z;c.sy1=(c.y1-L.cy)*Z;c.arc=160*Z}HL.frame(hpcs)};noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
 pxT+=dt
 if(pxT>.25){pxT=0;prox()}
 const p=mine()
@@ -1067,6 +1061,7 @@ const w=world(dt)
 for(const o of V.pl.values())if(o.fx&&o.fx[4]>0&&o.s!=='dead')blackhole(o)
 if(arenaK>0)arenaFx(ctx,cv,Wd,Hd,D,Z,w.cx,w.cy,clock,arenaK,lite)
 if(sgK>0&&sgA)arenaWorld(ctx,Wd,Hd,D,Z,w.cx,w.cy,clock,sgA,sgK,lite)
+if(SG&&SG[0]===1&&SG[8]){const pp=mine();if(pp&&pp.lair){const tv0=SG[1];labDraw(ctx,D,Z,w.cx,w.cy,clock,pp.lair*CS,SG[8],Math.hypot(tv0[0]-(pp.lair*CS+190),tv0[1]-(240+130))<24)}}
 if(SG&&SG[0]===7){const pp=mine();if(pp&&pp.lair)pondDraw(ctx,D,Z,w.cx,w.cy,clock,SG[7]*CS,SG[4],1)}
 if(hpF>0){ctx.save();ctx.setTransform(D,0,0,D,0,0);ctx.fillStyle='rgba(170,60,255,'+Math.min(.7,hpF*.5)+')';ctx.fillRect(0,0,Wd,Hd);ctx.restore()}
 if(FC.on){const hp2=handPos();curFrame(dt,hp2[0],hp2[1],clock)}
@@ -1095,7 +1090,7 @@ left(u){
 if(!host&&u===hostUid&&!done){V.st='lose';say('The host left the match');finish()}
 },
 stop(){
-cancelAnimationFrame(raf);try{HL&&HL.dispose()}catch{};clearInterval(mus);ro.disconnect();restoreVol()
+cancelAnimationFrame(raf);try{HL&&HL.dispose()}catch{};if(trm)trm.stop();clearInterval(mus);ro.disconnect();restoreVol()
 removeEventListener('keydown',kd);removeEventListener('keyup',ku);rip(false,box);curOff();uiFx('restore',box);bugOff();if(done10)done10()
 try{ac&&ac.close()}catch{}
 box.classList.remove('rs','tu-play')

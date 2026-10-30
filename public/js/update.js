@@ -9,7 +9,7 @@ const r=await fetch('/api/health?lite=1',{cache:'no-store'})
 const d=await r.json()
 if(!d||!d.build)return
 if(cur===null){cur=d.build;return}
-if(d.build!==cur)restart()
+if(d.build!==cur){if(document.hidden&&!V.ch&&!V.joining&&!gaming()){location.reload();return}restart()}
 }catch{}
 }
 function restart(){
@@ -29,7 +29,7 @@ tick()
 }
 export function startUpdates(){
 check()
-setInterval(()=>{if(!document.hidden)check()},45000)
+setInterval(check,45000)
 document.addEventListener('visibilitychange',()=>{
 document.documentElement.classList.toggle('hid',document.hidden)
 if(!document.hidden)check()

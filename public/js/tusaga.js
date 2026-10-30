@@ -30,7 +30,11 @@ const r=RM(idx),l=alive()
 st.a={x:p0.ret?p0.ret[0]:p0.x,y:p0.ret?p0.ret[1]:p0.y,r:620}
 l.forEach((p,i)=>{if(p.lair!==idx){p.ret=[p.x,p.y]}p.lair=idx;p.lt=1e9;p.tpc=3;tp(p,r.ox+500+(i-(l.length-1)/2)*52,700);p.lt=1e9})
 clear()
-st.tv.x=r.ox+500;st.tv.y=420
+st.tv.x=r.ox+470;st.tv.y=620;st.sub=1;st.sc=0;st.t=0
+}
+const cut=()=>{
+const r=RM(st.idx)
+st.sub=0;st.t=0;st.tv.x=r.ox+500;st.tv.y=420;st.tv.sx=1
 S.ts=Math.max(S.ts,SGD.lab)
 ev('cs','tlab')
 }
@@ -87,6 +91,15 @@ const tv=st.tv
 if(!tv)return
 const ph=st.ph,l=alive()
 if(ph===0){ally(dt);return}
+if(ph===1&&st.sub===1){
+const r=RM(st.idx),gx=r.ox+190,gy=r.y+130,dx=gx-tv.x,dy=gy-tv.y,d=Math.hypot(dx,dy)
+if(d>14){const sp=95*dt;tv.x+=dx/d*sp;tv.y+=dy/d*sp;tv.sx=dx>0?1:-1}else if(!st.sc){st.sc=1;ev('sg','q','Found the suitcase.')}
+const cx=r.ox+330,cy=r.y+60
+for(const p of l)if(p.lair===st.idx&&Math.hypot(p.x-cx,p.y-cy)<54){st.sub=2;st.t=0;ev('sg','term',p.u);break}
+if(test===2&&st.t>8&&l[0]){st.sub=2;st.t=0;ev('sg','term',l[0].u)}
+return
+}
+if(ph===1&&st.sub===2){if(st.t>=22){ev('sg','termx');cut()}return}
 if(ph===1){if(st.t>=SGD.lab){st.ph=2;st.t=0;tv.m=1;swarm();ev('sg','chase')}return}
 if(ph===2){
 const r=RM(st.idx)
@@ -185,6 +198,6 @@ enter:(p,idx)=>{if(st.ph!==0||!st.tv||S.st!=='run')return false;start(p,idx);ret
 step,
 end,
 p10:(u,ids)=>{if(st.ph===5&&Array.isArray(ids)&&!st.pr.has(u))st.pr.set(u,ids.slice(0,10).map(String))},
-snap:()=>st.tv?[st.ph,[Math.round(st.tv.x),Math.round(st.tv.y),st.tv.m,st.tv.sx],st.a?[Math.round(st.a.x),Math.round(st.a.y),st.a.r]:0,Math.max(0,Math.round(st.pd-st.t)),st.po.map(o=>[Math.round(o.x),Math.round(o.y)]),st.sk.map(k=>[Math.round(k.x),Math.round(k.y),k.r,Math.round(k.age*10)/10]),alive().filter(p=>p.sf>0).map(p=>[p.u,Math.round(p.sf*100)/100]),st.pi]:0
+snap:()=>st.tv?[st.ph,[Math.round(st.tv.x),Math.round(st.tv.y),st.tv.m,st.tv.sx],st.a?[Math.round(st.a.x),Math.round(st.a.y),st.a.r]:0,Math.max(0,Math.round(st.pd-st.t)),st.po.map(o=>[Math.round(o.x),Math.round(o.y)]),st.sk.map(k=>[Math.round(k.x),Math.round(k.y),k.r,Math.round(k.age*10)/10]),alive().filter(p=>p.sf>0).map(p=>[p.u,Math.round(p.sf*100)/100]),st.pi,st.sub||0]:0
 }
 }

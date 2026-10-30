@@ -2,18 +2,18 @@ import Photon from '/vendor/photon.js'
 const APP='1bfb6777-1e0c-49e7-840c-d8618dfccb59'
 const LBC=Photon.LoadBalancing.LoadBalancingClient
 const ST=LBC.State
-export function connectParty({code,create,me,on}){
-const c=new LBC(Photon.ConnectionProtocol.Wss,APP,'1.0')
+export function connectParty({code,create,me,on,app,max,pre}){
+const c=new LBC(Photon.ConnectionProtocol.Wss,app||APP,'1.0')
 try{c.setLogLevel(Photon.LogLevel.ERROR)}catch{}
 const nrOf=new Map(),uOf=new Map()
 let joined=false,dead=false
 const fail=t=>{if(dead)return;dead=true;try{c.disconnect()}catch{}on.fail(t)}
-const room='tu'+code
+const room=(pre||'tu')+code
 c.onStateChange=s=>{
 if(s===ST.JoinedLobby||s===ST.ConnectedToMaster){
 if(joined||c.__tried)return
 c.__tried=true
-if(create)c.createRoom(room,{maxPlayers:3,isVisible:false,emptyRoomLiveTime:2000})
+if(create)c.createRoom(room,{maxPlayers:max||3,isVisible:false,emptyRoomLiveTime:2000})
 else c.joinRoom(room)
 }else if(s===ST.Error||s===ST.Disconnected){if(!dead){dead=true;on.close(joined)}}
 }

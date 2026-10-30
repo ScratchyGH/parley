@@ -1,6 +1,6 @@
 import{h,mount,icon,toast,GET,POST}from'./util.js'
 import{topBar}from'./shell.js'
-const TILES=[['rush','Gourd Rush','Hold out in the dark until dawn.'],['terror','Terror Night','Gourd Rush with the lights almost out.'],['night','Hollow Siege','Five nights in a rotting chapel.'],['team','Gourd Rush: Teamup','Squad lobby with friends.']]
+const TILES=[['rush','Gourd Rush','Hold out in the dark until dawn.'],['terror','Terror Night','Gourd Rush with the lights almost out.'],['night','Hollow Siege','Five nights in a rotting chapel.'],['team','Gourd Rush: Teamup','Squad lobby with friends.'],['siege','Hollow Siege: MP Edition','Co-op nights for up to 4 players.']]
 export function gamesPage(r){
 const bar=topBar({lead:icon('flask'),title:'Games',topic:'Unlock seasonal games for good'})
 const page=h('div',{class:'pgh gp-page'})
@@ -20,6 +20,7 @@ draw()
 const tiles=h('div',{class:'gp-tiles'},...TILES.map(t=>{
 const b=h('button',{class:'gp-tile',type:'button',disabled:!p.owned,title:p.owned?'':'Unlock the pack to play'},h('b',null,t[1]),h('span',null,t[2]),h('em',null,p.owned?'Play':'Locked'))
 b.addEventListener('click',async()=>{
+if(t[0]==='siege'){const x=await import('./siegemp.js');x.openSiegeMP();return}
 if(t[0]==='team'){const x=await import('./teamup.js');x.openTeamup();return}
 let n=1
 if(t[0]==='night'){n=Number(prompt('Which night? 1 to 5','1'))||1;n=Math.max(1,Math.min(5,n))}

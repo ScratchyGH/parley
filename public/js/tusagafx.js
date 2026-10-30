@@ -356,3 +356,23 @@ export function bugOff(){
 clearInterval(bz)
 document.documentElement.classList.remove('tes-bug')
 }
+
+export function labDraw(ctx,D,Z,cx,cy,t,ox,sub,found){
+ctx.save();ctx.setTransform(D,0,0,D,0,0)
+const S=(x,y)=>[(ox+x-cx)*Z,(y-cy)*Z]
+const mon=(x,y,on,col)=>{
+const[sx,sy]=S(x,y),w=64*Z,hh=40*Z
+ctx.fillStyle='#14141c';ctx.fillRect(sx-w/2-4*Z,sy-hh/2-4*Z,w+8*Z,hh+22*Z)
+ctx.fillStyle=on?col:'#2a2a34';ctx.globalAlpha=on?.55+Math.sin(t*6+x)*.15:1;ctx.fillRect(sx-w/2,sy-hh/2,w,hh);ctx.globalAlpha=1
+ctx.fillStyle='#3a3a46';ctx.fillRect(sx-w/2,sy+hh/2+8*Z,w,6*Z)
+if(on){const g=ctx.createRadialGradient(sx,sy,0,sx,sy,110*Z);g.addColorStop(0,'rgba(120,255,200,.22)');g.addColorStop(1,'rgba(120,255,200,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,110*Z,0,6.3);ctx.fill()}
+}
+mon(330,300,sub===1,'#6bffc0');mon(500,300,false);mon(700,300,false)
+if(sub===1){const[sx,sy]=S(330,360);ctx.font='800 '+Math.round(12*Z)+'px system-ui';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,4,14,.9)';ctx.strokeText('Terminal 03',sx,sy);ctx.fillStyle='#bfffe6';ctx.fillText('Terminal 03',sx,sy)}
+const[bx,by]=S(190,370),w=44*Z,hh=28*Z
+ctx.fillStyle='#5a3a22';ctx.fillRect(bx-w/2,by-hh/2,w,hh)
+ctx.strokeStyle='#2a1a10';ctx.lineWidth=2;ctx.strokeRect(bx-w/2,by-hh/2,w,hh)
+ctx.fillStyle='#c8a050';ctx.fillRect(bx-4*Z,by-3*Z,8*Z,6*Z)
+if(found){ctx.fillStyle='#2a1a10';ctx.fillRect(bx-w/2,by-hh/2-10*Z,w,10*Z);const g=ctx.createRadialGradient(bx,by-6*Z,0,bx,by-6*Z,50*Z);g.addColorStop(0,'rgba(255,230,120,.7)');g.addColorStop(1,'rgba(255,230,120,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(bx,by-6*Z,50*Z,0,6.3);ctx.fill()}
+ctx.restore()
+}
