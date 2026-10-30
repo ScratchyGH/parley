@@ -8,11 +8,10 @@ cv.className='cs-3d'
 const W=cv.width=Math.max(480,box.clientWidth>>1),H=cv.height=Math.max(270,box.clientHeight>>1)
 box.append(cv)
 const g=cv.getContext('2d')
-const red=shell(260,1),blue=shell(260,1),pur=shell(340,1),acc=ring(520,1.25,2.6),str=mk(110,()=>{const t=Math.random()*TAU,u=Math.random()*2-1,s=Math.sqrt(1-u*u);return[s*Math.cos(t),u,s*Math.sin(t),Math.random()]})
+const red=shell(260,1),blue=shell(260,1),pur=shell(340,1),acc=ring(900,1.3,2.2),str=mk(110,()=>{const t=Math.random()*TAU,u=Math.random()*2-1,s=Math.sqrt(1-u*u);return[s*Math.cos(t),u,s*Math.sin(t),Math.random()]})
 const F=Math.min(W,H)*1.15,U=Math.min(W,H)*.2
 const P=(x,y,z,ry,rx,cz)=>{const c=Math.cos(ry),s=Math.sin(ry),x1=x*c+z*s,z1=-x*s+z*c,c2=Math.cos(rx),s2=Math.sin(rx),y2=y*c2-z1*s2,z2=y*s2+z1*c2,k=F/(F+(z2*U)+cz);return[W/2+x1*U*k,H/2+y2*U*k,k,z2]}
 const orb=(pts,cx,cy,cz,r,t,col,core,n)=>{
-const gx=g.createRadialGradient(0,0,0,0,0,1)
 const c0=P(cx,cy,cz,0,0,0)
 const sr=r*U*c0[2]
 const gr=g.createRadialGradient(c0[0],c0[1],0,c0[0],c0[1],sr*2.4)
@@ -61,7 +60,7 @@ g.save();g.globalCompositeOperation='source-over'
 g.fillStyle='#07000f';g.beginPath();g.arc(c0[0],c0[1],sr,0,TAU);g.fill()
 g.restore()
 g.strokeStyle='rgba(235,190,255,.95)';g.lineWidth=2.5+sr*.04;g.beginPath();g.arc(c0[0],c0[1],sr,0,TAU);g.stroke()
-for(const p of acc){const a=Math.atan2(p[2],p[0])+u*(2.4/Math.hypot(p[0],p[2])),d=Math.hypot(p[0],p[2]),q=P(Math.cos(a)*d*r,p[1]*r*3,Math.sin(a)*d*r,ry*.3,rx,cz);g.fillStyle=d<1.8?'#e6b0ff':'#9a50ff';g.globalAlpha=fade*(.25+.6*Math.min(1,q[2]));g.fillRect(q[0],q[1],1.6+q[2]*1.6,1.6+q[2]*1.6)}
+for(const p of acc){const a=Math.atan2(p[2],p[0])+u*(2.4/Math.hypot(p[0],p[2])),d=Math.hypot(p[0],p[2]),q=P(Math.cos(a)*d*r,p[1]*r*6,Math.sin(a)*d*r,0,rx*2+.3,cz);g.fillStyle=d<1.8?'#e6b0ff':'#9a50ff';g.globalAlpha=fade*(.4+.6*Math.min(1,q[2]));g.fillRect(q[0],q[1],1.8+q[2]*2,1.2+q[2]*1.2)}
 g.globalAlpha=fade
 for(let i=0;i<pur.length;i+=2){const p=pur[i],q=P(p[0]*r*1.04,p[1]*r*1.04,p[2]*r*1.04,ry,rx,cz);if(q[3]<0)continue;g.fillStyle='#d8a0ff';g.globalAlpha=fade*.5;g.fillRect(q[0],q[1],1.4,1.4)}
 g.globalAlpha=fade
