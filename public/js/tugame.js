@@ -5,7 +5,7 @@ import{createSim,CS,LI,POT,chunk,near,around,buildingAt,push,UPS,ET,ABN,ABI}from
 import{V as VC,setPeerVolume,toggleMute}from'./voice.js'
 import{scene,rip,arenaFx,tesvin,kandieDraw,bubble}from'./tucs.js'
 import{kandieArt,britArt}from'./kandie.js'
-import{hp3d}from'./tuhp.js'
+import{hp3d,hpLive}from'./tuhp.js'
 import{limbs,FC,curOn,curGrab,curOff,curFrame,cursorGlyph,uiFx,shatter,arenaWorld,pondDraw,sinkDraw,pick10,bugOn,bugOff}from'./tusagafx.js'
 const TAU=Math.PI*2
 const R=Math.random
@@ -105,6 +105,7 @@ const L={inv:0,keys:new Set(),mx:0,my:0,fire:false,aid:null,jid:null,jx:0,jy:0,j
 let csOn=0,arenaOn=0,arenaK=0,kns=new Map()
 let SG=null,sgA=null,sgK=0,fallT=0,ripT=0,tvSay='',tvSayT=0,hpF=0,lookT=0,done10=null
 const orbF=[],hpcs=[]
+let HL=null
 const BMS=[]
 let glitchT=0,pxT=0,proxOn=true,fpsT=60,beatT=1,bolt=8,whT=4,scare=0,clock=0,shake=0,note='',noteT=0,done=false,raf=0,last=performance.now(),acc=0,snapAcc=0,muted=false,ac=null,mg=null,mt=0,pg=false,over=null,beep=0,hurtT=0,mus=0
 const lights=[],items=[],abBtn=[]
@@ -215,7 +216,7 @@ else if(k==='pond'){say('You are in the water. Swim to the glowing orbs.');tone(
 else if(k==='orb'){burst(e[2],e[3],'#8fe3ff',18);tone(700,.2,.06,'triangle',1.8)}
 else if(k==='surge'){say('Power surge');tone(440,.4,.07,'triangle',2)}
 else if(k==='hpf'){hpF=1.4;shake=Math.max(shake,16);say('Hollow Purple. Hit Space when the ground opens.');tone(55,2,.12,'sawtooth',.5)}
-else if(k==='hpc')hpcs.push({x0:e[2],y0:e[3],x1:e[4],y1:e[5],t:0,d:e[6]})
+else if(k==='hpc'){if(HL===null)HL=hpLive(box)||0;hpcs.push({x0:e[2],y0:e[3],x1:e[4],y1:e[5],t:0,d:e[6]})}
 }
 const handPos=()=>{
 const r=cv.getBoundingClientRect(),T=SG&&SG[1]
@@ -683,12 +684,6 @@ lights.push([T[0],T[1]-30,m?220:110,.8,'cyan'])
 }
 }
 for(const o of orbF){const k=Math.min(1,o.t/.5),T=SG&&SG[1];if(!T)continue;const x=o.x+(T[0]-o.x)*k*k,y=o.y+(T[1]-o.y-30)*k*k-8;ctx.fillStyle='rgba(120,255,235,.9)';ctx.beginPath();ctx.arc(x,y,7*(1-k*.5),0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,60,200,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,11,0,TAU);ctx.stroke()}
-for(const c of hpcs){
-const k=Math.min(1,c.t/c.d),x=c.x0+(c.x1-c.x0)*k,y=c.y0+(c.y1-c.y0)*k-Math.sin(k*Math.PI)*160
-ctx.save();ctx.translate(x,y);ctx.rotate(.3+k*2);ctx.translate(-30,-45)
-cursorGlyph(ctx,5,'#b04aff',40)
-ctx.restore()
-}
 for(const b of BMS){const k=Math.max(0,b.l/b.m);ctx.save();ctx.globalCompositeOperation='lighter';const R0=2000;if(b.l>0){ctx.strokeStyle='rgba(255,60,200,'+(.35+Math.sin(clock*40)*.25)+')';ctx.lineWidth=2+(1-k)*4}else{ctx.strokeStyle='rgba(120,255,235,'+Math.max(0,1+b.l*5)+')';ctx.lineWidth=34}ctx.beginPath();if(b.o){ctx.moveTo(L.cx-R0,b.v);ctx.lineTo(L.cx+R0,b.v)}else{ctx.moveTo(b.v,L.cy-R0);ctx.lineTo(b.v,L.cy+R0)}ctx.stroke();ctx.restore()}
 for(const b of V.eb.values()){
 ctx.save();ctx.translate(b.x,b.y-10)
@@ -1063,7 +1058,7 @@ for(const b of V.eb.values()){b.x+=b.vx*dt;b.y+=b.vy*dt;b.a+=dt*14}
 for(let i=F.length-1;i>=0;i--){const f=F[i];f.l-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.94;f.vy*=.94;if(f.l<=0){F[i]=F[F.length-1];F.pop()}}
 for(let i=X.length-1;i>=0;i--){const x=X[i];x.l-=dt;x.y-=dt*34;if(x.l<=0){X[i]=X[X.length-1];X.pop()}}
 for(let i=RG.length-1;i>=0;i--){RG[i].l-=dt;if(RG[i].l<=0)RG.splice(i,1)}
-shake=Math.max(0,shake-dt*30);for(const k of kns.values())k.t-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));sgK=Math.max(0,Math.min(1,sgK+dt*(sgA?.7:-.9)));fallT-=dt;ripT-=dt;tvSayT-=dt;hpF-=dt;lookT-=dt;for(let i=orbF.length-1;i>=0;i--){orbF[i].t+=dt;if(orbF[i].t>.5){burst(orbF[i].x,orbF[i].y,'#58ffd0',6);orbF.splice(i,1)}}for(let i=hpcs.length-1;i>=0;i--){hpcs[i].t+=dt;if(hpcs[i].t>hpcs[i].d){const c=hpcs[i];RG.push({x:c.x1,y:c.y1,r:150,w:9,l:.6,m:.6});shake=Math.max(shake,14);tone(50,.8,.12,'sawtooth',.4);hpcs.splice(i,1)}};noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
+shake=Math.max(0,shake-dt*30);for(const k of kns.values())k.t-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));sgK=Math.max(0,Math.min(1,sgK+dt*(sgA?.7:-.9)));fallT-=dt;ripT-=dt;tvSayT-=dt;hpF-=dt;lookT-=dt;for(let i=orbF.length-1;i>=0;i--){orbF[i].t+=dt;if(orbF[i].t>.5){burst(orbF[i].x,orbF[i].y,'#58ffd0',6);orbF.splice(i,1)}}for(let i=hpcs.length-1;i>=0;i--){hpcs[i].t+=dt;if(hpcs[i].t>hpcs[i].d&&!hpcs[i].z){const c=hpcs[i];c.z=1;RG.push({x:c.x1,y:c.y1,r:150,w:9,l:.6,m:.6});shake=Math.max(shake,14);tone(50,.8,.12,'sawtooth',.4)}if(hpcs[i].t>hpcs[i].d+.7)hpcs.splice(i,1)};if(HL){for(const c of hpcs){c.sx0=(c.x0-L.cx)*Z;c.sy0=(c.y0-L.cy)*Z-26;c.sx1=(c.x1-L.cx)*Z;c.sy1=(c.y1-L.cy)*Z;c.arc=160*Z}HL.frame(hpcs)};noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
 pxT+=dt
 if(pxT>.25){pxT=0;prox()}
 const p=mine()
@@ -1100,7 +1095,7 @@ left(u){
 if(!host&&u===hostUid&&!done){V.st='lose';say('The host left the match');finish()}
 },
 stop(){
-cancelAnimationFrame(raf);clearInterval(mus);ro.disconnect();restoreVol()
+cancelAnimationFrame(raf);try{HL&&HL.dispose()}catch{};clearInterval(mus);ro.disconnect();restoreVol()
 removeEventListener('keydown',kd);removeEventListener('keyup',ku);rip(false,box);curOff();uiFx('restore',box);bugOff();if(done10)done10()
 try{ac&&ac.close()}catch{}
 box.classList.remove('rs','tu-play')

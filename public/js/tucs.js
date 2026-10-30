@@ -1,6 +1,7 @@
 import{h}from'./util.js'
 import{CSD}from'./tusim.js'
 import{kandieArt}from'./kandie.js'
+import{tvBody}from'./tusagafx.js'
 import{mkStage}from'./tusagafx.js'
 const TAU=Math.PI*2
 const CH={
@@ -437,40 +438,8 @@ ctx.fillRect(0,0,w,hh)
 ctx.restore()
 }
 export function tesvin(ctx,e,t,pp,tg){
-const x=e.x,y=e.y,b=Math.sin(t*3)*4
-ctx.save()
-ctx.translate(x,y-34+b)
-const gl=Math.random()<.06+(tg>0?.2:0)
-if(gl)ctx.translate((Math.random()-.5)*10,0)
-ctx.strokeStyle='#07040c';ctx.lineWidth=4
-ctx.beginPath();ctx.moveTo(-12,-46);ctx.lineTo(-24,-70);ctx.moveTo(12,-46);ctx.lineTo(26,-66);ctx.stroke()
-ctx.strokeStyle='#9aa4c0';ctx.lineWidth=2
-ctx.beginPath();ctx.moveTo(-12,-46);ctx.lineTo(-24,-70);ctx.moveTo(12,-46);ctx.lineTo(26,-66);ctx.stroke()
-ctx.fillStyle='#07040c';ctx.fillRect(-34,-3,68,10);ctx.fillRect(-26,26,14,14);ctx.fillRect(12,26,14,14)
-ctx.fillStyle='#1b1e2c'
-ctx.beginPath();ctx.roundRect(-48,-48,96,78,10);ctx.fill()
-ctx.fillStyle='#2e3350'
-ctx.beginPath();ctx.roundRect(-44,-44,88,70,8);ctx.fill()
-ctx.fillStyle='#03060a'
-ctx.beginPath();ctx.roundRect(-38,-38,76,52,6);ctx.fill()
-const sg=ctx.createLinearGradient(0,-38,0,14)
-sg.addColorStop(0,pp>=3?'#ff3a8a':'#1affd0');sg.addColorStop(1,pp>=3?'#6a1aff':'#0a6a8a')
-ctx.fillStyle=sg;ctx.globalAlpha=.88
-ctx.beginPath();ctx.roundRect(-36,-36,72,48,5);ctx.fill()
-ctx.globalAlpha=1
-ctx.fillStyle='#04141c'
-const bl=Math.sin(t*1.7)>.93?2:9
-ctx.fillRect(-22,-22,12,bl);ctx.fillRect(10,-22,12,bl)
-if(tg>0){ctx.fillStyle='#ff3a4a';ctx.fillRect(-22,-22,12,9);ctx.fillRect(10,-22,12,9)}
-ctx.fillStyle='#04141c'
-for(let i=-5;i<=5;i++){const hh=2+Math.abs(Math.sin(t*9+i*1.3))*7;ctx.fillRect(i*5-1,-2-hh/2+4,3,hh)}
-ctx.fillStyle='rgba(255,255,255,.55)'
-for(let i=0;i<22;i++)ctx.fillRect(-36+Math.random()*72,-36+Math.random()*48,2,1.5)
-ctx.fillStyle='rgba(0,0,0,.18)'
-for(let yy=-36;yy<12;yy+=3)ctx.fillRect(-36,yy,72,1)
-if(pp>=2){ctx.globalAlpha=.4;ctx.fillStyle='#ff2a5a';ctx.fillRect(-38,-36,3,48);ctx.fillStyle='#2affff';ctx.fillRect(35,-36,3,48);ctx.globalAlpha=1}
-ctx.fillStyle='#ff5a7a';ctx.beginPath();ctx.arc(34,20,2.6,0,TAU);ctx.fill();ctx.fillStyle='#7affd0';ctx.beginPath();ctx.arc(26,20,2.6,0,TAU);ctx.fill()
-ctx.restore()
+const b=Math.sin(t*3)*4,gl=Math.random()<.06+(tg>0?.2:0)
+tvBody(ctx,e.x,e.y-34+b,1,t,{m2:pp>=3?2:pp>=2?1:0,gl:gl?1:0,eyes:tg>0?2:0,sip:pp>=3?1:0})
 }
 export function kandieDraw(ctx,spr,x,y,t){
 const bob=Math.sin(t*5)*1.6
