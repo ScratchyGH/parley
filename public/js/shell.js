@@ -271,6 +271,7 @@ h('button',{class:'qs',on:{click:()=>quickSwitcher()}},icon('search','s'),h('spa
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page==='overview'?' on':''),on:{click:()=>{go('/');closeDrawers()}}},icon('chat'),h('span',{class:'nm'},'Home')),
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page!=='overview'?' on':''),on:{click:()=>{go('/friends');closeDrawers()}}},icon('users'),h('span',{class:'nm'},'Friends'),inc?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},inc):null),
 h('button',{class:'ci'+(S.nav.kind==='pars'?' on':''),on:{click:()=>{go('/pars');closeDrawers()}}},parIcon(18),h('span',{class:'nm'},'Pars shop'),S.me?.pars?h('span',{class:'par-chip'},String(S.me.pars)):null),
+h('button',{class:'ci'+(S.nav.kind==='games'?' on':''),on:{click:()=>{go('/games');closeDrawers()}}},icon('flask'),h('span',{class:'nm'},'Games')),
 h('button',{class:'ci'+(S.nav.kind==='docs'?' on':''),on:{click:()=>{go('/docs');closeDrawers()}}},h('span',{class:'kd-ci'},kandieArt(18)),h('span',{class:'nm'},'Kandie’s Docs')),
 h('button',{class:'ci',on:{click:()=>emit('ui:panel',{kind:'saved'})}},icon('bookmark'),h('span',{class:'nm'},'Saved messages')),
 h('div',{class:'cat'},h('span',null,'Direct messages'),h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'New message','aria-label':'New message',on:{click:()=>newDmDialog()}},icon('plus','s')))
@@ -333,7 +334,7 @@ if(bid){sbtn.classList.add('hasb');coverBg(sbtn,bid,'linear-gradient(180deg,tran
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{
-head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='docs'?'Docs':k==='settings'?'Settings':k==='pars'?'Pars shop':'Home'))
+head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='docs'?'Docs':k==='games'?'Games':k==='settings'?'Settings':k==='pars'?'Pars shop':'Home'))
 body=homeBody()
 }
 const key=k+':'+(S.nav.sid||'')

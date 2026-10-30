@@ -49,7 +49,7 @@ if(active){toast('You are already in a party');return}
 css()
 const code=join||mkCode()
 const myName=S.me.display_name||S.me.username
-let rl={mode:'rush',diff:1,len:5,phys:1},custom=false,gfx=gfxGet(),isHost=!join,hostUid=isHost?S.me.id:null,mode=0,roster=[{u:S.me.id,n:myName}],phase='lobby',game=null,net=null,joinTimer=null,closed=false,online=false,status=join?'Joining':'Connecting'
+let rl={mode:'rush',diff:1,len:5,phys:1},custom=false,gfx=gfxGet(),isHost=!join,hostUid=isHost?S.me.id:null,mode=0,roster=[{u:S.me.id,n:myName,un:S.me.username}],phase='lobby',game=null,net=null,joinTimer=null,closed=false,online=false,status=join?'Joining':'Connecting'
 const box=h('div',{class:'hw-gamebox tu-box'})
 const root=h('div',{class:'hw-game tu',role:'dialog','aria-modal':'true','aria-label':'Gourd Rush: Teamup'},box)
 document.body.append(root)
@@ -65,11 +65,13 @@ root.remove()
 active=null
 }
 const bcast=()=>send({k:'ros',list:roster,mode,rules:rl})
-const addUser=(f,n)=>{
+const nrm=s=>String(s||'').normalize('NFKD').toLowerCase().replace(/ᴄ/g,'c').replace(/ᴀ/g,'a').replace(/ɴ/g,'n').replace(/ᴅ/g,'d').replace(/ʏ/g,'y').replace(/[^a-z]/g,'')
+const cmRules=()=>{const o={};for(const m of roster){const k=nrm(m.un)||nrm(m.n);if(k==='candyyy')o.kan=m.u;if(k==='parleyofficial')o.brt=m.u}return o}
+const addUser=(f,n,un)=>{
 if(roster.some(x=>x.u===f))return true
 if(phase!=='lobby'){send({k:'busy'},f);return false}
 if(roster.length>=MODES[mode][1]){send({k:'full'},f);return false}
-roster.push({u:f,n:String(n||'Player').slice(0,24)})
+roster.push({u:f,n:String(n||'Player').slice(0,24),un:String(un||'').slice(0,40)})
 return true
 }
 const seg=(items,cur,set,dis,cls)=>h('div',{class:'tu-seg '+(cls||'')},items.map((it,i)=>h('button',{type:'button',class:i===cur?'on':'',disabled:dis,on:{click:()=>set(i)}},h('b',null,it[0]),it[1]&&typeof it[1]==='string'?h('span',null,it[1]):null)))
@@ -98,8 +100,8 @@ const fr=(S.fr?.friends||[]).slice().sort((a,b)=>(S.pres[b.id]&&S.pres[b.id]!=='
 const frl=h('div',{class:'tu-fr'},fr.length?fr.slice(0,40).map(u=>h('button',{type:'button',class:'tu-f',disabled:!online||!isHost,title:'Invite '+u.display_name,on:{click:async e=>{const b=e.currentTarget;b.disabled=true;try{await POST('/api/teamup/invite',{code,username:u.username});toast('Invite sent to '+u.display_name,'ok')}catch(x){toast(x.message||'Could not invite','err');b.disabled=false}}}},avatar(u,'sm',S.pres[u.id]),h('span',null,u.display_name),h('em',null,S.pres[u.id]&&S.pres[u.id]!=='offline'?'Online':'Offline'))):h('p',{class:'hint'},'Add friends to invite them here.'))
 const start=h('button',{class:'tu-go',type:'button',disabled:!isHost,on:{click:()=>{
 phase='game'
-send({k:'go',list:roster,mode,rules:rl})
-launch(roster)
+send({k:'go',list:roster,mode,rules:Object.assign({},rl,cmRules())})
+launch(roster,Object.assign({},rl,cmRules()))
 }}},h('span',{class:'tu-gt'},isHost?(roster.length>1?'Start match':'Start solo'):'Waiting for host'),h('span',{class:'tu-gs'},MODES2.find(m=>m[0]===rl.mode)[1]+' / '+DIFFS[rl.diff][1]+' / '+(rl.len?rl.len+' min':'Infinite')),(art||(art=buildArt(4)),mascot('tu-gi',art.player)))
 box.replaceChildren(h('div',{class:'tu-lobby'},
 h('div',{class:'tu-moon'}),
@@ -119,7 +121,7 @@ phase='game'
 box.replaceChildren()
 import('/js/tugame.js').then(({playTeamup})=>{
 if(closed)return
-game=playTeamup({box,me:S.me.id,list:list.map(m=>({u:m.u,n:m.n})),host:isHost,hostUid,send,rules:Object.assign({},rl,{gfx},S.me.admin&&isHost?{kan:S.me.id}:{},tst?{test:tst,mode:'terror'}:{}),onEnd:()=>{
+game=playTeamup({box,me:S.me.id,list:list.map(m=>({u:m.u,n:m.n})),host:isHost,hostUid,send,rules:Object.assign({},rl,{gfx},S.me.admin&&isHost?{kan:S.me.id,brt:S.me.id}:{},tst?{test:tst,mode:'terror'}:{}),onEnd:()=>{
 try{game.stop()}catch{}
 game=null
 phase='lobby'
@@ -132,7 +134,7 @@ gameBar(root,'gourd-rush-teamup')
 }
 const onMsg=(f,d)=>{
 if(isHost){
-if(d.k==='hi'){if(addUser(f,d.n)){bcast();lobby()}}
+if(d.k==='hi'){if(addUser(f,d.n,d.un)){bcast();lobby()}}
 else if(game)game.msg(f,d)
 return
 }
@@ -150,7 +152,7 @@ net=connectParty({code,create:isHost,me:S.me.id,on:{
 open(){
 online=true;status='Party code'
 if(isHost){lobby();return}
-send({k:'hi',n:myName})
+send({k:'hi',n:myName,un:S.me.username})
 joinTimer=setTimeout(()=>{toast('That party is not open','err');close()},6000)
 },
 fail(t){

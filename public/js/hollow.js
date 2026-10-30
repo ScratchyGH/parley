@@ -84,9 +84,9 @@ h('div',{class:'hq-b'},h('h5',null,q.title),h('p',null,q.descr),h('div',{class:'
 s==='claimed'?h('button',{class:'btn sm',disabled:true},'Claimed'):s==='lock'?h('button',{class:'btn sm',disabled:true},'Locked'):s==='done'?h('button',{class:'btn pri sm',on:{click:()=>claim({kind:'quest',id:q.id},rerender)}},'Claim'):h('span',{class:'hq-go'},Math.round(pr)+'%'))
 }
 import{gameBar}from'./gamebar.js'
-async function startRush(rerender,mode){
+async function startRush(rerender,mode,local){
 let run
-try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
+if(!local)try{run=(await POST(API+'/rush/start',{})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
 const{playRush}=await import('/js/rush.js')
 const box=h('div',{class:'hw-gamebox'})
@@ -100,12 +100,13 @@ if(over)return
 over=true
 try{stop?.()}catch{}
 root.remove()
-await loadHollow()
-rerender?.()
+if(!local){await loadHollow()
+rerender?.()}
 }
 closeBtn.addEventListener('click',()=>{if(over)return;over=true;try{stop?.()}catch{}root.remove()})
 stop=playRush(box,async r=>{
 if(over)return
+if(local){toast(r.ok?'You held until dawn.':'You were consumed.');setTimeout(end,900);return}
 try{
 const x=await POST(API+'/rush/finish',{run,ok:!!r.ok,secs:r.secs,kills:r.kills})
 toast(x.candy?'Run paid '+x.candy+' candy.':x.left===0?'Daily candy limit reached for runs.':'Survive 20 seconds to earn candy.',x.candy?'ok':undefined)
@@ -113,9 +114,9 @@ toast(x.candy?'Run paid '+x.candy+' candy.':x.left===0?'Daily candy limit reache
 setTimeout(end,600)
 },mode)
 }
-async function startNight(night,rerender,fp){
+async function startNight(night,rerender,fp,local){
 let run
-if(!fp)try{run=(await POST(API+'/night/start',{night})).run}catch(e){toast(e.message||'Could not start','err');return}
+if(!fp&&!local)try{run=(await POST(API+'/night/start',{night})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
 const [{playNight}]=await Promise.all([import('/g3d/doom3d.js')])
 const box=h('div',{class:'hw-gamebox'})
@@ -129,12 +130,13 @@ if(over)return
 over=true
 try{stop?.()}catch{}
 root.remove()
-await loadHollow()
-rerender?.()
+if(!local){await loadHollow()
+rerender?.()}
 }
-closeBtn.addEventListener('click',()=>{if(over)return;over=true;try{stop?.()}catch{}root.remove();if(!fp)POST(API+'/night/finish',{run,ok:false}).catch(()=>{})})
+closeBtn.addEventListener('click',()=>{if(over)return;over=true;try{stop?.()}catch{}root.remove();if(!fp&&!local)POST(API+'/night/finish',{run,ok:false}).catch(()=>{})})
 stop=playNight(night,box,async r=>{
 if(over)return
+if(local){toast(r.ok?'Night '+night+' survived.':'The shift ended.');setTimeout(end,r.ok?1800:700);return}
 if(fp){toast(fp.inf?'Freeplay ended at '+Math.floor(r.secs/60)+':'+String(r.secs%60).padStart(2,'0')+'.':r.ok?'Freeplay survived.':'Freeplay over.');setTimeout(end,r.ok?1800:600);return}
 try{
 const x=await POST(API+'/night/finish',{run,ok:!!r.ok})
@@ -254,3 +256,5 @@ css()
 loadHollow().then(()=>watch())
 setInterval(()=>{if(!document.hidden)loadHollow().then(()=>{if(st.d?.pumpkins.open.length)watch()})},300000)
 }
+
+export const playLocal=(kind,n)=>kind==='night'?startNight(n,null,null,1):startRush(null,kind,1)

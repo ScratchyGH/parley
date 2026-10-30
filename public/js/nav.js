@@ -27,6 +27,7 @@ if(p[0]==='discover')return{name:'discover'}
 if(p[0]==='pars')return{name:'pars'}
 if(p[0]==='hollow')return{name:'hollow'}
 if(p[0]==='docs')return{name:'docs'}
+if(p[0]==='games')return{name:'games'}
 if(p[0]==='lab'){
 if(!p[1])return{name:'lab',view:'mine'}
 if(p[1]==='new')return{name:'lab',view:'new'}

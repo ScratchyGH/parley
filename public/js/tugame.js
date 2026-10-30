@@ -4,7 +4,7 @@ import{terrorArt}from'./rushterror.js'
 import{createSim,CS,LI,POT,chunk,near,around,buildingAt,push,UPS,ET,ABN,ABI}from'./tusim.js'
 import{V as VC,setPeerVolume,toggleMute}from'./voice.js'
 import{scene,rip,arenaFx,tesvin,kandieDraw,bubble}from'./tucs.js'
-import{kandieArt}from'./kandie.js'
+import{kandieArt,britArt}from'./kandie.js'
 import{limbs,FC,curOn,curGrab,curOff,curFrame,cursorGlyph,uiFx,shatter,arenaWorld,pondDraw,sinkDraw,pick10,bugOn,bugOff}from'./tusagafx.js'
 const TAU=Math.PI*2
 const R=Math.random
@@ -101,7 +101,7 @@ const ro=new ResizeObserver(fit);ro.observe(box)
 const V={pt:[],ts:0,pl:new Map(),en:new Map(),pj:new Map(),eb:new Map(),gm:[],hp:[],pd:[],pk:[],bars:{},dead:new Set(),opened:new Set(),bz:new Map(),pr:new Map(),dc:[],bm:0,tm:0,st:'run',kl:0,bo:0,sn:performance.now()}
 const F=[],X=[],RG=[]
 const L={inv:0,keys:new Set(),mx:0,my:0,fire:false,aid:null,jid:null,jx:0,jy:0,jdx:0,jdy:0,slot:1,dash:0,dcd:0,dx:1,dy:0,sent:0,hold:0,tcd:0,walk:0,face:1,ang:0,offer:null,cx:0,cy:0,kx:0,ky:0}
-let csOn=0,arenaOn=0,arenaK=0,kn=null,knSay='',knT=0,KS=null
+let csOn=0,arenaOn=0,arenaK=0,kns=new Map()
 let SG=null,sgA=null,sgK=0,fallT=0,ripT=0,tvSay='',tvSayT=0,hpF=0,lookT=0,done10=null
 const orbF=[],hpcs=[]
 const BMS=[]
@@ -119,7 +119,7 @@ const mine=()=>V.pl.get(me)
 const apply=sn=>{
 const t0=performance.now()
 SG=sn.sg||null;V.tm=sn.tm;V.st=sn.st;V.kl=sn.kl;V.bars=Object.fromEntries(sn.b);V.bz=new Map(sn.z);V.bo=sn.bo;V.bm=sn.bm;V.dc=sn.dc;V.sn=t0
-if(sn.kn){if(!kn)kn={x:sn.kn[0],y:sn.kn[1],tx:sn.kn[0],ty:sn.kn[1]};kn.tx=sn.kn[0];kn.ty=sn.kn[1];kn.rv=sn.kn[2];kn.rt=sn.kn[3]}else kn=null
+if(sn.cm){const sw=new Set();for(const c of sn.cm){const w=c[0]?'brit':'kandie';sw.add(w);let k=kns.get(w);if(!k){k={w,x:c[1],y:c[2],say:'',t:0,art:c[0]?britArt(26):kandieArt(26)};kns.set(w,k)}k.tx=c[1];k.ty=c[2];k.rv=c[3];k.rt=c[4];k.own=c[5]}for(const w of[...kns.keys()])if(!sw.has(w))kns.delete(w)}else kns.clear()
 const pids=new Set()
 for(const[id,k,x,y]of sn.pr){pids.add(id);let o=V.pr.get(id);if(!o){o={id,k,x,y};V.pr.set(id,o)};o.tx=x;o.ty=y}
 for(const k of[...V.pr.keys()])if(!pids.has(k))V.pr.delete(k)
@@ -159,10 +159,10 @@ else if(e[0]==='sh')shake=Math.max(shake,e[1])
 else if(e[0]==='n'){say(e[1]);tone(70,1,.09,'sawtooth',.6)}
 else if(e[0]==='gl')glitchT=Math.max(glitchT,e[1])
 else if(e[0]==='sg')sgEv(e)
-else if(e[0]==='cs'){if(!csOn&&(e[1]!=='revive'||RU.kan===me)){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],pname:names.get(RU.kan)||names.get(me),cv,on:sceneOn}).then(()=>{csOn=0})}}
+else if(e[0]==='cs'){if(!csOn&&((e[1]!=='revive'&&e[1]!=='revive2')||e[3]===me)){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],pname:e[3]?names.get(e[3]):(names.get(RU.kan)||names.get(RU.brt)||names.get(me)),qname:names.get(RU.brt)||names.get(RU.kan)||names.get(me),cv,on:sceneOn}).then(()=>{csOn=0})}}
 else if(e[0]==='ar'){arenaOn=e[1];rip(!!e[1],box);if(e[1]){shake=Math.max(shake,16);glitchT=Math.max(glitchT,3);tone(60,2,.1,'sawtooth',.3)}}
 else if(e[0]==='bm'){BMS.push({o:e[1],v:e[2],l:e[3],m:e[3]});tone(300,.4,.04,'square',2)}
-else if(e[0]==='kl'){if(RU.kan===me){knSay=e[1];knT=5}}
+else if(e[0]==='kl'){const k=kns.get(e[3]);if(k){k.say=e[2];k.t=5}}
 else if(e[0]==='hurt'&&e[1]===me){hurtT=.5;shake=Math.max(shake,7);tone(120,.16,.07,'sawtooth',.6)}
 else if(e[0]==='down')say((names.get(e[1])||'A teammate')+' is down')
 }
@@ -661,7 +661,7 @@ ctx.drawImage(bb.c,-bb.ax*sw,-bb.ay*sw+4,bb.w*sw,bb.h*sw)
 ctx.restore();ctx.globalAlpha=1
 }
 for(const d of V.pd){ctx.fillStyle='rgba(255,217,59,.2)';ctx.beginPath();ctx.arc(d[0],d[1],d[2],0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,217,59,.55)';ctx.lineWidth=2;ctx.stroke();lights.push([d[0],d[1],d[2]*1.4,.7,'warm'])}
-if(kn){if(!KS)KS=kandieArt(26);kn.x+=(kn.tx-kn.x)*(kn.rv?.5:.25);kn.y+=(kn.ty-kn.y)*(kn.rv?.5:.25);if(kn.rv){let dn=null,bd=1e9;for(const q of V.pl.values())if(q.s==='down'){const d=Math.hypot(q.x-kn.x,q.y-kn.y);if(d<bd){bd=d;dn=q}}if(dn){const k=Math.min(1,kn.rt/11);ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<3;i++){const ph=(clock*.9+i/3)%1;ctx.strokeStyle='rgba(255,154,194,'+((1-ph)*.7)+')';ctx.lineWidth=2+k*3;ctx.beginPath();ctx.ellipse(dn.x,dn.y,10+ph*(34+k*40),(10+ph*(34+k*40))*.38,0,0,TAU);ctx.stroke()}for(let i=0;i<7;i++){const a=clock*2+i*.9,rr=14+k*14,py=dn.y-((clock*38+i*17)%46);ctx.fillStyle='rgba(255,230,240,'+(.5+.4*Math.sin(clock*8+i))+')';ctx.beginPath();ctx.arc(dn.x+Math.cos(a)*rr,py,1.8,0,TAU);ctx.fill()}const gr=ctx.createRadialGradient(dn.x,dn.y-10,0,dn.x,dn.y-10,60+k*50);gr.addColorStop(0,'rgba(255,170,210,'+(.35+k*.35)+')');gr.addColorStop(1,'rgba(255,170,210,0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(dn.x,dn.y-10,60+k*50,0,TAU);ctx.fill();ctx.restore();lights.push([dn.x,dn.y-10,120+k*60,.9,'warm'])}ctx.save();ctx.translate(kn.x,kn.y);ctx.scale(1,.78);kandieDraw(ctx,KS,0,0,clock*.3);ctx.restore()}else kandieDraw(ctx,KS,kn.x,kn.y,clock);if(knT>0)bubble(ctx,kn.x,kn.y-KS.height-4,knSay,knT)}
+for(const kn of kns.values()){const KS=kn.art,br=kn.w==='brit',CC=br?'122,215,255':'255,154,194',CR=br?'210,240,255':'255,230,240';kn.x+=(kn.tx-kn.x)*(kn.rv?.5:.25);kn.y+=(kn.ty-kn.y)*(kn.rv?.5:.25);if(kn.rv){let dn=null,bd=1e9;for(const q of V.pl.values())if(q.s==='down'){const d=Math.hypot(q.x-kn.x,q.y-kn.y);if(d<bd){bd=d;dn=q}}if(dn){const k=Math.min(1,kn.rt/(br?8:11));ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<3;i++){const ph=(clock*.9+i/3)%1;ctx.strokeStyle='rgba('+CC+','+((1-ph)*.7)+')';ctx.lineWidth=2+k*3;ctx.beginPath();ctx.ellipse(dn.x,dn.y,10+ph*(34+k*40),(10+ph*(34+k*40))*.38,0,0,TAU);ctx.stroke()}for(let i=0;i<7;i++){const a=clock*2+i*.9,rr=14+k*14,py=dn.y-((clock*38+i*17)%46);ctx.fillStyle='rgba('+CR+','+(.5+.4*Math.sin(clock*8+i))+')';ctx.beginPath();ctx.arc(dn.x+Math.cos(a)*rr,py,1.8,0,TAU);ctx.fill()}const gr=ctx.createRadialGradient(dn.x,dn.y-10,0,dn.x,dn.y-10,60+k*50);gr.addColorStop(0,'rgba('+CC+','+(.35+k*.35)+')');gr.addColorStop(1,'rgba('+CC+',0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(dn.x,dn.y-10,60+k*50,0,TAU);ctx.fill();ctx.restore();lights.push([dn.x,dn.y-10,120+k*60,.9,'warm'])}ctx.save();ctx.translate(kn.x,kn.y);ctx.scale(1,.78);kandieDraw(ctx,KS,0,0,clock*.3);ctx.restore()}else kandieDraw(ctx,KS,kn.x,kn.y,clock);if(kn.t>0)bubble(ctx,kn.x,kn.y-KS.height-4,kn.say,kn.t,br?'#7ad7ff':'#ff9ac2')}
 if(SG){
 for(const s of SG[5])sinkDraw(ctx,s,clock)
 const T=SG[1]
@@ -1054,7 +1054,7 @@ for(const b of V.eb.values()){b.x+=b.vx*dt;b.y+=b.vy*dt;b.a+=dt*14}
 for(let i=F.length-1;i>=0;i--){const f=F[i];f.l-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.94;f.vy*=.94;if(f.l<=0){F[i]=F[F.length-1];F.pop()}}
 for(let i=X.length-1;i>=0;i--){const x=X[i];x.l-=dt;x.y-=dt*34;if(x.l<=0){X[i]=X[X.length-1];X.pop()}}
 for(let i=RG.length-1;i>=0;i--){RG[i].l-=dt;if(RG[i].l<=0)RG.splice(i,1)}
-shake=Math.max(0,shake-dt*30);knT-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));sgK=Math.max(0,Math.min(1,sgK+dt*(sgA?.7:-.9)));fallT-=dt;ripT-=dt;tvSayT-=dt;hpF-=dt;lookT-=dt;for(let i=orbF.length-1;i>=0;i--){orbF[i].t+=dt;if(orbF[i].t>.5){burst(orbF[i].x,orbF[i].y,'#58ffd0',6);orbF.splice(i,1)}}for(let i=hpcs.length-1;i>=0;i--){hpcs[i].t+=dt;if(hpcs[i].t>hpcs[i].d){const c=hpcs[i];RG.push({x:c.x1,y:c.y1,r:150,w:9,l:.6,m:.6});shake=Math.max(shake,14);tone(50,.8,.12,'sawtooth',.4);hpcs.splice(i,1)}};noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
+shake=Math.max(0,shake-dt*30);for(const k of kns.values())k.t-=dt;for(let i=BMS.length-1;i>=0;i--){BMS[i].l-=dt;if(BMS[i].l<-.25)BMS.splice(i,1)};arenaK=Math.max(0,Math.min(1,arenaK+dt*(arenaOn?.5:-.6)));sgK=Math.max(0,Math.min(1,sgK+dt*(sgA?.7:-.9)));fallT-=dt;ripT-=dt;tvSayT-=dt;hpF-=dt;lookT-=dt;for(let i=orbF.length-1;i>=0;i--){orbF[i].t+=dt;if(orbF[i].t>.5){burst(orbF[i].x,orbF[i].y,'#58ffd0',6);orbF.splice(i,1)}}for(let i=hpcs.length-1;i>=0;i--){hpcs[i].t+=dt;if(hpcs[i].t>hpcs[i].d){const c=hpcs[i];RG.push({x:c.x1,y:c.y1,r:150,w:9,l:.6,m:.6});shake=Math.max(shake,14);tone(50,.8,.12,'sawtooth',.4);hpcs.splice(i,1)}};noteT-=dt;hurtT-=dt;glitchT=Math.max(0,glitchT-dt)
 pxT+=dt
 if(pxT>.25){pxT=0;prox()}
 const p=mine()

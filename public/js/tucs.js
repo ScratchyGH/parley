@@ -5,7 +5,7 @@ import{mkStage}from'./tusagafx.js'
 const TAU=Math.PI*2
 const CH={
 parley:{n:'Parley',c:'#c9a8ff',img:'/mascot-sm.webp'},
-brit:{n:'Brit',c:'#7ad7ff',img:'/brit.webp'},
+brit:{n:'Brit',c:'#7ad7ff',img:'/britc.webp'},
 kandie:{n:'Kandie',c:'#ff9ac2',art:1},
 tesvin:{n:'Tesvin',c:'#58ffd0',tv:1},
 narr:{n:'',c:'#d8d8e0'}
@@ -63,6 +63,70 @@ revive:[
 {w:'kandie',t:'I did not sit through all those first aid slides for nothing. Breathe!',z:2.1,y:30,sp:16},
 {w:'narr',t:'Pink light gathered around her hands.',z:2.3,y:30,fx:'flash',sp:16},
 {w:'kandie',t:'There. Back on your feet. And you owe me a snack, do not think I will forget.',z:1.4,sp:16}
+],
+revive2:[
+{w:'brit',t:'{p}, do not move. I am running the numbers on how to put you back together.',z:1.8,y:10,fx:'shake',sp:16},
+{w:'narr',t:'Brit slid in beside {p} and flipped the laptop open with one hand.',z:2,y:30,sp:16},
+{w:'brit',t:'Resuscitation routine, version four. I wrote it in the lab. It has only exploded twice.',z:2.1,y:30,sp:16},
+{w:'narr',t:'Blue light crawled up the screen and into {p}.',z:2.3,y:30,fx:'flash',sp:16},
+{w:'brit',t:'There. Stable. You are welcome, and I am billing you in compliments.',z:1.4,sp:16}
+],
+duo1:[
+{w:'narr',t:'A quiet moment between waves. Two sisters on watch.',z:2},
+{w:'kandie',t:'{q}, you have been staring at that laptop for twenty minutes.',z:1.5},
+{w:'brit',t:'I am calibrating. {p}, I am calibrating, not staring.',z:1.5},
+{w:'kandie',t:'Calibrating what? The monsters are not going to politely line up.',z:1.5},
+{w:'brit',t:'I am building a targeting matrix. If I tag them, you can burst them in clusters.',z:1.6},
+{w:'kandie',t:'Wow. A plan. With math. I am so proud, I might cry on you.',z:1.5},
+{w:'brit',t:'Please do not. You are sticky.',z:1.3},
+{w:'kandie',t:'I am sweet, there is a difference. Anyway. You tag them, I make them pop.',z:1.5},
+{w:'brit',t:'Deal. Sibling protocol, version one. Do not get hit.',z:1.5}
+],
+duo2:[
+{w:'narr',t:'The wind turned cold. Something big was thinking about them.',z:2},
+{w:'brit',t:'Kandie. Be honest. Do you ever get scared out here?',z:1.5},
+{w:'kandie',t:'Every single time. I just do it loudly so nobody notices.',z:1.6},
+{w:'brit',t:'That is the most illogical coping strategy I have ever heard.',z:1.5},
+{w:'kandie',t:'And yet I am still standing. Next to the genius who hides in a lab.',z:1.5},
+{w:'brit',t:'I do not hide. I observe from a protected location.',z:1.5},
+{w:'kandie',t:'Brit. You hide.',z:1.2},
+{w:'brit',t:'...Fine. I hide. But I am out here now. Because of you.',z:1.6},
+{w:'kandie',t:'Aww. Group hug?',z:1.2},
+{w:'brit',t:'Negative. But I will stand very close to you. That is basically the same.',z:1.7}
+],
+duo3:[
+{w:'narr',t:'The hollow went still. Both of them felt it at the same time.',z:2},
+{w:'brit',t:'I have been working on something. A way to link our systems. Yours and mine.',z:1.7},
+{w:'kandie',t:'Link how? Like a friendship bracelet? I would love a bracelet.',z:1.5},
+{w:'brit',t:'Like a shared field. If anyone drops low, we both pour everything into them at once.',z:1.8},
+{w:'kandie',t:'That is the sweetest thing you have ever said, and you said it like a manual.',z:1.7},
+{w:'narr',t:'Pink and blue light wound together between them.',z:2.2,fx:'flash'},
+{w:'brit',t:'Sibling Link, online. It needs a cooldown, so please do not abuse it.',z:1.6},
+{w:'kandie',t:'No promises. {q}, {p}, you heard it. We have got you now.',z:1.7}
+],
+kx1:[
+{w:'narr',t:'Kandie stopped mid-fight and checked her reflection in a shard of glass.',z:2},
+{w:'kandie',t:'Do I look like someone who is losing? No. I look amazing.',z:1.6},
+{w:'kandie',t:'Okay, tiny confession. I add extra sparkles when nobody is looking.',z:1.6},
+{w:'kandie',t:'It does not do more damage. It just feels better. Do not tell Brit.',z:1.7}
+],
+kx2:[
+{w:'narr',t:'Kandie pulled out a candy bar and snapped it in half.',z:2},
+{w:'kandie',t:'Half for me. Half for the team. This is how sugar diplomacy works.',z:1.7},
+{w:'kandie',t:'My Sweet Burst came from a craving I had during the first night. True story.',z:1.8},
+{w:'kandie',t:'Anyway. Tell me when you are low. I will pinky promise you back up.',z:1.7}
+],
+bx1:[
+{w:'narr',t:'Brit paused to scribble in a notebook the size of a door.',z:2},
+{w:'brit',t:'Observation one. The monsters get louder when you panic. Please stop panicking.',z:1.7},
+{w:'brit',t:'Observation two. Kandie is, against all probability, the reason we are alive.',z:1.7},
+{w:'brit',t:'I will deny saying that if she asks. Moving on.',z:1.5}
+],
+bx2:[
+{w:'narr',t:'Brit tapped three keys and a blue grid unfolded across the ground.',z:2},
+{w:'brit',t:'Containment, shields, and the orbital strike. All mine. All written during lunch.',z:1.8},
+{w:'brit',t:'If the orbital strike marks your feet, run. That is not a joke. I am a scientist.',z:1.8},
+{w:'brit',t:'Now. Let me show you what happens when somebody smart gets angry.',z:1.7}
 ],
 tlab:[
 {w:'narr',t:'Three floors down, the lab hummed. A dusty suitcase sat in the corner.',d:3800,m:{bg:'dark',lv:0,case:1,pot:0,eyes:0,m2:0,wh:0,back:0,bn:0,gl:0,sip:0}},
@@ -187,7 +251,7 @@ clearInterval(iv);clearTimeout(to);clearInterval(gv)
 i++
 if(i>=steps.length)return fin()
 const s=steps[i],c=CH[s.w]
-full=(s.t||'').replace('{b}',o.name||'').replace('{p}',o.pname||'friend')
+full=(s.t||'').replace('{b}',o.name||'').replace('{p}',o.pname||'friend').replace('{q}',o.qname||'friend')
 const cs=s.sp||28
 pos=0
 nm.textContent=c.n
@@ -366,7 +430,7 @@ const bob=Math.sin(t*5)*1.6
 ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+2,10,3.6,0,0,TAU);ctx.fill()
 ctx.drawImage(spr,x-spr.width/2,y-spr.height+3+bob)
 }
-export function bubble(ctx,x,y,text,k){
+export function bubble(ctx,x,y,text,k,col){
 ctx.save()
 ctx.globalAlpha=Math.min(1,k*3)
 ctx.font='700 11px system-ui,sans-serif'
@@ -376,7 +440,7 @@ let cur=''
 for(const wd of words){if(ctx.measureText(cur+' '+wd).width>w-12&&cur){lines.push(cur);cur=wd}else cur=cur?cur+' '+wd:wd}
 lines.push(cur)
 const hh=lines.length*13+8,bx=x-w/2,by=y-hh-8
-ctx.fillStyle='rgba(20,10,28,.92)';ctx.strokeStyle='#ff9ac2';ctx.lineWidth=1.5
+ctx.fillStyle='rgba(20,10,28,.92)';ctx.strokeStyle=col||'#ff9ac2';ctx.lineWidth=1.5
 ctx.beginPath();ctx.roundRect(bx,by,w,hh,6);ctx.fill();ctx.stroke()
 ctx.beginPath();ctx.moveTo(x-4,by+hh);ctx.lineTo(x,by+hh+6);ctx.lineTo(x+4,by+hh);ctx.fill()
 ctx.fillStyle='#ffe0ee';ctx.textAlign='center'

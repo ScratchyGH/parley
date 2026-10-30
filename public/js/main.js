@@ -154,6 +154,15 @@ showOverlay('settings','Settings',icon('sliders'),p.nodes[1],closeOv)
 document.title=p.title
 return
 }
+if(r.name==='games'){
+S.nav={kind:'games'}
+syncChrome()
+const{gamesPage}=await import('./gamepack.js')
+const p=gamesPage(r)
+layoutMain(...p.nodes)
+document.title=p.title
+return
+}
 if(r.name==='docs'){
 S.nav={kind:'docs'}
 syncChrome()

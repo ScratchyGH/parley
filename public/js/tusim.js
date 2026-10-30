@@ -187,7 +187,7 @@ export const DIFFS=[
 {n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12}
 ]
 export const LENS=[1,5,10,30,60,0]
-export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20,revive:13,tlab:SGD.lab,tworld:SGD.world,tcheat:SGD.cheat,tfair:SGD.fair,tbrit:SGD.brit}
+export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20,revive:13,revive2:13,duo1:34,duo2:30,duo3:30,kx1:20,kx2:20,bx1:20,bx2:20,tlab:SGD.lab,tworld:SGD.world,tcheat:SGD.cheat,tfair:SGD.fair,tbrit:SGD.brit}
 export const POT={speed:['Speed','#4aff9a'],reverse:['Reverse','#7dff7a'],bluelock:['Blue Lock','#3a8aff'],purple:['Hollow Purple','#b04aff'],giant:['Giant','#ff9a3a'],timestop:['Time Stop','#c8d8ff'],vamp:['Vampire','#ff3a5a'],blackhole:['Black Hole','#2a1a3a']}
 const PW=[['speed',20],['reverse',14],['bluelock',14],['purple',9],['giant',13],['timestop',10],['vamp',14]]
 const rollPot=()=>{
@@ -334,7 +334,7 @@ txt(p.x,p.y-40,'-'+Math.round(d),'#ff6a5a')
 ev('hurt',p.u)
 if(p.hp<=0){
 p.hp=0
-if((n>1&&alive().length>1)||(S.kn&&p.u===R.kan&&S.kn.rc<=0&&!S.kn.rv)){p.s='down';p.bleed=25;p.rv=0;ev('down',p.u);if(S.kn&&p.u===R.kan&&S.kn.rc<=0){S.kn.rv=1;S.kn.rt=0;ev('cs','revive');S.ts=Math.max(S.ts,CSD.revive-1)}}
+if((n>1&&alive().length>1)||cmOf(p.u)){p.s='down';p.bleed=25;p.rv=0;ev('down',p.u);const cc=cmOf(p.u);if(cc){cc.rv=1;cc.rt=0;const rs=cc.w==='brit'?'revive2':'revive';ev('cs',rs,'',cc.own);S.ts=Math.max(S.ts,CSD[rs]-1)}}
 else p.s=n>1?'down':'dead'
 if(p.s==='down')p.bleed=25
 }
@@ -424,7 +424,7 @@ for(const q of alive())if(Math.hypot(q.x-p.x,q.y-p.y)<260){q.hp=Math.min(q.max,q
 }
 }
 const drink=(p,k)=>{
-ev('x',rd(p.x),rd(p.y),130,10);txt(p.x,p.y-56,POT[k][0],POT[k][1],1);if(S.kn&&p.u===R.kan)kl('Ooh, '+POT[k][0]+'. Good pick.');burst(p.x,p.y-10,POT[k][1],26);ev('sh',6)
+ev('x',rd(p.x),rd(p.y),130,10);txt(p.x,p.y-56,POT[k][0],POT[k][1],1);{const cc=cmOf(p.u);if(cc)cl(cc.w,cc.w==='brit'?'Interesting. '+POT[k][0]+'. Log it.':'Ooh, '+POT[k][0]+'. Good pick.')};burst(p.x,p.y-10,POT[k][1],26);ev('sh',6)
 if(k==='speed')p.sp=20
 else if(k==='bluelock'){p.bl=18;p.cmb=0;p.ds=0;const F=['Emperor','Prodigy','Wild Card','Awakened Genius','Demon Wings'];p.fl=F[Math.floor(Math.random()*5)];p.wc=p.fl==='Wild Card'?(Math.random()<.12?7:1<<Math.floor(Math.random()*3)):0;txt(p.x,p.y-76,'Flow: '+p.fl+(p.wc===7?' jackpot':''),'#6ec1ff',1);if(p.fl==='Awakened Genius')for(const q of alive())if(q!==p&&Math.hypot(q.x-p.x,q.y-p.y)<700){q.bl=Math.max(q.bl||0,12);q.fl='Awakened Genius';q.wc=0;q.ds=0}}
 else if(k==='giant'){p.gi=20;p.arm=Math.max(p.arm,40);p.ar=p.arm}
@@ -650,27 +650,74 @@ else if(a==='glitch'){for(const p of alive())S.out.push({to:p.u,m:{k:'ctl',t:4}}
 else if(a==='pull'){for(const p of alive())if(!p.lair){const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy);if(d<460)kbP(p,dx/(d||1)*480,dy/(d||1)*480)}ev('x',rd(e.x),rd(e.y),460,5);e.at='slam';e.tg=.8;return}
 e.at=0;e.bs=0
 }
-const kl=(t,f)=>{const k=S.kn;if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',t)}
+S.cm=[]
+const cl=(w,t,f)=>{const k=S.cm.find(c=>c.w===w);if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',k.own,t,w)}
+const kl=(t,f)=>cl('kandie',t,f)
+const cmOf=u=>S.cm.find(c=>c.own===u&&c.rc<=0&&!c.rv)
 S.sg=makeSaga({S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl})
-S.kn=R.kan&&pl.get(R.kan)?{x:pl.get(R.kan).x-40,y:pl.get(R.kan).y+10,cd:0,sh:1,sb:3,nv:7,hc:0,dn:0,lo:0,rc:0,rv:0,rt:0,ia:rnd(25,40)}:null
-const QUIPS=['Psst. Look how well I am doing over here.','Just a reminder that I am carrying this team.','You did notice that one was mine, right?','Eyes up, I am the best support in this whole hollow.','I will take a thank you in snacks.','Hey. Hey. Watch this.']
+for(const[w,u]of[['kandie',R.kan],['brit',R.brt]]){const o=u&&pl.get(u);if(o)S.cm.push({w,own:u,x:o.x+(w==='brit'?40:-40),y:o.y+10,cd:0,sh:1,sb:3,nv:7,hc:0,dn:0,rc:0,rv:0,rt:0,pp:0,ru:0,ia:rnd(25,40),os:null})}
+S.dsc={};S.lk0=0
+const CF={
+kandie:{c:'#ff9ac2',heal:'Hey, you are not allowed to fall over. Heal up.',down:'No no no, stay with me!',rt:11,rcd:75,Q:['Psst. Look how well I am doing over here.','Just a reminder that I am carrying this team.','You did notice that one was mine, right?','Eyes up, I am the best support in this whole hollow.','I will take a thank you in snacks.','Hey. Hey. Watch this.']},
+brit:{c:'#7ad7ff',heal:'Administering a stabilizer. You are welcome.',down:'Do not move. Running the numbers.',rt:8,rcd:60,Q:['Statistically, you are doing fine. Statistically.','Logging this fight. For science.','Please stop standing in the red parts.','My sensors say you are being loud.','Note to self: write a paper on this.','Bring a bigger notebook next time.']}
+}
+const near2=(k,r)=>S.en.filter(e=>!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<r+e.r)
+const cmStep=(k,dt)=>{
+const o=pl.get(k.own),F=CF[k.w],br=k.w==='brit'
+k.cd-=dt;k.sh-=dt;k.hc-=dt;k.sb-=dt;k.nv-=dt;k.pp-=dt;k.ru-=dt
+if(o&&o.s==='up'&&!o.lair){
+const fx=o.x+(br?40:-40),fy=o.y+10,dx=fx-k.x,dy=fy-k.y,d=Math.hypot(dx,dy)
+if(d>520){k.x=fx;k.y=fy}else if(d>16){const sp=Math.min(d*4,230)*dt;k.x+=dx/d*sp;k.y+=dy/d*sp}
+const D=o.dmg*.8+S.te*.07
+if(k.sh<=0){let t=null,bd=(br?620:560)**2;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey-(e.k==='boss'?9e4:0);if(dd<bd){bd=dd;t=e}}
+if(t){k.sh=br?.5:k.ru>0?.2:.38;const a=Math.atan2(t.y-k.y,t.x-k.x),m=!br&&t.k==='boss'?3:1;for(let i=0;i<m;i++){const q=a+(i-(m-1)/2)*.16;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*(br?600:520),vy:Math.sin(q)*(br?600:520),life:1.1,pr:br?3:1,hit:new Set(),a:q,own:o.u,d:D*(m>1?.6:br?1.05:1),h:0})}}}
+if(!br){
+if(k.sb<=0&&near2(k,190).length){k.sb=6;for(const e of near2(k,190))hit(e,D*3.2,1,o.u);ev('x',rd(k.x),rd(k.y),190,12);burst(k.x,k.y,F.c,30);ev('sh',5);cl('kandie','Sweet Burst!')}
+if(k.nv<=0&&near2(k,460).length){k.nv=13;for(let i=0;i<14;i++){const q=i/14*TAU;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*400,vy:Math.sin(q)*400,life:1.2,pr:2,hit:new Set(),a:q,own:o.u,d:D*1.6,h:0})}burst(k.x,k.y,F.c,24);cl('kandie','Heart Nova, incoming!')}
+if(k.ru<=0&&k.hc<-8&&near2(k,420).length>3){k.ru=6;k.hc=-1e3;k.hc=0;for(const p of alive())if(Math.hypot(p.x-k.x,p.y-k.y)<420){p.sp=Math.max(p.sp,5)}burst(k.x,k.y,'#ffe27a',24);cl('kandie','Sugar Rush! Go go go!',1)}
+if(o.hp<o.max*.12&&k.pp<=0){k.pp=70;o.inv=Math.max(o.inv,2.5);o.hp=Math.max(o.hp,o.max*.2);ev('x',rd(o.x),rd(o.y),160,12);txt(o.x,o.y-50,'Pinky promise','#ff9ac2',1);cl('kandie','Pinky promise. You are not going down.',1)}
+}else{
+if(k.sb<=0){const c=near2(k,320);if(c.length>=3||c.some(e=>e.k==='boss')){k.sb=14;const tg=c.find(e=>e.k==='boss')||c[0];for(const e of near2({x:tg.x,y:tg.y},260)){e.stun=2.2;e.kx+=(tg.x-e.x)*3;e.ky+=(tg.y-e.y)*3;hit(e,D*1.2,0,o.u)}ev('x',rd(tg.x),rd(tg.y),260,9);cl('brit','Containment field deployed.')}}
+if(k.nv<=0&&(o.hp<o.max*.7||near2(k,400).length>5)){k.nv=20;for(const p of alive())if(Math.hypot(p.x-k.x,p.y-k.y)<420){p.ward=Math.max(p.ward,40+S.te*.25);p.wt=6;txt(p.x,p.y-48,'Shield','#7ad7ff',1)}ev('x',rd(k.x),rd(k.y),200,9);cl('brit','Shield matrix up. Do not waste it.')}
+if(!k.os&&k.ru<=0){const bo=S.en.find(e=>e.k==='boss'&&!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<900);const c=near2(k,520);const tg=bo||(c.length>6?c[0]:null);if(tg){k.ru=30;k.os={x:tg.x,y:tg.y,t:1.3};ev('x',rd(tg.x),rd(tg.y),150,6);cl('brit','Orbital strike marked. Please clear the area.',1)}}
+if(k.os){k.os.t-=dt;if(k.os.t<=0){for(const e of near2(k.os,150))hit(e,D*8,1,o.u);ev('x',rd(k.os.x),rd(k.os.y),150,12);ev('sh',10);burst(k.os.x,k.os.y,'#7ad7ff',40);k.os=null}}
+}
+if(o.hp<o.max*(br?.35:.3)&&k.hc<=0){k.hc=br?12:14;o.hp=Math.min(o.max,o.hp+(br?22:12));txt(o.x,o.y-44,'+'+(br?22:12),F.c);cl(k.w,F.heal,1)}
+k.dn=0;k.rv=0;k.rt=0
+}else if(o&&o.s==='down'){
+if(k.rv){k.rt+=dt;o.bleed=25;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}
+if(k.rt>=F.rt){k.rv=0;k.rt=0;k.rc=F.rcd;o.s='up';o.hp=o.max*(br?.65:.55);o.rv=0;o.inv=3;txt(o.x,o.y-44,'Revived',F.c,1);burst(o.x,o.y-10,F.c,40);ev('x',rd(o.x),rd(o.y),220,12);ev('sh',8)}}
+else if(!k.dn){k.dn=1;cl(k.w,F.down,1)}
+}
+k.rc-=dt;k.ia-=dt
+if(k.ia<=0&&k.cd<=0&&!k.rv){k.ia=rnd(32,58);cl(k.w,F.Q[Math.floor(Math.random()*F.Q.length)])}
+}
+const DUO=[['duo1',70],['duo2',190],['duo3',330]]
+const SOLO=[['kx1','kandie',120],['kx2','kandie',260],['bx1','brit',150],['bx2','brit',290]]
+const cmScenes=dt=>{
+if(S.ts>0||S.boss||S.sg.st.lk||S.st!=='run')return
+if(S.cm.length>1)for(const[id,t]of DUO)if(!S.dsc[id]&&S.time>t){S.dsc[id]=1;ev('cs',id);S.ts=Math.max(S.ts,CSD[id]);if(id==='duo3')S.link=1;return}
+for(const[id,w,t]of SOLO)if(!S.dsc[id]&&S.time>t&&S.cm.some(c=>c.w===w)){S.dsc[id]=1;ev('cs',id);S.ts=Math.max(S.ts,CSD[id]);return}
+}
+const link=dt=>{
+S.lk0-=dt
+if(!S.link||S.lk0>0||S.cm.length<2)return
+const l=alive().filter(p=>p.hp<p.max*.4)
+if(!l.length)return
+S.lk0=45
+for(const p of alive()){p.hp=Math.min(p.max,p.hp+p.max*.3);p.ward=Math.max(p.ward,60+S.te*.4);p.wt=6;txt(p.x,p.y-52,'Sibling Link','#d9b8ff',1);burst(p.x,p.y-10,'#d9b8ff',20)}
+for(const c of S.cm)ev('x',rd(c.x),rd(c.y),220,12)
+cl('kandie','Sibling Link!',1)
+cl('brit','Sibling Link engaged.',1)
+}
 S.step=dt=>{
 if(S.st!=='run')return
 S.time+=dt
 if(S.arT>0){S.arT-=dt;if(S.arT<=0){S.arena=1;ev('ar',1);ev('cs','tes2')}}
 if(!S.intro&&S.time>.8&&!test){S.intro=1;ev('cs','intro');S.ts=Math.max(S.ts,CSD.intro)}
-if(S.kn){const k=S.kn,o=pl.get(R.kan);k.cd-=dt;k.sh-=dt;k.hc-=dt
-if(o&&o.s==='up'&&!o.lair){const dx=o.x-40-k.x,dy=o.y+10-k.y,d=Math.hypot(dx,dy);if(d>520){k.x=o.x-40;k.y=o.y+10}else if(d>16){const sp=Math.min(d*4,230)*dt;k.x+=dx/d*sp;k.y+=dy/d*sp}
-k.sb-=dt;k.nv-=dt
-const D=o.dmg*.8+S.te*.07
-if(k.sh<=0){let t=null,bd=560*560;for(const e of S.en){if(e.al)continue;const ex=e.x-k.x,ey=e.y-k.y,dd=ex*ex+ey*ey-(e.k==='boss'?9e4:0);if(dd<bd){bd=dd;t=e}}if(t){k.sh=.38;const a=Math.atan2(t.y-k.y,t.x-k.x),m=t.k==='boss'?3:1;for(let i=0;i<m;i++){const q=a+(i-(m-1)/2)*.16;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*520,vy:Math.sin(q)*520,life:1.1,pr:1,hit:new Set(),a:q,own:o.u,d:D*(m>1?.6:1),h:0})}}}
-if(k.sb<=0){let c=0;for(const e of S.en)if(!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<190+e.r)c++;if(c){k.sb=6;for(const e of S.en)if(!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<190+e.r)hit(e,D*3.2,1,o.u);ev('x',rd(k.x),rd(k.y),190,12);burst(k.x,k.y,'#ff9ac2',30);ev('sh',5);kl('Sweet Burst!')}}
-if(k.nv<=0&&S.en.some(e=>!e.al&&Math.hypot(e.x-k.x,e.y-k.y)<460)){k.nv=13;for(let i=0;i<14;i++){const q=i/14*TAU;S.pj.push({id:S.id++,k:0,x:k.x,y:k.y,vx:Math.cos(q)*400,vy:Math.sin(q)*400,life:1.2,pr:2,hit:new Set(),a:q,own:o.u,d:D*1.6,h:0})}burst(k.x,k.y,'#ff9ac2',24);kl('Heart Nova, incoming!')}
-if(o.hp<o.max*.3&&k.hc<=0){k.hc=14;o.hp=Math.min(o.max,o.hp+12);txt(o.x,o.y-44,'+12','#ff9ac2');kl('Hey, you are not allowed to fall over. Heal up.',1)}
-k.dn=0;k.rv=0;k.rt=0
-}else if(o&&o.s==='down'){if(k.rv){k.rt+=dt;o.bleed=25;const tx=o.x-16,ty=o.y+4,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);if(d>6){const sp=Math.min(d*8,620)*dt;k.x+=dx/d*Math.min(1,sp/d);k.y+=dy/d*Math.min(1,sp/d)}if(k.rt>=11){k.rv=0;k.rt=0;k.rc=75;o.s='up';o.hp=o.max*.55;o.rv=0;o.inv=3;txt(o.x,o.y-44,'Revived','#ff9ac2',1);burst(o.x,o.y-10,'#ff9ac2',40);ev('x',rd(o.x),rd(o.y),220,12);ev('sh',8)}}else if(!k.dn){k.dn=1;kl('No no no, stay with me!',1)}}
-k.rc-=dt;k.ia-=dt;if(k.ia<=0&&k.cd<=0&&!k.rv){k.ia=rnd(32,58);kl(QUIPS[Math.floor(Math.random()*QUIPS.length)])}}
-S.sg.step(dt)
+for(const k of S.cm)cmStep(k,dt)
+cmScenes(dt)
+link(dt)
 S.te=S.time*pace
 S.orbA+=dt*2.7
 if(S.bm>0)S.bm-=dt
@@ -908,7 +955,7 @@ S.gm=S.gm.filter(g2=>!g2.got)
 S.hp=S.hp.filter(h2=>!h2.got)
 S.pt=S.pt.filter(q=>!q.got)
 S.pk=S.pk.filter(k=>k.life>0&&!k.got)
-if(!alive().length&&!(S.kn&&S.kn.rv))S.st='lose'
+if(!alive().length&&!S.cm.some(c=>c.rv))S.st='lose'
 }
 S.snap=()=>{
 const r=Math.round,r2=x=>Math.round(x*100)/100
@@ -926,7 +973,7 @@ d:S.pd.map(d=>[r(d.x),r(d.y),r(d.r)]),
 c:S.pk.map(k=>[k.id,k.k,r(k.x),r(k.y)]),
 b:Object.entries(S.bars).filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
 z:[...S.bs].filter(a=>a[1]>0).map(a=>[a[0],r(a[1])]),
-pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,sg:S.sg.snap(),kn:S.kn?[r(S.kn.x),r(S.kn.y),S.kn.rv?1:0,r2(S.kn.rt)]:0,bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
+pr:[...PR.values()].filter(nr).map(o=>[o.id,o.k,r(o.x),r(o.y)]),dc:S.dc.map(d=>[d.id,d.x,d.y]),bm:Math.ceil(S.bm),ar:S.arena?1:0,sg:S.sg.snap(),cm:S.cm.map(c=>[c.w==='brit'?1:0,r(c.x),r(c.y),c.rv?1:0,r2(c.rt),c.own]),bo:S.boss&&!S.boss.dead?[S.boss.name,r(S.boss.hp),r(S.boss.mx)]:0,
 v:S.ev}
 S.ev=[]
 return o
