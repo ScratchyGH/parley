@@ -1,6 +1,6 @@
 import{GET,fileUrl,setTZ,setTF}from'./util.js'
 
-export const P={VIEW:1,SEND:2,MANAGE_MESSAGES:4,MANAGE_CHANNELS:8,MANAGE_ROLES:16,CREATE_INVITE:32,KICK:64,BAN:128,MANAGE_SERVER:256,MODERATE:512,CONNECT:1024,MANAGE_VOICE:2048,ATTACH:4096,REACT:8192,MENTION_ALL:16384,ADMIN:32768}
+export const P={VIEW:1,SEND:2,MANAGE_MESSAGES:4,MANAGE_CHANNELS:8,MANAGE_ROLES:16,CREATE_INVITE:32,KICK:64,BAN:128,MANAGE_SERVER:256,MODERATE:512,CONNECT:1024,MANAGE_VOICE:2048,ATTACH:4096,REACT:8192,MENTION_ALL:16384,ADMIN:32768,GIVE_ANY:65536,GIVE_SELF:131072,MANAGE_BOTS:262144}
 export const PERM_INFO=[
 ['VIEW','View channels','See channels and read history'],
 ['SEND','Send messages','Post in text channels'],
@@ -12,6 +12,9 @@ export const PERM_INFO=[
 ['MANAGE_MESSAGES','Manage messages','Delete and pin anyone’s messages'],
 ['MANAGE_CHANNELS','Manage channels','Create, edit and delete channels'],
 ['MANAGE_ROLES','Manage roles','Create roles and assign them below your own'],
+['GIVE_ANY','Give roles to anyone','Give or take roles below their own for any member'],
+['GIVE_SELF','Give roles to themselves','Take or give themselves roles below their own'],
+['MANAGE_BOTS','Add and remove bots','Add bots to the server and remove them'],
 ['KICK','Kick members','Remove members from the server'],
 ['BAN','Ban members','Ban and unban members'],
 ['MODERATE','Moderate members','Time out members and handle reports'],

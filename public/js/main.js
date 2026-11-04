@@ -45,6 +45,7 @@ if(ae){history.replaceState(null,'','/');setTimeout(()=>toast(ae,'err'),600)}
 if(r.name==='appeal'){renderAppeal(root,()=>{history.replaceState(null,'','/');boot()});return}
 try{
 const d=await GET('/api/me')
+if(d.user.is_bot){const{botGate}=await import('./botscreen.js');await botGate(root,d.user);return}
 await start(d.user)
 }catch(e){
 if(e.status===401)showAuth()

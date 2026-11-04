@@ -19,7 +19,7 @@ mount(body)
 const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
 fn(body)
 }
-mount(pg,h('h3',null,'Admin'),nav,body)
+mount(pg,h('h3',null,'Admin'),h('button',{class:'btn sm',type:'button',style:{marginBottom:'10px'},on:{click:async()=>{const{botScreen}=await import('./botscreen.js');const ov=h('div',{style:{position:'fixed',inset:'0',zIndex:'9999',background:'var(--bg,#111)',overflow:'auto'}});document.body.append(ov);botScreen(ov,{name:'Example Bot',description:'This is a test of the bot sign-in screen.',servers:3},{preview:true,done:()=>ov.remove()})}}},'Preview bot sign-in screen'),nav,body)
 draw()
 }
 

@@ -327,7 +327,7 @@ r.is_everyone?null:h('button',{class:'btn',title:'Raise',on:{click:async()=>{
 const i=list.indexOf(r)
 const up=list[i-1]
 if(!up||up.is_everyone)return
-try{await PATCH(`/api/servers/${sid}/roles/${r.id}`,{position:up.position});await PATCH(`/api/servers/${sid}/roles/${up.id}`,{position:r.position});await loadServer(sid);draw()}catch(e){fail(e);await loadServer(sid);draw()}
+try{if(up.position===r.position)await PATCH(`/api/servers/${sid}/roles/${r.id}`,{position:up.position+1});else{await PATCH(`/api/servers/${sid}/roles/${r.id}`,{position:up.position});await PATCH(`/api/servers/${sid}/roles/${up.id}`,{position:r.position})};await loadServer(sid);draw()}catch(e){fail(e);await loadServer(sid);draw()}
 }}},'Move up'),
 h('button',{class:'btn pri',on:{click:async()=>{
 try{await PATCH(`/api/servers/${sid}/roles/${r.id}`,r.is_everyone?{perms}:{name:name.value.trim(),color:col.value,perms});await loadServer(sid);toast('Saved','ok');draw()}catch(e){fail(e)}
