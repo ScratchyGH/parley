@@ -167,3 +167,14 @@ h2{font-size:clamp(28px,4vw,44px);line-height:1.08;margin:0 0 28px}
 .seg button[aria-pressed=true]{background:var(--strong);color:var(--bg)}
 #kids .sub{max-width:62ch;margin:0 0 16px}
 #kids[hidden],#pt[hidden]{display:none}
+
+.hseg{margin:0 0 0 auto}
+.hseg button{padding:7px 14px;font-size:14px}
+.hero.kh{display:none}
+body.kids .hero.kh{display:grid}
+body.kids .hero:not(.kh){display:none}
+body.kids main>section:not(.hero):not(.dev){display:none}
+body.kids .top nav a:not([href="#devices"]){display:none}
+@media(max-width:700px){.hseg{margin:0}.top nav{display:none}}
+@font-face{font-family:"Parli-Bold";src:url(/fonts/parli-bold.woff2?v=2) format("woff2");font-weight:700;font-display:swap}
+h1,h2,h3,.brand,.logo{font-family:"Parli-Bold",Bricolage,Figtree,system-ui,sans-serif}
