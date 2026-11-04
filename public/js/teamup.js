@@ -111,7 +111,7 @@ launch(roster,Object.assign({},rl,cmRules()))
 }}},h('span',{class:'tu-gt'},isHost?(roster.length>1?'Start match':'Start solo'):'Waiting for host'),h('span',{class:'tu-gs'},MODES2.find(m=>m[0]===rl.mode)[1]+' / '+DIFFS[rl.diff][1]+' / '+(rl.len?rl.len+' min':'Infinite')),(art||(art=buildArt(4)),mascot('tu-gi',art.player)))
 box.replaceChildren(h('div',{class:'tu-lobby'},
 h('div',{class:'tu-moon'}),
-h('div',{class:'tu-head'},h('h2',null,'Gourd Rush'),h('b',null,'Teamup'),h('p',null,'Hold the hollow until dawn. Board up doors, throw candy bombs, revive your squad.')),
+h('div',{class:'tu-head'},h('h2',{class:'tu-logo'},h('img',{src:'/teamup-title.svg',alt:'Gourd Rush: Teamup',width:640,height:200})),h('p',null,'Hold the hollow until dawn. Board up doors, throw candy bombs, revive your squad.')),
 h('div',{class:'tu-main'},
 h('div',{class:'tu-left'},
 h('div',{class:'tu-startrow'},start,h('div',{class:'tu-stack'},h('h4',null,'Squad size'),sq,h('button',{class:'tu-pill',type:'button',on:{click:close}},'Leave'),S.me.admin&&isHost&&roster.length===1?h('button',{class:'tu-pill',type:'button',on:{click:()=>{phase='game';launch(roster,null,1)}}},'Blackhole test'):null,S.me.admin&&isHost&&roster.length===1?h('button',{class:'tu-pill',type:'button',on:{click:()=>{phase='game';launch(roster,null,2)}}},'Tesvin test'):null)),
