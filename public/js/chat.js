@@ -354,9 +354,30 @@ const box=h('div',{class:'itch'},fr,h('div',{class:'row itch-bar'},h('button',{t
 document.addEventListener('keydown',esc)
 return box
 }
+function embedSrc(u){
+try{
+const x=new URL(u)
+const hn=x.hostname.replace(/^www\./,'').replace(/^m\./,'')
+const yt=ytId(u)
+if(yt)return['https://www.youtube-nocookie.com/embed/'+yt+'?rel=0','16/9','YouTube']
+let m
+if(hn==='tiktok.com'&&(m=x.pathname.match(/\/video\/(\d+)/)))return['https://www.tiktok.com/embed/v2/'+m[1],'9/16','TikTok']
+if(hn==='instagram.com'&&(m=x.pathname.match(/^\/(?:[\w.]+\/)?(reel|reels|p)\/([\w-]+)/)))return['https://www.instagram.com/'+(m[1]==='reels'?'reel':m[1])+'/'+m[2]+'/embed','9/16','Instagram']
+if(hn==='medal.tv'&&(m=x.pathname.match(/\/(?:games\/[^/]+\/)?clips?\/([\w-]+)/)))return['https://medal.tv/clip/'+m[1]+'/embed','16/9','Medal']
+}catch{}
+return null
+}
+function embedBox(e,url){
+const fr=h('iframe',{src:e[0],class:'itch-fr emb',allow:'fullscreen; autoplay; encrypted-media; picture-in-picture',allowfullscreen:'true',sandbox:'allow-scripts allow-same-origin allow-popups allow-presentation',referrerpolicy:'no-referrer',loading:'lazy',title:e[2]+' video'})
+fr.style.aspectRatio=e[1]
+if(e[1]==='9/16'){fr.style.maxWidth='325px';fr.style.height='578px';fr.style.aspectRatio='auto'}
+return h('div',{class:'itch'},fr,h('div',{class:'itch-bar row'},h('a',{href:url,target:'_blank',rel:'noopener noreferrer nofollow'},'Open on '+e[2])))
+}
 function unfurlSlot(url){
 const slot=h('div',{class:'unf-slot'})
 const go=async()=>{
+const em=embedSrc(url)
+if(em){const btn=h('button',{type:'button',class:'btn sm',on:{click:()=>btn.replaceWith(embedBox(em,url))}},'Watch '+em[2]+' here');slot.append(btn);if(em[2]!=='YouTube')return}
 let d=unfurlCache.get(url)
 if(d===undefined){
 d=null
