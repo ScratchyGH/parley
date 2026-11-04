@@ -9,7 +9,7 @@ export const STATUS="(case when u.status_until is null or u.status_until>cast(st
 const GT=c=>`(select s.${c} from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_${c}`
 export const GTAG=[GT('tag'),GT('tag_emoji'),GT('tag_icon_id')].join(',')
 export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,u.title,u.bubble,u.acard,u.ctitle,u.cmsg,${GTAG},u.created_at`
-const SESSION_MS=30*86400000
+const SESSION_MS=400*86400000
 const NAME=/^[\p{L}\p{M}\p{N}_.-]{3,24}$/u
 
 export function cookie(url,token,maxAge){

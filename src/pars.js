@@ -198,7 +198,7 @@ await c.env.DB.prepare('update par_beats set strikes=strikes+1 where user_id=?')
 return{ok:false}
 }
 const ms=clamp(b.ms,0,0,3600000)
-if(ms<350||t-row.check_sent<350){
+if(ms<900||t-row.check_sent<900||!(Number(b.p)>=5)){
 await c.env.DB.prepare('update par_beats set strikes=strikes+1 where user_id=?').bind(c.user.id).run()
 return{ok:false}
 }

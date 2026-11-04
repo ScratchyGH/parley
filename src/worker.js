@@ -229,6 +229,20 @@ if(!env0.FILES)env.FILES=d1Store(env)
 return env
 }
 
+async function cardFor(env,url){
+const p=url.pathname
+if(p==='/games'||p.startsWith('/games/'))return['Parley Games','Gourd Rush, Siege, Night Shift and more. Play with friends, free, right in your browser.']
+if(p.startsWith('/gift/'))return['You were sent a gift on Parley','Open the link to claim it. Frames, name styles, vanity links and more.']
+if(p==='/weareparley')return['Parley','Your not supposed to be here.']
+const m=p.match(/^\/invite\/([\w-]{2,40})$/)
+if(m){
+try{
+const r=await env.DB.prepare('select s.name,s.description from invites i join servers s on s.id=i.server_id where i.code=? and i.revoked=0 and (i.expires_at is null or i.expires_at>?)').bind(m[1],now()).first()
+if(r)return['Join '+r.name+' on Parley',String(r.description||'You were invited to join a server on Parley. Free, no ads.').slice(0,200)]
+}catch{}
+}
+return null
+}
 export default{
 async fetch(req,env0,ec){
 const env=await wrap(env0)
@@ -236,9 +250,14 @@ const url=new URL(req.url)
 try{
 if(url.pathname==='/ws')return await ws(req,env,url)
 if(!url.pathname.startsWith('/api/')){
-const res=await env.ASSETS.fetch(req)
+let res=await env.ASSETS.fetch(req)
 const h=new Headers(res.headers)
 for(const[k,v]of Object.entries(SEC))h.set(k,v)
+const card=await cardFor(env,url)
+if(card&&(h.get('content-type')||'').includes('text/html')){
+const m={'og:title':card[0],'twitter:title':card[0],'og:description':card[1],'twitter:description':card[1],'description':card[1],'og:url':url.href}
+res=new HTMLRewriter().on('meta',{element(e){const k=e.getAttribute('property')||e.getAttribute('name');if(k in m)e.setAttribute('content',m[k])}}).on('title',{element(e){e.setInnerContent(card[0])}}).transform(res)
+}
 return new Response(res.body,{status:res.status,statusText:res.statusText,headers:h})
 }
 const res=await api(req,env,ec,url)
