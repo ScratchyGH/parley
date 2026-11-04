@@ -31,9 +31,18 @@
 <header class="top">
 <a class="brand" href="#top"><img src="/mascot.webp" width="40" height="40" alt="">Parley</a>
 <nav aria-label="Sections"><a href="#features">Features</a><a href="#vs">Compare</a><a href="#free">Why free</a><a href="#devices">Get the app</a><a href="#faq">Questions</a></nav>
+<div class="seg hseg" role="group" aria-label="Which Parley"><button data-seg="p" type="button" aria-pressed="true">Parley</button><button data-seg="k" type="button" aria-pressed="false">Parley Kids</button></div>
 <a id="web" class="pill ghost" href="https://parley.heavengtwashere.workers.dev/?web=1">Open in browser</a>
 </header>
 <main id="top">
+<section class="hero kh">
+<div class="hl">
+<h1>A safer first chat for kids 10 and under.</h1>
+<p class="lead">Parley Kids only opens with a code from a parent. Friends need both parents to say yes, and every message is checked before it sends.</p>
+<div class="cta"><a class="pill solid" href="#devices">Get Parley Kids</a><a class="pill ghost" href="/connect/">Open PK Connect</a></div>
+<ul class="facts"><li>Parent activation code</li><li>Parent approved friends</li><li>Messages checked first</li><li>No ads, no tracking</li></ul>
+</div>
+</section>
 <section class="hero">
 <div class="hl">
 <h1>One free place for your friends to talk.</h1>
@@ -130,14 +139,15 @@
 <section id="devices" class="dev">
 <h2>Get Parley on your device</h2>
 <p class="sub">Every app opens the same Parley and stays current. Pick the one that fits.</p>
-<div class="seg" role="group" aria-label="Which Parley"><button id="seg-p" type="button" aria-pressed="true">Parley</button><button id="seg-k" type="button" aria-pressed="false">Parley Kids, for parents</button></div>
+<div class="seg" role="group" aria-label="Which Parley"><button data-seg="p" type="button" aria-pressed="true">Parley</button><button data-seg="k" type="button" aria-pressed="false">Parley Kids, for parents</button></div>
 <div id="kids" hidden>
 <p class="sub">Parley Kids is a separate app for children 10 and under. A parent sets it up first in PK Connect, then the child enters a code from the parent. Without that code the app does not open.</p>
 <div class="tiles">
 <article data-k="win"><h3>Windows</h3><p>Windows 10 and 11. Windows may warn that the app is unsigned.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/ParleyKids-Setup.exe">Installer (.exe)</a></div></article>
+<article data-k="linux"><h3>Linux</h3><p>Debian, Ubuntu and most other distributions. Make the AppImage executable, then run it.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/ParleyKids.AppImage">AppImage</a><a href="https://github.com/ScratchyGH/parley/releases/download/kids/ParleyKids.deb">.deb</a></div></article>
 <article data-k="android"><h3>Android</h3><p>Sideload the package on your child's phone or tablet.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/ParleyKids.apk">APK</a></div></article>
 <article data-k="ios"><h3>iPhone and iPad</h3><p>Open this page in Safari on the child's device and install the profile, or open Parley Kids and use Add to Home Screen.</p><div class="dls"><a href="/api/get/parley-kids.mobileconfig">Profile</a><a href="/kids/">Open Parley Kids</a></div></article>
-<article data-k="pc"><h3>PK Connect for parents</h3><p>Add your child's device, make activation codes and approve accounts. Install it on your own computer or phone.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/PKConnect-Setup.exe">Windows .exe</a><a href="https://github.com/ScratchyGH/parley/releases/download/kids/PKConnect.apk">Android .apk</a><a href="/api/get/parley-connect.mobileconfig">iPhone profile</a><a href="/connect/">Open in browser</a></div></article>
+<article data-k="pc"><h3>PK Connect for parents</h3><p>Add your child's device, make activation codes and approve accounts. Install it on your own computer or phone.</p><div class="dls"><a href="https://github.com/ScratchyGH/parley/releases/download/kids/PKConnect-Setup.exe">Windows .exe</a><a href="https://github.com/ScratchyGH/parley/releases/download/kids/PKConnect.AppImage">Linux AppImage</a><a href="https://github.com/ScratchyGH/parley/releases/download/kids/PKConnect.deb">Linux .deb</a><a href="https://github.com/ScratchyGH/parley/releases/download/kids/PKConnect.apk">Android .apk</a><a href="/api/get/parley-connect.mobileconfig">iPhone profile</a><a href="/connect/">Open in browser</a></div></article>
 </div>
 </div>
 <div id="steps" class="steps" hidden></div>
