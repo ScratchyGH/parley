@@ -1537,3 +1537,4 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 @keyframes gxmin{from{opacity:0;transform:scale(.3)}}
 .gcard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:320px}
 .gc-sw{transform:scale(.8);transform-origin:left top}
+.wap{position:fixed;inset:0;z-index:99999;background:#000}.wap canvas{width:100%;height:100%;display:block}
