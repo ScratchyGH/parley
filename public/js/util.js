@@ -215,6 +215,12 @@ el.style.backgroundSize='cover'
 el.style.backgroundPosition='center'
 return el
 }
+export function cTitle(u){
+try{const o=JSON.parse(u.ctitle);const e=h('span',{class:'ttl ctl'},o.t);e.style.color=o.c;e.style.borderColor=o.c;return e}catch{return null}
+}
+export function cMsg(u,el){
+try{const o=JSON.parse(u.cmsg);el.classList.add('cm_'+o.s);if(o.h)el.style.setProperty('--hl',o.h)}catch{}
+}
 export function heroBox(accent,bannerId,cls){
 const el=h('div',{class:cls||'hero'})
 const bg=accentBg(accent)

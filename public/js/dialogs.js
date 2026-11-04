@@ -236,7 +236,7 @@ try{data=await GET('/api/users/'+id)}catch(e){fail(e);return}
 const u=cacheUser(data.user)
 const rel=data.relationship
 const own=u.id===S.me.id
-const el=h('div',{class:'pcard'})
+const el=h('div',{class:'pcard'+(u.acard?' '+u.acard:'')})
 const act=h('div',{class:'row',style:{flexWrap:'wrap',marginTop:'10px'}})
 const refresh=async()=>{await loadFriends();closeMenu();profileCard({id,x,y,sid})}
 const btn=(label,fn,cls='')=>h('button',{class:'btn sm '+cls,on:{click:async()=>{try{await fn()}catch(e){fail(e)}}}},label)

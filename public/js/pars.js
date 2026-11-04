@@ -47,8 +47,8 @@ setTimeout(checkGifts,3000)
 on('pars.gift',()=>checkGifts())
 }
 export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('circle',{cx:'12',cy:'12',r:'11',fill:'#d9870b'}),sv('circle',{cx:'12',cy:'12',r:'10',fill:'#f5b82e'}),sv('circle',{cx:'12',cy:'12',r:'7.6',fill:'#fcd462'}),sv('circle',{cx:'12',cy:'12',r:'7.6',fill:'none',stroke:'#d9870b','stroke-width':'.8'}),sv('path',{d:'M9.6 16.6V7.4h3a2.7 2.7 0 0 1 0 5.4h-3',fill:'none',stroke:'#7c3f06','stroke-width':'2.1','stroke-linecap':'round','stroke-linejoin':'round'}))
-const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['frame','Avatar frames'],['effect','Avatar effects'],['nameplate','Nameplates'],['namefx','Name styles'],['badge','Badges'],['title','Titles'],['bubble','Message styles']]
-const EQ=['nameplate','frame','effect','namefx','badge','title','bubble']
+const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['frame','Avatar frames'],['effect','Avatar effects'],['nameplate','Nameplates'],['namefx','Name styles'],['badge','Badges'],['title','Titles'],['bubble','Message styles'],['acard','Avatar card styles'],['unlock','Custom items']]
+const EQ=['nameplate','frame','effect','namefx','badge','title','bubble','acard']
 const COS=new Set(EQ)
 const bundleData=it=>{try{return JSON.parse(it.data||'{}')}catch{return{}}}
 const variantsOf=it=>{const d=bundleData(it);return d.variants||{main:{label:'Bundle',items:d.items||[],vanity_days:d.vanity_days||0,price:it.price,gift_price:it.price,server_price:0}}}
@@ -64,6 +64,8 @@ if(it.kind==='namefx')return h('div',{class:'par-np'},h('b',null,h('span',{class
 if(it.kind==='badge')return h('div',{class:'par-np'},h('b',null,S.me.display_name,h('span',{class:'bdg-i '+it.id})))
 if(it.kind==='title')return h('div',{class:'par-np'},h('b',null,S.me.display_name,h('span',{class:'ttl '+it.id})))
 if(it.kind==='bubble')return h('div',{class:'par-msg '+it.id},h('b',null,S.me.display_name),' Hey, this is how your messages will look.')
+if(it.kind==='acard')return h('div',{class:'pcard par-card '+it.id},h('div',{class:'hero'}),h('div',{class:'bd'},avatar({...S.me,frame:null,effect:null},'lg'),h('b',null,S.me.display_name)))
+if(it.kind==='unlock')return h('div',{class:'par-big'},h('b',null,it.id==='ctitle'?'Your title':'Your style'))
 if(it.kind==='vanity')return h('div',{class:'par-big'},h('span',{class:'par-bi'},icon('link')),h('b',null,'/your-name'))
 if(it.kind==='boost')return h('div',{class:'par-big'},h('span',{class:'par-bi'},icon('upload')),h('b',null,'+'+it.mb+' MB'))
 return null
@@ -108,7 +110,7 @@ function giftBtn(d,it,vk){
 return h('button',{class:'gift-b',title:'Send as a gift',on:{click:()=>giftDialog(d,it,vk)}},icon('gift'))
 }
 function card(d,it){
-const have=COS.has(it.kind)&&owns(d,it.id)
+const have=(COS.has(it.kind)||it.kind==='unlock')&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 const cant=d.balance<it.price
 return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
@@ -284,16 +286,38 @@ const gr=h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/admin/
 return h('section',{class:'lab'},h('h3',null,'Pars'),h('p',{class:'hint'},d.total_supply+' Pars held by '+d.holders+' people.'),cfg.map(c=>c.row),save,h('h4',null,'Prices'),items,h('h4',null,'Bonus Pars'),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},who,amt,why,gr))
 }
 export function loadoutBox(){
-const KS=[['frame','Avatar frame'],['effect','Avatar effect'],['nameplate','Nameplate'],['namefx','Name style'],['badge','Badge'],['title','Title'],['bubble','Message style']]
+const KS=[['frame','Avatar frame'],['effect','Avatar effect'],['nameplate','Nameplate'],['namefx','Name style'],['badge','Badge'],['title','Title'],['bubble','Message style'],['acard','Avatar card style']]
 const box=h('div',{class:'lo'},h('div',{class:'hint'},'Loading'))
 const key='parley.looks'
 const looks=()=>{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}}
 const saveLooks=a=>{try{localStorage.setItem(key,JSON.stringify(a.slice(0,8)))}catch{}}
 let d=null
 async function load(){
-try{d=await GET('/api/pars');for(const[k]of KS)S.me[k]=d[k];draw()}catch(e){mount(box,h('div',{class:'hint'},e.message))}
+try{d=await GET('/api/pars');for(const[k]of KS)S.me[k]=d[k];S.me.ctitle=d.ctitle;S.me.cmsg=d.cmsg;draw()}catch(e){mount(box,h('div',{class:'hint'},e.message))}
 }
 const mine=k=>d.items.filter(i=>i.kind===k&&owns(d,i.id))
+const parse=v=>{try{return JSON.parse(v)||{}}catch{return{}}}
+const CMS=[['empty','Empty'],['dotted','Dotted'],['lined','Lined'],['adotted','Animated dotted'],['d3dotted','3D dotted'],['dashed','Dashed'],['double','Double'],['wave','Wave'],['glow','Glow'],['stripe','Striped']]
+async function saveCustom(b){
+try{await POST('/api/pars/custom',b);await load();toast('Saved','ok')}catch(e){fail(e)}
+}
+function custom(){
+const out=[]
+if(owns(d,'ctitle')){
+const o=parse(d.ctitle)
+const t=h('input',{class:'inp',maxLength:16,value:o.t||'',placeholder:'Your title','aria-label':'Custom title'})
+const c=h('input',{type:'color',value:o.c||'#8b949e','aria-label':'Title colour',style:{width:'48px',height:'34px'}})
+out.push(h('div',{class:'row',style:{gap:'8px',marginTop:'12px',flexWrap:'wrap'}},h('b',null,'Custom title'),t,c,h('button',{class:'btn sm',on:{click:()=>saveCustom({kind:'title',t:t.value.trim(),c:c.value})}},'Save'),h('button',{class:'btn sm',on:{click:()=>saveCustom({kind:'title'})}},'Clear')))
+}
+if(owns(d,'cmsg')){
+const o=parse(d.cmsg)
+const s=h('select',{class:'sel',style:{width:'auto'},'aria-label':'Message style'},CMS.map(([v,l])=>h('option',{value:v,selected:o.s===v},l)))
+const c=h('input',{type:'color',value:o.h||'#facc15','aria-label':'Highlight colour',style:{width:'48px',height:'34px'}})
+const on_=h('input',{type:'checkbox',checked:!!o.h,'aria-label':'Use highlight'})
+out.push(h('div',{class:'row',style:{gap:'8px',marginTop:'12px',flexWrap:'wrap'}},h('b',null,'Custom message style'),s,c,h('label',{class:'row',style:{gap:'4px'}},on_,'Highlight'),h('button',{class:'btn sm',on:{click:()=>saveCustom({kind:'msg',s:s.value,h:on_.checked?c.value:''})}},'Save'),h('button',{class:'btn sm',on:{click:()=>saveCustom({kind:'msg'})}},'Clear')))
+}
+return h('div',null,...out)
+}
 async function set(k,v){
 try{await POST('/api/pars/equip',{kind:k,item:v||null});S.me[k]=v||null;d[k]=v||null;draw()}catch(e){fail(e)}
 }
@@ -312,7 +336,7 @@ return h('label',{class:'lo-f'},h('span',null,l+(list.length?'':' (none owned)')
 const ls=looks()
 const nameIn=h('input',{class:'inp',placeholder:'Name this look',maxlength:24,'aria-label':'Look name'})
 const saved=h('div',{class:'lo-saved'},ls.length?ls.map((l,i)=>h('span',{class:'lo-chip'},h('button',{class:'btn sm',on:{click:()=>apply(l)}},l.name),h('button',{class:'btn sm',title:'Delete look','aria-label':'Delete '+l.name,on:{click:()=>{const a=looks();a.splice(i,1);saveLooks(a);draw()}}},'×'))):h('span',{class:'hint',style:{margin:0}},'No saved looks yet.'))
-mount(box,h('div',{class:'lo-grid'},prev,h('div',{class:'lo-sels'},...sels)),h('div',{class:'row',style:{gap:'8px',marginTop:'12px',flexWrap:'wrap'}},nameIn,h('button',{class:'btn',on:{click:()=>{const n=nameIn.value.trim();if(!n)return;const a=looks().filter(x=>x.name!==n);a.unshift({name:n,...cur});saveLooks(a);draw();toast('Look saved on this device')}}},'Save this look')),saved,h('div',{class:'hint'},'Mix any items you own. Get more in the Pars shop.'))
+mount(box,h('div',{class:'lo-grid'},prev,h('div',{class:'lo-sels'},...sels)),custom(),h('div',{class:'row',style:{gap:'8px',marginTop:'12px',flexWrap:'wrap'}},nameIn,h('button',{class:'btn',on:{click:()=>{const n=nameIn.value.trim();if(!n)return;const a=looks().filter(x=>x.name!==n);a.unshift({name:n,...cur});saveLooks(a);draw();toast('Look saved on this device')}}},'Save this look')),saved,h('div',{class:'hint'},'Mix any items you own. Get more in the Pars shop.'))
 }
 load()
 return box

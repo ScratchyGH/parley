@@ -1,7 +1,7 @@
 import{scheduleDialog}from'./schedule.js'
 import{recorderButton}from'./voiceclip.js'
 import{translateMsg,catchUp,remind,remindDialog,parseDelay}from'./tools.js'
-import{h,mount,clear,icon,gtag,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey,tzo}from'./util.js'
+import{h,mount,clear,icon,gtag,cTitle,cMsg,GET,POST,PATCH,PUT,DEL,fmtSize,fmtDate,fmtStamp,avatar,toast,fail,menu,menuAt,confirmBox,copyText,debounce,rid,dayKey,tzo}from'./util.js'
 import{render,plain}from'./md.js'
 import{emojiPicker}from'./emoji.js'
 import{S,P,on,emit,cacheUser,user,isDm,chanInfo,conv,convTitle,roomPerms,setting,hubOf,loadMembers,can}from'./state.js'
@@ -279,6 +279,7 @@ const el=h('div',{class:'m'+(m.author.bubble?' '+m.author.bubble:'')+(cont?' con
 contextmenu:e=>{if(e.target.closest('a,img,video,audio'))return;e.preventDefault();msgMenu(m,e.clientX,e.clientY)},
 click:e=>{if(matchMedia('(max-width:820px)').matches&&!e.target.closest('a,button,img,video,audio,.sp'))el.classList.toggle('tap')}
 }})
+cMsg(m.author,el)
 const av=cont?h('div',{class:'av'}):avatar(m.author)
 if(!cont){av.style.cursor='pointer';av.addEventListener('click',e=>openProfile(e,m.author))}
 const main=h('div',{style:{minWidth:'0'}})
@@ -290,7 +291,7 @@ if(!cont){
 const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click:e=>openProfile(e,m.author)}},m.author.namefx?h('span',{class:'nf '+m.author.namefx},m.author.display_name):m.author.display_name)
 const un=tw('show_username')&&m.author.username?h('span',{class:'hint tw-un'},'@'+m.author.username):null
 const bdg=m.author.badge?h('span',{class:'bdg-i '+m.author.badge,title:'Badge'}):null
-const ttl=m.author.title?h('span',{class:'ttl '+m.author.title}):null
+const ttl=cTitle(m.author)||(m.author.title?h('span',{class:'ttl '+m.author.title}):null)
 const inNp=!!m.author.nameplate
 if(inNp){if(bdg)nm.append(bdg);if(ttl)nm.append(ttl)}
 main.append(h('div',{class:'mh'},nm,un,inNp?null:bdg,inNp?null:ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString(undefined,tzo()),'data-t':m.created_at},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
