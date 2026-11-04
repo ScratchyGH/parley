@@ -195,7 +195,10 @@ g.fillStyle='#3b2412';g.strokeStyle='#120a04';g.lineWidth=2;g.fillRect(29,28,6,3
 g.fillStyle='#ff8a1a';g.beginPath();g.moveTo(32,6);g.quadraticCurveTo(44,18,38,28);g.lineTo(26,28);g.quadraticCurveTo(20,18,32,6);g.fill()
 g.fillStyle='#ffe27a';g.beginPath();g.moveTo(32,14);g.quadraticCurveTo(38,22,35,28);g.lineTo(29,28);g.quadraticCurveTo(26,22,32,14);g.fill()
 })
-return{crawler,screamer,brute,imp,bomb,fire,rage,pack,torch}
+const crate=mk(32,32,(g,w,h)=>{g.fillStyle='#5a3a1c';g.fillRect(2,4,28,26);g.strokeStyle='#2a1808';g.lineWidth=2;g.strokeRect(3,5,26,24);g.beginPath();g.moveTo(3,5);g.lineTo(29,29);g.moveTo(29,5);g.lineTo(3,29);g.stroke();g.fillStyle='#8a5a2c';g.fillRect(3,5,26,3)})
+const barrel=mk(32,32,(g,w,h)=>{g.fillStyle='#7a1c14';g.beginPath();g.ellipse(16,16,11,14,0,0,6.283);g.fill();g.strokeStyle='#220806';g.lineWidth=2;g.stroke();g.fillStyle='#d9a21c';g.fillRect(6,9,20,3);g.fillRect(6,20,20,3);g.fillStyle='#ffd24a';g.fillRect(14,13,4,6)})
+const gourd=mk(32,32,(g,w,h)=>{g.fillStyle='#e0731a';g.beginPath();g.ellipse(16,18,13,11,0,0,6.283);g.fill();g.strokeStyle='#5a2406';g.lineWidth=2;g.stroke();g.beginPath();g.moveTo(16,8);g.lineTo(16,28);g.moveTo(10,9);g.lineTo(8,27);g.moveTo(22,9);g.lineTo(24,27);g.stroke();g.fillStyle='#3a6a1c';g.fillRect(14,3,4,6)})
+return{crawler,screamer,brute,imp,bomb,fire,rage,pack,torch,crate,barrel,gourd}
 }
 function genMap(seed){
 const m=new Array(MAPW*MAPH).fill(1)
@@ -265,6 +268,12 @@ if(hash(x,y,77)<.045&&(cell(x+1,y)||cell(x-1,y)||cell(x,y+1)||cell(x,y-1)))torch
 const TYPES={crawler:{hp:22,spd:1.5,dmg:6,r:.3,sz:.62,pts:4,sp:'crawler'},screamer:{hp:15,spd:2.5,dmg:5,r:.26,sz:.7,pts:5,sp:'screamer',fly:1},brute:{hp:70,spd:1.0,dmg:15,r:.42,sz:1.05,pts:12,sp:'brute'},imp:{hp:30,spd:1.3,dmg:8,r:.3,sz:.82,pts:6,sp:'imp'},bomb:{hp:12,spd:3.3,dmg:0,r:.3,sz:.7,pts:5,sp:'bomb'}}
 const counts=fp?{crawler:fp.g,screamer:fp.p,brute:fp.j,imp:Math.round(fp.p/2),bomb:Math.round(fp.g/3)}:{crawler:3+night*2,screamer:1+night,brute:Math.floor(night/2),imp:Math.floor(night*1.2),bomb:Math.ceil(night/2)+1}
 let fb=[],gibs=[],rageT=0,streak=0,streakT=0,ann='',annT=0,blackT=0,nextBlack=16,shake=0,beatT=0,ac=null
+const slow=document.documentElement.classList.contains('perf')||document.documentElement.classList.contains('rm')
+const PR={crate:{r:.3,m:1.4,hp:30,sz:.5,img:'crate'},barrel:{r:.28,m:1,hp:20,sz:.5,img:'barrel',boom:1},gourd:{r:.24,m:.6,hp:12,sz:.42,img:'gourd'}}
+const props=[]
+const PCAP=slow?6:14
+for(let i=0;i<PCAP;i++){const c=free[Math.floor(hash(i,3,night)*free.length)];if(!c||Math.hypot(c[0]+.5-posX,c[1]+.5-posY)<3)continue;const k=['crate','barrel','gourd'][i%3];props.push({k,x:c[0]+.5,y:c[1]+.5,vx:0,vy:0,hp:PR[k].hp,d:PR[k]})}
+let pvx=0,pvy=0
 let enemies=[],pickups=[],wave=1,maxWave=fp?.inf?999:5,hp=100,t=0,over=false,shotCd=0,kills=0,flash=0,hurt=0,bob=0,recoil=0,bannerT=0,banner='',waitNext=0,raf=0,lastT=performance.now(),locked=false,fireHeld=false
 const keys={}
 function spawnWave(){
@@ -307,8 +316,14 @@ else if(k==='kill'){tn(160,.2,.14,'square',.4)}
 const announce=(m,sec)=>{ann=m;annT=sec||1.6}
 const gib=(x,y,n,col,z0)=>{for(let i=0;i<n&&gibs.length<220;i++){const a=Math.random()*6.283,v=.6+Math.random()*2.6;gibs.push({x,y,z:z0??.45,vx:Math.cos(a)*v,vy:Math.sin(a)*v,vz:1+Math.random()*3,l:1.4+Math.random()*1.4,col:col[Math.floor(Math.random()*col.length)]})}}
 const BLOOD=[px(150,10,14),px(190,20,20),px(110,6,10),px(220,60,40)],FIRE=[px(255,230,120),px(255,150,30),px(255,90,10)],BONE=[px(235,225,195),px(200,190,160)]
+const blast=(x,y,rad,pw,src)=>{
+for(const e of enemies){if(e===src)continue;const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d<rad&&d>.001){const k=(1-d/rad)*pw*.4/(e.d.sp==='brute'?2.2:1);e.kx=(e.kx||0)+dx/d*k;e.ky=(e.ky||0)+dy/d*k}}
+for(const p of props){const dx=p.x-x,dy=p.y-y,d=Math.hypot(dx,dy);if(d<rad&&d>.001){const k=(1-d/rad)*pw*1.6/p.d.m;p.vx+=dx/d*k;p.vy+=dy/d*k;p.hp-=(1-d/rad)*30}}
+const dx=posX-x,dy=posY-y,d=Math.hypot(dx,dy);if(d<rad&&d>.001){pvx+=dx/d*(1-d/rad)*pw*.9;pvy+=dy/d*(1-d/rad)*pw*.9}
+}
 const explode=(x,y,src)=>{
 sfx('boom');shake=Math.max(shake,1);flash=.25
+blast(x,y,2.6,9,src)
 gib(x,y,40,FIRE,.4);gib(x,y,16,BLOOD,.4)
 const dp=Math.hypot(posX-x,posY-y)
 if(dp<1.9){hp-=Math.round(26*(1-dp/1.9)+4);hurt=.9;shake=1.4}
@@ -403,6 +418,7 @@ if(d<.1||d>bd)continue
 const perp=Math.abs(ex*dy-ey*dx)
 if(perp<e.d.r*1.1){best=e;bd=d}
 }
+if(!best){let pb=null,pd=wd;for(const q of props){const ex=q.x-posX,ey=q.y-posY,d=ex*dx+ey*dy;if(d<.1||d>pd)continue;if(Math.abs(ex*dy-ey*dx)<q.d.r){pb=q;pd=d}}if(pb){pb.vx+=dx*.7/pb.d.m;pb.vy+=dy*.7/pb.d.m;pb.hp-=4}}
 if(best){best.hp-=(14+Math.random()*6)*(bd<3?1.2:bd<6?1:.6)*(rageT>0?2:1);best.fl=.12;best.kx=(best.kx||0)+dx*.9;best.ky=(best.ky||0)+dy*.9;if(Math.random()<.5)gib(best.x,best.y,1,BLOOD,.5)}
 }
 }
@@ -484,6 +500,7 @@ pix[y*SW+x]=(255<<24)|((b>255?255:b|0)<<16)|((g>255?255:g|0)<<8)|(r>255?255:r|0)
 }
 const sprites=[]
 for(const o of torches)sprites.push({x:o.x,y:o.y,img:A.torch,sz:.5,z:.1,glow:1,ph:o.ph})
+for(const p of props)sprites.push({x:p.x,y:p.y,img:A[p.d.img],sz:p.d.sz,z:.26,glow:0,ph:0})
 for(const o of pickups)sprites.push({x:o.x,y:o.y,img:o.k==='rage'?A.rage:A.pack,sz:.4,z:.14+Math.sin(t*3+o.x)*.03,glow:o.k==='rage'?1:0,ph:o.x})
 for(const f of fb)sprites.push({x:f.x,y:f.y,img:A.fire,sz:.34,z:.5,glow:1,ph:f.x})
 for(const g of gibs)sprites.push({x:g.x,y:g.y,col:g.col,sz:.07,z:g.z,glow:0,ph:0})
@@ -688,6 +705,25 @@ if(!collide(nx,posY,.22))posX=nx
 if(!collide(posX,ny,.22))posY=ny
 bob+=dt*9
 }
+if(pvx||pvy){const nx=posX+pvx*dt,ny=posY+pvy*dt;if(!collide(nx,posY,.22))posX=nx;else pvx*=-.3;if(!collide(posX,ny,.22))posY=ny;else pvy*=-.3;const f=Math.pow(.04,dt);pvx*=f;pvy*=f;if(Math.abs(pvx)<.02)pvx=0;if(Math.abs(pvy)<.02)pvy=0}
+for(let i=props.length-1;i>=0;i--){
+const p=props[i]
+if(p.hp<=0){gib(p.x,p.y,p.d.boom?30:10,p.d.boom?FIRE:BONE,.3);if(p.d.boom){sfx('boom');shake=Math.max(shake,.8);flash=.15;blast(p.x,p.y,2.2,7,null);const dd=Math.hypot(posX-p.x,posY-p.y);if(dd<1.7){hp-=Math.round(14*(1-dd/1.7)+2);hurt=.7}for(const e of enemies)if(Math.hypot(e.x-p.x,e.y-p.y)<2){e.hp-=34;e.fl=.2}}else if(Math.random()<.35)pickups.push({x:p.x,y:p.y,k:'med'});props.splice(i,1);continue}
+const dxp=p.x-posX,dyp=p.y-posY,dp=Math.hypot(dxp,dyp)
+if(dp<p.d.r+.25&&dp>.001){const o=(p.d.r+.25-dp);p.vx+=dxp/dp*o*14/p.d.m;p.vy+=dyp/dp*o*14/p.d.m}
+if(p.vx||p.vy){
+const nx=p.x+p.vx*dt,ny=p.y+p.vy*dt
+if(!collide(nx,p.y,p.d.r)){p.x=nx}else{p.vx*=-.5;if(Math.abs(p.vx)>2)p.hp-=Math.abs(p.vx)}
+if(!collide(p.x,ny,p.d.r)){p.y=ny}else{p.vy*=-.5;if(Math.abs(p.vy)>2)p.hp-=Math.abs(p.vy)}
+const f=Math.pow(.06,dt);p.vx*=f;p.vy*=f
+if(Math.abs(p.vx)<.03)p.vx=0
+if(Math.abs(p.vy)<.03)p.vy=0
+const sp=Math.hypot(p.vx,p.vy)
+if(sp>1.5)for(const e of enemies){const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy);if(d<p.d.r+e.d.r&&d>.001){e.hp-=sp*2.2*p.d.m;e.fl=.12;e.kx=(e.kx||0)+p.vx*.3;e.ky=(e.ky||0)+p.vy*.3;p.vx*=.6;p.vy*=.6}}
+}
+for(let j=i-1;j>=0;j--){const q=props[j];const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),mn=p.d.r+q.d.r;if(d<mn&&d>.001){const o=(mn-d)*.5,nx=dx/d,ny=dy/d;if(!collide(q.x+nx*o,q.y+ny*o,q.d.r)){q.x+=nx*o;q.y+=ny*o}if(!collide(p.x-nx*o,p.y-ny*o,p.d.r)){p.x-=nx*o;p.y-=ny*o}const rv=(p.vx-q.vx)*nx+(p.vy-q.vy)*ny;if(rv>0){const im=rv*.7;q.vx+=nx*im*p.d.m/q.d.m;q.vy+=ny*im*p.d.m/q.d.m;p.vx-=nx*im*q.d.m/p.d.m;p.vy-=ny*im*q.d.m/p.d.m}}}
+}
+if(enemies.length>1)for(let i=0;i<enemies.length;i++){const a=enemies[i];if(a.d.fly)continue;for(let j=i+1;j<enemies.length;j++){const b=enemies[j];if(b.d.fly)continue;const dx=b.x-a.x,dy=b.y-a.y,mn=a.d.r+b.d.r;if(dx>mn||dx<-mn||dy>mn||dy<-mn)continue;const d=Math.hypot(dx,dy);if(d<mn&&d>.001){const o=(mn-d)*.5,nx=dx/d*o,ny=dy/d*o;if(!collide(b.x+nx,b.y,b.d.r*.6))b.x+=nx;if(!collide(b.x,b.y+ny,b.d.r*.6))b.y+=ny;if(!collide(a.x-nx,a.y,a.d.r*.6))a.x-=nx;if(!collide(a.x,a.y-ny,a.d.r*.6))a.y-=ny}}}
 if(fireHeld||keys[' '])shoot()
 for(let i=enemies.length-1;i>=0;i--){
 const e=enemies[i]
