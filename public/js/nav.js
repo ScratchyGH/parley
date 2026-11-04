@@ -44,6 +44,7 @@ return{name:'bots',view:'project',slug:p[1],tab:p[2]||''}
 }
 if(p[0]==='settings')return{name:'settings',page:p[1]||'account'}
 if(p[0]==='invite')return{name:'invite',code:p[1]}
+if(p[0]==='weareparley')return{name:'wap'}
 if(p[0]==='gift')return{name:'gift',code:p[1]}
 if(p[0]==='appeal')return{name:'appeal'}
 return{name:'home',page:'friends'}

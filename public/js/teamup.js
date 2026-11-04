@@ -1,4 +1,4 @@
-import{h,toast,POST,avatar}from'./util.js'
+import{h,toast,POST,avatar,confirmBox}from'./util.js'
 import{S,loadFriends}from'./state.js'
 import{gameBar}from'./gamebar.js'
 import{connectParty}from'./tunet.js'
@@ -46,6 +46,12 @@ setTimeout(()=>el.remove(),30000)
 }
 export async function openTeamup(join){
 if(active){toast('You are already in a party');return}
+let seen=false
+try{seen=!!localStorage.getItem('parley:tuep')}catch{}
+if(!seen){
+if(!await confirmBox('Photosensitivity warning','This game has flashing lights and rapid visual effects that may trigger seizures in people with photosensitive epilepsy. Continue only if you are comfortable.','I understand'))return
+try{localStorage.setItem('parley:tuep','1')}catch{}
+}
 css()
 const code=join||mkCode()
 const myName=S.me.display_name||S.me.username

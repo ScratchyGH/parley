@@ -110,6 +110,11 @@ closeDrawers()
 if(r.name!=='pars'&&r.name!=='hollow'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
 const closeOv=()=>go(lastPath||'/')
 const needBack=async()=>{if(lastPath===null){lastPath='/';await renderHome('overview')}}
+if(r.name==='wap'){
+const x=await import('/js/wap.js')
+x.weAreParley()
+return
+}
 if(r.name==='gift'){
 history.replaceState(null,'','/')
 S.nav={kind:'home',page:'overview'}

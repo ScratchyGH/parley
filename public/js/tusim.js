@@ -770,7 +770,7 @@ if(S.bi<bt.length&&S.time>=bt[S.bi]&&!S.boss&&sf.length&&!S.sg.st.lk&&!test){
 const sp=spawnPos()
 if(sp){
 const bh=dur?Math.max(.35,Math.min(1,dur/360)):1+S.bi*.25
-const tes=0
+const tes=Math.random()<.05?1:0
 S.tsd=1
 spawnE('boss',sp[0],sp[1],1+S.bi*.5,(1+.6*(n-1))*bh*(tes?1.4:1))
 const nm=BN[TM?1:0]

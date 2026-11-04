@@ -22,9 +22,17 @@ return{w,k:n.k,c:n.c,s:n.s,m:n.m,v:true}
 function showCheck(ck){
 if(chk||!ck)return
 const shown=performance.now()
+let path=[]
+const pm=e=>{if(e.isTrusted)path.push([e.clientX,e.clientY,performance.now()]);if(path.length>40)path.shift()}
+addEventListener('pointermove',pm,{passive:true})
 const b=h('button',{class:'btn pri',on:{click:async e=>{
 if(!e.isTrusted)return
-try{const r=await POST('/api/pars/ack',{tok:ck.tok,ms:Math.round(performance.now()-shown)});if(r.ok){chk.remove();chk=null;toast('Thanks, still earning Pars',null)}}catch{}
+const ms=Math.round(performance.now()-shown)
+const pts=path.filter(q=>q[2]>performance.now()-2500)
+const ys=new Set(pts.map(q=>Math.round(q[0]/3)+':'+Math.round(q[1]/3)))
+if(ms<900||pts.length<5||ys.size<5){toast('Move your mouse to the button and click it',null);return}
+removeEventListener('pointermove',pm)
+try{const r=await POST('/api/pars/ack',{tok:ck.tok,ms,p:ys.size});if(r.ok){chk.remove();chk=null;toast('Thanks, still earning Pars',null)}}catch{}
 }}},'I am here')
 chk=h('div',{class:'updb',role:'alert',style:{top:'auto',bottom:(20+Math.random()*60)+'px',left:(20+Math.random()*55)+'%'}},h('b',null,'Still there?'),h('span',null,'Click to keep earning Pars'),b)
 document.body.append(chk)
@@ -39,7 +47,7 @@ const r=await POST('/api/pars/beat',sample())
 if(S.me)S.me.pars=r.balance
 if(r.earned>0)toast('+'+r.earned+' Pars earned',null)
 for(const n of r.notes||[])toast(n)
-if(r.check)showCheck(r.check)
+if(r.check)showCheck(r.check);else if(chk){chk.remove();chk=null}
 }catch{}
 },60000)
 setTimeout(()=>POST('/api/pars/beat',{w:[],v:true}).catch(()=>{}),1500)
