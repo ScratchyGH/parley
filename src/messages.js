@@ -63,6 +63,13 @@ thread:m.thread_id?th.find(x=>x.id===m.thread_id)||null:null
 })
 }
 
+export async function sysMsg(c,rr,actor,text){
+const id=msgId(),t=now(),content='\u2063'+text.slice(0,200)
+await c.env.DB.batch([c.env.DB.prepare('insert into messages(id,room,server_id,author_id,content,created_at,sig) values(?,?,?,?,?,?,?)').bind(id,rr.room,null,actor,content,t,await signMsg(c.env,{id,room:rr.room,author_id:actor,created_at:t,edited_at:null,content})),c.env.DB.prepare('update conversations set last_message_at=?,last_msg=? where id=?').bind(t,id,rr.room)])
+const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
+const[mm]=await hydrate(c.env,[row],actor)
+await publishMsg(c,rr,{t:'msg.new',m:mm,ment:{users:[],everyone:false,roles:[]}})
+}
 export async function publishMsg(c,rr,event,opts={}){
 if(rr.kind==='channel')c.pub(rr.hub,event,{ch:rr.gate||rr.room,...opts})
 else{
@@ -124,7 +131,7 @@ const quote=src.content?src.content.split('\n').map(l=>'> '+l).join('\n')+'\n':'
 content=(note?note+'\n\n':'')+quote+`*Forwarded from ${src.display_name}${from?' in <#'+from.id+'>':''}*`
 if(b.attachments&&(rr.perms&P.ATTACH))fwdFiles=(await c.env.DB.prepare("select * from files where message_id=? and kind='attachment' order by created_at limit 6").bind(src.id).all()).results
 }
-content=content.trim()
+content=content.replace(/^\u2063+/,'').trim()
 if(content.length>MAX_LEN)fail(413,`Messages can be up to ${MAX_LEN} characters`)
 const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))].slice(0,24):[]
 let stk=null
@@ -245,7 +252,7 @@ if(m.author_id!==c.user.id)fail(403,'You can only edit your own messages')
 if(!(rr.perms&P.SEND))fail(403,'You cannot edit messages here')
 limit('edit:'+c.user.id,30,60000)
 const b=await body(c.req,40000)
-const content=str(b.content,1,MAX_LEN,'Message')
+const content=str(String(b.content||'').replace(/^\u2063+/,''),1,MAX_LEN,'Message')
 await automod(c.env,rr,content)
 await extBlock(c.env,rr,content,null)
 const et=now()

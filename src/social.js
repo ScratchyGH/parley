@@ -2,6 +2,7 @@ import{fail,now,newId,str,opt,limit,body,json,clamp,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember}from'./perms.js'
 import{PUBLIC,badgesOf,linksOf}from'./auth.js'
 import{triage}from'./modai.js'
+import{sysMsg}from'./messages.js'
 
 const pair=(x,y)=>x<y?[x,y]:[y,x]
 const settingsOf=u=>{try{return JSON.parse(u.settings||'{}')}catch{return{}}}
@@ -191,6 +192,34 @@ const rr=await resolveRoom(c.env,c.p.id,c.user.id)
 if(rr.kind!=='dm'||rr.conv.type!=='group')fail(400,'Not a group conversation')
 return rr
 }
+const GP=['rename','icon','add','remove']
+async function gperms(c,id){
+const r=await c.env.DB.prepare('select v from app_settings where k=?').bind('gperm:'+id).first()
+let o={}
+try{o=JSON.parse(r.v)}catch{}
+return{def:o.def||{},users:o.users||{}}
+}
+async function gcan(c,rr,key){
+if(rr.conv.owner_id===c.user.id)return true
+const g=await gperms(c,rr.room)
+const u=g.users[c.user.id]
+return!!(u&&key in u?u[key]:g.def[key])
+}
+r.add('GET','/api/conversations/:id/perms',async c=>{
+const rr=await groupCtx(c)
+return await gperms(c,rr.room)
+})
+r.add('PUT','/api/conversations/:id/perms',async c=>{
+const rr=await groupCtx(c)
+if(rr.conv.owner_id!==c.user.id)fail(403,'Only the group owner can change this')
+const b=await body(c.req,4000)
+const clean=o=>{const x={};for(const k of GP)if(o&&k in o)x[k]=!!o[k];return x}
+const users={}
+for(const[u,o]of Object.entries(b.users&&typeof b.users==='object'?b.users:{}).slice(0,10)){const x=clean(o);if(Object.keys(x).length)users[String(u).slice(0,40)]=x}
+const v={def:clean(b.def),users}
+await c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind('gperm:'+rr.room,JSON.stringify(v)).run()
+return v
+})
 const notifyConv=async(c,id)=>{
 const ms=(await c.env.DB.prepare('select user_id from conv_members where conv_id=?').bind(id).all()).results
 for(const m of ms)c.pub('u_'+m.user_id,{t:'conv.update'})
@@ -198,8 +227,8 @@ for(const m of ms)c.pub('u_'+m.user_id,{t:'conv.update'})
 
 r.add('PATCH','/api/conversations/:id',async c=>{
 const rr=await groupCtx(c)
-if(rr.conv.owner_id!==c.user.id)fail(403,'Only the group owner can change this')
 const b=await body(c.req)
+if(('name'in b&&!await gcan(c,rr,'rename'))||('icon_id'in b&&!await gcan(c,rr,'icon')))fail(403,'You do not have permission to change this')
 const sets=[],vals=[]
 if('name'in b){sets.push('name=?');vals.push(b.name?str(b.name,1,50,'Group name'):'')}
 if('icon_id'in b){
@@ -217,13 +246,15 @@ return{ok:true}
 
 r.add('POST','/api/conversations/:id/members',async c=>{
 const rr=await groupCtx(c)
-if(rr.conv.owner_id!==c.user.id)fail(403,'Only the group owner can add members')
+if(!await gcan(c,rr,'add'))fail(403,'You do not have permission to add members')
 const b=await body(c.req)
 const uid=String(b.user_id)
 if(!await areFriends(c.env,c.user.id,uid))fail(403,'You can only add friends to a group')
 const n=await c.env.DB.prepare('select count(*) n from conv_members where conv_id=?').bind(rr.room).first()
 if(n.n>=10)fail(400,'Groups can have up to 10 members')
+const ex=await c.env.DB.prepare('select 1 x from conv_members where conv_id=? and user_id=?').bind(rr.room,uid).first()
 await c.env.DB.prepare('insert or ignore into conv_members(conv_id,user_id,joined_at,accepted) values(?,?,?,1)').bind(rr.room,uid,now()).run()
+if(!ex){const u=await c.env.DB.prepare('select display_name from users where id=?').bind(uid).first();await sysMsg(c,rr,c.user.id,c.user.display_name+' added '+(u?u.display_name:'someone')+' to the group')}
 await notifyConv(c,rr.room)
 return{ok:true}
 })
@@ -231,9 +262,11 @@ return{ok:true}
 r.add('DELETE','/api/conversations/:id/members/:uid',async c=>{
 const rr=await groupCtx(c)
 const self=c.p.uid===c.user.id
-if(!self&&rr.conv.owner_id!==c.user.id)fail(403,'Only the group owner can remove members')
+if(!self&&!await gcan(c,rr,'remove'))fail(403,'You do not have permission to remove members')
 const ms=(await c.env.DB.prepare('select user_id from conv_members where conv_id=? order by joined_at').bind(rr.room).all()).results
 if(!ms.some(m=>m.user_id===c.p.uid))fail(404,'Member not found')
+if(self)await sysMsg(c,rr,c.user.id,c.user.display_name+' left the group')
+else{const u=await c.env.DB.prepare('select display_name from users where id=?').bind(c.p.uid).first();await sysMsg(c,rr,c.user.id,c.user.display_name+' removed '+(u?u.display_name:'someone')+' from the group')}
 const stmts=[c.env.DB.prepare('delete from conv_members where conv_id=? and user_id=?').bind(rr.room,c.p.uid)]
 const rest=ms.filter(m=>m.user_id!==c.p.uid)
 if(rr.conv.owner_id===c.p.uid&&rest.length)stmts.push(c.env.DB.prepare('update conversations set owner_id=? where id=?').bind(rest[0].user_id,rr.room))
