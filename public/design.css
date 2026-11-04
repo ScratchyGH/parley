@@ -1491,3 +1491,43 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .np{transform:translateZ(0);backface-visibility:hidden;contain:paint}
 .np::before,.np::after{will-change:background-position}
 .av.fr_halo .frm{inset:-20% -40%}
+.pcard.ac_banner .hero{height:150px}
+.pcard.ac_center .bd{text-align:center}.pcard.ac_center .av.lg{margin-left:auto;margin-right:auto;width:96px;height:96px;margin-top:-48px}
+.pcard.ac_center .badges,.pcard.ac_center .plinks,.pcard.ac_center .row{justify-content:center}
+.pcard.ac_big .av.lg{width:120px;height:120px;margin-top:-64px}
+.pcard.ac_right .bd{text-align:right}.pcard.ac_right .av.lg{margin-left:auto}.pcard.ac_right .badges,.pcard.ac_right .plinks,.pcard.ac_right .row{justify-content:flex-end}
+.pcard.ac_square .av.lg,.pcard.ac_square .av.lg img{border-radius:10px}.pcard.ac_square,.pcard.ac_square .hero{border-radius:0}
+.pcard.ac_slim .hero{height:56px}.pcard.ac_slim .av.lg{width:56px;height:56px;margin-top:-28px}
+.pcard.ac_glass .bd{background:color-mix(in srgb,var(--panel) 70%,transparent);backdrop-filter:blur(10px);margin-top:-30px;border-radius:14px 14px 0 0;padding-top:1px}
+.pcard.ac_float .av.lg{float:left;margin-right:12px;margin-bottom:8px}.pcard.ac_float .bd>h3{padding-top:8px}
+.pcard.ac_poster .hero{height:200px}.pcard.ac_poster .bd{margin-top:-120px;text-shadow:0 1px 3px rgba(0,0,0,.8);background:linear-gradient(transparent,rgba(0,0,0,.65) 40%)}
+.pcard.ac_neon{box-shadow:0 0 0 2px var(--accent),0 0 16px var(--accent)}
+.pcard.ac_ticket{clip-path:polygon(0 0,100% 0,100% 62%,calc(100% - 10px) 64%,100% 66%,100% 100%,0 100%,0 66%,10px 64%,0 62%)}
+.pcard.ac_mini{width:260px}.pcard.ac_mini .hero{height:36px}.pcard.ac_mini .av.lg{width:48px;height:48px;margin-top:-24px}
+.par-card{width:150px!important;transform:scale(.8);transform-origin:top left}
+@keyframes stnoise{0%{background-position:0 0}25%{background-position:-37px 21px}50%{background-position:19px -43px}75%{background-position:-52px -9px}100%{background-position:0 0}}
+.ef_static::after,.ef_staticc::after,.ef_scan::after{inset:0;border-radius:50%;opacity:.4;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.2'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");animation:stnoise .4s steps(4) infinite}
+.ef_staticc::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.45;mix-blend-mode:screen}
+.ef_scan::before{inset:0;border-radius:50%;background:repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 1px,transparent 1px 3px);animation:stnoise 1s steps(5) infinite}
+.np_static{background:#374151;position:relative}
+.np_static::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.2'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.35;animation:stnoise .4s steps(4) infinite}
+.fr_static .frm{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 164 164'%3E%3Ccircle cx='82' cy='82' r='60' fill='none' stroke='%23e5e7eb' stroke-width='9' stroke-dasharray='3 2 1 4 5 2'/%3E%3Ccircle cx='82' cy='82' r='66' fill='none' stroke='%239ca3af' stroke-width='3' stroke-dasharray='1 3 6 2'/%3E%3C/svg%3E");animation:stjit .3s steps(3) infinite}
+@keyframes stjit{0%{transform:translate(0,0)}33%{transform:translate(1px,-1px)}66%{transform:translate(-1px,1px)}100%{transform:translate(0,0)}}
+.nf_static{color:#e5e7eb;animation:stjit .25s steps(3) infinite;text-shadow:1px 0 #f43f5e,-1px 0 #22d3ee}
+.ti_static::before{content:"Static"}.ti_static{color:#e5e7eb;animation:stjit .3s steps(3) infinite}
+.m.bb_static,.par-msg.bb_static{border-radius:6px;box-shadow:inset 3px 0 0 #9ca3af;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 -.1'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");background-blend-mode:overlay;animation:stnoise .6s steps(4) infinite}
+.rm .ef_static::after,.rm .ef_staticc::after,.rm .ef_scan::before,.rm .np_static::before,.rm .fr_static .frm,.rm .nf_static,.rm .ti_static,.rm .m.bb_static,.perf .ef_static::after,.perf .ef_staticc::after{animation:none!important}
+.ttl.ctl{border:1px solid;border-radius:4px;padding:0 6px;font-size:11px;font-weight:700;margin-left:6px}
+.m[class*=cm_]{border-radius:8px;--hl:transparent;background-color:color-mix(in srgb,var(--hl) 14%,transparent)}
+.cm_empty{box-shadow:inset 0 0 0 1px var(--border)}
+.cm_dotted{border:2px dotted var(--hl,var(--border))}
+.cm_lined{border-left:3px solid var(--hl,var(--accent));border-radius:0}
+.cm_adotted{border:2px dotted var(--hl,var(--accent));animation:cmdash 1.2s linear infinite}
+.cm_d3dotted{border:3px dotted var(--hl,var(--accent));box-shadow:2px 2px 0 rgba(0,0,0,.45)}
+.cm_dashed{border:2px dashed var(--hl,var(--border))}
+.cm_double{border:4px double var(--hl,var(--border))}
+.cm_wave{border-bottom:3px solid var(--hl,var(--accent));border-image:repeating-linear-gradient(90deg,var(--hl,var(--accent)) 0 6px,transparent 6px 10px) 1}
+.cm_glow{box-shadow:0 0 12px var(--hl,var(--accent))}
+.cm_stripe{background-image:repeating-linear-gradient(45deg,color-mix(in srgb,var(--hl,var(--accent)) 18%,transparent) 0 8px,transparent 8px 16px)}
+@keyframes cmdash{50%{border-color:transparent}}
+.rm .cm_adotted,.perf .cm_adotted{animation:none}
