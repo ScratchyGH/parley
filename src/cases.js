@@ -1,6 +1,7 @@
 import{fail,now,newId,str,opt,limit,body}from'./util.js'
 import{P,loadMember}from'./perms.js'
 import{target}from'./servers.js'
+import{warnLimit}from'./blocks.js'
 
 export const TYPES=['warn','timeout','kick','ban','unban','note']
 export const STATES=['open','appealed','resolved','overturned']
@@ -33,10 +34,29 @@ evidence=`#${row.name} at ${new Date(row.created_at).toISOString()}: ${row.conte
 }
 await c.env.DB.batch([caseStmt(c,m.server.id,c.p.uid,'warn',reason,evidence),c.logStmt(m.server.id,'member.warn',c.p.uid,reason)])
 c.pub('u_'+c.p.uid,{t:'notice',text:`You received a warning in ${m.server.name}: ${reason}`})
+await warnLimit(c,m.server.id,c.user.id,c.p.uid)
 const row=await c.env.DB.prepare('select num from mod_cases where server_id=? order by num desc limit 1').bind(m.server.id).first()
 return{ok:true,num:row.num}
 })
 
+r.add('GET','/api/servers/:sid/warn-limit',async c=>{
+const m=await mod(c,c.p.sid)
+const r=await c.env.DB.prepare('select v from app_settings where k=?').bind('warnlim:'+m.server.id).first()
+let o={n:0,a:'kick'}
+try{o=JSON.parse(r.v)}catch{}
+return o
+})
+r.add('PUT','/api/servers/:sid/warn-limit',async c=>{
+const m=await loadMember(c.env,c.p.sid,c.user.id)
+if(!m)fail(404,'Server not found')
+if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission')
+const b=await body(c.req)
+const n=Math.round(Number(b.n))
+if(!Number.isFinite(n)||n<0||n>50)fail(400,'Warn limit must be 0 to 50')
+const a=['kick','ban','timeout'].includes(b.a)?b.a:'kick'
+await c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind('warnlim:'+m.server.id,JSON.stringify({n,a})).run()
+return{n,a}
+})
 r.add('POST','/api/servers/:sid/cases',async c=>{
 limit('note:'+c.user.id,60,3600000)
 const m=await mod(c,c.p.sid)

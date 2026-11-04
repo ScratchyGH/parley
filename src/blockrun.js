@@ -32,7 +32,7 @@ return{h:Number(o.hour)%24,mi:Number(o.minute),d:Number(o.day),mo:Number(o.month
 }
 const UN={m:['l',1],km:['l',1000],cm:['l',.01],mm:['l',.001],mi:['l',1609.344],yd:['l',.9144],ft:['l',.3048],in:['l',.0254],kg:['w',1],g:['w',.001],lb:['w',.45359237],oz:['w',.028349523125],mps:['s',1],kmh:['s',1/3.6],mph:['s',.44704],knot:['s',.514444],l:['v',1],ml:['v',.001],gal:['v',3.785411784],cup:['v',.2365882365],c:['t'],f:['t'],k:['t'],b:['d',1],kb:['d',1e3],mb:['d',1e6],gb:['d',1e9],tb:['d',1e12],sec:['T',1],min:['T',60],hr:['T',3600],day:['T',86400]}
 export const TYPES={
-msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0']},def:{mode:'contains',text:'',ci:'1'}},
+msg:{out:NX,trigger:true,spec:{mode:['any','contains','equals','starts'],text:100,ci:['1','0'],channel:40},def:{mode:'contains',text:'',ci:'1',channel:''}},
 cmd:{out:NX,trigger:true,spec:{prefix:3,name:32,desc:100,options:600},def:{prefix:'!',name:'ping',desc:'',options:''}},
 mention:{out:NX,trigger:true,spec:{},def:{}},
 join:{out:NX,trigger:true,spec:{},def:{}},
@@ -50,9 +50,9 @@ sayto:{out:NX,spec:{channel:40,text:1500},def:{channel:'general',text:''}},
 react:{out:NX,spec:{emoji:40},def:{emoji:'👍'}},
 delete:{out:NX,spec:{},def:{}},
 pin:{out:NX,spec:{},def:{}},
-timeout:{out:NX,spec:{minutes:3},def:{minutes:'5'}},
-addrole:{out:NX,spec:{role:40},def:{role:''}},
-removerole:{out:NX,spec:{role:40},def:{role:''}},
+timeout:{out:NX,spec:{minutes:3,target:60},def:{minutes:'5',target:''}},
+addrole:{out:NX,spec:{role:40,target:60},def:{role:'',target:''}},
+removerole:{out:NX,spec:{role:40,target:60},def:{role:'',target:''}},
 stop:{out:[],spec:{},def:{}},
 pick:{out:NX,spec:{name:24,options:1500},def:{name:'choice',options:''}},
 set:{out:NX,spec:{name:24,value:300},def:{name:'',value:''}},
@@ -63,6 +63,7 @@ text:{out:NX,spec:{name:24,input:300,fn:FNS,arg:100},def:{name:'result',input:'{
 randnum:{out:NX,spec:{name:24,min:9,max:9},def:{name:'roll',min:'1',max:'6'}},
 map:{out:NX,spec:{name:24,input:200,table:1500,fallback:200},def:{name:'result',input:'{arg1}',table:'',fallback:''}},
 gate:{out:YN,spec:{on:['1','0']},def:{on:'1'}},
+choose:{out:['else'],spec:{input:200,count:3,list:8000},def:{input:'{arg1}',count:'5',list:''}},
 switch:{out:CASES,spec:{input:200,v1:60,v2:60,v3:60,v4:60},def:{input:'{arg1}',v1:'',v2:'',v3:'',v4:''}},
 sub:{out:NX,entry:true,spec:{name:24},def:{name:'shared'}},
 call:{out:NX,spec:{name:24},def:{name:'shared'}},
@@ -86,12 +87,13 @@ if2:{out:YN,spec:{left:200,op:OPS,right:200,join:['and','or'],left2:200,op2:OPS,
 notice:{out:NX,spec:{text:300},def:{text:''}},
 unpin:{out:NX,spec:{},def:{}},
 slowmode:{out:NX,spec:{seconds:5},def:{seconds:'10'}},
-setnick:{out:NX,spec:{nick:32},def:{nick:''}},
-untimeout:{out:NX,spec:{},def:{}},
-kick:{out:NX,spec:{reason:200},def:{reason:'Removed by bot'}},
-ban:{out:NX,spec:{reason:200},def:{reason:'Banned by bot'}},
-purge:{out:NX,spec:{count:2},def:{count:'5'}},
-warn:{out:NX,spec:{name:24,reason:200},def:{name:'warns',reason:'Warning from bot'}},
+setnick:{out:NX,spec:{nick:32,target:60},def:{nick:'',target:''}},
+untimeout:{out:NX,spec:{target:60},def:{target:''}},
+kick:{out:NX,spec:{reason:200,target:60},def:{reason:'Removed by bot',target:''}},
+ban:{out:NX,spec:{reason:200,target:60},def:{reason:'Banned by bot',target:''}},
+purge:{out:NX,spec:{count:2,target:60},def:{count:'5',target:''}},
+warnif:{out:YN,spec:{n:2,act:['ban','kick','timeout'],reason:200,target:60},def:{n:'3',act:'ban',reason:'Too many warnings',target:''}},
+warn:{out:NX,spec:{name:24,reason:200,target:60},def:{name:'warns',reason:'Warning from bot',target:''}},
 log:{out:NX,spec:{channel:40,text:1500},def:{channel:'mod-log',text:''}},
 wait:{out:NX,spec:{seconds:1},def:{seconds:'2'}},
 save:{out:NX,spec:{key:24,value:300,scope:SC},def:{key:'note',value:'',scope:'server'}},
@@ -217,6 +219,8 @@ else{if(v.length>spec)bad(k+' is too long');p[k]=v}
 }
 if((n.type==='sub'||n.type==='call'||n.type==='hook')&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Names use letters, numbers and underscores')
 if(n.type==='cmd'&&!/^[a-z0-9_]{1,32}$/i.test(p.name))bad('Command names use letters, numbers and underscores')
+if(n.type==='choose')p.count=num(p.count,1,200,'Paths')
+if(n.type==='warnif')p.n=num(p.n,1,50,'Warnings')
 if(n.type==='chance')p.percent=num(p.percent,0,100,'Percent')
 if(n.type==='count')p.by=num(p.by,-1000,1000,'Add')
 if(n.type==='setcount')p.value=num(p.value,-1000000,1000000,'Value')
@@ -270,6 +274,7 @@ if(n.type==='word')p.n=num(p.n,1,50,'Word number')
 if((n.type==='save'||n.type==='load')&&!/^[a-z0-9_]{1,24}$/i.test(p.key))bad('Keys use letters, numbers and underscores')
 if(n.type==='getcount'&&!/^[a-z0-9_]{1,24}$/i.test(p.counter))bad('Counter names use letters, numbers and underscores')
 if((n.type==='log'||n.type==='channelis')&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
+if(n.type==='msg'&&p.channel&&!/^#?[a-z0-9_-]{1,40}$/i.test(p.channel))bad('Channel names use letters, numbers, dashes and underscores')
 if(n.type==='sayto'&&!/^[a-z0-9_-]{1,40}$/i.test(p.channel.replace(/^#/,'')))bad('Channel names use letters, numbers, dashes and underscores')
 if(T.spec.name!==undefined&&p.name&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Variable names use letters, numbers and underscores')
 let xo=Number(n.xo);xo=Number.isInteger(xo)&&xo>0&&T.out.length?Math.min(3,xo):0
@@ -282,7 +287,7 @@ const by=new Map(nodes.map(n=>[n.id,n]))
 const seen=new Set(),edges=[]
 for(const e of g.edges){
 if(!e||!by.has(e.f)||!by.has(e.t))bad('Invalid connection')
-if(!TYPES[by.get(e.f).type].out.includes(e.o)&&!(/^x[1-3]$/.test(e.o)&&(by.get(e.f).xo||0)>=Number(e.o[1])))bad('Invalid connection')
+if(!TYPES[by.get(e.f).type].out.includes(e.o)&&!(by.get(e.f).type==='choose'&&/^p\d{1,3}$/.test(e.o)&&Number(e.o.slice(1))>=1&&Number(e.o.slice(1))<=Number(by.get(e.f).p.count))&&!(/^x[1-3]$/.test(e.o)&&(by.get(e.f).xo||0)>=Number(e.o[1])))bad('Invalid connection')
 if(TYPES[by.get(e.t).type].trigger||TYPES[by.get(e.t).type].entry)bad('Nothing can lead into a trigger, subflow start or note')
 const k=e.f+':'+e.o
 if(seen.has(k))continue
@@ -335,6 +340,7 @@ const Tg=TRIG[n.type];if(Tg)return Tg.test(n.p,t)
 if(n.type==='link')return/https?:\/\//i.test(t)
 if(n.type==='image')return(ctx.attachments||0)>0
 if(n.type==='msg'){
+if(n.p.channel&&n.p.channel.replace(/^#/,'').toLowerCase()!==String(ctx.channel).toLowerCase())return false
 const a=n.p.ci==='0'?t:t.toLowerCase(),b=n.p.ci==='0'?n.p.text:n.p.text.toLowerCase()
 if(n.p.mode==='any')return true
 if(!b)return false
@@ -391,6 +397,7 @@ vars.args=m.slice(1).join(' ');m.slice(1,4).forEach((x,i)=>{vars['arg'+(i+1)]=x}
 return vars
 }
 export async function execute(graph,ctx,io,rnd=Math.random){
+const tio=async(P,R)=>{const t=P.target?R(P.target).trim():'';return t?io.as(t):io}
 const by=new Map(graph.nodes.map(n=>[n.id,n]))
 const next=(id,o)=>graph.edges.find(e=>e.f===id&&e.o===o)?.t
 const vars=baseVars(ctx,rnd)
@@ -423,6 +430,7 @@ case'newmember':{const d=await io.joinedDays();branch=d!==null&&d<Number(P.days)
 case'weekday':{const d=wall(ctx.at||Date.now(),P.tz||'UTC').wd;branch=P.day==='weekdays'?d>=1&&d<=5:P.day==='weekend'?d===0||d===6:DAYS.indexOf(P.day)===d;break}
 case'wordlist':{const l=R(P.input).toLowerCase();branch=P.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean).some(x=>l.includes(x));break}
 case'if2':{const a=test(P.op,R(P.left),R(P.right)),b=test(P.op2,R(P.left2),R(P.right2));branch=P.join==='or'?a||b:a&&b;break}
+case'choose':{const v=R(P.input).trim().toLowerCase();route='else';const L=P.list.split('\n');for(let i=0;i<L.length&&i<Number(P.count);i++){const c=L[i].trim().toLowerCase();if(c&&c===v){route='p'+(i+1);break}}break}
 case'switch':{const v=R(P.input).trim().toLowerCase();route='else';for(const k of['1','2','3','4']){const c=P['v'+k].trim().toLowerCase();if(c&&c===v){route='c'+k;break}}break}
 case'call':{if(depth<4){const sb=graph.nodes.find(x=>x.type==='sub'&&x.p.name.toLowerCase()===P.name.toLowerCase());if(sb){log.push({id:n.id,did:'call',name:P.name});await chain(next(sb.id,'next'),depth+1)}}break}
 case'say':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.send(t,P.reply==='1');log.push({id:n.id,did:'say',text:t})}break}
@@ -430,16 +438,17 @@ case'sayto':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P
 case'react':if(P.emoji&&acts<8){acts++;await io.react(P.emoji);log.push({id:n.id,did:'react',emoji:P.emoji})}break
 case'delete':if(acts<8){acts++;await io.del();log.push({id:n.id,did:'delete'})}break
 case'pin':if(acts<8){acts++;await io.pin();log.push({id:n.id,did:'pin'})}break
-case'timeout':if(acts<8){acts++;await io.timeout(Number(P.minutes));log.push({id:n.id,did:'timeout',minutes:P.minutes})}break
-case'addrole':case'removerole':if(P.role&&acts<8){acts++;await io.role(R(P.role),n.type==='addrole');log.push({id:n.id,did:n.type,role:P.role})}break
+case'timeout':if(acts<8){acts++;await(await tio(P,R)).timeout(Number(P.minutes));log.push({id:n.id,did:'timeout',minutes:P.minutes})}break
+case'addrole':case'removerole':if(P.role&&acts<8){acts++;await(await tio(P,R)).role(R(P.role),n.type==='addrole');log.push({id:n.id,did:n.type,role:P.role})}break
 case'notice':{const t=R(P.text).trim().slice(0,300);if(t&&acts<8){acts++;await io.notice(t);log.push({id:n.id,did:'notice',text:t})}break}
 case'unpin':if(acts<8){acts++;await io.unpin();log.push({id:n.id,did:'unpin'})}break
 case'slowmode':if(acts<8){acts++;await io.slowmode(Number(P.seconds));log.push({id:n.id,did:'slowmode',seconds:P.seconds})}break
-case'setnick':if(acts<8){acts++;await io.setNick(R(P.nick).trim().slice(0,32));log.push({id:n.id,did:'setnick'})}break
-case'untimeout':if(acts<8){acts++;await io.untimeout();log.push({id:n.id,did:'untimeout'})}break
-case'kick':case'ban':if(acts<8&&heavy<1){acts++;heavy++;await io[n.type](R(P.reason).slice(0,200));log.push({id:n.id,did:n.type})}break
-case'purge':if(acts<8){acts++;await io.purge(Number(P.count));log.push({id:n.id,did:'purge',count:P.count})}break
-case'warn':if(acts<8){acts++;const w=await io.warn(R(P.reason).slice(0,200));log.push({id:n.id,did:'warn',value:setv(P.name||'warns',String(w))})}break
+case'setnick':if(acts<8){acts++;await(await tio(P,R)).setNick(R(P.nick).trim().slice(0,32));log.push({id:n.id,did:'setnick'})}break
+case'untimeout':if(acts<8){acts++;await(await tio(P,R)).untimeout();log.push({id:n.id,did:'untimeout'})}break
+case'kick':case'ban':if(acts<8&&heavy<1){acts++;heavy++;await(await tio(P,R))[n.type](R(P.reason).slice(0,200));log.push({id:n.id,did:n.type})}break
+case'purge':if(acts<8){acts++;await(await tio(P,R)).purge(Number(P.count));log.push({id:n.id,did:'purge',count:P.count})}break
+case'warnif':{const t=await tio(P,R),w=await t.warns();branch=w>=Number(P.n);if(branch&&acts<8&&heavy<1){acts++;heavy++;await t.punish(P.act,R(P.reason).slice(0,200));log.push({id:n.id,did:'warnif',value:String(w)})}break}
+case'warn':if(acts<8){acts++;const w=await(await tio(P,R)).warn(R(P.reason).slice(0,200));log.push({id:n.id,did:'warn',value:setv(P.name||'warns',String(w))})}break
 case'log':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P.channel).replace(/^#/,''),t);log.push({id:n.id,did:'log',text:t})}break}
 case'wait':{const ms=Math.min(5000,Number(P.seconds)*1000),left=8000-waited;if(!ctx.dry&&left>0){const w=Math.min(ms,left);waited+=w;await new Promise(r=>setTimeout(r,w))}log.push({id:n.id,did:'wait'});break}
 case'save':if(P.key){await io.save(P.key.toLowerCase(),R(P.value).slice(0,300),P.scope);log.push({id:n.id,did:'save'})}break

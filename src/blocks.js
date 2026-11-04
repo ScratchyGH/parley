@@ -46,10 +46,10 @@ return getVar(c,botId,sid,k)
 
 
 const caseSt=(c,sid,botId,uid,type,reason)=>c.env.DB.prepare('insert into mod_cases(id,server_id,num,user_id,mod_id,type,reason,evidence,status,created_at,updated_at) values(?,?,(select coalesce(max(num),0)+1 from mod_cases where server_id=?),?,?,?,?,?,?,?,?)').bind(newId('mc'),sid,sid,uid,botId,type,String(reason||'').slice(0,500),'','open',now(),now())
-async function removeFrom(c,sid,botId,uid,kind,reason){
+async function removeFrom(c,sid,botId,uid,kind,reason,force){
 const bm=await loadMember(c.env,sid,botId),tm=await loadMember(c.env,sid,uid)
 const need=kind==='ban'?P.BAN:P.KICK
-if(!bm||!tm||uid===botId||!(bm.admin||(bm.base&need))||tm.owner||tm.admin||tm.top>=bm.top)return
+if(!tm||uid===botId||tm.owner||tm.admin||!force&&(!bm||!(bm.admin||(bm.base&need))||tm.top>=bm.top))return
 const st=[
 c.env.DB.prepare('delete from member_roles where server_id=? and user_id=?').bind(sid,uid),
 c.env.DB.prepare('delete from members where server_id=? and user_id=?').bind(sid,uid),
@@ -62,9 +62,31 @@ c.pubClose('s_'+sid,{close:[uid],purge:true})
 c.pub('u_'+uid,{t:'server.removed',id:sid,reason:kind==='ban'?'banned':'kicked'})
 }
 
+export async function punish(c,sid,actor,uid,a,reason){
+if(a==='timeout'){
+if(!await loadMember(c.env,sid,uid))return
+await c.env.DB.batch([c.env.DB.prepare('update members set timeout_until=? where server_id=? and user_id=?').bind(now()+86400000,sid,uid),caseSt(c,sid,actor,uid,'timeout',reason)])
+c.pub('u_'+uid,{t:'notice',text:'You were timed out for 24 hours: '+reason})
+c.pub('s_'+sid,{t:'member.update',uid})
+return
+}
+await removeFrom(c,sid,actor,uid,a==='ban'?'ban':'kick',reason,true)
+}
+const warnCount=async(c,sid,uid)=>(await c.env.DB.prepare("select count(*) n from mod_cases where server_id=? and user_id=? and type='warn' and status!='overturned'").bind(sid,uid).first()).n
+export async function warnLimit(c,sid,actor,uid){
+const r=await c.env.DB.prepare('select v from app_settings where k=?').bind('warnlim:'+sid).first()
+let o
+try{o=JSON.parse(r.v)}catch{return}
+if(o&&o.n&&await warnCount(c,sid,uid)===o.n)await punish(c,sid,actor,uid,o.a,'Reached the warning limit of '+o.n)
+}
 export function makeIo(c,botId,sid,room,user,message){
 const uid=user.id
 return{
+as:async t=>{
+const id=(t.match(/<@([a-z0-9_]+)>/i)||[])[1]||t.replace(/^@/,'')
+const u=await c.env.DB.prepare('select u.id,u.username,u.display_name from members m join users u on u.id=m.user_id where m.server_id=? and (u.id=? or lower(u.username)=lower(?))').bind(sid,id,id).first()
+return u?makeIo(c,botId,sid,room,u,message):new Proxy({},{get:()=>async()=>0})
+},
 send:(text,reply)=>say(c,room,sid,botId,text,reply&&message?message.id:null),
 sendTo:async(name,text)=>{
 const ch=await c.env.DB.prepare("select id from channels where server_id=? and lower(name)=lower(?) and type in ('text','announce') limit 1").bind(sid,name).first()
@@ -123,8 +145,12 @@ await publishMsg(c,brr,{t:'msg.delete',room,id:r.id})
 warn:async reason=>{
 await c.env.DB.batch([caseSt(c,sid,botId,uid,'warn',reason)])
 c.pub('u_'+uid,{t:'notice',text:'You received a warning: '+reason})
-return addVar(c,botId,sid,vkey('warns','user',uid),1)
+const w=await addVar(c,botId,sid,vkey('warns','user',uid),1)
+await warnLimit(c,sid,botId,uid)
+return w
 },
+warns:()=>warnCount(c,sid,uid),
+punish:(a,r)=>punish(c,sid,botId,uid,a,r),
 save:(k,v,scope)=>putVar(c,botId,sid,vkey('tx_'+k,scope,uid),v),
 load:async(k,scope)=>{const r=await c.env.DB.prepare('select v from bot_vars where bot_id=? and server_id=? and k=?').bind(botId,sid,vkey('tx_'+k,scope,uid)).first();return r?r.v:null},
 getCount:(k,scope)=>getVar(c,botId,sid,vkey(k,scope,uid)),
@@ -236,6 +262,9 @@ isOwner:async()=>false,joinedDays:async()=>30,notice:async t=>{sent.push({note:'
 warn:async r=>{const k='user:warns';mem.set(k,(mem.get(k)||0)+1);sent.push({note:'Warns the member: '+r});return mem.get(k)},
 save:async(k,v,s)=>{mem.set('tx:'+s+':'+k,v)},load:async(k,s)=>mem.has('tx:'+s+':'+k)?mem.get('tx:'+s+':'+k):null,getCount:async(k,s)=>mem.get(s+':'+k)||0,memberInfo:async w=>w==='joined_days'?30:w==='role_count'?1:w==='roles'?'Member':'Tester',serverInfo:async w=>w==='name'?'Your server':w==='members'?42:w==='channels'?8:5,
 api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),webhook:async()=>false,device:async a=>{sent.push({note:'Asks the member to allow on their device: '+a.map(x=>x.k).join(', ')})},
+as:async()=>io,
+warns:async()=>mem.get('user:warns')||0,
+punish:async a=>{sent.push({note:'Would '+a+' the member'})},
 isMod:async()=>false,
 hasRole:async()=>false,
 del:async()=>{sent.push({note:'Deletes the message'})},
