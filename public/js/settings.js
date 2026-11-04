@@ -4,7 +4,7 @@ import{gifPicker,importGif}from'./gifs.js'
 import{historyBox}from'./imghist.js'
 import{accountsList,addAccountDialog}from'./accounts.js'
 import{adminView}from'./admin.js'
-import{S,P,can,emit,applySettings,setting,loadFriends,cacheUser,FONTS,PRESETS}from'./state.js'
+import{S,P,st,can,emit,applySettings,setting,loadFriends,cacheUser,FONTS,PRESETS}from'./state.js'
 import{uploadImage}from'./dialogs.js'
 import{pickCropped}from'./cropper.js'
 import{passkeysSupported,registerPasskey}from'./webauthn.js'
@@ -21,7 +21,7 @@ import{parsPage,loadoutBox}from'./pars.js'
 import{pushSupported,pushEnabled,pushEnable,pushDisable}from'./pushclient.js'
 
 const PAGES=[
-['account','My account'],['profile','Profile'],['appearance','Appearance'],['tweaks','Tweaks'],['performance','Performance'],['notifications','Notifications'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
+['account','My account'],['profile','Profile'],['appearance','Appearance'],['tweaks','Tweaks'],['performance','Performance'],['notifications','Notifications'],['streamer','Streamer'],['bots','Bots'],['network','Network and P2P'],['media','Images and uploads'],['privacy','Privacy and safety'],['voice','Voice and video'],['apps','Apps'],['sessions','Sessions'],['data','Data and deletion']
 ]
 
 async function saveSettings(patch){
@@ -54,7 +54,7 @@ try{await POST('/api/auth/logout',{})}catch{}
 location.href='/'
 }}},'Log out'))
 drawNav()
-const fn={apps:appsPage,pars:parsPage,tweaks:tweaksPage,performance:perfPage,account,profile,appearance,notifications,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
+const fn={apps:appsPage,pars:parsPage,tweaks:tweaksPage,performance:perfPage,account,profile,appearance,notifications,streamer,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
 mount(pg)
 fn(pg,{close:()=>go('/')})
 GET('/api/lab/status').then(x=>{if(x.labs){labs=true;drawNav()}}).catch(()=>{})
@@ -82,7 +82,7 @@ const pw=h('input',{class:'inp',type:'password',autocomplete:'current-password',
 const code=h('input',{class:'inp',inputmode:'numeric',autocomplete:'one-time-code',maxLength:6,placeholder:'6 digit code','aria-label':'Email code'})
 const draw=()=>{
 if(!d.enabled){mount(box,h('p',{class:'hint'},'Email is not set up on this server yet.'));return}
-if(d.email&&d.verified){mount(box,h('p',{class:'hint'},'Confirmed: '+d.email+'. It can reset your password and gets alerts when your password changes.'),field('Password to remove',pw),h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/me/email/remove',{password:pw.value});d={enabled:true,email:null,verified:false};draw();toast('Email removed','ok')}catch(e){fail(e)}}}},'Remove email'));return}
+if(d.email&&d.verified){mount(box,h('p',{class:'hint'},'Confirmed: '+(st('mail')?d.email.replace(/^(.).*(@.*)$/,'$1***$2'):d.email)+'. It can reset your password and gets alerts when your password changes.'),field('Password to remove',pw),h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/me/email/remove',{password:pw.value});d={enabled:true,email:null,verified:false};draw();toast('Email removed','ok')}catch(e){fail(e)}}}},'Remove email'));return}
 if(d.email){mount(box,h('p',{class:'hint'},'We sent a code to '+d.email+'. It expires in 15 minutes.'),field('Code',code),h('div',{class:'row'},h('button',{class:'btn pri',on:{click:async()=>{try{await POST('/api/me/email/verify',{code:code.value.trim()});d.verified=true;draw();toast('Email confirmed','ok')}catch(e){fail(e)}}}},'Confirm'),h('button',{class:'btn',on:{click:()=>{d.email=null;draw()}}},'Use a different email')));return}
 mount(box,h('p',{class:'hint'},'Add an email to reset a forgotten password and get alerts when your password changes. It is never shown to anyone else.'),field('Email',em),field('Password',pw),h('button',{class:'btn pri',on:{click:async()=>{try{const r=await POST('/api/me/email',{email:em.value.trim(),password:pw.value});pw.value='';d={enabled:true,email:r.email,verified:false};draw()}catch(e){fail(e)}}}},'Send code'))
 }
@@ -311,6 +311,9 @@ mount(pg,h('h3',null,'Notifications'),
 sw('sound',true,'Notification sounds','A short tone for new mentions and direct messages while this tab is open.'),
 sw('desktop',false,'Desktop notifications','Shown for mentions and direct messages when this tab is not focused. Works only while Parley is open in a browser tab.',async v=>{if(v){const ok=await requestDesktop();if(!ok){toast('Notifications are blocked in your browser settings','err');saveSettings({desktop:false}).then(()=>notifications(pg))}}}),
 row('Test desktop notification','Sends one right now so you can check your browser and system settings.',h('button',{class:'btn sm',on:{click:async()=>{try{toast((await testDesktop())?'Sent. Look for it in your system notifications':'Notifications are blocked or unsupported in this browser',null)}catch(e){fail(e)}}}},'Send test')),
+sw('n_dm',true,'Direct messages','Sound and desktop alerts for new direct messages.'),
+sw('n_mention',true,'Mentions and replies','Sound and desktop alerts when you are mentioned in a server.'),
+sw('n_call',true,'Incoming calls','Ring and alert when someone calls you.'),
 sw('dnd',false,'Do not disturb','Silences sounds and desktop notifications. Unread badges still show.'),
 sw('quiet_on',false,'Quiet hours','Silence sounds and desktop notifications between the times below.'),
 h('div',{class:'row',style:{padding:'8px 0'}},
@@ -460,11 +463,32 @@ h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'iPhone and iPad'),h('d
 h('div',{class:'card',style:{margin:'8px 0'}},h('b',null,'Install Parley as its own app'),h('div',{class:'hint'},standalone?'You are using the installed app. It has its own window and shows up as Parley in your task manager.':'Installs Parley in its own window with its own icon, and it shows up as its own app in Task Manager. Chrome and Edge on desktop and Android support this. Safari: Share, then Add to Home Screen.'),standalone?null:h('button',{class:'btn pri',style:{marginTop:'8px'},on:{click:async()=>{const e=window.__pwa;if(!e){toast('Use the install icon in the address bar, or the browser menu and Install Parley.');return}e.prompt();try{await e.userChoice}catch{}window.__pwa=null}}},'Install Parley')))
 }
 
+let bgm
+function bgmPlay(f){
+if(bgm){bgm.pause();URL.revokeObjectURL(bgm.src);bgm=null}
+if(!f)return
+bgm=new Audio(URL.createObjectURL(f))
+bgm.loop=true
+bgm.volume=.3
+bgm.play().catch(()=>{})
+}
+function streamer(pg){
+const P=[['','Off'],['min','Minimalized'],['med','Medium'],['max','Maximum']]
+const cur=setting('streamer','')
+mount(pg,[
+h('h3',null,'Streamer settings'),
+field('Streamer mode',h('div',{class:'tabs',style:{flexWrap:'wrap'}},P.map(([v,l])=>h('button',{class:cur===v?'on':'','aria-pressed':String(cur===v),on:{click:async()=>{try{await saveSettings({streamer:v,...Object.fromEntries(['mail','inv','names','redact','notif','dm','srv'].map(k=>['st_'+k,({min:'mail inv',med:'mail inv names redact notif',max:'mail inv names redact notif dm srv'}[v]||'').split(' ').includes(k)]))});streamer(pg)}catch(e){fail(e)}}}},l))),'Minimalized hides your email and invite links. Medium also masks usernames, redacts card numbers, IPs, phone numbers and tokens in messages, and hides notification previews. Maximum also blurs direct messages and server names. Toggle any item below to override the preset.'),
+...[['mail','Hide email address'],['inv','Mask invite links and codes'],['names','Hide usernames and real names'],['redact','Redact card, IP, phone and token text'],['notif','Hide notification previews'],['dm','Blur direct messages'],['srv','Blur server names']].map(([k,l])=>row(l,null,toggle(st(k),async v=>{try{await saveSettings({['st_'+k]:v})}catch(e){fail(e)}},l)))
+])
+}
 function perfPage(pg){
 const row=(k,get)=>h('div',{class:'tabs',style:{flexWrap:'wrap'}},LV.map((l,i)=>h('button',{class:get()===i?'on':'','aria-pressed':String(get()===i),on:{click:()=>{setLevel(k,i);perfPage(pg)}}},l)))
 mount(pg,[
 h('h2',null,'Performance'),
 field('CPU usage',row('cpu',cpu),'Lower uses less processing: slower background polling, no link game embeds or extra effects on Low, and lighter game logic. Takes effect right away.'),
-field('GPU usage',row('gpu',gpu),'Lower uses less graphics power: Low turns off blur, shadows and animations, and renders games at a smaller resolution. Max renders games sharper with more particles.')
+field('GPU usage',row('gpu',gpu),'Lower uses less graphics power: Low turns off blur, shadows and animations, and renders games at a smaller resolution. Max renders games sharper with more particles.'),
+sw('hwaccel',true,'Hardware acceleration','Off removes layer promotion and blur so the GPU does less work.',()=>{}),
+sw('amoled',false,'AMOLED black','Pure black backgrounds on dark themes. Ignored in performance mode.'),
+field('Background music',h('div',{class:'row'},h('input',{type:'file',accept:'audio/*',on:{change:e=>bgmPlay(e.target.files[0])}}),h('button',{class:'btn sm',on:{click:()=>bgmPlay()}},'Stop')),'Plays a local file on loop at low volume. Nothing is uploaded. Stop it before streaming copyrighted music.')
 ])
 }

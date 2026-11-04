@@ -1,3 +1,4 @@
+import{st,redact}from'./state.js'
 import{h,tzo}from'./util.js'
 import{clearUrl}from'./tweaks.js'
 
@@ -178,6 +179,7 @@ return out
 }
 
 export function render(text,ctx){
+if(st('redact'))text=redact(text)
 const frag=document.createDocumentFragment()
 const lines=String(text||'').split('\n')
 let i=0

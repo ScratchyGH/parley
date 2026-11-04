@@ -103,6 +103,9 @@ export const setting=(k,d)=>{
 const v=S.me?.settings?.[k]
 return v===undefined?d:v
 }
+const STP={min:['mail','inv'],med:['mail','inv','names','redact','notif'],max:['mail','inv','names','redact','notif','dm','srv']}
+export const st=k=>{const v=S.me?.settings?.['st_'+k];return v===undefined?(STP[S.me?.settings?.streamer]||[]).includes(k):v}
+export const redact=t=>String(t).replace(/\b(?:\d[ -]?){13,19}\b/g,'[card]').replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,'[ip]').replace(/\+?\d[\d ()-]{8,}\d/g,'[phone]').replace(/\b[\w-]{20,}\.[\w-]{6,}\.[\w-]{20,}\b/g,'[token]')
 export const muteLevel=id=>S.me?.settings?.mute?.[id]||'all'
 
 export async function loadServers(){
@@ -206,6 +209,9 @@ root.style.setProperty('--border','color-mix(in srgb,'+s.ui_bg+' 70%,#fff)')
 const rm=s.reduced_motion===undefined?matchMedia('(prefers-reduced-motion: reduce)').matches:s.reduced_motion
 root.classList.toggle('rm',!!rm||!!s.performance)
 root.classList.toggle('perf',!!s.performance)
+root.classList.toggle('nohw',s.hwaccel===false)
+root.classList.toggle('amoled',!!s.amoled&&!s.performance)
+for(const k of['mail','inv','names','dm','srv'])root.classList.toggle('st-'+k,st(k))
 const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
 if(!over&&S.me){try{localStorage.setItem('parley:look',JSON.stringify({uid:S.me.id,s:Object.fromEntries(['theme','density','font_size','font_ui','font_msg','ui_color','ui_bg','reduced_motion','performance'].filter(k=>s[k]!==undefined).map(k=>[k,s[k]]))}))}catch{}}

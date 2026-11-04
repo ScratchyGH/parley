@@ -3,7 +3,7 @@ import'./halloween.js'
 import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce,fmtStamp}from'./util.js'
 import{render}from'./md.js'
 import{deviceRequest}from'./devblock.js'
-import{S,P,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
+import{S,P,st,setting,can,on,emit,cacheUser,ensureThread,noteThread,applySettings,applyCachedLook,loadServers,loadServer,loadConvs,loadFriends,loadUnread,loadNotifCount,loadMembers,conv,convTitle,convOther,chanInfo,isDm,hubOf,unreadOf,muteLevel}from'./state.js'
 import{setRooms,sendAll,stopAll}from'./net.js'
 import{go,parse,setRouteHandler,lastChan,setLastChan}from'./nav.js'
 import{renderAuth,renderAppeal}from'./auth.js'
@@ -433,10 +433,10 @@ const lvl=Math.max(['none','mentions','all'].indexOf(muteLevel(room)),0)
 const srvLvl=sid?['none','mentions','all'].indexOf(muteLevel(sid)):2
 const eff=Math.min(lvl,srvLvl<0?2:srvLvl)
 const wants=eff===2?(dm||mention):eff===1?mention:false
-if(wants&&!viewing){
+if(wants&&!viewing&&setting(dm?'n_dm':'n_mention',true)){
 ping()
 const title=dm?convTitle(conv(room)):`${msg.author.display_name} in #${info?.ch.name||'channel'}`
-desktop(title,dm?`${msg.author.display_name}: ${msg.content}`:msg.content,room,()=>go(dm?'/dm/'+room:`/s/${sid}/${room}`))
+desktop(title,st('notif')?'New message':dm?`${msg.author.display_name}: ${msg.content}`:msg.content,room,()=>go(dm?'/dm/'+room:`/s/${sid}/${room}`))
 }
 if(dm)reloadConvs()
 }
