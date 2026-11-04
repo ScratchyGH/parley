@@ -81,6 +81,22 @@ g.items=(await c.env.DB.prepare(`select id,kind,name from par_items where id in 
 }
 return{gifts}
 })
+const wishOf=async(env,uid)=>{try{return JSON.parse((await env.DB.prepare('select v from app_settings where k=?').bind('wish:'+uid).first())?.v||'[]')}catch{return[]}}
+r.add('GET','/api/pars/wishlist',async c=>({ids:await wishOf(c.env,c.user.id)}))
+r.add('POST','/api/pars/wishlist',async c=>{
+const b=await body(c.req,200)
+const id=String(b.item||'')
+if(!(await c.env.DB.prepare('select 1 x from par_items where id=?').bind(id).first()))fail(404,'Item not found')
+let w=await wishOf(c.env,c.user.id)
+w=w.includes(id)?w.filter(x=>x!==id):[id,...w].slice(0,40)
+await c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind('wish:'+c.user.id,JSON.stringify(w)).run()
+return{ids:w}
+})
+r.add('GET','/api/users/:uid/wishlist',async c=>{
+const w=await wishOf(c.env,c.p.uid)
+if(!w.length)return{items:[]}
+return{items:(await c.env.DB.prepare(`select id,kind,name,price from par_items where id in (${w.map(()=>'?').join(',')}) and enabled=1`).bind(...w).all()).results}
+})
 r.add('POST','/api/pars/giftlink',async c=>{
 limit('pargl:'+c.user.id,10,3600000)
 const b=await body(c.req,500)

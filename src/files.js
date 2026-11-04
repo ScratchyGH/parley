@@ -13,6 +13,22 @@ const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','ser
 const KINDS=['attachment','avatar','banner','server_icon','server_banner','server_bg','conv_icon','emoji','sticker']
 const PART=16*1048576
 
+function zipBomb(b){
+const u=new Uint8Array(b),dv=new DataView(b)
+if(u.length<22||u[0]!==0x50||u[1]!==0x4b)return false
+let e=-1
+for(let i=u.length-22;i>=Math.max(0,u.length-66000);i--)if(u[i]===0x50&&u[i+1]===0x4b&&u[i+2]===5&&u[i+3]===6){e=i;break}
+if(e<0)return false
+const n=dv.getUint16(e+10,true),o=dv.getUint32(e+16,true)
+if(n>20000)return true
+let p=o,comp=0,unc=0
+for(let i=0;i<n&&p+46<=u.length;i++){
+if(dv.getUint32(p,true)!==0x02014b50)break
+comp+=dv.getUint32(p+20,true);unc+=dv.getUint32(p+24,true)
+p+=46+dv.getUint16(p+28,true)+dv.getUint16(p+30,true)+dv.getUint16(p+32,true)
+}
+return unc>4294967296||(unc>104857600&&unc/Math.max(1,comp)>150)
+}
 function sniff(b,type){
 const u=new Uint8Array(b.slice(0,16))
 const at=(o,s)=>[...s].every((ch,i)=>u[o+i]===ch.charCodeAt(0))
@@ -94,6 +110,7 @@ if(want&&!okSha(want))fail(400,'Invalid checksum')
 const buf=await c.req.arrayBuffer()
 if(buf.byteLength!==len)fail(400,'Body size does not match Content-Length')
 if(p.typed&&!sniff(buf,p.mime))fail(415,'File content does not match its type')
+if(buf.byteLength<268435456&&zipBomb(buf))fail(415,'This archive looks like a zip bomb and was blocked')
 const look=p.scan&&p.mime.startsWith('image/')&&len>=1500&&len<=3145728
 if(look&&explicitText(p.name))fail(422,'This image was blocked by the explicit content filter')
 const scanP=look?imageExplicit(c.env,new Uint8Array(buf)):Promise.resolve(false)

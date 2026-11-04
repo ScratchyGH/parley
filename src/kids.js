@@ -109,8 +109,60 @@ const t=str(v,1,20,'Display name')
 if(!/^[\p{L}\p{N} ._-]+$/u.test(t))fail(400,'Display names use letters, numbers and spaces')
 return t
 }
+const KD={theme:'normal',qs:'',qe:'',tz:0,links:0,cap:0}
+const THEMES=['normal','educational','calm','night']
+const hm=v=>v===''||(typeof v==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v))
+async function kcfg(env,id){
+const x=await env.DB.prepare('select v from app_settings where k=?').bind('kcfg:'+id).first()
+try{return{...KD,...JSON.parse(x?.v||'{}')}}catch{return{...KD}}
+}
+const mins=v=>+v.slice(0,2)*60+ +v.slice(3)
 export default function(r){
 const P=(m,p,h)=>r.add(m,p,h,{auth:false})
+P('GET','/api/connect/children/:id/settings',async c=>{
+const p=await parentOf(c)
+const ch=await c.env.DB.prepare('select id from kp_children where id=? and parent_id=?').bind(c.p.id,p.id).first()
+if(!ch)fail(404,'No such child')
+return kcfg(c.env,ch.id)
+})
+P('POST','/api/connect/children/:id/settings',async c=>{
+const p=await parentOf(c)
+const ch=await c.env.DB.prepare('select id,display_name from kp_children where id=? and parent_id=?').bind(c.p.id,p.id).first()
+if(!ch)fail(404,'No such child')
+const b=await body(c.req,400)
+if(!THEMES.includes(b.theme)||!hm(b.qs)||!hm(b.qe))fail(400,'Invalid settings')
+const v={theme:b.theme,qs:b.qs,qe:b.qe,tz:int(b.tz,-840,840,'Time zone'),links:b.links?1:0,cap:int(b.cap,0,1000,'Daily limit')}
+await c.env.DB.batch([c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind('kcfg:'+ch.id,JSON.stringify(v)),logp(c.env,p.id,'safety','Settings changed for '+ch.display_name)])
+return{ok:true}
+})
+P('GET','/api/connect/pin',async c=>{
+const p=await parentOf(c)
+return{set:!!(await c.env.DB.prepare('select 1 x from app_settings where k=?').bind('kpin:'+p.id).first())}
+})
+P('POST','/api/connect/pin',async c=>{
+const p=await parentOf(c)
+limit('kpn:'+p.id,10,600000)
+const b=await body(c.req,200)
+const k='kpin:'+p.id
+const cur=await c.env.DB.prepare('select v from app_settings where k=?').bind(k).first()
+if(cur){const o=JSON.parse(cur.v);if(!safeEq(await pbkdf2(String(b.old||''),o.s,PITER),o.h))fail(403,'Wrong passcode')}
+if(b.clear&&cur){await c.env.DB.prepare('delete from app_settings where k=?').bind(k).run();return{ok:true}}
+const pin=String(b.pin||'')
+if(pin.length<4||pin.length>32)fail(400,'Use 4 to 32 characters')
+const salt=randHex(16)
+await c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind(k,JSON.stringify({s:salt,h:await pbkdf2(pin,salt,PITER)})).run()
+return{ok:true}
+})
+P('POST','/api/connect/pin/verify',async c=>{
+const p=await parentOf(c)
+limit('kpv:'+p.id,8,600000)
+const b=await body(c.req,200)
+const cur=await c.env.DB.prepare('select v from app_settings where k=?').bind('kpin:'+p.id).first()
+if(!cur)return{ok:true}
+const o=JSON.parse(cur.v)
+if(!safeEq(await pbkdf2(String(b.pin||''),o.s,PITER),o.h))fail(403,'Wrong passcode')
+return{ok:true}
+})
 P('POST','/api/kids/device',async c=>{
 await ensure(c.env)
 limit('kpd:'+ip(c),10,3600000)
@@ -199,7 +251,8 @@ return{token:await session(c.env,id)}
 P('GET','/api/kids/me',async c=>{
 const d=await deviceOf(c)
 const ch=d.child_id?await c.env.DB.prepare('select * from kp_children where id=?').bind(d.child_id).first():null
-return{device:{id:d.id,label:d.label},child:childOut(ch)}
+const cf=ch?await kcfg(c.env,ch.id):KD
+return{device:{id:d.id,label:d.label},child:childOut(ch),theme:cf.theme}
 })
 P('POST','/api/kids/account',async c=>{
 const d=await deviceOf(c)
@@ -288,7 +341,7 @@ db.prepare('select id,label,status,child_id,created_at,last_seen from kp_devices
 db.prepare('select kind,detail,at from kp_log where parent_id=? order by at desc limit 40').bind(p.id).all(),
 db.prepare('select id,device_id,exp,tries from kp_codes where parent_id=? and used_at is null and revoked=0 and exp>?').bind(p.id,now()).all()
 ])
-return{parent:{username:p.username,id_status:p.id_status},caps:CAP(p.id_status),children:ch.results.map(childOut),devices:dv.results,log:lg.results,codes:cd.results}
+return{parent:{username:p.username,id_status:p.id_status,pin:!!(await c.env.DB.prepare('select 1 x from app_settings where k=?').bind('kpin:'+p.id).first())},caps:CAP(p.id_status),children:ch.results.map(childOut),devices:dv.results,log:lg.results,codes:cd.results}
 })
 P('POST','/api/connect/devices/claim',async c=>{
 const p=await parentOf(c)
@@ -481,6 +534,10 @@ const t=now()
 if(me.muted_until>t)fail(429,'Chat is paused for a little while. Try again in '+Math.ceil((me.muted_until-t)/60000)+' min.')
 const b=await body(c.req,800)
 const text=String(b.text||'').replace(/\s+/g,' ').trim()
+const cf=await kcfg(c.env,me.id)
+if(cf.qs&&cf.qe){const d=new Date(t-cf.tz*60000),m=d.getUTCHours()*60+d.getUTCMinutes(),a=mins(cf.qs),e=mins(cf.qe);if(a<=e?m>=a&&m<e:m>=a||m<e)fail(403,'Chat is closed right now. Your parent set quiet hours.')}
+if(cf.links&&/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|gg|tv|me|co|xyz|ru|cn)\b/i.test(text))fail(422,'Links are turned off by your parent.')
+if(cf.cap){const day=new Date(t-cf.tz*60000);day.setUTCHours(0,0,0,0);const n=await c.env.DB.prepare('select count(*) n from kp_msgs where from_child=? and at>?').bind(me.id,day.getTime()+cf.tz*60000).first();if(n.n>=cf.cap)fail(429,'You reached today\'s message limit.')}
 const v=moderate(text)
 if(!v.ok){
 if(v.cat==='empty'||v.cat==='long')fail(400,v.msg)

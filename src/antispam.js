@@ -33,7 +33,16 @@ if(/(.)\1{24,}/su.test(c))return'Too many repeated characters.'
 if((c.match(/[̀-ͯ]/g)||[]).length>30)return'That message has too many combining marks.'
 return''
 }
+const GRAB=/(?:^|[\/.@])(grabify\.link|iplogger\.(?:org|com|ru|co)|2no\.co|yip\.su|ipgrabber\.ru|iplogger\.info|blasze\.(?:com|tk)|leancoding\.co|stopify\.co|freegiftcards\.co|joinmy\.site|curiouscat\.club|gyazos\.com|lovebird\.guru|ps3cfw\.com|bmwforum\.co|spottyfly\.com|quickmessage\.us|datauth\.xyz|dateing\.club|xn--80ak6aa92e\.com)(?:[\/:?#]|$)/i
+export function grabCheck(c,content){
+if(c.user.admin)return
+for(const m of String(content||'').matchAll(/https?:\/\/[^\s<>"')]+/gi)){
+let h='';try{h=new URL(m[0]).hostname}catch{continue}
+if(GRAB.test('/'+h+'/')||/^\d{1,3}(\.\d{1,3}){3}$/.test(h)&&/\.(php|png|jpg|gif)\b|[?&](id|ref|uid)=/i.test(m[0]))fail(422,'That link was blocked. It looks like an IP logger.')
+}
+}
 export async function antispam(c,rr,content,hasFiles){
+grabCheck(c,content)
 if(c.user.is_bot||c.user.admin)return
 if(rr.kind==='channel'&&(rr.perms&(P.MANAGE_MESSAGES|P.MODERATE)))return
 if(rr.kind==='channel'&&rr.m&&rr.m.server&&rr.m.server.owner_id===c.user.id)return
