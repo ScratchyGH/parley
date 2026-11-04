@@ -1597,3 +1597,12 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .st-inv a[href*="/invite/"],.st-inv .invc,.st-inv .inv{filter:blur(6px)}
 .st-names .mh b,.st-names .mh .tw-un,.st-names .mem .mn>span:first-child,.st-names .me .who b,.st-names .me .who small,.st-names .ci .nm,.st-names .pcard h3{filter:blur(5px)}
 .st-srv .ctx-h span,.st-srv .ctx .cib span{filter:blur(5px)}
+.av[data-fit]>img{transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fs,1));border-radius:var(--fb,12px)}
+.av[data-fit].has-img{border-radius:var(--fb,12px)}
+.actw{display:flex;gap:10px;align-items:center;margin:8px 0;padding:10px;border-radius:10px;background:var(--surf2);border:1px solid var(--border)}
+.aci{width:40px;height:40px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.aci svg{width:22px;height:22px}
+.act{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.act small{color:var(--muted);font-size:12px}
+.act b{color:var(--strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act span{color:var(--muted);font-size:12px}
