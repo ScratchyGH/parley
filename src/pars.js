@@ -121,6 +121,7 @@ if(!checkAt)checkAt=t+(20+Math.random()*25)*60000
 if(sent&&t-sent>180000)paused=1
 if(!sent&&checkAt<=t){tok=Math.random().toString(36).slice(2,14);sent=t}
 const human=b.v===true&&act>=4&&ev>=8&&kinds>=2&&hard>=2&&dt<=180000&&strikes<3&&!repeat&&!flat&&!paused
+if(human&&sent){sent=0;tok='';checkAt=t+(20+Math.random()*25)*60000}
 let credit=human?Math.min(dt,120000):0
 const cap=cfg.dailyHours*3600000
 if(row.day_ms+credit>cap)credit=Math.max(0,cap-row.day_ms)

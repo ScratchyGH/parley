@@ -592,7 +592,7 @@ const perms=limitPerms(m,b.perms??0)
 if((perms&P.ADMIN)&&!m.admin)fail(403,'Only administrators can grant Administrator')
 const id=newId('r')
 await c.env.DB.batch([
-c.env.DB.prepare('insert into roles(id,server_id,name,color,position,perms) values(?,?,?,?,?,?)').bind(id,m.server.id,str(b.name,1,40,'Role name'),color(b.color,'Color'),1,perms),
+c.env.DB.prepare('insert into roles(id,server_id,name,color,position,perms) values(?,?,?,?,(select coalesce(max(position),1)+1 from roles where server_id=?),?)').bind(id,m.server.id,str(b.name,1,40,'Role name'),color(b.color,'Color'),m.server.id,perms),
 c.logStmt(m.server.id,'role.create',id,b.name)
 ])
 c.pub('s_'+m.server.id,{t:'server.update'})
