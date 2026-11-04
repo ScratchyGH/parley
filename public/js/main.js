@@ -377,9 +377,11 @@ const sid=room.slice(2)
 loadServer(sid).then(()=>{loadServers();if(S.nav.sid===sid&&S.nav.room&&!chanInfo(S.nav.room)){toast('That channel was removed','err');go('/s/'+sid,true)}else refreshComposer()}).catch(()=>{})
 }
 break
-case'member.join':case'member.leave':case'member.update':
-if(room.startsWith('s_'))reloadMembers(room.slice(2))
+case'member.join':case'member.leave':case'member.update':{
+const sid=room.startsWith('s_')?room.slice(2):null
+if(sid){reloadMembers(sid);if(m.uid===S.me.id)loadServer(sid).catch(()=>{})}
 break
+}
 case'server.removed':
 case'server.deleted':{
 const id=m.id
@@ -391,7 +393,7 @@ case'notice':toast(m.text);break
 case'tu.invite':import('/js/teamup.js').then(x=>x.showInvite(m));break
 case'bot.device':deviceRequest(m);break
 case'call.ring':
-if(V.ch){POST(`/api/conversations/${m.room}/ring/decline`,{busy:true}).catch(()=>{});break}
+if(V.ch&&V.ch.startsWith('cv_')){POST(`/api/conversations/${m.room}/ring/decline`,{busy:true}).catch(()=>{});break}
 ringToast(m.from,m.room,()=>startCall(m.room))
 break
 case'call.cancel':

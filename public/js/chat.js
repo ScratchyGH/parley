@@ -705,7 +705,7 @@ autoGrow()
 
 function renderChips(){
 const c=C.chips
-if(!C.files.length){c.style.display='none';return}
+if(!C.files.length){c.style.display='none';C.sendBtn.disabled=false;return}
 c.style.display='flex'
 mount(c,C.files.map(f=>h('div',{class:'chip',title:f.name},icon(f.file.type.startsWith('image/')?'file':'file','s'),h('span',null,f.name+' ('+fmtSize(f.file.size)+')'+(f.stage?' · '+f.stage+'…':'')),f.err?h('span',{style:{color:'var(--err)'}},f.err):null,
 h('div',{class:'pg',style:{width:Math.round((f.prog||0)*100)+'%',display:f.id?'none':'block'}}),

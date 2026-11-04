@@ -188,7 +188,7 @@ if(s<86400)return Math.floor(s/3600)+'h ago'
 if(s<2592000)return Math.floor(s/86400)+'d ago'
 return new Date(t).toLocaleDateString()
 }
-export const dayKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()}
+export const dayKey=t=>new Date(t).toLocaleDateString('en-CA',tzo())
 export const idTime=id=>parseInt(String(id).split('_').pop().slice(0,9),36)
 
 export function initials(name){
