@@ -85,7 +85,7 @@ let tick=[]
 load()
 async function load(){
 try{
-const d=await GET('/api/pars')
+const d=await GET('/api/pars');d.wish=(await GET('/api/pars/wishlist').catch(()=>({ids:[]}))).ids
 S.me.pars=d.balance
 for(const k of EQ)S.me[k]=d[k]
 draw(d)
@@ -121,7 +121,9 @@ function card(d,it){
 const have=(COS.has(it.kind)||it.kind==='unlock')&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 const cant=d.balance<it.price
-return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
+const wl=(d.wish||[]).includes(it.id)
+const heart=have?null:h('button',{class:'btn sm',type:'button','aria-pressed':String(wl),title:wl?'Remove from wishlist':'Add to wishlist',on:{click:async e=>{try{const r=await POST('/api/pars/wishlist',{item:it.id});d.wish=r.ids;e.currentTarget.setAttribute('aria-pressed',String(r.ids.includes(it.id)));e.currentTarget.textContent=r.ids.includes(it.id)?'♥':'♡'}catch(x){fail(x)}}}},wl?'♥':'♡')
+return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),heart,have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
 }
 function preview(d,it,v){
 const ids=v.items||[]

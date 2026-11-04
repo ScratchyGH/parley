@@ -258,10 +258,12 @@ const links=(u.links||[]).length?h('div',{class:'plinks'},u.links.map(l=>h('a',{
 const note=own?null:h('textarea',{class:'inp pnote',rows:2,maxLength:500,placeholder:'Add a private note. Only you can see it.','aria-label':'Private note about '+u.display_name})
 if(note){
 GET('/api/users/'+u.id+'/note').then(d=>{note.value=d.note}).catch(()=>{})
+GET('/api/users/'+u.id+'/wishlist').then(d=>{if(d.items.length)wish.replaceChildren(h('b',null,'Wishlist: '),d.items.slice(0,6).map(x=>x.name).join(', '))}).catch(()=>{})
 let last=null
 note.addEventListener('focus',()=>{last=note.value})
 note.addEventListener('blur',()=>{if(note.value!==last)PUT('/api/users/'+u.id+'/note',{note:note.value}).catch(e=>fail(e))})
 }
+const wish=h('div',{class:'hint'})
 const mem=sid?S.sdata[sid]?.memberList?.find(m=>m.id===u.id):null
 el.append(hero,h('div',{class:'bd'},avatar(u,'lg',S.pres[u.id]||(own?S.me.presence:null)),
 h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},mem?.nickname||u.display_name),
@@ -270,7 +272,7 @@ u.status_text?h('div',{style:{margin:'6px 0'}},u.status_text):null,
 badges,links,
 u.bio?h('div',{class:'mb',style:{margin:'8px 0',maxHeight:'120px',overflow:'auto'}},render(u.bio,{})):null,
 h('div',{class:'hint'},`${data.mutual_servers} mutual server${data.mutual_servers===1?'':'s'} · Joined ${new Date(u.created_at).toLocaleDateString()}`),
-note,act,
+wish,note,act,
 !own?h('div',{class:'row',style:{marginTop:'8px'}},btn('Copy ID',()=>copyText(u.id)),btn('Report user',()=>{closeMenu();emit('ui:report',{type:'user',id:u.id})}),sid&&mem?btn('Moderation',()=>{closeMenu();const items=memberMenu(sid,mem);menu(items,x,y)}):null):null))
 popup(el,Math.min(x,innerWidth-400),Math.min(y,innerHeight-460),'')
 }
