@@ -527,3 +527,10 @@ a.bh-row:hover{text-decoration:none;transform:translateY(-1px);border-color:var(
 .kd-av canvas{width:64px;height:auto;image-rendering:auto}
 .kd-rail canvas{width:28px;height:auto;image-rendering:auto}
 .kd-ci canvas{width:16px;height:auto;image-rendering:auto}
+.st-mail [data-email],.st-mail .eml{filter:blur(6px)}
+.st-inv .inv,.st-inv [data-inv]{filter:blur(6px)}
+.st-names .mh b,.st-names .mem .nm,.st-names .me .nm{filter:blur(5px)}
+.st-dm .ctx .ci,.st-dm .mb{filter:blur(5px)}
+.st-srv .ws button,.st-srv .ctx h3{filter:blur(5px)}
+.nohw *{will-change:auto!important;backdrop-filter:none!important}
+.amoled{--bg:#000;--side:#000;--panel:#050505;--surf2:#0a0a0a}
