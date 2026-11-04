@@ -3,7 +3,8 @@ import{categoryMenu}from'./catmenu.js'
 import{parIcon}from'./pars.js'
 import{expTag}from'./exp.js'
 import{communityDialog}from'./xlabs.js'
-import{VC,h,mount,icon,PATCH,POST,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
+import{statusMenu}from'./status.js'
+import{VC,h,mount,icon,PATCH,POST,stxt,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
 import{applyServerTheme,S,P,on,emit,setting,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{sendAll}from'./net.js'
@@ -288,21 +289,8 @@ return h('div',{class:'ctx-b'},kids)
 }
 
 function presenceMenu(anchor){
-const cur=S.me.presence
-const set=async p=>{
-try{
-const d=await PATCH('/api/me',{presence:p})
-S.me=d.user
-sendAll({t:'presence',s:p})
-renderCtx()
-}catch(e){fail(e)}
-}
-menuAt(anchor,[
-{label:(cur==='online'?'✓ ':'')+'Online',fn:()=>set('online')},
-{label:(cur==='idle'?'✓ ':'')+'Idle',fn:()=>set('idle')},
-{label:(cur==='busy'?'✓ ':'')+'Do not disturb',fn:()=>set('busy')},
-{label:(cur==='invisible'?'✓ ':'')+'Invisible',fn:()=>set('invisible')},
-'-',{icon:'user',label:'Edit profile',fn:()=>openSettings('profile')},
+statusMenu(anchor,p=>{if(p)sendAll({t:'presence',s:p});renderCtx()},[
+{icon:'user',label:'Edit profile',fn:()=>openSettings('profile')},
 S.me.admin?{icon:'shield',label:'Admin panel',fn:()=>openSettings('admin')}:null,
 {icon:'compass',label:'Guide through Parley',fn:()=>startTour(true)},
 {icon:'swap',label:'Switch account',fn:()=>accountsDialog()}
@@ -315,7 +303,7 @@ h('button',{class:'ib',title:'Open voice room','aria-label':'Open voice room',on
 h('button',{class:'ib dng',title:'Disconnect','aria-label':'Disconnect from voice',on:{click:()=>leaveVoice()}},icon('leave','s'))):null
 const who=h('button',{class:'who',style:{display:'flex',gap:'8px',alignItems:'center',flex:'1',minWidth:0,textAlign:'left'},on:{click:e=>presenceMenu(e.currentTarget)}},
 avatar(S.me,'',S.me.presence==='invisible'?'':S.me.presence),
-h('div',{class:'who'},h('b',null,S.me.display_name),h('small',null,S.me.status_text||'@'+S.me.username)))
+h('div',{class:'who'},h('b',null,S.me.display_name),h('small',null,stxt(S.me)||'@'+S.me.username)))
 return h('div',null,strip,h('div',{class:'me'},who,
 h('button',{class:'ib',title:'Inbox','aria-label':'Inbox'+(S.notifN?`, ${S.notifN} unread`:''),on:{click:()=>emit('ui:panel',{kind:'inbox'})}},icon('bell'),S.notifN?h('span',{class:'bdg',style:{position:'absolute',top:'-2px',right:'-2px',borderColor:'var(--side)'}},S.notifN>99?'99+':S.notifN):null),
 h('button',{class:'ib',title:'User settings','aria-label':'User settings',on:{click:()=>openSettings()}},icon('sliders'))))

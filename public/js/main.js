@@ -88,6 +88,8 @@ startStreaks(()=>renderCtx())
 {const tc=new URLSearchParams(location.search).get('tu');if(tc&&/^[A-Z0-9]{6}$/.test(tc)){history.replaceState(null,'','/');setTimeout(()=>import('/js/teamup.js').then(x=>x.openTeamup(tc)),900)}}
 setTimeout(whatsNew,1200)
 import('./appnotice.js').then(m=>m.appNotice())
+import('./androidapp.js').then(m=>m.androidApp())
+import('./bgm.js').then(m=>m.bgmBoot())
 setTimeout(maybeTour,2600)
 }
 
@@ -408,6 +410,7 @@ case'notice':toast(m.text);break
 case'tu.invite':import('/js/teamup.js').then(x=>x.showInvite(m));break
 case'bot.device':deviceRequest(m);break
 case'call.ring':
+if(!setting('n_call',true))break
 if(V.ch&&V.ch.startsWith('cv_')){POST(`/api/conversations/${m.room}/ring/decline`,{busy:true}).catch(()=>{});break}
 ringToast(m.from,m.room,()=>startCall(m.room))
 break

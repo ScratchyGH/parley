@@ -85,6 +85,7 @@ tab==='recover'?null:tabs,
 tab==='recover'?h('h2',{style:{margin:'0 0 8px',fontSize:'16px',color:'var(--strong)'}},'Reset your password'):null,
 form,
 tab==='recover'?null:social,
+h('div',{class:'hint',style:{textAlign:'center',margin:'10px 0 0'}},h('a',{href:'/support/'},'Lost your account or need help?')),
 h('div',{class:'row',style:{justifyContent:'center',marginTop:'12px'}},
 tab==='recover'?h('button',{class:'btn sm',on:{click:()=>{tab='login';draw()}}},'Back to sign in'):h('button',{class:'btn sm',on:{click:()=>{tab='recover';draw()}}},'Forgot password?'),tab==='recover'?h('button',{class:'btn sm',on:{click:()=>emailReset(card,()=>{tab='login';draw()})}},'Reset with email'):null))
 }

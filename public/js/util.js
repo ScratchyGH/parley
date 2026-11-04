@@ -216,6 +216,7 @@ el.style.backgroundSize='cover'
 el.style.backgroundPosition='center'
 return el
 }
+export const stxt=u=>(u?.status_emoji?u.status_emoji+' ':'')+(u?.status_text||'')
 export function cTitle(u){
 try{const o=JSON.parse(u.ctitle);const e=h('span',{class:'ttl ctl'},o.t);e.style.color=o.c;e.style.borderColor=o.c;return e}catch{return null}
 }

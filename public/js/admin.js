@@ -10,13 +10,13 @@ import{aiBadge,modaiPanel,handledList}from'./modai.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
+const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
+const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),h('button',{class:'btn sm',type:'button',style:{marginBottom:'10px'},on:{click:async()=>{const{botScreen}=await import('./botscreen.js');const ov=h('div',{style:{position:'fixed',inset:'0',zIndex:'9999',background:'var(--bg,#111)',overflow:'auto'}});document.body.append(ov);botScreen(ov,{name:'Example Bot',description:'This is a test of the bot sign-in screen.',servers:3},{preview:true,done:()=>ov.remove()})}}},'Preview bot sign-in screen'),nav,body)
@@ -270,4 +270,16 @@ h('button',{class:'btn',on:{click:()=>{previewToggle(false);upd()}}},'Exit previ
 h('button',{class:'btn',on:{click:()=>previewRestart()}},'Preview countdown and restart')),
 bdayPreview())
 return w
+}
+
+async function support(pg){
+mount(pg,h('h3',null,'Support tickets'),h('div',{class:'hint'},'Loading…'))
+try{
+const d=await GET('/api/admin/support')
+mount(pg,h('h3',null,'Support tickets'),h('div',{class:'list'},d.tickets.length?d.tickets.map(t=>{
+const rp=h('textarea',{class:'inp',rows:2,maxLength:1500,placeholder:'Reply shown to the person on their ticket page'},t.reply||'')
+const send=async st=>{try{await POST('/api/admin/support/'+t.id,{reply:rp.value,status:st});support(pg)}catch(e){fail(e)}}
+return h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,t.kind+' / '+t.status+(t.user?' / @'+t.user:'')),h('div',{class:'hint'},(t.contact||'no contact')+' / '+new Date(t.at).toLocaleString()),h('div',null,t.msg),rp),h('button',{class:'btn sm',on:{click:()=>send()}},'Reply'),t.status!=='closed'?h('button',{class:'btn sm dng',on:{click:()=>send('closed')}},'Close'):null)
+}):h('div',{class:'hint'},'No tickets')))
+}catch(e){mount(pg,h('div',{class:'err'},e.message))}
 }
