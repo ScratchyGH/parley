@@ -58,6 +58,7 @@ drawNav()
 const fn={apps:appsPage,pars:parsPage,tweaks:tweaksPage,performance:perfPage,account,profile,appearance,notifications,streamer,connections,bots,network,media,privacy,voice,sessions,data,labs:labsPage,admin:adminView}[cur]
 mount(pg)
 fn(pg,{close:()=>go('/')})
+if(cur==='profile'&&setting('dev_ids'))import('./ab.js').then(m=>pg.append(m.abBox()))
 GET('/api/lab/status').then(x=>{if(x.labs){labs=true;drawNav()}}).catch(()=>{})
 const bar=topBar({lead:icon_('sliders'),title:'Settings',topic:'Your account and app'})
 return{nodes:[bar,h('div',{class:'split sp-page'},nav,pg)],title:'Settings • Parley',ready:Promise.resolve()}

@@ -15,140 +15,140 @@ narr:{n:'',c:'#d8d8e0'}
 const SC={
 intro:[
 {w:'narr',t:'',z:1.05,y:0},
-{w:'narr',t:'Gourd Hollow. Midnight. The kind of quiet that listens back.',z:1.3,y:24},
-{w:'narr',t:'The harvest moon rose, and every lantern in the village went out at once.',z:1.6,y:30,fx:'imp'},
-{w:'parley',t:'Okay. Nobody panic. Technically I already knew the lanterns going out was a bad sign.',z:1.5},
+{w:'narr',t:'Gourd Hollow. Midnight. Way too quiet.',z:1.3,y:24},
+{w:'narr',t:'The moon came up and every lantern in the village went out.',z:1.6,y:30,fx:'imp'},
+{w:'parley',t:'Okay, nobody panic. Lanterns going out is a bad sign. I knew that.',z:1.5},
 {w:'you',t:'You knew? And you are only telling us now?',z:1.4},
-{w:'brit',t:'My sensors are pinned. Whatever is out there is hungry, and your squad is the loudest signal for a hundred miles.',z:1.35},
+{w:'brit',t:'My sensors are maxed out. Something out there is hungry, and you are the loudest thing for miles.',z:1.35},
 {w:'parley',t:'So we are bait. Great. Love that for us.',z:1.5},
-{w:'kandie',k:1,t:'Relax, nerd. I came to keep the admin in one piece. Try to keep up, okay?',z:1.4},
+{w:'kandie',k:1,t:'Relax, nerd. I am here to keep the admin alive. Keep up.',z:1.4},
 {w:'you',t:'Dawn. Right. Easy. Totally easy.',z:1.4},
-{w:'brit',t:'Hold the line until dawn. I will keep the field relay running from the lab, and I will log everything.',z:1.3},
+{w:'brit',t:'Hold out until dawn. I will run the relay from the lab and log everything.',z:1.3},
 {w:'parley',t:'She is going to log everything. Of course she is.',z:1.15},
 {w:'narr',t:'Something in the dark started counting.',z:1.9,y:10,fx:'imp'}
 ],
 moon:[
-{w:'narr',t:'The moon bled red. The whole hollow held its breath.',z:1.3,fx:'shake'},
-{w:'brit',t:'Blood moon. Spawn rates are doubling. Parley, I would like a note in my journal that I predicted this.',z:1.35},
-{w:'parley',t:'You predicted it in the same breath as it happening, Brit.',z:1.5},
-{w:'kandie',k:1,t:'Both of you stop flirting with the science and start shooting things.',z:1.4}
+{w:'narr',t:'The moon turned red. Everything went quiet.',z:1.3,fx:'shake'},
+{w:'brit',t:'Blood moon. Spawns are doubling. Put it in the journal that I called it.',z:1.35},
+{w:'parley',t:'You called it while it was happening, Brit.',z:1.5},
+{w:'kandie',k:1,t:'Both of you stop talking science and start shooting.',z:1.4}
 ],
 lair:[
-{w:'parley',t:'Stairs. Under a graveyard. Who builds stairs under a graveyard on purpose?',z:1.5},
-{w:'brit',t:'Someone who wanted to hide something worth finding. Three pedestals, three potions. Take one, the lair seals itself behind you.',z:1.3},
+{w:'parley',t:'Stairs under a graveyard. Who builds that?',z:1.5},
+{w:'brit',t:'Someone hiding something good. Three pedestals, three potions. Take one and the lair seals behind you.',z:1.3},
 {w:'kandie',k:1,t:'So pick the good one. No pressure.',z:1.4}
 ],
 boss:[
-{w:'narr',t:'The ground split open, and something very large decided it was done waiting.',z:1.2,fx:'shake'},
-{w:'brit',t:'That is not a normal anomaly. Big, loud, and politely ignoring physics.',z:1.3},
-{w:'parley',t:'It is ignoring me too, which is rude. I have been very visible.',z:1.5},
+{w:'narr',t:'The ground split open. Something huge climbed out.',z:1.2,fx:'shake'},
+{w:'brit',t:'That is not normal. It is big, loud, and ignores physics.',z:1.3},
+{w:'parley',t:'It is ignoring me too. Rude. I am right here.',z:1.5},
 {w:'kandie',k:1,t:'Aim for the glowing parts. There is always a glowing part.',z:1.4},
 {w:'narr',t:'{b}',z:1.9,fx:'flash'}
 ],
 bossend:[
-{w:'brit',t:'Signal is clear. The anomaly is gone. That was textbook, if the textbook had a lot of screaming in it.',z:1.3},
+{w:'brit',t:'Signal is clear. It is gone. Textbook, if the textbook had a lot of screaming.',z:1.3},
 {w:'parley',t:'I will take the credit and also a snack.',z:1.5},
 {w:'kandie',k:1,t:'You two are unbearable. Good job, though. Really.',z:1.4}
 ],
 tes1:[
 {w:'narr',t:'Every window in Gourd Hollow flickered to the same channel.',z:1.2,fx:'glitch'},
-{w:'tesvin',t:'Good evening, viewers. You are watching the last broadcast you will ever see.',z:1.5,fx:'glitch'},
-{w:'parley',t:'Is that a TV? Why is the TV talking? Why does it sound like it paid for the good microphone?',z:1.5},
-{w:'brit',t:'Tesvin. He has been rewriting pixels across the entire network. Parley, this is very, very bad.',z:1.3},
-{w:'tesvin',t:'I do not break the rules. I split them. I split atoms, and I split your reality at the seams.',z:1.7,fx:'shake'},
+{w:'tesvin',t:'Good evening, viewers. This is the last broadcast you will ever watch.',z:1.5,fx:'glitch'},
+{w:'parley',t:'Is that a TV? Why is it talking? And why does it sound so good?',z:1.5},
+{w:'brit',t:'Tesvin. He has been rewriting pixels across the whole network. Parley, this is bad.',z:1.3},
+{w:'tesvin',t:'I do not break the rules. I split them. Atoms, and your reality too.',z:1.7,fx:'shake'},
 {w:'kandie',k:1,t:'Okay, that is the creepiest thing I have heard all week, and I live with you two.',z:1.4},
-{w:'brit',t:'Everyone, brace. He is about to pull the render layer.',z:1.2,fx:'glitch'}
+{w:'brit',t:'Brace. He is about to pull the render layer.',z:1.2,fx:'glitch'}
 ],
 tes2:[
-{w:'tesvin',t:'Look closely. This page is only a texture. Allow me to peel it off.',z:1.6,fx:'glitch'},
+{w:'tesvin',t:'Look closely. This place is just a texture. Watch me peel it off.',z:1.6,fx:'glitch'},
 {w:'parley',t:'Brit, the whole site is getting pulled in!',z:1.4,fx:'shake'},
-{w:'brit',t:'He is ripping it into his dimension. Hold on to something solid and keep moving!',z:1.3}
+{w:'brit',t:'He is pulling it into his dimension. Hold on to something and keep moving!',z:1.3}
 ],
 revive:[
-{w:'kandie',t:'{p}! Hey, hey, eyes on me. You do not get to quit on me.',z:1.8,y:10,fx:'shake',sp:16},
-{w:'narr',t:'Kandie hit the dirt on her knees and did not look back.',z:2,y:30,sp:16},
-{w:'kandie',t:'I did not sit through all those first aid slides for nothing. Breathe!',z:2.1,y:30,sp:16},
+{w:'kandie',t:'{p}! Eyes on me. You are not quitting on me.',z:1.8,y:10,fx:'shake',sp:16},
+{w:'narr',t:'Kandie dropped to her knees beside {p}.',z:2,y:30,sp:16},
+{w:'kandie',t:'I sat through those first aid slides for a reason. Breathe!',z:2.1,y:30,sp:16},
 {w:'narr',t:'Pink light gathered around her hands.',z:2.3,y:30,fx:'flash',sp:16},
-{w:'kandie',t:'There. Back on your feet. And you owe me a snack, do not think I will forget.',z:1.4,sp:16}
+{w:'kandie',t:'There. Back on your feet. You owe me a snack. I will not forget.',z:1.4,sp:16}
 ],
 revive2:[
-{w:'brit',t:'{p}, do not move. I am running the numbers on how to put you back together.',z:1.8,y:10,fx:'shake',sp:16},
-{w:'narr',t:'Brit slid in beside {p} and flipped the laptop open with one hand.',z:2,y:30,sp:16},
-{w:'brit',t:'Resuscitation routine, version four. I wrote it in the lab. It has only exploded twice.',z:2.1,y:30,sp:16},
+{w:'brit',t:'{p}, do not move. I am working out how to fix you.',z:1.8,y:10,fx:'shake',sp:16},
+{w:'narr',t:'Brit slid in next to {p} and opened her laptop.',z:2,y:30,sp:16},
+{w:'brit',t:'Revive routine, version four. I wrote it in the lab. It has only exploded twice.',z:2.1,y:30,sp:16},
 {w:'narr',t:'Blue light crawled up the screen and into {p}.',z:2.3,y:30,fx:'flash',sp:16},
-{w:'brit',t:'There. Stable. You are welcome, and I am billing you in compliments.',z:1.4,sp:16}
+{w:'brit',t:'There. Stable. You are welcome. Compliments are accepted as payment.',z:1.4,sp:16}
 ],
 duo1:[
 {w:'narr',t:'A quiet moment between waves. Two sisters on watch.',z:2},
 {w:'kandie',t:'{q}, you have been staring at that laptop for twenty minutes.',z:1.5},
-{w:'brit',t:'I am calibrating. {p}, I am calibrating, not staring.',z:1.5},
-{w:'kandie',t:'Calibrating what? The monsters are not going to politely line up.',z:1.5},
-{w:'brit',t:'I am building a targeting matrix. If I tag them, you can burst them in clusters.',z:1.6},
-{w:'kandie',t:'Wow. A plan. With math. I am so proud, I might cry on you.',z:1.5},
+{w:'brit',t:'I am calibrating. Not staring.',z:1.5},
+{w:'kandie',t:'Calibrating what? The monsters will not line up for you.',z:1.5},
+{w:'brit',t:'I am building a targeting grid. If I tag them, you can pop them in groups.',z:1.6},
+{w:'kandie',t:'Wow. A plan with math. I am so proud.',z:1.5},
 {w:'brit',t:'Please do not. You are sticky.',z:1.3},
 {w:'you',t:'Are they always like this?',z:1.3},
-{w:'kandie',t:'I am sweet, there is a difference. Anyway. You tag them, I make them pop.',z:1.5},
-{w:'brit',t:'Deal. Sibling protocol, version one. Do not get hit.',z:1.5}
+{w:'kandie',t:'I am sweet. There is a difference. Anyway. You tag them, I pop them.',z:1.5},
+{w:'brit',t:'Deal. Do not get hit.',z:1.5}
 ],
 duo2:[
-{w:'narr',t:'The wind turned cold. Something big was thinking about them.',z:2},
+{w:'narr',t:'The wind turned cold. Something big was watching.',z:2},
 {w:'brit',t:'Kandie. Be honest. Do you ever get scared out here?',z:1.5},
 {w:'kandie',t:'Every single time. I just do it loudly so nobody notices.',z:1.6},
-{w:'brit',t:'That is the most illogical coping strategy I have ever heard.',z:1.5},
-{w:'kandie',t:'And yet I am still standing. Next to the genius who hides in a lab.',z:1.5},
-{w:'brit',t:'I do not hide. I observe from a protected location.',z:1.5},
+{w:'brit',t:'That makes no sense as a coping strategy.',z:1.5},
+{w:'kandie',t:'And I am still standing. Next to the genius who hides in a lab.',z:1.5},
+{w:'brit',t:'I do not hide. I watch from a safe place.',z:1.5},
 {w:'kandie',t:'Brit. You hide.',z:1.2},
-{w:'brit',t:'...Fine. I hide. But I am out here now. Because of you.',z:1.6},
+{w:'brit',t:'Fine. I hide. But I am out here now. Because of you.',z:1.6},
 {w:'you',t:'I am right here, you know. I can hear everything.',z:1.4},
 {w:'kandie',t:'Aww. Group hug?',z:1.2},
-{w:'brit',t:'Negative. But I will stand very close to you. That is basically the same.',z:1.7}
+{w:'brit',t:'No. But I will stand right next to you. Close enough.',z:1.7}
 ],
 duo3:[
-{w:'narr',t:'The hollow went still. Both of them felt it at the same time.',z:2},
-{w:'brit',t:'I have been working on something. A way to link our systems. Yours and mine.',z:1.7},
+{w:'narr',t:'Everything went still. They both felt it.',z:2},
+{w:'brit',t:'I have been working on something. A way to link us up.',z:1.7},
 {w:'kandie',t:'Link how? Like a friendship bracelet? I would love a bracelet.',z:1.5},
-{w:'brit',t:'Like a shared field. If anyone drops low, we both pour everything into them at once.',z:1.8},
+{w:'brit',t:'A shared field. If anyone drops low, we both pour everything into them.',z:1.8},
 {w:'kandie',t:'That is the sweetest thing you have ever said, and you said it like a manual.',z:1.7},
 {w:'narr',t:'Pink and blue light wound together between them.',z:2.2,fx:'flash'},
-{w:'brit',t:'Sibling Link, online. It needs a cooldown, so please do not abuse it.',z:1.6},
+{w:'brit',t:'Sibling Link is on. It has a cooldown, so do not spam it.',z:1.6},
 {w:'you',t:'Okay, that is actually really cool. Thanks, you two.',z:1.6},
 {w:'kandie',t:'No promises. {q}, {p}, you heard it. We have got you now.',z:1.7}
 ],
 kx1:[
-{w:'narr',t:'Kandie stopped mid-fight and checked her reflection in a shard of glass.',z:2},
+{w:'narr',t:'Kandie stopped mid-fight to check her reflection in a piece of glass.',z:2},
 {w:'kandie',t:'Do I look like someone who is losing? No. I look amazing.',z:1.6},
 {w:'kandie',t:'Okay, tiny confession. I add extra sparkles when nobody is looking.',z:1.6},
 {w:'kandie',t:'It does not do more damage. It just feels better. Do not tell Brit.',z:1.7}
 ],
 kx2:[
 {w:'narr',t:'Kandie pulled out a candy bar and snapped it in half.',z:2},
-{w:'kandie',t:'Half for me. Half for the team. This is how sugar diplomacy works.',z:1.7},
-{w:'kandie',t:'My Sweet Burst came from a craving I had during the first night. True story.',z:1.8},
-{w:'kandie',t:'Anyway. Tell me when you are low. I will pinky promise you back up.',z:1.7}
+{w:'kandie',t:'Half for me, half for the team. Fair.',z:1.7},
+{w:'kandie',t:'My Sweet Burst came from a craving on the first night. True story.',z:1.8},
+{w:'kandie',t:'Tell me when you are low and I will back you up.',z:1.7}
 ],
 bx1:[
-{w:'narr',t:'Brit paused to scribble in a notebook the size of a door.',z:2},
-{w:'brit',t:'Observation one. The monsters get louder when you panic. Please stop panicking.',z:1.7},
-{w:'brit',t:'Observation two. Kandie is, against all probability, the reason we are alive.',z:1.7},
+{w:'narr',t:'Brit stopped to scribble in a huge notebook.',z:2},
+{w:'brit',t:'The monsters get louder when you panic. Please stop panicking.',z:1.7},
+{w:'brit',t:'Also, Kandie is somehow the reason we are alive.',z:1.7},
 {w:'brit',t:'I will deny saying that if she asks. Moving on.',z:1.5}
 ],
 bx2:[
-{w:'narr',t:'Brit tapped three keys and a blue grid unfolded across the ground.',z:2},
-{w:'brit',t:'Containment, shields, and the orbital strike. All mine. All written during lunch.',z:1.8},
-{w:'brit',t:'If the orbital strike marks your feet, run. That is not a joke. I am a scientist.',z:1.8},
-{w:'brit',t:'Now. Let me show you what happens when somebody smart gets angry.',z:1.7}
+{w:'narr',t:'Brit hit three keys and a blue grid spread across the ground.',z:2},
+{w:'brit',t:'Containment, shields and the orbital strike. All mine. I wrote them at lunch.',z:1.8},
+{w:'brit',t:'If the orbital strike marks your feet, run. I am not joking.',z:1.8},
+{w:'brit',t:'Now watch what happens when a smart person gets angry.',z:1.7}
 ],
 tlab:[
 {w:'narr',t:'',d:2200,z:1.05,m:{bg:'black',lv:0,case:0,pot:0,eyes:0,m2:0,wh:0,back:0,bn:0,gl:0,sip:0}},
-{w:'narr',t:'Three floors below the hollow, a door nobody had opened in years sighed apart.',d:4200,z:1.25,y:14,m:{bg:'dark',case:1}},
-{w:'narr',t:'The lab hummed. Cold light. A dusty suitcase waited in the corner like it had been expecting company.',d:4600,z:1.45,y:26},
-{w:'you',t:'Okay. That suitcase is giving me a very bad feeling.',d:3200,z:1.3},
+{w:'narr',t:'Three floors under the hollow, a door nobody had opened in years swung open.',d:4200,z:1.25,y:14,m:{bg:'dark',case:1}},
+{w:'narr',t:'The lab hummed in cold light. A dusty suitcase sat in the corner.',d:4600,z:1.45,y:26},
+{w:'you',t:'I have a bad feeling about that suitcase.',d:3200,z:1.3},
 {w:'tesvin',t:'Hm. Brit says this lab is completely safe. Funny.',d:3400,z:1.6},
 {w:'parley',t:'Tesvin, walk ahead of us. Stay at the front, buddy.',d:3000,z:1.35},
 {w:'brit',t:'Ideal. He absorbs most of the damage anyway.',d:3000,z:1.35},
 {w:'you',t:'Brit. Did you just say that out loud?',d:2800},
 {w:'tesvin',t:'Anyone ever wonder why you always send me first?',d:3600,z:1.9,y:8},
-{w:'narr',t:'He pulled the suitcase open. The dust fell like snow.',d:3400,z:1.5,fx:'shake',m:{case:2}},
+{w:'narr',t:'He pulled the suitcase open. Dust fell everywhere.',d:3400,z:1.5,fx:'shake',m:{case:2}},
 {w:'narr',t:'Inside, a single bottle. DEBUG.',d:3000,z:1.8,m:{pot:1},fx:'flash'},
 {w:'tesvin',t:'I think I know why.',d:2800,z:2,m:{pot:2}},
 {w:'you',t:'Tesvin. Do not drink that.',d:2200,z:1.6},
@@ -177,7 +177,7 @@ tlab:[
 {w:'tesvin',t:'PERFECT VICTORY.',d:3800,big:1,fx:'imp',m:{gl:1}}
 ],
 tworld:[
-{w:'narr',t:'The monsters were gone. Only the TV remained, breathing static.',d:3200},
+{w:'narr',t:'The monsters were gone. Only the TV was left, buzzing with static.',d:3200},
 {w:'tesvin',t:'Wait.',d:1800,fx:'imp'},
 {w:'you',t:'Tesvin? Buddy? Why are you looking at the screen?',d:2800},
 {w:'narr',t:'He turned and looked straight through the screen.',d:3200,e:'look'},
@@ -204,7 +204,7 @@ tcheat:[
 {w:'narr',t:'He snapped his fingers. Every power left them.',d:2800,fx:'flash',e:'strip'},
 {w:'tesvin',t:'Who the hell do you think you are!',d:3000,fx:'imp'},
 {w:'tesvin',t:'Trying to. Cheat? IN MY DIMENSION!?',d:3600,fx:'shake',e:'rip'},
-{w:'narr',t:'He tore them in half and threw them into the water.',d:3200,fx:'imp',e:'rip2'}
+{w:'narr',t:'He tore them in half and threw them in the water.',d:3200,fx:'imp',e:'rip2'}
 ],
 tfair:[
 {w:'narr',t:'The water went still. The arena rose around them.',d:2800},

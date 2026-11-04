@@ -162,7 +162,7 @@ else if(e[0]==='sh')shake=Math.max(shake,e[1])
 else if(e[0]==='n'){say(e[1]);tone(70,1,.09,'sawtooth',.6)}
 else if(e[0]==='gl')glitchT=Math.max(glitchT,e[1])
 else if(e[0]==='sg')sgEv(e)
-else if(e[0]==='cs'){if(!csOn&&((e[1]!=='revive'&&e[1]!=='revive2')||e[3]===me)){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],pname:e[3]?names.get(e[3]):(names.get(RU.kan)||names.get(RU.brt)||names.get(me)),me:names.get(me),qname:names.get(RU.brt)||names.get(RU.kan)||names.get(me),cv,on:sceneOn}).then(()=>{csOn=0})}}
+else if(e[0]==='cs'){if(!csOn&&((e[1]!=='revive'&&e[1]!=='revive2')||e[3]===me)){csOn=1;scene(box,e[1],{kan:RU.kan===me,name:e[2],pname:e[3]?names.get(e[3]):(names.get(RU.kan)||names.get(RU.brt)||names.get(me)),me:names.get(me),qname:names.get(RU.brt)||names.get(RU.kan)||names.get(me),cv,on:sceneOn}).then(()=>{csOn=0;if(host)sim.csDone(me,e[1]);else send({k:'cd',id:e[1]})})}}
 else if(e[0]==='ar'){arenaOn=e[1];rip(!!e[1],box);if(e[1]){shake=Math.max(shake,16);glitchT=Math.max(glitchT,3);tone(60,2,.1,'sawtooth',.3)}}
 else if(e[0]==='bm'){BMS.push({o:e[1],v:e[2],l:e[3],m:e[3]});tone(300,.4,.04,'square',2)}
 else if(e[0]==='kl'){const k=kns.get(e[3]);if(k){k.say=e[2];k.t=5}}
@@ -1080,6 +1080,7 @@ if(host){
 if(d.k==='i')sim.input(f,d.x,d.y,d.a,d.d)
 else if(d.k==='t')sim.throw(f,d.w,d.x,d.y)
 else if(d.k==='h')sim.holdSet(f,d.v)
+else if(d.k==='cd')sim.csDone(f,String(d.id||''))
 else if(d.k==='p')sim.pick(f,d.id)
 else if(d.k==='a')sim.cast(f,d.n)
 else if(d.k==='q')sim.p10(f,d.ids)

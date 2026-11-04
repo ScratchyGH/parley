@@ -92,6 +92,7 @@ import('./androidapp.js').then(m=>m.androidApp())
 import('./bgm.js').then(m=>m.bgmBoot())
 import('./framefit.js').then(m=>m.frameFit())
 import('./activity.js').then(m=>m.startActivity())
+import('./ab.js').then(m=>m.abBoot())
 setTimeout(maybeTour,2600)
 }
 

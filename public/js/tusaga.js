@@ -3,12 +3,16 @@ const AW=['Hi! I am Tesvin. I help!','I am always at the front. Funny.','You all
 const BL=new Set(['x','y','hp','s','ang','cd','nv','hit','inv','tcd','rv','rvBy','bleed','hold','held','offer','ot','pend','lv','xp','next','lair','ret','lt','tpc','ig','ahit','sp','bl','gi','vm','bh','hpt','bk','cmb','fl','wc','k','u','n','r','dp','dh','sf'])
 export const SGD={lab:90,world:55,cheat:20,fair:7,brit:34}
 export function makeSaga(X){
-const{S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl}=X
+const{S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl,wall,buildingAt}=X
 const st={ph:0,t:0,lk:0,tv:null,a:null,idx:0,pi:0,pr:new Map(),base:new Map(),po:[],sk:[],hs:0,ad:0,dm:0,qt:0,qi:0,hc:0,tc:0,pd:test===2?35:300}
 st.tv={x:500,y:520,m:0,cd:1,hop:0,sx:1}
 const RM=i=>{const ox=i*CS;return{x:ox+120,y:240,w:760,h:520,ox}}
 const cp=b=>({...b,ammo:[...b.ammo],up:{...b.up},ab:{...b.ab},acd:{...b.acd}})
-const tp=(p,x,y)=>{p.x=x;p.y=y;p.ig=.6;p.inv=Math.max(p.inv,1.5);S.out.push({to:p.u,m:{k:'tp',x:Math.round(x),y:Math.round(y)}})}
+const bad=(x,y)=>wall(x,y)||wall(x+16,y)||wall(x-16,y)||wall(x,y+16)||wall(x,y-16)||!!buildingAt({x,y})
+const fit=(x,y)=>{if(x>=LI*CS||!bad(x,y))return[x,y]
+for(let r=24;r<=720;r+=24)for(let k=0;k<16;k++){const q=k/16*TAU,xx=x+Math.cos(q)*r,yy=y+Math.sin(q)*r;if(!bad(xx,yy))return[xx,yy]}
+return[x,y]}
+const tp=(p,a,b)=>{const[x,y]=fit(a,b);p.x=x;p.y=y;p.ig=.6;p.inv=Math.max(p.inv,1.5);S.out.push({to:p.u,m:{k:'tp',x:Math.round(x),y:Math.round(y)}})}
 const clear=()=>{S.en.length=0;S.eb.length=0;S.pj.length=0}
 const ring=(a,i,m,r)=>{const q=i/m*TAU;return[a.x+Math.cos(q)*r,a.y+Math.sin(q)*r]}
 const pic=()=>{const l=alive();return l[Math.floor(Math.random()*l.length)]}

@@ -181,10 +181,10 @@ export const UPS=[
 ['a_drain','Soul Drain [F]','Rip life out of everything around you',3,ab('drain')]
 ].map(u=>u[0].startsWith('a_')?[u[0],u[1],u[2],u[3],u[4]]:u)
 export const DIFFS=[
-{n:'I dont wanna die',t:'Easy mode',hp:.7,dmg:.6,sp:.65,php:1.35,xp:1.25,spd:.95},
-{n:'Im a man',t:'Neutral',hp:1,dmg:1,sp:1,php:1,xp:1,spd:1},
-{n:'I CAN FUCKING TAKE IT',t:'Hard',hp:1.35,dmg:1.3,sp:1.3,php:1,xp:1,spd:1.04},
-{n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12}
+{n:'I dont wanna die',t:'Easy mode',hp:.7,dmg:.6,sp:.65,php:1.35,xp:1.25,spd:.95,ar:.8},
+{n:'Im a man',t:'Neutral',hp:1,dmg:1,sp:1,php:1,xp:1,spd:1,ar:1},
+{n:'I CAN FUCKING TAKE IT',t:'Hard',hp:1.35,dmg:1.3,sp:1.3,php:1,xp:1,spd:1.04,ar:1.25},
+{n:'GIVE ME ALL YOU GOT',t:'Extreme',hp:1.8,dmg:1.8,sp:1.7,php:.85,xp:.9,spd:1.12,ar:1.6}
 ]
 export const LENS=[1,5,10,30,60,0]
 export const CSD={intro:26,moon:14,lair:13,boss:16,bossend:13,tes1:26,tes3:20,revive:13,revive2:13,duo1:34,duo2:30,duo3:30,kx1:20,kx2:20,bx1:20,bx2:20,tlab:SGD.lab,tworld:SGD.world,tcheat:SGD.cheat,tfair:SGD.fair,tbrit:SGD.brit}
@@ -397,6 +397,8 @@ p.dh=dash
 p.x=x;p.y=y;p.ang=a
 if(dash)p.inv=Math.max(p.inv,.3)
 }
+S.cdw=new Set()
+S.csDone=(u,id)=>{if(/^t(lab|world|cheat|fair|brit)$/.test(id)||!CSD[id]){return}S.cdw.add(u);if(alive().every(p=>S.cdw.has(p.u))){S.ts=0;S.cdw.clear()}}
 S.holdSet=(u,v)=>{const p=pl.get(u);if(p)p.hold=v?1:0}
 S.cast=(u,nm)=>{
 const p=pl.get(u),lv=p&&p.ab[nm]
@@ -654,7 +656,7 @@ S.cm=[]
 const cl=(w,t,f)=>{const k=S.cm.find(c=>c.w===w);if(!k)return;if(!f&&k.cd>0)return;k.cd=8;ev('kl',k.own,t,w)}
 const kl=(t,f)=>cl('kandie',t,f)
 const cmOf=u=>S.cm.find(c=>c.own===u&&c.rc<=0&&!c.rv)
-S.sg=makeSaga({S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl})
+S.sg=makeSaga({S,pl,test,n,ev,txt,hurtP,kbP,spawnE,alive,UPS,ABN,CS,LI,offer,rnd,kl,wall,buildingAt})
 for(const[w,u]of[['kandie',R.kan],['brit',R.brt]]){const o=u&&pl.get(u);if(o)S.cm.push({w,own:u,x:o.x+(w==='brit'?40:-40),y:o.y+10,cd:0,sh:1,sb:3,nv:7,hc:0,dn:0,rc:0,rv:0,rt:0,pp:0,ru:0,ia:rnd(25,40),os:null})}
 S.dsc={};S.lk0=0
 const CF={
@@ -749,6 +751,7 @@ const ps=alive()
 const sf=ps.filter(p=>!p.lair)
 const bls=ps.filter(q=>q.bl>0)
 if(S.ts>0)S.ts-=dt
+else if(S.cdw.size)S.cdw.clear()
 if(S.fast>0)S.fast-=dt
 const seen=new Set()
 for(const p of ps){structs(p,seen,dt);if(!p.lair)seedProps(p)}
@@ -841,7 +844,7 @@ const f=e.hp/e.mx,ph=f>.66?1:f>.33?2:3
 if(ph!==e.pp){e.pp=ph;ev('n',ph===2?'It is furious':'It will not stop');ev('sh',12);ring(e.x,e.y,10,170)}
 if(e.at){e.tg-=dt;sp=0;if(e.tg<=0)bossAtk(e,ph)}
 else{
-e.bs+=dt*(ph===3?1.5:1)
+e.bs+=dt*(ph===3?1.5:1)*DF.ar
 if(e.bs>(ph===1?4.2:3.2)){
 const o=e.tes?(ph===1?['atom','beam','warp']:['atom','beam','warp','volley','glitch','pull']):ph===1?['slam','volley','summon']:['slam','volley','summon','leap','pull']
 e.at=o[Math.floor(Math.random()*o.length)];e.tg=e.at==='volley'?.6:e.at==='beam'?1.2:e.at==='glitch'?.8:1;e.ax=t.x;e.ay=t.y;e.bs=0
@@ -851,21 +854,21 @@ ev('x',rd(e.x),rd(e.y),e.at==='slam'?190:130,7)
 if(ph>1){e.ch+=dt;if(e.ch>8.5)e.ch=-1;if(e.ch<0){sp*=2.2;e.ch-=dt;if(e.ch<-.8)e.ch=0}}
 }
 }else if(e.k==='xbow'){
-e.bs+=dt
+e.bs+=dt*DF.ar
 if(e.tg>0){e.tg-=dt;sp=0;if(e.tg<=0){const a=Math.atan2(e.ay-e.y,e.ax-e.x);S.eb.push({x:e.x,y:e.y,vx:Math.cos(a)*540,vy:Math.sin(a)*540,life:1.1,a:0,d:e.dmg,id:S.id++,kd:1})}}
 else{
 if(dp<230)sp*=-.9;else if(dp<340)sp*=.12
 if(e.bs>2.4&&dp<460&&dp>80&&los(e.x,e.y,t.x,t.y)){e.bs=0;e.tg=.65;e.ax=t.x;e.ay=t.y}
 }
 }else if(e.k==='gmimic'){
-e.bs+=dt
+e.bs+=dt*DF.ar
 if(dp<380&&dp>90&&e.bs>2.8){e.bs=0;const a0=Math.atan2(cy,cx);for(let i=-1;i<=1;i++){const a=a0+i*.22;S.eb.push({x:e.x,y:e.y,vx:Math.cos(a)*220,vy:Math.sin(a)*220,life:2.6,a:0,d:e.dmg*.6,id:S.id++,kd:2})}}
 }else if(e.k==='ghoul'||e.k==='lurker'||e.k==='mimic'||e.k==='smimic'){
 e.ch+=dt
 if(e.ch>3.6+e.ph*.2)e.ch=-.45
 if(e.ch<0){sp*=3.4;e.ch+=dt*2}
 }else if(e.k==='bone'){
-e.bs+=dt
+e.bs+=dt*DF.ar
 if(dp<300&&dp>110&&eb===tb){sp*=.35;if(e.bs>2.4){e.bs=0;const a=Math.atan2(cy,cx);S.eb.push({x:e.x,y:e.y,vx:Math.cos(a)*170,vy:Math.sin(a)*170,life:3,a:0,d:e.dmg,id:S.id++})}}
 }
 const w=Math.sin(S.time*(e.k==='bat'?9:3)+e.ph)*(e.k==='bat'?.9:.3)
