@@ -307,6 +307,8 @@ const r=d.roles.find(x=>x.id===sel)||list[0]
 const name=h('input',{class:'inp',value:r.name,maxLength:32,disabled:!!r.is_everyone})
 const col=h('input',{type:'color',value:r.color||'#8b949e',disabled:!!r.is_everyone,'aria-label':'Role colour',style:{width:'48px',height:'34px'}})
 let perms=r.perms
+const logo=h('input',{class:'inp',value:r.logo||'',maxLength:8,placeholder:'Emoji or short symbol',disabled:!!r.is_everyone})
+const give=h('select',{class:'sel',multiple:true,size:5,disabled:!!r.is_everyone},d.roles.filter(x=>!x.is_everyone&&x.id!==r.id).map(x=>h('option',{value:x.id,selected:(r.give||[]).includes(x.id)},x.name)))
 const checks=PERM_INFO.map(([n,l,sub])=>{
 const bit=P[n]
 if(r.is_everyone&&(n==='ADMIN'))return null
@@ -316,9 +318,9 @@ mount(pg,h('h3',null,'Roles'),
 h('div',{class:'row',style:{alignItems:'flex-start',flexWrap:'wrap'}},
 h('div',{style:{width:'200px'}},
 h('button',{class:'btn',style:{width:'100%',marginBottom:'8px'},on:{click:async()=>{try{const x=await POST(`/api/servers/${sid}/roles`,{name:'New role',color:'#8b949e',perms:P.VIEW|P.SEND|P.REACT|P.ATTACH|P.CONNECT});await loadServer(sid);sel=x.id;draw()}catch(e){fail(e)}}}},icon('plus','s'),'Create role'),
-h('div',{class:'list'},list.map(x=>h('button',{class:'ci'+(x.id===sel?' on':''),on:{click:()=>{sel=x.id;draw()}}},h('span',{style:{width:'10px',height:'10px',borderRadius:'50%',background:x.color||'var(--neutral)',flex:'none'}}),h('span',{class:'nm'},x.name))))),
+h('div',{class:'list'},list.map(x=>h('button',{class:'ci'+(x.id===sel?' on':''),on:{click:()=>{sel=x.id;draw()}}},h('span',{style:{width:'10px',height:'10px',borderRadius:'50%',background:x.color||'var(--neutral)',flex:'none'}}),h('span',{class:'nm'},(x.logo?x.logo+' ':'')+x.name)))),h('button',{class:'btn sm',style:{width:'100%',marginTop:'8px'},on:{click:async()=>{try{const x=await POST(`/api/servers/${sid}/roles/presets`,{});await loadServer(sid);toast(x.added?'Added '+x.added+' preset roles':'Preset roles already exist','ok');draw()}catch(e){fail(e)}}}},'Add preset roles')),
 h('div',{class:'grow',style:{minWidth:'260px'}},
-field('Role name',name),field('Colour',col),
+field('Role name',name),field('Colour',col),field('Logo',logo,'Shown before the role name.'),r.is_everyone?null:field('Can give',give,'Members with Give roles permission can only hand out the roles selected here. Leave empty for no limit.'),
 h('label',{class:'f'},'Permissions'),...checks,
 h('div',{class:'row sp',style:{marginTop:'16px'}},
 r.is_everyone?h('span'):h('button',{class:'btn dng',on:{click:async()=>{if(!await confirmBox('Delete role '+r.name,'Members lose this role.','Delete',true))return;try{await DEL(`/api/servers/${sid}/roles/${r.id}`);await loadServer(sid);sel=null;roles(pg,sid)}catch(e){fail(e)}}}},'Delete role'),
@@ -330,7 +332,7 @@ if(!up||up.is_everyone)return
 try{if(up.position===r.position)await PATCH(`/api/servers/${sid}/roles/${r.id}`,{position:up.position+1});else{await PATCH(`/api/servers/${sid}/roles/${r.id}`,{position:up.position});await PATCH(`/api/servers/${sid}/roles/${up.id}`,{position:r.position})};await loadServer(sid);draw()}catch(e){fail(e);await loadServer(sid);draw()}
 }}},'Move up'),
 h('button',{class:'btn pri',on:{click:async()=>{
-try{await PATCH(`/api/servers/${sid}/roles/${r.id}`,r.is_everyone?{perms}:{name:name.value.trim(),color:col.value,perms});await loadServer(sid);toast('Saved','ok');draw()}catch(e){fail(e)}
+try{await PATCH(`/api/servers/${sid}/roles/${r.id}`,r.is_everyone?{perms}:{name:name.value.trim(),color:col.value,perms,logo:logo.value.trim(),give:[...give.selectedOptions].map(o=>o.value)});await loadServer(sid);toast('Saved','ok');draw()}catch(e){fail(e)}
 }}},'Save role'))))))
 }
 draw()
