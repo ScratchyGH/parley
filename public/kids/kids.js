@@ -114,45 +114,75 @@ return
 }
 chatApp(id,tok,keys,c)
 }
+const IC={chat:'M4 6a3 3 0 013-3h10a3 3 0 013 3v8a3 3 0 01-3 3h-5l-5 4v-4a3 3 0 01-3-3z',users:'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2 20c0-3.3 3-5.5 7-5.5s7 2.2 7 5.5M17 4.5a3.5 3.5 0 010 6.5M19 14.8c1.8.7 3 2.2 3 4.2',plus:'M12 5v14M5 12h14',back:'M15 5l-7 7 7 7',copy:'M9 9h10v10H9zM5 15V5h10'}
+const ic=n=>sv('svg',{viewBox:'0 0 24 24',width:22,height:22,fill:'none',stroke:'currentColor','stroke-width':2.2,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'},sv('path',{d:IC[n]}))
+const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})
 function chatApp(id,tok,keys,c){
-let fr=[],cur=null,last=0,msgs=[],code='',note='',off=false
+let fr=[],cur=null,last=0,msgs=[],code='',off=false,tab='all',view='chat',pre=new URLSearchParams(location.search).get('f')||''
+if(pre){view='add';tab='add';history.replaceState(null,'','/kids/')}
 const call=(p,b)=>api(p,b,tok)
-const list=h('div',{class:'fl'}),pane=h('section',{class:'cp'}),side=h('aside',{class:'cs'})
-const flash=h('div',{class:'err',hidden:true})
+const rail=h('nav',{class:'kr','aria-label':'Parley Kids'}),ctx=h('aside',{class:'kc'}),main=h('section',{class:'km'})
+const app=h('div',{class:'kapp'},rail,ctx,main)
+const flash=h('div',{class:'err',hidden:true,role:'alert'})
 const say=t=>{flash.hidden=false;flash.textContent=t;setTimeout(()=>{flash.hidden=true},6000)}
-const draw=()=>{
-list.replaceChildren(...fr.map(f=>h('button',{class:'fi',type:'button','aria-current':cur&&cur.id===f.id?'true':undefined,disabled:f.status!=='active',on:{click:()=>{cur=f;last=0;msgs=[];draw();poll()}}},h('i',{class:'av sm'},face(f.avatar)),h('span',null,f.display_name,f.status==='pending'?h('small',null,'Waiting for parents'):null))))
-if(!fr.length)list.append(h('p',{class:'em'},'No friends yet. Share your code or enter a friend\'s code.'))
+const act=fr2=>fr2.filter(f=>f.status==='active'),pend=()=>fr.filter(f=>f.status==='pending')
+const drawRail=()=>rail.replaceChildren(
+h('div',{class:'kl','aria-hidden':'true'},sv('svg',{viewBox:'0 0 24 24',width:26,height:26},sv('path',{d:IC.chat,fill:'#fff'}))),
+...[['chat','Chats',()=>{tab='all';view='chat';app.classList.remove('in');drawAll()}],['users','Friends',()=>{tab=pend().length?'pending':'all';view='friends';drawAll()}],['plus','Add',()=>{tab='add';view='add';app.classList.add('in');drawAll()}]].map(([n,l,f])=>h('button',{class:'rb',type:'button','aria-label':l,title:l,'aria-current':(n==='chat'&&view==='chat')||(n==='users'&&view==='friends')||(n==='plus'&&view==='add')?'true':undefined,on:{click:f}},ic(n),pend().length&&n==='users'?h('b',null,String(pend().length)):null)))
+const row=f=>h('button',{class:'fi',type:'button','aria-current':cur&&cur.id===f.id&&view==='chat'?'true':undefined,disabled:f.status!=='active',on:{click:()=>{cur=f;last=0;msgs=[];view='chat';app.classList.add('in');drawAll();poll()}}},h('i',{class:'av sm'},face(f.avatar)),h('span',null,f.display_name,h('small',null,'@'+f.username)),h('em',{class:'on'}))
+const prow=f=>h('div',{class:'fi pr'},h('i',{class:'av sm'},face(f.avatar)),h('span',null,f.display_name,h('small',null,f.mine?'Waiting for your parents':'Wants to be friends. Your parents will check.')),f.mine?h('button',{class:'btn alt sm',type:'button',on:{click:async()=>{try{await call('/api/kids/friends/'+f.id+'/cancel',{});load()}catch(e){say(e.message)}}}},'Cancel'):null)
+const drawCtx=()=>{
+const a=act(fr),p=pend()
+const tabs=h('div',{class:'kt',role:'tablist'},[['all','All',a.length],['pending','Pending',p.length]].map(([k,l,n])=>h('button',{type:'button',role:'tab','aria-selected':String(tab===k&&view!=='add'),on:{click:()=>{tab=k;if(view==='add')view='chat';drawAll()}}},l+(n?' '+n:''))))
+const body=h('div',{class:'fl'},tab==='pending'?(p.length?p.map(prow):h('p',{class:'em'},'No requests right now.')):(a.length?a.map(row):h('p',{class:'em'},'No friends yet. Tap Add to invite someone.')))
+ctx.replaceChildren(h('div',{class:'kch'},h('h2',null,'Friends'),h('button',{class:'rb sm',type:'button','aria-label':'Add a friend',on:{click:()=>{tab='add';view='add';app.classList.add('in');drawAll()}}},ic('plus'))),tabs,body,
+h('div',{class:'ku'},h('i',{class:'av sm'},face(c.avatar)),h('span',null,h('b',null,c.display_name),h('small',null,'@'+c.username))),
+h('a',{class:'pv',href:'/kids/privacy.html',target:'_blank',rel:'noopener'},'Privacy notice for parents'))
 }
+const link=()=>location.origin+'/kids/?f='+code
+const cp=async t=>{try{await navigator.clipboard.writeText(t);say('Copied')}catch{say(t)}}
+const drawAdd=()=>{
+const inp=h('input',{maxlength:'20',autocomplete:'off',autocapitalize:'none',placeholder:'Friend code or username','aria-label':'Friend code or username',value:pre})
+pre=''
+const add=async()=>{const v=inp.value.trim();if(!v)return;try{await call('/api/kids/friends',{code:v});inp.value='';say('Sent. Your parents both have to say yes.');load()}catch(e){say(e.message)}}
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')add()})
+main.replaceChildren(h('div',{class:'kh'},h('button',{class:'rb sm kb',type:'button','aria-label':'Back',on:{click:()=>{view='chat';app.classList.remove('in');drawAll()}}},ic('back')),h('b',null,'Add a friend')),
+h('div',{class:'kb2'},h('section',{class:'card'},h('h2',null,'Add a friend'),h('p',null,'Type their friend code or username. Both of your parents have to say yes before you can chat.'),h('div',{class:'af'},inp,h('button',{class:'btn',type:'button',on:{click:add}},'Send request')),flash),
+h('section',{class:'card'},h('h2',null,'Your friend code'),h('div',{class:'big'},code||'...'),h('div',{class:'row2'},h('button',{class:'btn alt sm',type:'button',on:{click:()=>cp(code)}},ic('copy'),'Copy code'),h('button',{class:'btn alt sm',type:'button',on:{click:()=>cp(link())}},ic('copy'),'Copy invite link')))))
+if(pre===''&&inp.value==='')inp.focus()
+}
+const drawFriends=()=>main.replaceChildren(h('div',{class:'kh'},h('button',{class:'rb sm kb',type:'button','aria-label':'Back',on:{click:()=>{view='chat';app.classList.remove('in');drawAll()}}},ic('back')),h('b',null,'Friends')),
+h('div',{class:'kb2'},h('section',{class:'card'},h('h2',null,'Requests'),pend().length?pend().map(prow):h('p',{class:'em'},'Nothing waiting.')),h('section',{class:'card'},h('h2',null,'All friends ('+act(fr).length+')'),act(fr).length?act(fr).map(row):h('p',{class:'em'},'No friends yet.'))))
 const drawChat=()=>{
-if(!cur){pane.replaceChildren(h('div',{class:'ph'},h('h2',null,'Hi '+c.display_name+'!'),h('p',null,off?'Chat is paused. Ask your parent.':'Pick a friend to chat. You can only chat with friends your parents said yes to.')));return}
-const box=h('div',{class:'ms',role:'log','aria-live':'polite'},msgs.map(m=>h('div',{class:'mb '+(m.mine?'me':'')},h('span',null,m.body),m.mine?null:h('button',{class:'rp',type:'button',title:'Report this message',on:{click:async()=>{if(!confirm('Report this message and block this friend?'))return;try{await call('/api/kids/report',{msg:m.id});cur=null;load()}catch(e){say(e.message)}}}},'Report'))))
-const inp=h('input',{maxlength:'300',autocomplete:'off',placeholder:'Say something nice','aria-label':'Message',disabled:off})
+if(!cur){main.replaceChildren(h('div',{class:'ph'},h('h2',null,'Hi '+c.display_name+'!'),h('p',null,off?'Chat is paused. Ask your parent.':'Pick a friend on the left to chat. You can only chat with friends your parents said yes to.'),h('button',{class:'btn',type:'button',on:{click:()=>{tab='add';view='add';app.classList.add('in');drawAll()}}},'Add a friend')));return}
+let prev=null
+const box=h('div',{class:'ms',role:'log','aria-live':'polite'},msgs.map(m=>{
+const who=m.mine?c:cur,first=!prev||prev.mine!==m.mine||m.at-prev.at>300000
+prev=m
+return h('div',{class:'mg'+(first?' f':'')},first?h('i',{class:'av sm'},face(who.avatar)):h('i',{class:'av sm sp'}),h('div',{class:'mt'},first?h('b',null,who.display_name,h('time',null,tm(m.at))):null,h('span',null,m.body)),m.mine?null:h('button',{class:'rp',type:'button',title:'Report this message',on:{click:async()=>{if(!confirm('Report this message and block this friend?'))return;try{await call('/api/kids/report',{msg:m.id});cur=null;load()}catch(e){say(e.message)}}}},'Report'))}))
+const inp=h('input',{maxlength:'300',autocomplete:'off',placeholder:'Message '+cur.display_name,'aria-label':'Message',disabled:off})
 const send=async()=>{const t=inp.value.trim();if(!t)return;inp.disabled=true;try{await call('/api/kids/chat/'+cur.id,{text:t});inp.value='';await poll()}catch(e){say(e.message)}inp.disabled=false;inp.focus()}
 inp.addEventListener('keydown',e=>{if(e.key==='Enter')send()})
-const blk=h('button',{class:'btn alt sm',type:'button',on:{click:async()=>{if(!confirm('Block '+cur.display_name+'?'))return;try{await call('/api/kids/friends/'+cur.id+'/block',{});cur=null;load()}catch(e){say(e.message)}}}},'Block')
-pane.replaceChildren(h('div',{class:'ch'},h('i',{class:'av sm'},face(cur.avatar)),h('b',null,cur.display_name),blk),box,flash,h('div',{class:'sd'},inp,h('button',{class:'btn',type:'button',on:{click:send}},'Send')))
+const blk=h('button',{class:'btn alt sm',type:'button',on:{click:async()=>{if(!confirm('Block '+cur.display_name+'?'))return;try{await call('/api/kids/friends/'+cur.id+'/block',{});cur=null;app.classList.remove('in');load()}catch(e){say(e.message)}}}},'Block')
+main.replaceChildren(h('div',{class:'kh'},h('button',{class:'rb sm kb',type:'button','aria-label':'Back to friends',on:{click:()=>{app.classList.remove('in')}}},ic('back')),h('i',{class:'av sm'},face(cur.avatar)),h('b',null,cur.display_name),blk),box,flash,h('div',{class:'sd'},inp,h('button',{class:'btn',type:'button',on:{click:send}},'Send')))
 box.scrollTop=box.scrollHeight
 }
+const drawAll=()=>{drawRail();drawCtx();view==='add'?drawAdd():view==='friends'?drawFriends():drawChat()}
 const load=async()=>{
-try{const r=await call('/api/kids/friends');fr=r.friends;code=r.code;off=!r.chat;if(cur&&!fr.find(f=>f.id===cur.id&&f.status==='active'))cur=null;drawSide();draw();drawChat()}catch(e){if(e.status===401||e.status===403)boot()}
+try{const r=await call('/api/kids/friends');fr=r.friends;code=r.code;off=!r.chat;if(cur&&!fr.find(f=>f.id===cur.id&&f.status==='active')){cur=null;app.classList.remove('in')}const keep=document.activeElement&&main.contains(document.activeElement)&&document.activeElement.tagName==='INPUT'
+drawRail();drawCtx();if(!keep)view==='add'?drawAdd():view==='friends'?drawFriends():drawChat()}catch(e){if(e.status===401||e.status===403)boot()}
 }
 const poll=async()=>{
 if(!cur||document.hidden)return
-try{const r=await call('/api/kids/chat/'+cur.id+(last?'?after='+last:''));if(r.messages.length){if(!last)msgs=[];msgs.push(...r.messages);last=msgs[msgs.length-1].id;drawChat()}else if(!last&&msgs.length){msgs=[];drawChat()}}catch{}
+try{const r=await call('/api/kids/chat/'+cur.id+(last?'?after='+last:''));if(r.messages.length){if(!last)msgs=[];msgs.push(...r.messages);last=msgs[msgs.length-1].id;if(view==='chat')drawChat()}else if(!last&&msgs.length){msgs=[];if(view==='chat')drawChat()}}catch{}
 }
-const drawSide=()=>{
-const inp=h('input',{maxlength:'9',autocomplete:'off',placeholder:'Friend code','aria-label':'Friend code'})
-const add=h('button',{class:'btn sm',type:'button',on:{click:async()=>{try{await call('/api/kids/friends',{code:inp.value});inp.value='';say('Sent. Your parents both have to say yes.');load()}catch(e){say(e.message)}}}},'Add')
-side.replaceChildren(h('div',{class:'me sm'},h('div',{class:'av'},face(c.avatar)),h('div',null,h('b',null,c.display_name),h('p',null,'@'+c.username))),h('div',{class:'mc'},h('small',null,'Your friend code'),h('div',{class:'fc'},code||'')),list,h('div',{class:'af'},inp,add))
-}
-shell2(h('div',{class:'app'},side,pane))
+mount(root,h('main',{class:'kmain'},app))
+drawAll()
 load()
-const t1=setInterval(()=>{if(!document.getElementById('app').contains(side)){clearInterval(t1);clearInterval(t2);clearInterval(t3)}},2000)
+const t1=setInterval(()=>{if(!document.getElementById('app').contains(app)){clearInterval(t1);clearInterval(t2);clearInterval(t3)}},2000)
 const t2=setInterval(poll,3000)
 const t3=setInterval(()=>{if(!document.hidden)load()},15000)
 }
-const shell2=(...k)=>mount(root,h('main',{class:'wide'},h('div',{class:'brand'},h('i',null,sv('svg',{viewBox:'0 0 24 24'},sv('path',{d:'M4 6a3 3 0 013-3h10a3 3 0 013 3v8a3 3 0 01-3 3h-5l-5 4v-4a3 3 0 01-3-3z',fill:'#fff'}))),'Parley Kids'),...k,h('a',{class:'pv',href:'/kids/privacy.html',target:'_blank',rel:'noopener'},'Privacy notice for parents')))
 function create(id,tok,again){
 let av='fox'
 const un=h('input',{maxlength:'16',autocomplete:'off',autocapitalize:'none',spellcheck:'false','aria-label':'Username'})
