@@ -150,14 +150,19 @@ jobs:
       - run: |
           mkdir cap && cd cap
           npm init -y
-          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/app@6 @capacitor/haptics@6 @capacitor/status-bar@6 @capacitor/splash-screen@6 @capacitor/keyboard@6
           mkdir www
-          echo '<!doctype html><title>Parley</title>' > www/index.html
-          cat > capacitor.config.json <<EOF
-          {"appId":"app.parley.android","appName":"Parley","webDir":"www","server":{"url":"${SITE}","androidScheme":"https"}}
-          EOF
+          echo '<!doctype html><title>Parley</title><body style="background:#121211">' > www/index.html
+          cat > www/offline.html <<EOF2
+          <!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Parley</title><style>html,body{height:100%;margin:0;background:#121211;color:#ece9e2;font:16px system-ui}body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}img{width:84px;height:84px;border-radius:22px}h1{font-size:22px;margin:0}p{margin:0;color:#a39f94}button{font:700 16px system-ui;padding:12px 24px;border:0;border-radius:12px;background:#d8a24a;color:#1a1405}</style><img src=logo.png alt=""><h1>You are offline</h1><p>Parley needs a connection. Check your network and try again.</p><button onclick="location.href='${SITE}'">Try again</button>
+          EOF2
+          cp ../public/logo-192.png www/logo.png
+          cat > capacitor.config.json <<EOF2
+          {"appId":"app.parley.android","appName":"Parley","webDir":"www","server":{"url":"${SITE}","androidScheme":"https","errorPath":"offline.html"},"android":{"appendUserAgent":"ParleyAndroid/2","backgroundColor":"#121211","allowMixedContent":false},"plugins":{"SplashScreen":{"launchShowDuration":600,"launchAutoHide":true,"backgroundColor":"#121211","showSpinner":false},"StatusBar":{"style":"DARK","backgroundColor":"#121211","overlaysWebView":false},"Keyboard":{"resize":"body"}}}
+          EOF2
           npx cap add android
-          sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/><application#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#<item name="android:background">@null</item>#<item name="android:background">\#121211</item><item name="android:windowBackground">\#121211</item><item name="android:statusBarColor">\#121211</item><item name="android:navigationBarColor">\#121211</item>#' android/app/src/main/res/values/styles.xml
           for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do n=${d%%:*}; s=${d##*:}; mkdir -p android/app/src/main/res/mipmap-$n; for f in ic_launcher ic_launcher_round ic_launcher_foreground; do convert ../public/logo-512.png -resize ${s}x${s} android/app/src/main/res/mipmap-$n/$f.png; done; done
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           npx cap sync android
