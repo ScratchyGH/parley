@@ -3,7 +3,7 @@ import{resolveRoom,need,P}from'./perms.js'
 import{place}from'./store.js'
 import{explicitText}from'./safety.js'
 
-const MAX=10*1048576
+const MAX=30*1048576
 const base=env=>(env.GIF_API_BASE||(env.TENOR_API_KEY?'https://tenor.googleapis.com/v2':'')).replace(/\/+$/,'')
 const key=env=>env.GIF_API_KEY||env.TENOR_API_KEY||''
 const hosts=env=>(env.GIF_MEDIA_HOSTS||'tenor.com,klipy.com,giphy.com,cdn.otakugifs.xyz,cdn.purrbot.site,nekos.best,upload.wikimedia.org').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
@@ -123,9 +123,9 @@ if(!res.ok)fail(502,'Could not download that GIF')
 const type=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()
 if(!['image/gif','image/webp','image/png','image/jpeg'].includes(type))fail(415,'That is not an image')
 const len=parseInt(res.headers.get('content-length')||'0')
-if(len>MAX)fail(413,'That GIF is larger than 10 MB')
+if(len>MAX)fail(413,'That GIF is larger than 30 MB')
 const buf=await res.arrayBuffer()
-if(buf.byteLength>MAX||buf.byteLength<8)fail(413,'That GIF is larger than 10 MB')
+if(buf.byteLength>MAX||buf.byteLength<8)fail(413,'That GIF is larger than 30 MB')
 return{buf,type}
 }
 
