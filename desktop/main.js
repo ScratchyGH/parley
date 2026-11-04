@@ -1,4 +1,5 @@
 const{app,BrowserWindow,shell,session,desktopCapturer,ipcMain}=require('electron')
+if(process.platform==='linux')app.commandLine.appendSwitch('enable-features','WebRTCPipeWireCapturer')
 const U='https://parley.heavengtwashere.workers.dev/?web=1'
 const O='https://parley.heavengtwashere.workers.dev'
 if(!app.requestSingleInstanceLock())app.quit()
@@ -17,10 +18,11 @@ p.once('ready-to-show',()=>p.show())
 app.whenReady().then(()=>{
 const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#0a0a09',autoHideMenuBar:true,icon:__dirname+'/icon.png',webPreferences:{contextIsolation:true,sandbox:true}})
 const ses=w.webContents.session
-ses.setPermissionRequestHandler((wc,perm,cb,d)=>cb(['media','display-capture','notifications','fullscreen','clipboard-sanitized-write','clipboard-read'].includes(perm)&&(d.requestingUrl||'').startsWith(O)))
-ses.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(O)&&['media','display-capture','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
+ses.setPermissionRequestHandler((wc,perm,cb,d)=>cb(['media','notifications','fullscreen','clipboard-sanitized-write','clipboard-read'].includes(perm)&&(d.requestingUrl||'').startsWith(O)))
+ses.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(O)&&['media','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
 ses.setDisplayMediaRequestHandler(async(req,cb)=>{
 try{
+if(!req.userGesture||!(req.frame?.url||'').startsWith(O))return cb({})
 const src=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:420,height:260}})
 if(!src.length)return cb({})
 const id=await pick(w,src)
