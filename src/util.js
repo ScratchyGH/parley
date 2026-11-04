@@ -34,6 +34,14 @@ const t=v.trim()
 if(t.length<min||t.length>max)fail(400,`${n} must be ${min}-${max} characters`)
 return t
 }
+export const cleanName=(v,min,max,n)=>{
+if(typeof v!=='string')fail(400,n+' must be text')
+const t=v.normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u034f\u061c\u115f\u1160\u180b-\u180f\u200b\u200c\u200e\u200f\u202a-\u202e\u2060-\u206f\u3164\ufeff\ufff9-\ufffb\u{e0000}-\u{e007f}]/gu,'').replace(/(\p{M}{3})\p{M}+/gu,'$1').replace(/\s+/gu,' ').trim()
+const l=[...t].length
+if(l<min||l>max)fail(400,`${n} must be ${min}-${max} characters`)
+if(!/[\p{L}\p{N}\p{Extended_Pictographic}\p{S}]/u.test(t))fail(400,n+' needs at least one visible character')
+return t
+}
 export const opt=(v,max,n)=>{
 if(v==null)return ''
 if(typeof v!=='string'||v.length>max)fail(400,n+' is invalid')

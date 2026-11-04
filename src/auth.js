@@ -3,9 +3,9 @@ import{alertUser}from'./email.js'
 import{checkSecondFactor}from'./totp.js'
 import{redeemReferral}from'./referral.js'
 import{nameProblem,dnProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
-import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
+import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,cleanName,color,gradient,limit,body,json}from'./util.js'
 
-export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
+export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text,(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_emoji else '' end) status_emoji"
 const GT=c=>`(select s.${c} from servers s where s.id=u.tag_server and s.tag is not null and exists(select 1 from members mm where mm.server_id=s.id and mm.user_id=u.id)) guild_${c}`
 export const GTAG=[GT('tag'),GT('tag_emoji'),GT('tag_icon_id')].join(',')
 export const PUBLIC=`u.id,u.username,u.display_name,u.avatar_id,u.banner_id,u.bio,u.pronouns,${STATUS},u.status_until,u.links,u.accent,u.nameplate,u.frame,u.effect,u.namefx,u.badge,u.title,u.bubble,u.acard,u.ctitle,u.cmsg,${GTAG},u.created_at`
@@ -92,7 +92,7 @@ return{label,url:u.href}
 export function me(u){
 let settings={}
 try{settings=JSON.parse(u.settings)}catch{}
-return{tos_ok:u.tos_version===TOS_VERSION,tos_version:TOS_VERSION,pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,namefx:u.namefx||null,badge:u.badge||null,title:u.title||null,bubble:u.bubble||null,acard:u.acard||null,ctitle:u.ctitle||null,cmsg:u.cmsg||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
+return{tos_ok:u.tos_version===TOS_VERSION,tos_version:TOS_VERSION,pars:u.pars||0,seen_version:u.seen_version||null,nameplate:u.nameplate||null,frame:u.frame||null,effect:u.effect||null,namefx:u.namefx||null,badge:u.badge||null,title:u.title||null,bubble:u.bubble||null,acard:u.acard||null,ctitle:u.ctitle||null,cmsg:u.cmsg||null,id:u.id,username:u.username,display_name:u.display_name,avatar_id:u.avatar_id,banner_id:u.banner_id,bio:u.bio,pronouns:u.pronouns,status_text:u.status_until&&u.status_until<=now()?'':u.status_text,status_emoji:u.status_until&&u.status_until<=now()?'':u.status_emoji||'',presence:u.presence,accent:u.accent,settings,admin:u.admin,owner:!!u.owner,links:linksOf(u.links),status_until:u.status_until&&u.status_until>now()?u.status_until:null,totp_on:!!u.totp_on,labs:!!u.labs,adult_ok:!!u.adult_ok,tag_server:u.tag_server||null,created_at:u.created_at}
 }
 
 const tokenOf=(req,name)=>{
@@ -141,13 +141,13 @@ r.add('POST','/api/auth/register',async c=>{
 if(c.env.REGISTRATION_OPEN==='false')fail(403,'Registration is closed')
 limit('reg:'+ip(c),10,3600000)
 const b=await body(c.req)
-const username=str(b.username,3,24,'Username')
+const username=cleanName(b.username,3,24,'Username')
 if(!NAME.test(username))fail(400,'Username may only contain letters from any language, numbers, dots, dashes and underscores')
 const bad=nameProblem(c.env,username)
 if(bad)fail(400,bad)
 if(await claimOwner(c.env,username))fail(409,'That username is taken or too similar to an existing or previously used one')
 const pw=str(b.password,10,200,'Password')
-const dn=b.display_name?str(b.display_name,1,32,'Display name'):username
+const dn=b.display_name?cleanName(b.display_name,1,32,'Display name'):username
 if(dnProblem(dn))fail(400,dnProblem(dn))
 const salt=randHex(16)
 const n=iters(c.env)
@@ -268,9 +268,14 @@ r.add('PATCH','/api/me',async c=>{
 const b=await body(c.req,16384)
 const sets=[],vals=[]
 const add=(col,v)=>{sets.push(col+'=?');vals.push(v)}
-if('display_name'in b){const dn=str(b.display_name,1,32,'Display name');if(dnProblem(dn))fail(400,dnProblem(dn));add('display_name',dn)}
+if('display_name'in b){const dn=cleanName(b.display_name,1,32,'Display name');if(dnProblem(dn))fail(400,dnProblem(dn));add('display_name',dn)}
 if('bio'in b)add('bio',opt(b.bio,500,'Bio'))
 if('pronouns'in b)add('pronouns',opt(b.pronouns,32,'Pronouns'))
+if('status_emoji'in b){
+const e=String(b.status_emoji||'').trim()
+if(e&&(e.length>16||!/^[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u{1f3fb}-\u{1f3ff}]+$/u.test(e)||!/[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(e)))fail(400,'Pick a real emoji')
+add('status_emoji',e||null)
+}
 if('status_text'in b){
 add('status_text',opt(b.status_text,100,'Status'))
 if(!('status_until'in b))add('status_until',null)

@@ -481,16 +481,17 @@ const alertP=(env,pid,kind,detail)=>logp(env,pid,kind,detail)
 P('GET','/api/kids/friends',async c=>{
 const me=await myChild(c)
 const rows=await c.env.DB.prepare('select f.*,k.username,k.display_name,k.avatar from kp_friends f join kp_children k on k.id=(case when f.a=?1 then f.b else f.a end) where (f.a=?1 or f.b=?1) and f.status in(\'active\',\'pending\')').bind(me.id).all()
-return{code:me.fcode,chat:!me.chat_off,muted:Math.max(0,me.muted_until-now()),friends:rows.results.map(r=>({id:r.id,username:r.username,display_name:r.display_name,avatar:r.avatar,status:r.status}))}
+return{code:me.fcode,chat:!me.chat_off,muted:Math.max(0,me.muted_until-now()),friends:rows.results.map(r=>({id:r.id,username:r.username,display_name:r.display_name,avatar:r.avatar,status:r.status,mine:r.a===me.id}))}
 })
 P('POST','/api/kids/friends',async c=>{
 const me=await myChild(c)
 limit('kpf:'+me.id,10,600000)
 const b=await body(c.req,200)
-const code=String(b.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'')
-if(code.length!==8)fail(400,'Friend codes have 8 letters and numbers')
-const o=await c.env.DB.prepare('select * from kp_children where fcode=? and status=\'active\'').bind(code).first()
-if(!o||o.id===me.id)fail(404,'No one has that friend code')
+const raw=String(b.code||'').trim()
+const code=raw.toUpperCase().replace(/[^A-Z0-9]/g,'')
+let o=code.length===8?await c.env.DB.prepare('select * from kp_children where fcode=? and status=\'active\'').bind(code).first():null
+if(!o&&/^[A-Za-z0-9_]{3,16}$/.test(raw))o=await c.env.DB.prepare('select * from kp_children where lower(username)=lower(?) and status=\'active\'').bind(raw).first()
+if(!o||o.id===me.id)fail(404,'No one has that friend code or username')
 const ex=await c.env.DB.prepare('select id from kp_friends where ((a=?1 and b=?2) or (a=?2 and b=?1)) and status!=\'blocked\'').bind(me.id,o.id).first()
 if(ex)fail(409,'You already asked this friend')
 const pr=await c.env.DB.prepare('select id_status from kp_parents where id=?').bind(me.parent_id).first()
@@ -503,6 +504,11 @@ c.env.DB.prepare('insert into kp_friends(id,a,b,a_ok,b_ok,status,created_at) val
 logp(c.env,me.parent_id,'friend',me.display_name+' asked to be friends with '+o.display_name+'. Approve it in Friends.'),
 ...(same?[]:[logp(c.env,o.parent_id,'friend',o.display_name+' got a friend request from '+me.display_name+'. Approve it in Friends.')])
 ])
+return{ok:true}
+})
+P('POST','/api/kids/friends/:id/cancel',async c=>{
+const me=await myChild(c)
+await c.env.DB.prepare('delete from kp_friends where id=? and a=? and status=\'pending\'').bind(c.p.id,me.id).run()
 return{ok:true}
 })
 P('POST','/api/kids/friends/:id/block',async c=>{
