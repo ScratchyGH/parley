@@ -271,6 +271,7 @@ function userFor(m){return m.author}
 function openProfile(e,u){emit('ui:profile',{id:u.id,x:e.clientX,y:e.clientY,el:e.currentTarget})}
 
 function buildMsg(m,cont){
+if(m.content&&m.content.charCodeAt(0)===8291)return h('div',{class:'m sysln',role:'status',style:{textAlign:'center',opacity:'.7',fontSize:'.85em',padding:'4px 0'}},m.content.slice(1))
 const me=S.me
 const own=m.author.id===me.id
 const ctx={urls:[],onMention:n=>emit('ui:mention',n),who:whoIs,chan:chanLink}

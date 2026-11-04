@@ -326,22 +326,29 @@ const owner=c.owner_id===S.me.id
 const body=h('div',{class:'bd'})
 const d=dialog('Group settings',body,{})
 if(!S.fr.friends.length)await loadFriends().catch(()=>{})
+let gp={def:{},users:{}}
+try{gp=await GET('/api/conversations/'+room+'/perms')}catch{}
+const can=k=>owner||!!(((gp.users[S.me.id]||{})[k])??gp.def[k])
+const PK=[['rename','Rename'],['icon','Icon'],['add','Add'],['remove','Remove']]
+const savePerms=async()=>{try{gp=await PUT('/api/conversations/'+room+'/perms',gp);toast('Saved','ok')}catch(e){fail(e)}}
 const err=errBox()
-const name=h('input',{class:'inp',maxLength:50,value:c.name||'',disabled:!owner})
+const name=h('input',{class:'inp',maxLength:50,value:c.name||'',disabled:!can('rename')})
 function draw(){
 const cur=conv(room)
 if(!cur){d.close();return}
 const memberIds=new Set(cur.members.map(m=>m.id))
 mount(body,
-field('Group name',h('div',{class:'row'},name,owner?h('button',{class:'btn',on:{click:async()=>{try{await PATCH('/api/conversations/'+room,{name:name.value.trim()});await loadConvs();toast('Saved','ok')}catch(e){fail(e)}}}},'Save'):null)),
-owner?field('Group icon',h('div',{class:'row'},avatar({id:room,name:convTitle(cur),icon_id:cur.icon_id},'sm'),h('button',{class:'btn sm',on:{click:async()=>{
+field('Group name',h('div',{class:'row'},name,can('rename')?h('button',{class:'btn',on:{click:async()=>{try{await PATCH('/api/conversations/'+room,{name:name.value.trim()});await loadConvs();toast('Saved','ok')}catch(e){fail(e)}}}},'Save'):null)),
+can('icon')?field('Group icon',h('div',{class:'row'},avatar({id:room,name:convTitle(cur),icon_id:cur.icon_id},'sm'),h('button',{class:'btn sm',on:{click:async()=>{
 const f=await pickCropped({aspect:1,round:true,width:512,title:'Crop group icon'});if(!f)return
 try{const up=await uploadImage('conv_icon',{room},f);await PATCH('/api/conversations/'+room,{icon_id:up.id});await loadConvs();draw()}catch(e){fail(e)}
 }}},'Upload'),cur.icon_id?h('button',{class:'btn sm',on:{click:async()=>{try{await PATCH('/api/conversations/'+room,{icon_id:null});await loadConvs();draw()}catch(e){fail(e)}}}},'Remove'):null)):null,
 h('label',{class:'f'},`Members (${cur.members.length}/10)`),
 h('div',{class:'list'},cur.members.map(m=>h('div',{class:'li'},avatar(m,'sm'),h('div',{class:'grow'},h('b',null,m.display_name+(m.id===cur.owner_id?' (owner)':'')),h('small',null,'@'+m.username)),
-owner&&m.id!==S.me.id?h('button',{class:'btn sm dng',on:{click:async()=>{try{await DEL(`/api/conversations/${room}/members/${m.id}`);await loadConvs();draw()}catch(e){fail(e)}}}},'Remove'):null))),
-owner?h('div',null,h('label',{class:'f'},'Add a friend'),h('div',{class:'list',style:{maxHeight:'140px',overflow:'auto'}},S.fr.friends.filter(f=>!memberIds.has(f.id)).map(f=>h('div',{class:'li'},avatar(f,'sm'),h('div',{class:'grow'},f.display_name),h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/conversations/${room}/members`,{user_id:f.id});await loadConvs();draw()}catch(e){fail(e)}}}},'Add'))))):null,
+can('remove')&&m.id!==S.me.id&&m.id!==cur.owner_id?h('button',{class:'btn sm dng',on:{click:async()=>{try{await DEL(`/api/conversations/${room}/members/${m.id}`);await loadConvs();draw()}catch(e){fail(e)}}}},'Remove'):null))),
+can('add')?h('div',null,h('label',{class:'f'},'Add a friend'),h('div',{class:'list',style:{maxHeight:'140px',overflow:'auto'}},S.fr.friends.filter(f=>!memberIds.has(f.id)).map(f=>h('div',{class:'li'},avatar(f,'sm'),h('div',{class:'grow'},f.display_name),h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/conversations/${room}/members`,{user_id:f.id});await loadConvs();draw()}catch(e){fail(e)}}}},'Add'))))):null,
+owner?h('div',null,h('label',{class:'f'},'What members can do'),h('div',{class:'row',style:{flexWrap:'wrap',gap:'10px'}},PK.map(([k,l])=>h('label',{class:'row',style:{gap:'4px'}},h('input',{type:'checkbox',checked:!!gp.def[k],on:{change:e=>{gp.def[k]=e.target.checked;savePerms()}}}),l+' (everyone)'))),
+cur.members.filter(m=>m.id!==cur.owner_id).map(m=>h('div',{class:'li'},h('div',{class:'grow'},m.display_name),PK.map(([k,l])=>h('label',{class:'row',style:{gap:'4px',marginLeft:'8px'}},h('input',{type:'checkbox',checked:!!((gp.users[m.id]||{})[k]??gp.def[k]),on:{change:e=>{const u=gp.users[m.id]=gp.users[m.id]||{};for(const[x]of PK)if(!(x in u))u[x]=!!gp.def[x];u[k]=e.target.checked;savePerms()}}}),l))))):null,
 err,
 h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'16px'}},h('button',{class:'btn dng',on:{click:async()=>{
 if(!await confirmBox('Leave group','You will stop receiving messages from this group.','Leave',true))return

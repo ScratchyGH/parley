@@ -9,7 +9,7 @@ const KEY='parley:voice'
 export function voicePrefs(){
 let p={}
 try{p=JSON.parse(localStorage.getItem(KEY)||'{}')}catch{}
-return{input:'',output:'',camera:'',echo:true,noise:true,agc:true,ptt:false,pttKey:'KeyV',scrRes:'720',scrFps:30,scrKbps:0,scrAudio:false,captions:false,...p}
+return{input:'',output:'',camera:'',camRes:'720',camFps:30,mirror:true,echo:true,noise:true,agc:true,ptt:false,pttKey:'KeyV',scrRes:'720',scrFps:30,scrKbps:0,scrAudio:false,captions:false,...p}
 }
 export function saveVoicePrefs(p){
 try{localStorage.setItem(KEY,JSON.stringify(p))}catch{}
@@ -32,6 +32,10 @@ if(n==='NotFoundError'||n==='OverconstrainedError')return['No microphone found',
 if(n==='NotReadableError'||n==='AbortError')return['Your microphone is busy','Another app or tab is using your microphone. Close it, then press Allow microphone below.']
 return['Microphone problem',(e&&e.message)||'The microphone could not be started.']
 }
+const CAMR={480:[640,480],720:[1280,720],1080:[1920,1080]}
+const camC=pr=>{const r=CAMR[pr.camRes]||CAMR[720];return{width:{ideal:r[0]},height:{ideal:r[1]},frameRate:{ideal:+pr.camFps||30}}}
+const camApply=()=>{const t=V.cam?.getVideoTracks()[0];if(t)t.applyConstraints(camC(voicePrefs())).catch(()=>{})}
+const micApply=()=>{if(V.mic)switchInput(voicePrefs().input)}
 const micOpts=()=>{const pr=voicePrefs();return{audio:{deviceId:pr.input?{ideal:pr.input}:undefined,echoCancellation:pr.echo,noiseSuppression:pr.noise,autoGainControl:pr.agc},video:false}}
 function askMic(first){
 return new Promise(res=>{
@@ -397,7 +401,7 @@ for(const p of V.peers.values()){if(p.senders.cam){try{p.pc.removeTrack(p.sender
 V.cam=null
 }else{
 const pr=voicePrefs()
-try{V.cam=await navigator.mediaDevices.getUserMedia({video:{deviceId:pr.camera?{ideal:pr.camera}:undefined,width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}}})}
+try{V.cam=await navigator.mediaDevices.getUserMedia({video:{deviceId:pr.camera?{ideal:pr.camera}:undefined,...camC(pr)}})}
 catch(e){toast('Camera unavailable: '+(e.name==='NotAllowedError'?'permission denied':e.message),'err');return}
 for(const p of V.peers.values())for(const t of V.cam.getVideoTracks()){p.senders.cam=p.pc.addTrack(t,V.cam)}
 for(const uid of V.peers.keys())setTimeout(()=>sendKinds(uid),300)
@@ -636,10 +640,14 @@ mount(wrap,
 sel('Input device','audioinput','input',id=>switchInput(id)),
 sel('Output device','audiooutput','output',id=>applyOutput(id)),
 sel('Camera','videoinput','camera'),
-h('div',{class:'perm'},toggle(pr.echo,v=>save({echo:v}),'Echo cancellation'),h('span',null,'Echo cancellation')),
-h('div',{class:'perm'},toggle(pr.noise,v=>save({noise:v}),'Noise suppression'),h('span',null,'Noise suppression')),
-h('div',{class:'perm'},toggle(pr.agc,v=>save({agc:v}),'Automatic gain'),h('span',null,'Automatic gain control')),
-h('div',{class:'hint'},'Echo, noise and gain changes apply the next time you join a call.'),
+h('div',{class:'perm'},toggle(pr.echo,v=>{save({echo:v});micApply()},'Echo cancellation'),h('span',null,'Echo cancellation')),
+h('div',{class:'perm'},toggle(pr.noise,v=>{save({noise:v});micApply()},'Noise suppression'),h('span',null,'Noise suppression')),
+h('div',{class:'perm'},toggle(pr.agc,v=>{save({agc:v});micApply()},'Automatic gain'),h('span',null,'Automatic gain control')),
+h('h4',{style:{margin:'16px 0 6px'}},'Camera'),
+field('Camera quality',h('select',{class:'sel','aria-label':'Camera quality',on:{change:e=>{save({camRes:e.target.value});camApply()}}},[['480','480p'],['720','720p (recommended)'],['1080','1080p']].map(([v,l])=>h('option',{value:v,selected:String(pr.camRes)===v},l)))),
+field('Camera frame rate',h('select',{class:'sel','aria-label':'Camera frame rate',on:{change:e=>{save({camFps:+e.target.value});camApply()}}},[[15,'15 fps'],[24,'24 fps'],[30,'30 fps'],[60,'60 fps']].map(([v,l])=>h('option',{value:v,selected:+pr.camFps===v},l)))),
+h('div',{class:'perm'},toggle(pr.mirror,v=>save({mirror:v}),'Mirror my camera'),h('span',null,'Mirror my own camera preview')),
+h('div',{class:'hint'},'Audio and camera changes apply right away during a call.'),
 h('h4',{style:{margin:'16px 0 6px'}},'Screen sharing'),
 field('Resolution',h('select',{class:'sel','aria-label':'Screen share resolution',on:{change:e=>{save({scrRes:e.target.value});applyScreenQuality()}}},[['480','480p'],['720','720p (recommended)'],['1080','1080p'],['1440','1440p'],['2160','4K'],['4320','8K'],['8640','16K HD'],['native','Source size']].map(([v,l])=>h('option',{value:v,selected:String(pr.scrRes)===v},l)))),
 field('Frame rate',h('select',{class:'sel','aria-label':'Screen share frame rate',on:{change:e=>{save({scrFps:+e.target.value});applyScreenQuality()}}},[[5,'5 fps, slides'],[15,'15 fps'],[30,'30 fps'],[60,'60 fps, games']].map(([v,l])=>h('option',{value:v,selected:+pr.scrFps===v},l)))),
@@ -669,6 +677,7 @@ let v=vids.get(stream)
 if(v)return v
 const vd=h('video',{autoplay:true,playsInline:true,muted:mute})
 vd.srcObject=stream
+if(stream===V.cam&&voicePrefs().mirror)vd.style.transform='scaleX(-1)'
 v=h('div',{class:'vw'},vd)
 v._z=1;v._x=0;v._y=0;v._d=null
 v.addEventListener('wheel',e=>{e.preventDefault();v._z=Math.max(1,Math.min(8,v._z*(e.deltaY<0?1.2:1/1.2)));if(v._z===1){v._x=0;v._y=0}place(v)},{passive:false})
