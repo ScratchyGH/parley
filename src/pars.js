@@ -69,7 +69,47 @@ try{const d=JSON.parse(i.data||'{}');if(d.season){const w=seasonWindow(d.season)
 return true
 }
 export default function(r){
-r.add('GET','/api/pars/gifts',async c=>({gifts:(await c.env.DB.prepare('select id,from_name,kind,item_id,label,amount,created_at from gift_inbox where user_id=? and seen=0 order by created_at limit 12').bind(c.user.id).all()).results}))
+r.add('GET','/api/pars/gifts',async c=>{
+const gifts=(await c.env.DB.prepare('select id,from_name,kind,item_id,label,amount,created_at from gift_inbox where user_id=? and seen=0 order by created_at limit 12').bind(c.user.id).all()).results
+for(const g of gifts){
+if(g.kind!=='bundle')continue
+const it=await c.env.DB.prepare('select data from par_items where id=?').bind(g.item_id).first()
+let d={};try{d=JSON.parse(it?.data||'{}')}catch{}
+const ids=(d.items||Object.values(d.variants||{})[0]?.items||[]).slice(0,8)
+if(!ids.length)continue
+g.items=(await c.env.DB.prepare(`select id,kind,name from par_items where id in (${ids.map(()=>'?').join(',')})`).bind(...ids).all()).results
+}
+return{gifts}
+})
+r.add('POST','/api/pars/giftlink',async c=>{
+limit('pargl:'+c.user.id,10,3600000)
+const b=await body(c.req,500)
+const it=await c.env.DB.prepare('select * from par_items where id=? and enabled=1').bind(String(b.item||'')).first()
+if(!it||!(COSMETIC.includes(it.kind)||it.kind==='unlock'))fail(400,'That item cannot be sent as a link')
+const ok=await c.env.DB.prepare('update users set pars=pars-? where id=? and pars>=?').bind(it.price,c.user.id,it.price).run()
+if(!ok.meta.changes)fail(402,'You need '+it.price+' Pars for this')
+const code=newId('g').slice(-10)
+await c.env.DB.batch([txRow(c.env,c.user.id,-it.price,'purchase','gl:'+code,it.name+' gift link'),c.env.DB.prepare('insert into app_settings(k,v) values(?,?)').bind('glink:'+code,JSON.stringify({i:it.id,f:c.user.username,p:it.price}))])
+return json({code,balance:await bal(c.env,c.user.id)},201)
+})
+r.add('GET','/api/pars/giftlink/:code',async c=>{
+const x=await c.env.DB.prepare('select v from app_settings where k=?').bind('glink:'+c.p.code).first()
+if(!x)fail(404,'This gift was already claimed or does not exist')
+const g=JSON.parse(x.v)
+const it=await c.env.DB.prepare('select id,kind,name,descr from par_items where id=?').bind(g.i).first()
+return{from:g.f,item:it}
+})
+r.add('POST','/api/pars/giftlink/:code/claim',async c=>{
+const k='glink:'+c.p.code
+const x=await c.env.DB.prepare('select v from app_settings where k=?').bind(k).first()
+if(!x)fail(404,'This gift was already claimed or does not exist')
+const g=JSON.parse(x.v)
+if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,g.i).first())fail(409,'You already own this')
+const del=await c.env.DB.prepare('delete from app_settings where k=?').bind(k).run()
+if(!del.meta.changes)fail(404,'This gift was already claimed')
+await c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),c.user.id,g.i,null,g.f,now()).run()
+return{ok:true}
+})
 r.add('POST','/api/pars/gifts/seen',async c=>{
 const b=await body(c.req)
 const ids=(Array.isArray(b.ids)?b.ids:[]).slice(0,50).map(String)
@@ -213,7 +253,7 @@ sid=String(b.server_id||'')
 const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Server not found')
 if(it.kind==='vanity'){
-if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission')
+if(!b.gift&&!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage Server permission')
 if(await permVanity(c.env,sid))fail(409,'This server already has vanity links unlocked')
 }
 note+=' for '+m.server.name
