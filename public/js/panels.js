@@ -1,5 +1,6 @@
 import{h,mount,icon,stxt,GET,POST,DEL,avatar,fail,fmtStamp,fmtRel,ctxMenu}from'./util.js'
 import{render}from'./md.js'
+import{actText}from'./activity.js'
 import{S,on,emit,cacheUser,isDm,chanInfo,conv,convTitle,loadMembers,noteThread}from'./state.js'
 import{go}from'./nav.js'
 import{memberMenu}from'./ssettings.js'
@@ -144,7 +145,7 @@ return row
 function memberRow(m,sid,color,off){
 const st=m.id===S.me.id?(S.me.presence==='invisible'?null:S.me.presence):S.pres[m.id]
 const name=m.nickname||m.display_name
-const b=h('button',{class:'mem'+(off?' off':''),on:{click:e=>emit('ui:profile',{id:m.id,x:e.clientX,y:e.clientY,el:b,sid}),contextmenu:e=>{if(sid)ctxMenu(e,memberMenu(sid,m))}}},avatar(m,'sm',off?null:st||'online'),h('span',{class:'mn'},h('span',{style:color?{color}:{}},name),stxt(m)?h('small',{class:'mst'},stxt(m)):null),m.guild_tag?h('span',{class:'gtag'},m.guild_tag):null,m.timeout_until>Date.now()?icon('clock','s'):null)
+const b=h('button',{class:'mem'+(off?' off':''),on:{click:e=>emit('ui:profile',{id:m.id,x:e.clientX,y:e.clientY,el:b,sid}),contextmenu:e=>{if(sid)ctxMenu(e,memberMenu(sid,m))}}},avatar(m,'sm',off?null:st||'online'),h('span',{class:'mn'},h('span',{style:color?{color}:{}},name),(actText(S.act[m.id])||stxt(m))?h('small',{class:'mst'},actText(S.act[m.id])||stxt(m)):null),m.guild_tag?h('span',{class:'gtag'},m.guild_tag):null,m.timeout_until>Date.now()?icon('clock','s'):null)
 return b
 }
 

@@ -4,6 +4,7 @@ import{parIcon}from'./pars.js'
 import{expTag}from'./exp.js'
 import{communityDialog}from'./xlabs.js'
 import{statusMenu}from'./status.js'
+import{activityDialog}from'./activity.js'
 import{VC,h,mount,icon,PATCH,POST,stxt,avatar,fail,menu,menuAt,ctxMenu,copyText,coverBg}from'./util.js'
 import{applyServerTheme,S,P,on,emit,setting,conv,convTitle,convOther,chanInfo,can,dmUnread,serverUnread,unreadOf,muteLevel,isDm,loadConvs,loadServer,noteThread}from'./state.js'
 import{go}from'./nav.js'
@@ -290,6 +291,7 @@ return h('div',{class:'ctx-b'},kids)
 
 function presenceMenu(anchor){
 statusMenu(anchor,p=>{if(p)sendAll({t:'presence',s:p});renderCtx()},[
+{icon:'star',label:'Set activity',fn:()=>activityDialog()},
 {icon:'user',label:'Edit profile',fn:()=>openSettings('profile')},
 S.me.admin?{icon:'shield',label:'Admin panel',fn:()=>openSettings('admin')}:null,
 {icon:'compass',label:'Guide through Parley',fn:()=>startTour(true)},

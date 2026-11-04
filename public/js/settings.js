@@ -341,6 +341,7 @@ privacy(pg)
 },'Adult content')),
 row('Who can send friend requests',null,sel('friend_policy',[['everyone','Everyone'],['none','Nobody']],'everyone')),
 sw('show_presence',true,'Show online status','When off, you appear offline to others.'),
+sw('show_activity',true,'Share my activity','Show what you are playing or doing on your profile and in member lists.'),
 h('h3',{style:{marginTop:'24px'}},'Blocked users'),
 h('div',{class:'list'},S.fr.blocked.length?S.fr.blocked.map(u=>h('div',{class:'li'},avatar(u,'sm'),h('div',{class:'grow'},u.display_name),h('button',{class:'btn sm',on:{click:async()=>{try{await DEL('/api/blocks/'+u.id);await loadFriends();privacy(pg)}catch(e){fail(e)}}}},'Unblock'))):h('div',{class:'hint'},'You have not blocked anyone.')))
 }

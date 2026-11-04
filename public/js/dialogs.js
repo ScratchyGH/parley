@@ -1,3 +1,4 @@
+import{actWidget}from'./activity.js'
 import{h,mount,icon,stxt,GET,POST,PATCH,PUT,DEL,upload,avatar,heroBox,gtag,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
 import{render}from'./md.js'
 import{S,emit,cacheUser,user,conv,convTitle,convOther,can,loadServers,loadServer,loadConvs,loadFriends}from'./state.js'
@@ -269,7 +270,7 @@ const mem=sid?S.sdata[sid]?.memberList?.find(m=>m.id===u.id):null
 el.append(hero,h('div',{class:'bd'},avatar(u,'lg',S.pres[u.id]||(own?S.me.presence:null)),
 h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},mem?.nickname||u.display_name),
 h('div',{class:'hint',style:{margin:0}},'@'+u.username+(u.pronouns?' · '+u.pronouns:'')),
-stxt(u)?h('div',{style:{margin:'6px 0'}},stxt(u)):null,conns,
+stxt(u)?h('div',{style:{margin:'6px 0'}},stxt(u)):null,actWidget(u),conns,
 badges,links,
 u.bio?h('div',{class:'mb',style:{margin:'8px 0',maxHeight:'120px',overflow:'auto'}},render(u.bio,{})):null,
 h('div',{class:'hint'},`${data.mutual_servers} mutual server${data.mutual_servers===1?'':'s'} · Joined ${new Date(u.created_at).toLocaleDateString()}`),

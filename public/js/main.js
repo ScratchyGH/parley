@@ -90,6 +90,8 @@ setTimeout(whatsNew,1200)
 import('./appnotice.js').then(m=>m.appNotice())
 import('./androidapp.js').then(m=>m.androidApp())
 import('./bgm.js').then(m=>m.bgmBoot())
+import('./framefit.js').then(m=>m.frameFit())
+import('./activity.js').then(m=>m.startActivity())
 setTimeout(maybeTour,2600)
 }
 
@@ -343,6 +345,7 @@ const reloadUnread=debounce(()=>loadUnread().catch(()=>{}),600)
 const reloadFriends=debounce(()=>{loadFriends().catch(()=>{});loadNotifCount().catch(()=>{})},400)
 const reloadMembers=debounce(sid=>{if(S.sdata[sid]?.memberList)loadMembers(sid,true).catch(()=>{})},800)
 const refreshPresence=debounce(()=>{emit('members',S.nav.sid);renderCtx()},400)
+on('act',refreshPresence)
 
 on('ev',({room,m})=>{
 if(!S.me)return
