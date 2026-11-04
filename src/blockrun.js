@@ -63,6 +63,13 @@ text:{out:NX,spec:{name:24,input:300,fn:FNS,arg:100},def:{name:'result',input:'{
 randnum:{out:NX,spec:{name:24,min:9,max:9},def:{name:'roll',min:'1',max:'6'}},
 map:{out:NX,spec:{name:24,input:200,table:1500,fallback:200},def:{name:'result',input:'{arg1}',table:'',fallback:''}},
 gate:{out:YN,spec:{on:['1','0']},def:{on:'1'}},
+xp:{out:YN,spec:{name:24,amount:4,cooldown:5},def:{name:'xp',amount:'15',cooldown:'60'}},
+rankcard:{out:NX,spec:{name:24,xp:24,shape:['plain','box','round','bar'],font:['normal','bold','mono','double'],title:60,width:2,fill:2,empty:2},def:{name:'card',xp:'xp',shape:'box',font:'bold',title:'{username}',width:'12',fill:'▰',empty:'▱'}},
+board:{out:NX,spec:{name:24,count:2,font:['normal','bold','mono','double']},def:{name:'board',count:'10',font:'normal'}},
+setsecret:{out:NX,spec:{key:24,value:300},def:{key:'webhookurl',value:'{args}'}},
+getsecret:{out:NX,spec:{name:24,key:24},def:{name:'secret',key:'webhookurl'}},
+mentionask:{out:NX,trigger:true,spec:{},def:{}},
+botsays:{out:NX,trigger:true,spec:{what:['any','ip','phone','email','link','time','location']},def:{what:'ip'}},
 choose:{out:['else'],spec:{input:200,count:3,list:8000},def:{input:'{arg1}',count:'5',list:''}},
 switch:{out:CASES,spec:{input:200,v1:60,v2:60,v3:60,v4:60},def:{input:'{arg1}',v1:'',v2:'',v3:'',v4:''}},
 sub:{out:NX,entry:true,spec:{name:24},def:{name:'shared'}},
@@ -219,6 +226,9 @@ else{if(v.length>spec)bad(k+' is too long');p[k]=v}
 }
 if((n.type==='sub'||n.type==='call'||n.type==='hook')&&!/^[a-z0-9_]{1,24}$/i.test(p.name))bad('Names use letters, numbers and underscores')
 if(n.type==='cmd'&&!/^[a-z0-9_]{1,32}$/i.test(p.name))bad('Command names use letters, numbers and underscores')
+if(n.type==='xp'){p.amount=num(p.amount,1,1000,'XP');p.cooldown=num(p.cooldown,0,86400,'Cooldown')}
+if(n.type==='board')p.count=num(p.count,1,20,'Entries')
+if(n.type==='setsecret'||n.type==='getsecret')if(!/^[a-z0-9_]{1,24}$/i.test(p.key))bad('Secret names use letters, numbers and underscores')
 if(n.type==='choose')p.count=num(p.count,1,200,'Paths')
 if(n.type==='warnif')p.n=num(p.n,1,50,'Warnings')
 if(n.type==='chance')p.percent=num(p.percent,0,100,'Percent')
@@ -242,7 +252,7 @@ if(n.type==='dateadd')p.days=num(p.days,-36500,36500,'Days')
 if(n.type==='bar')p.width=num(p.width,3,30,'Width')
 if(n.type==='hashnum')p.max=num(p.max,1,1000000,'Highest')
 if(n.type==='ddembed'&&p.color&&!/^#?[0-9a-f]{6}$/i.test(p.color))bad('Colors are six hex digits like 5865F2')
-if((n.type==='ddwebhook'||n.type==='ddembed')&&!hookUrl(p.url)&&p.url!=='https://discord.com/api/webhooks/')bad('Use a Discord webhook URL that starts with https://discord.com/api/webhooks/')
+if((n.type==='ddwebhook'||n.type==='ddembed')&&!p.url.includes('{')&&!hookUrl(p.url)&&p.url!=='https://discord.com/api/webhooks/')bad('Use a Discord webhook URL that starts with https://discord.com/api/webhooks/')
 if((n.type==='ddwebhook'||n.type==='ddembed')&&p.avatar&&!/^https:\/\//i.test(p.avatar))bad('The avatar link must start with https://')
 if(n.type==='ddembed'&&p.image&&!/^https:\/\//i.test(p.image))bad('The image link must start with https://')
 if(n.type==='caesar')p.shift=num(p.shift,-25,25,'Shift')
@@ -297,6 +307,21 @@ edges.push({f:e.f,o:e.o,t:e.t})
 return{nodes,edges}
 }
 const clip=(s,n)=>String(s).slice(0,n)
+export const levelOf=xp=>Math.max(0,Math.floor((-1+Math.sqrt(1+Math.max(0,xp)/12.5))/2))
+const need=l=>50*l*(l+1)
+const FM={bold:[0x1D5D4,0x1D5EE,0x1D7EC],mono:[0x1D670,0x1D68A,0x1D7F6],double:[0x1D538,0x1D552,0x1D7D8]}
+const fnt=(s,f)=>{const m=FM[f];if(!m)return s;return[...s].map(c=>{const k=c.charCodeAt(0);return k>=65&&k<=90?String.fromCodePoint(m[0]+k-65):k>=97&&k<=122?String.fromCodePoint(m[1]+k-97):k>=48&&k<=57?String.fromCodePoint(m[2]+k-48):c}).join('')}
+const bar=(p,w,a,b)=>{const n=Math.round(Math.max(0,Math.min(1,p))*w);return a.repeat(n)+b.repeat(w-n)}
+const BOX={box:['┌','─','┐','│','└','┘'],round:['╭','─','╮','│','╰','╯']}
+export function cardText(P,v,xp){
+const L=levelOf(xp),lo=need(L),hi=need(L+1),w=Math.max(5,Math.min(30,Number(P.width)||12))
+const b=bar((xp-lo)/(hi-lo),w,(P.fill||'▰')[0],(P.empty||'▱')[0])
+const t=fnt(v.title||'',P.font),lv=fnt('Level '+L,P.font),xs=fnt((xp-lo)+'/'+(hi-lo)+' XP',P.font)
+if(P.shape==='bar')return b
+if(P.shape==='plain')return t+'\n'+lv+' · '+xs+'\n'+b
+const bx=BOX[P.shape]||BOX.box,lines=[t,lv+' · '+xs,b],iw=Math.max(...lines.map(x=>[...x].length))+2
+return '```\n'+bx[0]+bx[1].repeat(iw)+bx[2]+'\n'+lines.map(x=>bx[3]+' '+x+' '.repeat(iw-[...x].length-1)+bx[3]).join('\n')+'\n'+bx[4]+bx[1].repeat(iw)+bx[5]+'\n```'
+}
 const strip=s=>s.replace(/<@everyone>|<@&[a-z0-9_]+>/g,'@​everyone')
 export const render=(s,vars)=>strip(String(s).replace(/\{([a-z0-9_]{1,24})\}/gi,(_,k)=>vars[k.toLowerCase()]??'')).slice(0,2000)
 function test(op,l,r){
@@ -316,12 +341,19 @@ case'notempty':return a.trim()!==''
 }
 return false
 }
+const botSays=(w,t)=>{
+const T={ip:/\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-f0-9]{1,4}:){3,7}[a-f0-9]{1,4}\b/i,phone:/(?:\+?\d[\s().-]?){9,14}\d/,email:/[^\s@]+@[^\s@]+\.[a-z]{2,}/i,link:/https?:\/\/\S+/i,time:/\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/i,location:/\b(?:lat(?:itude)?|lon(?:gitude)?|located in|coordinates?|-?\d{1,3}\.\d{3,},\s?-?\d{1,3}\.\d{3,})\b/i}
+return w==='any'?true:T[w].test(t)
+}
 const triggered=(n,ctx)=>{
 const t=ctx.text.trim()
 if(n.type==='join')return ctx.event==='join'
 if(n.type==='hook')return ctx.event==='hook'&&String(ctx.hook||'').toLowerCase()===n.p.name.toLowerCase()
 if(ctx.event)return false
+if(ctx.fromBot)return n.type==='botsays'&&botSays(n.p.what,t)
+if(n.type==='botsays')return false
 if(n.type==='mention')return!!ctx.mentioned
+if(n.type==='mentionask')return!!ctx.mentioned&&t.replace(/<@[a-z0-9_]+>/gi,'').trim().length>0
 if(n.type==='reply')return!!ctx.replied
 if(n.type==='everyone')return/@everyone|@here/i.test(t)
 if(n.type==='usermention')return/<@[a-z0-9_]+>/i.test(t)
@@ -404,6 +436,8 @@ const vars=baseVars(ctx,rnd)
 const log=[]
 let steps=0,sends=0,acts=0,heavy=0,waited=0,calls=0
 const devs=[]
+const secrets=new Set()
+const hid=s=>{for(const x of secrets)s=s.split(x).join('[hidden]');return s}
 const setv=(name,v)=>{vars[name.toLowerCase()]=clip(v,500);return vars[name.toLowerCase()]}
 async function chain(start,depth){
 let cur=start
@@ -411,7 +445,7 @@ while(cur&&steps<60){
 steps++
 const n=by.get(cur)
 if(!n)break
-const P=n.p,R=s=>render(s,vars)
+const P=n.p,R=s=>hid(render(s,vars))
 let branch=null,route=null
 if(n.xi)for(const[xk,xv]of n.xi)setv(xk,R(xv))
 switch(n.type){
@@ -430,6 +464,11 @@ case'newmember':{const d=await io.joinedDays();branch=d!==null&&d<Number(P.days)
 case'weekday':{const d=wall(ctx.at||Date.now(),P.tz||'UTC').wd;branch=P.day==='weekdays'?d>=1&&d<=5:P.day==='weekend'?d===0||d===6:DAYS.indexOf(P.day)===d;break}
 case'wordlist':{const l=R(P.input).toLowerCase();branch=P.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean).some(x=>l.includes(x));break}
 case'if2':{const a=test(P.op,R(P.left),R(P.right)),b=test(P.op2,R(P.left2),R(P.right2));branch=P.join==='or'?a||b:a&&b;break}
+case'xp':{const x=await io.xp(Number(P.amount),Number(P.cooldown)),k=(P.name||'xp').toLowerCase();setv(k,String(x.xp));setv(k+'_level',String(x.level));setv(k+'_next',String(x.next));branch=x.up;log.push({id:n.id,did:'xp'});break}
+case'rankcard':{const x=await io.xpGet(),t=cardText(P,{title:R(P.title)},x);setv(P.name||'card',t);log.push({id:n.id,did:'rankcard'});break}
+case'board':{const rows=await io.top(Math.max(1,Math.min(20,Number(P.count)||10)));setv(P.name||'board',rows.map((x,i)=>(i+1)+'. '+fnt(x.name,P.font)+' · Level '+levelOf(x.v)+' ('+x.v+' XP)').join('\n')||'No one has XP yet');log.push({id:n.id,did:'board'});break}
+case'setsecret':if(acts<8){acts++;const v=render(P.value,vars).trim().slice(0,300);if(v&&await io.setSecret(P.key,v)){await io.del();await io.notice('Saved '+P.key+'.')}log.push({id:n.id,did:'setsecret'})}break
+case'getsecret':{const v=await io.getSecret(P.key);if(v){secrets.add(v);vars[(P.name||'secret').toLowerCase()]=v}log.push({id:n.id,did:'getsecret'});break}
 case'choose':{const v=R(P.input).trim().toLowerCase();route='else';const L=P.list.split('\n');for(let i=0;i<L.length&&i<Number(P.count);i++){const c=L[i].trim().toLowerCase();if(c&&c===v){route='p'+(i+1);break}}break}
 case'switch':{const v=R(P.input).trim().toLowerCase();route='else';for(const k of['1','2','3','4']){const c=P['v'+k].trim().toLowerCase();if(c&&c===v){route='c'+k;break}}break}
 case'call':{if(depth<4){const sb=graph.nodes.find(x=>x.type==='sub'&&x.p.name.toLowerCase()===P.name.toLowerCase());if(sb){log.push({id:n.id,did:'call',name:P.name});await chain(next(sb.id,'next'),depth+1)}}break}
@@ -490,7 +529,7 @@ case'ddwebhook':case'ddembed':{const body=n.type==='ddwebhook'?{content:R(P.text
 if(P.user.trim())body.username=R(P.user).slice(0,80)
 if(R(P.avatar).startsWith('https://'))body.avatar_url=R(P.avatar)
 let ok=false
-if(calls<3&&sends<4&&(body.content||body.embeds&&(body.embeds[0].title||body.embeds[0].description))){calls++;sends++;ok=ctx.dry?false:await io.webhook(P.url,body)}
+if(calls<3&&sends<4&&(body.content||body.embeds&&(body.embeds[0].title||body.embeds[0].description))){calls++;sends++;ok=ctx.dry?false:await io.webhook(render(P.url,vars),body)}
 log.push({id:n.id,did:n.type,value:P.name?setv(P.name,ctx.dry?'dry run':ok===true?'yes':'no'):''});break}
 case'ddformat':if(P.name)log.push({id:n.id,did:'ddformat',value:setv(P.name,L.style(R(P.input),P.fmt))});break
 case'ddtime':if(P.name){const u=R(P.input).trim()===''?Math.floor((ctx.at||Date.now())/1000):Math.floor(Number(R(P.input)));log.push({id:n.id,did:'ddtime',value:setv(P.name,Number.isFinite(u)?'<t:'+u+':'+P.fmt+'>':'')})}break

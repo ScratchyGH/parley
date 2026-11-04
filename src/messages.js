@@ -241,7 +241,7 @@ const others=(await c.env.DB.prepare('select user_id from conv_members where con
 if(others.length)c.ec.waitUntil(pushTo(c.env,others,{title:c.user.display_name,body:preview,room:rr.room,mid:id}))
 }
 }
-if(rr.kind==='channel'&&!c.user.is_bot&&!rr.thread&&content)c.ec.waitUntil(runBlocks(c,rr,message).catch(()=>{}))
+if(rr.kind==='channel'&&!rr.thread&&content)c.ec.waitUntil(runBlocks(c,rr,message).catch(()=>{}))
 return json({message},201)
 })
 

@@ -2,7 +2,7 @@ import{now,msgId,limit,newId}from'./util.js'
 import{resolveRoom,loadMember,P}from'./perms.js'
 import{signMsg}from'./sign.js'
 import{hydrate,publishMsg}from'./messages.js'
-import{execute}from'./blockrun.js'
+import{execute,levelOf}from'./blockrun.js'
 import{runApi,runHttp,runWebhook}from'./apiblock.js'
 import{messageExplicit,filterOn}from'./safety.js'
 
@@ -82,6 +82,23 @@ if(o&&o.n&&await warnCount(c,sid,uid)===o.n)await punish(c,sid,actor,uid,o.a,'Re
 export function makeIo(c,botId,sid,room,user,message){
 const uid=user.id
 return{
+xp:async(amt,cd)=>{
+const k=vkey('xp','user',uid)
+let cur=await getVar(c,botId,sid,k),up=false
+const ck=vkey('cd_xp','user',uid),last=await getVar(c,botId,sid,ck),t=Date.now()
+if(!last||t-last>=cd*1000){await putVar(c,botId,sid,ck,t);const before=levelOf(cur);cur=await addVar(c,botId,sid,k,amt);up=levelOf(cur)>before}
+const l=levelOf(cur)
+return{xp:cur,level:l,next:50*(l+1)*(l+2)-cur,up}
+},
+xpGet:()=>getVar(c,botId,sid,vkey('xp','user',uid)),
+top:async n=>{
+const rows=(await c.env.DB.prepare("select substr(k,4) u,v from bot_vars where bot_id=? and server_id=? and k like 'xp:%' order by v desc limit ?").bind(botId,sid,n).all()).results
+const out=[]
+for(const x of rows){const u=await c.env.DB.prepare('select display_name from users where id=?').bind(x.u).first();out.push({name:u?u.display_name:'Member',v:x.v})}
+return out
+},
+getSecret:async k=>{const r=await c.env.DB.prepare('select v from bot_vars where bot_id=? and server_id=? and k=?').bind(botId,sid,'sec_'+k).first();return r?String(r.v):''},
+setSecret:async(k,v)=>{const m=await loadMember(c.env,sid,uid);if(!m||!(m.admin||m.owner||(m.base&P.MANAGE_SERVER)))return false;await putVar(c,botId,sid,'sec_'+k,v);return true},
 as:async t=>{
 const id=(t.match(/<@([a-z0-9_]+)>/i)||[])[1]||t.replace(/^@/,'')
 const u=await c.env.DB.prepare('select u.id,u.username,u.display_name from members m join users u on u.id=m.user_id where m.server_id=? and (u.id=? or lower(u.username)=lower(?))').bind(sid,id,id).first()
@@ -227,7 +244,7 @@ let graph
 try{graph=JSON.parse(row.blocks)}catch{continue}
 try{limit('blk:'+row.bot_id+':'+rr.room,30,60000)}catch{continue}
 const user=message.author||{id:message.author_id,username:'',display_name:''}
-const ctx={user,channel:rr.ch.name,server:rr.m.server.name,text:message.content||'',mentioned:(message.content||'').includes('<@'+row.bot_id+'>'),attachments:(message.attachments||[]).length,replied:!!(message.reply||message.reply_to),at:Date.now()}
+const ctx={fromBot:!!c.user.is_bot,user,channel:rr.ch.name,server:rr.m.server.name,text:message.content||'',mentioned:(message.content||'').includes('<@'+row.bot_id+'>'),attachments:(message.attachments||[]).length,replied:!!(message.reply||message.reply_to),at:Date.now()}
 try{await execute(graph,ctx,makeIo(c,row.bot_id,rr.serverId,rr.room,user,message))}catch{}
 }
 }
@@ -263,6 +280,10 @@ warn:async r=>{const k='user:warns';mem.set(k,(mem.get(k)||0)+1);sent.push({note
 save:async(k,v,s)=>{mem.set('tx:'+s+':'+k,v)},load:async(k,s)=>mem.has('tx:'+s+':'+k)?mem.get('tx:'+s+':'+k):null,getCount:async(k,s)=>mem.get(s+':'+k)||0,memberInfo:async w=>w==='joined_days'?30:w==='role_count'?1:w==='roles'?'Member':'Tester',serverInfo:async w=>w==='name'?'Your server':w==='members'?42:w==='channels'?8:5,
 api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),webhook:async()=>false,device:async a=>{sent.push({note:'Asks the member to allow on their device: '+a.map(x=>x.k).join(', ')})},
 as:async()=>io,
+xp:async(a,cd)=>{const cur=(mem.get('xp')||0)+a;mem.set('xp',cur);const l=levelOf(cur);return{xp:cur,level:l,next:50*(l+1)*(l+2)-cur,up:levelOf(cur)>levelOf(cur-a)}},
+xpGet:async()=>mem.get('xp')||0,
+top:async()=>[{name:user.display_name||'You',v:mem.get('xp')||0}],
+getSecret:async()=>'',setSecret:async()=>false,
 warns:async()=>mem.get('user:warns')||0,
 punish:async a=>{sent.push({note:'Would '+a+' the member'})},
 isMod:async()=>false,

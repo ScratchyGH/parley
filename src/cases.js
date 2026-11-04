@@ -25,7 +25,7 @@ const m=await mod(c,c.p.sid)
 if(c.p.uid===c.user.id)fail(400,'You cannot warn yourself')
 await target(c,m.server.id,c.p.uid,m)
 const b=await body(c.req)
-const reason=str(b.reason,2,500,'Reason')
+const reason=b.reason&&String(b.reason).trim()?str(b.reason,2,500,'Reason'):'No reason given'
 let evidence=''
 if(b.message_id){
 const row=await c.env.DB.prepare('select m.content,m.author_id,m.created_at,ch.name from messages m join channels ch on ch.id=m.room where m.id=? and ch.server_id=?').bind(String(b.message_id),m.server.id).first()

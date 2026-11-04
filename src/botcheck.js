@@ -16,7 +16,7 @@ const walk=id=>{if(reach.has(id))return;reach.add(id);const n=by.get(id);if(n?.t
 for(const n of g.nodes)if(TYPES[n.type].trigger)walk(n.id)
 const set=new Set()
 for(const n of g.nodes){
-if(n.p.name&&(LAB[n.type]||['pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','feed','preview','jsonget','item','dd','world','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink','moonphase','distance','unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext','foreach'].includes(n.type)))set.add(n.p.name.toLowerCase())
+if(n.p.name&&(LAB[n.type]||['xp','rankcard','board','getsecret','pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','feed','preview','jsonget','item','dd','world','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink','moonphase','distance','unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext','foreach'].includes(n.type)))set.add(n.p.name.toLowerCase())
 for(const r of n.xi||[])set.add(r[0].toLowerCase())
 if(n.type==='cmd'&&n.p.options)for(const o of parseOpts(n.p.options))set.add(o.name)
 }
