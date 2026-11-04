@@ -1,5 +1,6 @@
 import{h,mount,icon,GET,POST,field,copyText,saveBlob,toast,avatar}from'./util.js'
 import{switchTo}from'./accounts.js'
+try{const q=new URLSearchParams(location.search).get('ref');if(q)localStorage.setItem('ref',q)}catch{}
 import{passkeysSupported,signInWithPasskey}from'./webauthn.js'
 
 export function renderAuth(root,onDone,note){
@@ -57,13 +58,15 @@ if(tab==='login'){
 const d=await POST('/api/auth/login',{username:un.value.trim(),password:pw.value,totp:tot.value.trim()||undefined})
 onDone(d.user)
 }else if(tab==='register'){
-const d=await POST('/api/auth/register',{username:un.value.trim(),password:pw.value,display_name:dn.value.trim()||undefined})
+let rf;try{const q=new URLSearchParams(location.search).get('ref');if(q)localStorage.setItem('ref',q);rf=localStorage.getItem('ref')||undefined}catch{}
+const d=await POST('/api/auth/register',{username:un.value.trim(),password:pw.value,display_name:dn.value.trim()||undefined,ref:rf})
+try{localStorage.removeItem('ref')}catch{}
 codeScreen(un.value.trim(),d.recovery_code,()=>onDone(d.user))
 }else{
 const d=await POST('/api/auth/recover',{username:un.value.trim(),recovery_code:rc.value.trim(),password:pw.value})
 codeScreen(un.value.trim(),d.recovery_code,()=>{tab='login';draw()})
 }
-}catch(x){if(x.data?.need_totp){totBox.hidden=false;tot.focus()}err.textContent=x.message;submit.disabled=false}
+}catch(x){if(tab==='login'&&x.status===403&&/suspended/i.test(x.message)){renderAppeal(root,()=>location.reload(),{u:un.value.trim(),p:pw.value});return}if(x.data?.need_totp){totBox.hidden=false;tot.focus()}err.textContent=x.message;submit.disabled=false}
 }}},
 field('Username',un,tab==='register'?'3 to 24 letters (any language), numbers, dots, dashes or underscores':null),
 tab==='register'?field('Display name (optional)',dn):null,
@@ -87,12 +90,13 @@ tab==='recover'?h('button',{class:'btn sm',on:{click:()=>{tab='login';draw()}}},
 }
 }
 
-export function renderAppeal(root,back){
+export function renderAppeal(root,back,pre){
 const err=h('div',{class:'err',role:'alert'})
 const un=h('input',{class:'inp',autocomplete:'username',required:true,maxLength:40})
 const pw=h('input',{class:'inp',type:'password',autocomplete:'current-password',required:true})
 const msg=h('textarea',{class:'inp',rows:5,minLength:10,maxLength:2000,required:true})
 const evi=h('textarea',{class:'inp',rows:3,maxLength:1200,placeholder:'https://… (one link per line, up to 5)'})
+if(pre){un.value=pre.u;pw.value=pre.p}
 const btn=h('button',{class:'btn pri',type:'submit'},'Submit appeal')
 mount(root,h('div',{class:'auth'},h('div',{class:'card'},h('h1',null,'Appeal a suspension'),h('p',{class:'hint'},'Sign in details are only used to confirm the account is yours. An administrator will review your appeal.'),
 h('form',{on:{submit:async e=>{
@@ -103,7 +107,7 @@ try{
 await POST('/api/appeals',{username:un.value.trim(),password:pw.value,message:msg.value.trim(),evidence:evi.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,5)})
 mount(root,h('div',{class:'auth'},h('div',{class:'card'},h('h1',null,'Appeal submitted'),h('p',null,'An administrator will review it. Check back by trying to sign in later.'),h('button',{class:'btn',on:{click:back}},'Back to sign in'))))
 }catch(x){err.textContent=x.message;btn.disabled=false}
-}}},field('Username',un),field('Password',pw),field('What happened?',msg),field('Evidence links (optional)',evi,'Screenshots or posts hosted somewhere you control. Only https:// links are accepted.'),err,h('div',{class:'row',style:{marginTop:'8px'}},h('button',{type:'button',class:'btn',on:{click:back}},'Back'),btn)))))
+}}},field('Username',un),field('Password',pw),field('What happened?',msg),field('Evidence links (optional)',evi,'Screenshots or posts hosted somewhere you control. Only https:// links are accepted.'),err,h('div',{class:'row',style:{marginTop:'8px'}},h('button',{type:'button',class:'btn',on:{click:back}},pre?'Appeal later':'Back'),btn)))))
 }
 
 function emailReset(card,back){

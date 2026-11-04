@@ -157,6 +157,7 @@ const out=h('div')
 mount(pg,h('h3',null,'My account'),
 field('Username',h('div',{class:'row'},un,h('button',{class:'btn',on:{click:async()=>{try{await saveProfile({username:un.value.trim()});toast('Username changed','ok')}catch(e){fail(e)}}}},'Change'))),
 h('div',{class:'hint'},'You can change your username 3 times per day.'),
+h('h3',{style:{marginTop:'24px'}},'Referral link'),h('div',{id:'ref'}),
 h('h3',{style:{marginTop:'24px'}},'Accounts on this device'),
 h('p',{class:'hint'},'Stay signed in to more than one account and switch between them without logging out.'),
 h('div',{id:'accs'}),
@@ -184,6 +185,7 @@ mount(out,h('div',{class:'card',style:{fontFamily:'var(--mono)',fontSize:'16px',
 return[pw,b]
 })()),out)
 accountsList().then(l=>mount(pg.querySelector('#accs'),l))
+GET('/api/referral').then(d=>{if(!d.code)return mount(pg.querySelector('#ref'),h('div',{class:'hint'},'You have used all '+d.max+' referrals.'));const link=location.origin+'/?ref='+d.code;mount(pg.querySelector('#ref'),h('div',{class:'row'},h('input',{class:'inp',readonly:true,value:link,'aria-label':'Referral link'}),h('button',{class:'btn',on:{click:()=>{copyText(link);toast('Copied','ok')}}},'Copy')),h('div',{class:'hint'},'Each link works once for a new account on a different device and network. You get '+d.pars+' Pars per friend ('+d.done+' of '+d.max+' used).'))}).catch(()=>{})
 emailBox(pg.querySelector('#eml'))
 twofa(pg.querySelector('#tfa'))
 signin(pg.querySelector('#sgn'))
