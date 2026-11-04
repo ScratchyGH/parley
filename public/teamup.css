@@ -118,15 +118,15 @@
 .cs-fl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 .cs-fl.go{animation:csfl .7s ease-out}
 @keyframes csfl{0%{opacity:.85}100%{opacity:0}}
-.cs-p{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:min(760px,92%);display:flex;gap:16px;align-items:flex-end;background:linear-gradient(180deg,rgba(14,10,22,.78),rgba(8,6,14,.92));border:1px solid #3a2f55;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));padding:16px 20px;transition:transform .5s,opacity .5s}
+.cs-p{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:min(760px,92%);display:flex;gap:16px;align-items:flex-end;background:linear-gradient(180deg,rgba(14,10,22,.9),rgba(8,6,14,.96));border:1px solid #3a2f55;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));padding:16px 20px;transition:transform .5s,opacity .5s}
 .cs-p.nr{text-align:center;justify-content:center}
 .cs-p.nr .cs-pt{display:none}
 .cs-pt{flex:0 0 76px;height:76px;border:2px solid #fff;background:#120d1c;display:grid;place-items:center;overflow:hidden}
 .cs-pt img,.cs-pt canvas{width:100%;height:100%;object-fit:cover;image-rendering:auto}
 .cs-pt canvas{object-fit:contain;image-rendering:pixelated}
 .cs-pb{flex:1;min-height:70px}
-.cs-n{font:800 14px system-ui,sans-serif;letter-spacing:.04em;margin-bottom:4px}
-.cs-t{font:600 16px/1.45 Georgia,serif;color:#f1ecff;min-height:46px}
+.cs-n{font:800 15px system-ui,sans-serif;letter-spacing:.02em;margin-bottom:5px}
+.cs-t{font:600 clamp(17px,2.2vw,20px)/1.5 system-ui,sans-serif;color:#fff;min-height:58px;text-shadow:0 1px 2px #000}
 .cs-sk{position:absolute;right:16px;top:calc(11% + 12px);background:rgba(0,0,0,.6);border:1px solid #4a3f66;color:#cfc8e6;padding:6px 14px;font:700 12px system-ui,sans-serif;cursor:pointer}
 .cs-sk:hover{border-color:#b48aff;color:#fff}
 .cs-tv{position:relative;width:100%;height:100%;background:linear-gradient(180deg,#1affd0,#0a6a8a)}
