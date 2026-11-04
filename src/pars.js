@@ -3,6 +3,7 @@ export const VANITY={1:3,3:6,7:10,14:16,30:25,90:55,180:90,365:140,730:220,1095:
 import{fail,now,newId,str,body,clamp,limit,json}from'./util.js'
 import{loadMember,P}from'./perms.js'
 import{hollowBump}from'./hollow.js'
+import{badName}from'./names.js'
 
 const DEF={rate:5,dailyHours:12,giftMax:200,giftDaily:500,giftMinAgeHours:24,boostCapMb:300}
 const MILE=[[10,10],[50,50],[100,100],[250,250]]
@@ -34,7 +35,9 @@ const permVanity=async(env,sid)=>!!(await env.DB.prepare("select 1 x from par_ow
 export async function expireVanity(env){
 await env.DB.prepare("update servers set vanity=null where vanity is not null and not exists(select 1 from par_owned o where o.server_id=servers.id and o.item_id='vanity' and (o.expires_at is null or o.expires_at>?))").bind(now()).run()
 }
-const COSMETIC=['nameplate','frame','effect','namefx','badge','title','bubble']
+const COSMETIC=['nameplate','frame','effect','namefx','badge','title','bubble','acard']
+const CMS=['empty','dotted','lined','adotted','d3dotted','dashed','double','wave','glow','stripe']
+const hex=v=>typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v)
 const bundleOf=(it,v)=>{
 let d={};try{d=JSON.parse(it.data||'{}')}catch{}
 const vs=d.variants||{main:{items:d.items,vanity_days:d.vanity_days,price:it.price,gift_price:it.price}}
@@ -79,11 +82,11 @@ const[items,owned,tx,me,beat]=await Promise.all([
 c.env.DB.prepare('select * from par_items order by sort,price').all(),
 c.env.DB.prepare('select o.id,o.item_id,o.server_id,o.gift_from,o.created_at,o.expires_at,s.name server_name from par_owned o left join servers s on s.id=o.server_id where o.user_id=? order by o.created_at desc limit 200').bind(c.user.id).all(),
 c.env.DB.prepare('select id,delta,kind,note,created_at from par_tx where user_id=? order by created_at desc limit 40').bind(c.user.id).all(),
-c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge,title,bubble from users where id=?').bind(c.user.id).first(),
+c.env.DB.prepare('select pars,nameplate,frame,effect,namefx,badge,title,bubble,acard,ctitle,cmsg from users where id=?').bind(c.user.id).first(),
 c.env.DB.prepare('select total_ms,day,day_ms from par_beats where user_id=?').bind(c.user.id).first()
 ])
 const today=beat&&beat.day===dayOf(now())?beat.day_ms:0
-return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.filter(i=>visible(i,c.user.admin)).map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,vanity_tiers:VANITY,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
+return{balance:me.pars,nameplate:me.nameplate,frame:me.frame,effect:me.effect,namefx:me.namefx,badge:me.badge,title:me.title,bubble:me.bubble,acard:me.acard,ctitle:me.ctitle,cmsg:me.cmsg,rate:cfg.rate,daily_cap_hours:cfg.dailyHours,today_ms:today,total_ms:beat?.total_ms||0,account_boost_mb:await boostMb(c.env,c.user.id,null),items:items.results.filter(i=>visible(i,c.user.admin)).map(shapeItem),owned:owned.results,tx:tx.results,gift_max:cfg.giftMax,vanity_tiers:VANITY,notice:'Pars are only earned by using Parley. They cannot be bought with money.'}
 })
 r.add('GET','/api/pars/history',async c=>{
 const before=clamp(c.url.searchParams.get('before'),now()+1,0,now()+1)
@@ -220,7 +223,7 @@ if(u.id===c.user.id)fail(400,'Use "My account" to boost yourself')
 owner=u.id;from=c.user.id;note+=' gift to '+u.username
 }else if(it.kind==='boost'&&b.target==='self'){
 note+=' for your account'
-}else if(COSMETIC.includes(it.kind)){
+}else if(COSMETIC.includes(it.kind)||it.kind==='unlock'){
 if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(owner,it.id).first())fail(409,gifting?to.username+' already has this':'You already own this')
 if(gifting)note+=' gift to '+to.username
 }else fail(400,'Choose where to apply this')
@@ -257,6 +260,26 @@ throw e
 if(sid)c.pub?.('s_'+sid,{t:'server.update',server_id:sid})
 if(to){await inbox(c.env,to.id,c.user.username,it.kind,it.id,it.name,0);c.pub?.('u_'+to.id,{t:'pars.gift',from:c.user.username,item:it.name})}
 return json({ok:true,balance:await bal(c.env,c.user.id),spent:price},201)
+})
+r.add('POST','/api/pars/custom',async c=>{
+const b=await body(c.req,500)
+const need=b.kind==='title'?'ctitle':b.kind==='msg'?'cmsg':null
+if(!need)fail(400,'Invalid kind')
+if(!(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,need).first()))fail(403,'You do not own this')
+let v=null
+if(b.kind==='title'&&b.t){
+const t=str(String(b.t),1,16,'Title')
+if(badName(t))fail(400,'That title is not allowed')
+if(!hex(b.c))fail(400,'Pick a colour')
+v=JSON.stringify({t,c:b.c.toLowerCase()})
+}
+if(b.kind==='msg'&&b.s){
+if(!CMS.includes(b.s))fail(400,'Invalid style')
+if(b.h&&!hex(b.h))fail(400,'Invalid colour')
+v=JSON.stringify({s:b.s,h:b.h?b.h.toLowerCase():''})
+}
+await c.env.DB.prepare(`update users set ${need}=? where id=?`).bind(v,c.user.id).run()
+return{ok:true}
 })
 r.add('POST','/api/pars/equip',async c=>{
 const b=await body(c.req,500)
