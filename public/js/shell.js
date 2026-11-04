@@ -136,7 +136,7 @@ return items
 }
 
 function chanIcon(c){
-if(c.type==='stage')return icon('hand','s');if(c.type==='voice')return icon('volume','s');if(c.type==='rules')return icon('rules','s')
+if(c.type==='stage')return icon('hand','s');if(c.type==='voice')return icon('volume','s');if(c.type==='rules')return icon('rules','s');if(c.type==='media')return icon('image','s');if(c.type==='ideas')return icon('star','s')
 if(c.type==='announce')return icon('mega','s')
 if(c.type==='forum')return icon('chat','s')
 return c.locked||(c.perms&P.SEND)===0?icon('lock','s'):icon('hash','s')

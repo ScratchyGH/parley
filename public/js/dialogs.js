@@ -132,7 +132,7 @@ export function channelDialog(sid,categoryId){
 const d0=S.sdata[sid]
 const err=errBox()
 const name=h('input',{class:'inp',maxLength:40,required:true,autofocus:true,placeholder:'new-channel'})
-const type=h('select',{class:'sel'},h('option',{value:'text'},'Text'),h('option',{value:'announce'},'Announcement (read-only for most members)'),h('option',{value:'voice'},'Voice'),h('option',{value:'stage'},'Stage (speakers and an audience)'),h('option',{value:'rules'},'Rules (read-only info channel)'),h('option',{value:'forum'},'Forum (one thread per post)'))
+const type=h('select',{class:'sel'},h('option',{value:'text'},'Text'),h('option',{value:'announce'},'Announcement (read-only for most members)'),h('option',{value:'voice'},'Voice'),h('option',{value:'stage'},'Stage (speakers and an audience)'),h('option',{value:'rules'},'Rules (read-only info channel)'),h('option',{value:'forum'},'Forum (one thread per post)'),h('option',{value:'media'},'Media (pictures, videos and links only)'),h('option',{value:'ideas'},'Ideas (members suggest, others vote)'))
 const topic=h('input',{class:'inp',maxLength:200})
 const cat=h('select',{class:'sel'},h('option',{value:''},'No category'),d0.categories.map(c=>h('option',{value:c.id,selected:c.id===categoryId},c.name)))
 const btn=h('button',{class:'btn pri',type:'submit'},'Create channel')

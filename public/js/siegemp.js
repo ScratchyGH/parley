@@ -30,7 +30,7 @@ if(game)game.stop()
 if(net)net.close()
 root.remove()
 }
-const shell=(...k)=>h('div',{class:'tu-lobby hs-lb'},h('div',{class:'tu-moon'}),h('div',{class:'tu-head'},h('h2',null,'Hollow Siege'),h('b',null,'MP Edition'),h('p',null,'Hold the chapel together. Up to four players, one night, everyone at once.')),...k)
+const shell=(...k)=>h('div',{class:'tu-lobby hs-lb'},h('div',{class:'tu-moon'}),h('div',{class:'tu-head'},h('h2',null,'Hollow Siege'),h('b',null,'MP Edition'),h('p',null,'Hold the chapel together. Up to four players, one round, everyone at once.')),...k)
 const menu=()=>{
 const inp=h('input',{class:'hs-in',maxlength:'6',placeholder:'CODE',autocomplete:'off','aria-label':'Party code'})
 const mk=h('button',{class:'tu-go',type:'button'},h('span',{class:'tu-gt'},'Create party'),h('span',{class:'tu-gs'},'You host. Share the code.'))
@@ -47,7 +47,7 @@ const nn=h('div',{class:'hs-nights'},...[1,2,3,4,5].map(n=>{const b=h('button',{
 const go=h('button',{class:'tu-go',type:'button',disabled:!host},h('span',{class:'tu-gt'},host?(roster.length>1?'Start round '+night:'Start solo'):'Waiting for host'),h('span',{class:'tu-gs'},'Round '+night+' / '+roster.length+' of 4 players'))
 go.addEventListener('click',()=>{send({k:'go',night,list:roster});begin(night,roster)})
 const cp=h('button',{class:'tu-pill',type:'button',on:{click:()=>{navigator.clipboard?.writeText(code).then(()=>toast('Code copied','ok')).catch(()=>{})}}},'Copy')
-card.replaceChildren(shell(h('div',{class:'hs-code'},h('span',null,'Party code'),h('b',null,code),cp),seats,h('h4',{class:'hs-h'},'Pick the night'),nn,go,h('button',{class:'tu-d hs-x',type:'button',on:{click:close}},h('b',null,'Leave party'))))
+card.replaceChildren(shell(h('div',{class:'hs-code'},h('span',null,'Party code'),h('b',null,code),cp),seats,h('h4',{class:'hs-h'},'Pick the round'),nn,go,h('button',{class:'tu-d hs-x',type:'button',on:{click:close}},h('b',null,'Leave party'))))
 }
 const begin=async(n,list)=>{
 if(game)return
@@ -73,7 +73,7 @@ root.style.display=''
 lobby()
 }
 const mark=(u,s)=>{const v=st.get(u);if(v&&v.s==='playing'){v.s=s;draw()
-if([...st.values()].every(x=>x.s!=='playing')){const w=[...st.values()].every(x=>x.s==='won');toast(w?'The whole squad survived night '+n+'.':'The siege is over.',w?'ok':undefined)}}}
+if([...st.values()].every(x=>x.s!=='playing')){const w=[...st.values()].every(x=>x.s==='won');toast(w?'The whole squad survived round '+n+'.':'The siege is over.',w?'ok':undefined)}}}
 game={stop:end,mark,left:u=>mark(u,'left')}
 out.addEventListener('click',()=>{send({k:'dn',s:'left'});mark(me,'left');end()})
 root.style.display='none'
@@ -93,7 +93,7 @@ bcast();lobby()
 }else if(d.k==='ros'&&!host){hostUid=f;roster=d.list;night=d.night;if(!roster.some(r=>r.u===me)){toast('You were removed from the party','err');close();return}lobby()}
 else if(d.k==='go'&&f===hostUid){begin(d.night,d.list)}
 else if(d.k==='full'){toast('That party is full','err');close()}
-else if(d.k==='busy'){toast('That night already started','err');close()}
+else if(d.k==='busy'){toast('That round already started','err');close()}
 else if(d.k==='dn'&&game)game.mark(f,d.s)
 }
 const connect=(c,create)=>{
