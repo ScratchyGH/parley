@@ -599,9 +599,9 @@ c.pub('s_'+m.server.id,{t:'server.update'})
 return json({id},201)
 })
 
-async function roleCtx(c){
+async function roleCtx(c,give){
 const m=await mem(c,c.p.sid)
-must(m,P.MANAGE_ROLES)
+if(!(give&&(m.base&(c.p.uid===c.user.id?P.GIVE_SELF:P.GIVE_ANY))))must(m,P.MANAGE_ROLES)
 const role=await c.env.DB.prepare('select * from roles where id=? and server_id=?').bind(c.p.rid,m.server.id).first()
 if(!role)fail(404,'Role not found')
 if(!m.owner&&role.position>=m.top)fail(403,'That role is above your highest role')
@@ -640,10 +640,10 @@ return{ok:true}
 })
 
 r.add('PUT','/api/servers/:sid/members/:uid/roles/:rid',async c=>{
-const{m,role}=await roleCtx(c)
+const{m,role}=await roleCtx(c,1)
 if(role.is_everyone)fail(400,'Everyone already has this role')
 if(c.p.uid!==c.user.id)await target(c,m.server.id,c.p.uid,m)
-else if(!m.owner)fail(403,'You cannot assign roles to yourself')
+else if(!m.owner&&!(m.base&P.GIVE_SELF))fail(403,'You cannot assign roles to yourself')
 const t=await c.env.DB.prepare('select 1 x from members where server_id=? and user_id=?').bind(m.server.id,c.p.uid).first()
 if(!t)fail(404,'Member not found')
 await c.env.DB.batch([c.env.DB.prepare('insert or ignore into member_roles(server_id,user_id,role_id) values(?,?,?)').bind(m.server.id,c.p.uid,role.id),c.logStmt(m.server.id,'role.assign',c.p.uid,role.name)])
@@ -653,7 +653,7 @@ return{ok:true}
 })
 
 r.add('DELETE','/api/servers/:sid/members/:uid/roles/:rid',async c=>{
-const{m,role}=await roleCtx(c)
+const{m,role}=await roleCtx(c,1)
 if(c.p.uid!==c.user.id)await target(c,m.server.id,c.p.uid,m)
 await c.env.DB.batch([c.env.DB.prepare('delete from member_roles where server_id=? and user_id=? and role_id=?').bind(m.server.id,c.p.uid,role.id),c.logStmt(m.server.id,'role.unassign',c.p.uid,role.name)])
 c.pubClose('s_'+m.server.id,{close:[c.p.uid]})

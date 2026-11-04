@@ -321,16 +321,18 @@ const p=await c.env.DB.prepare('select id,owner_id,bot_id,visibility,name,screen
 if(!p||((p.visibility==='private'||(p.visibility==='public'&&!['approved','legacy'].includes(p.screen_status)))&&p.owner_id!==c.user.id))fail(404,'Bot not found')
 const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Server not found')
-if(!m.admin&&!(m.base&P.MANAGE_SERVER))fail(403,'You need the Manage server permission to add bots')
+if(!m.admin&&!(m.base&(P.MANAGE_SERVER|P.MANAGE_BOTS)))fail(403,'You need the Manage server or Add and remove bots permission to add bots')
 const bot=await c.env.DB.prepare('select id,display_name from users where id=? and deleted_at is null and suspended=0').bind(p.bot_id).first()
 if(!bot)fail(404,'This bot is no longer available')
 const inServer=await c.env.DB.prepare('select 1 x from members where server_id=? and user_id=?').bind(sid,bot.id).first()
 if(inServer)fail(409,'This bot is already in that server')
 const first=!await c.env.DB.prepare('select 1 x from bot_installs where project_id=? and server_id=?').bind(p.id,sid).first()
-const st=[c.env.DB.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(sid,bot.id,now()),c.logStmt(sid,'bot.add',bot.id,bot.display_name)]
+const rid=newId('r')
+const st=[c.env.DB.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(sid,bot.id,now()),c.env.DB.prepare('insert into roles(id,server_id,name,color,position,perms) values(?,?,?,?,1,0)').bind(rid,sid,String(bot.display_name||'Bot').slice(0,40),'#5865f2'),c.env.DB.prepare('insert or ignore into member_roles(server_id,user_id,role_id) values(?,?,?)').bind(sid,bot.id,rid),c.logStmt(sid,'bot.add',bot.id,bot.display_name)]
 if(first)st.push(c.env.DB.prepare('insert or ignore into bot_installs(project_id,server_id,user_id,created_at) values(?,?,?,?)').bind(p.id,sid,c.user.id,now()),c.env.DB.prepare('update bot_projects set installs=installs+1 where id=?').bind(p.id))
 await c.env.DB.batch(st)
 c.pub('s_'+sid,{t:'member.join',uid:bot.id})
+c.pub('s_'+sid,{t:'server.update'})
 return{ok:true}
 })
 }

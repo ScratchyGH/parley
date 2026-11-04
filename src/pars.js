@@ -19,7 +19,7 @@ const inbox=(env,uid,from,kind,itemId,label,amount)=>env.DB.prepare('insert into
 const bal=async(env,id)=>(await env.DB.prepare('select pars from users where id=?').bind(id).first())?.pars||0
 const txRow=(env,uid,delta,kind,ref,note)=>env.DB.prepare('insert into par_tx(id,user_id,delta,kind,ref,note,created_at) values(?,?,?,?,?,?,?)').bind(newId('pt'),uid,delta,kind,ref||null,note||'',now())
 export async function grant(env,uid,n,kind,ref,note){
-if(!n)return
+if(!n||(await env.DB.prepare('select is_bot b from users where id=?').bind(uid).first())?.b)return
 await env.DB.batch([txRow(env,uid,n,kind,ref,note),env.DB.prepare('update users set pars=max(0,pars+?) where id=?').bind(n,uid)])
 }
 export async function boostMb(env,uid,sid){
@@ -91,6 +91,7 @@ const rows=(await c.env.DB.prepare('select id,delta,kind,note,created_at from pa
 return{tx:rows}
 })
 r.add('POST','/api/pars/beat',async c=>{
+if(c.user.is_bot)return{earned:0,balance:0}
 const b=await body(c.req,800)
 const cfg=await parsCfg(c.env)
 const t=now(),day=dayOf(t)

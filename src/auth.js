@@ -254,6 +254,12 @@ return json({ok:true,recovery_code:next})
 },{auth:false})
 
 r.add('GET','/api/me',async c=>({user:me(c.user)}))
+r.add('GET','/api/me/botinfo',async c=>{
+if(!c.user.is_bot)fail(404,'Not found')
+const p=await c.env.DB.prepare('select summary from bot_projects where bot_id=?').bind(c.user.id).first()
+const n=await c.env.DB.prepare('select count(*) n from members where user_id=?').bind(c.user.id).first()
+return{name:c.user.display_name||c.user.username,description:(p&&p.summary)||c.user.bio||'No description',servers:n.n}
+})
 
 r.add('PATCH','/api/me',async c=>{
 const b=await body(c.req,16384)
