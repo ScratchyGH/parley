@@ -376,6 +376,7 @@ return h('div',{class:'itch'},fr,h('div',{class:'itch-bar row'},h('a',{href:url,
 function unfurlSlot(url){
 const slot=h('div',{class:'unf-slot'})
 const go=async()=>{
+try{const gx=new URL(url);const gm=gx.origin===location.origin&&gx.pathname.match(/^\/gift\/(\w+)$/);if(gm){const {giftCard}=await import('/js/pars.js');slot.append(giftCard(gm[1]));return}}catch{}
 const em=embedSrc(url)
 if(em){const btn=h('button',{type:'button',class:'btn sm',on:{click:()=>btn.replaceWith(embedBox(em,url))}},'Watch '+em[2]+' here');slot.append(btn);if(em[2]!=='YouTube')return}
 let d=unfurlCache.get(url)

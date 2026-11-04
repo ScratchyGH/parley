@@ -30,6 +30,11 @@ return h('div',{class:'gx-lid gx-stemw'},...ps,face('gx-leaf','translate3d(10px,
 function item(g){
 if(g.kind==='candy')return h('div',{class:'gx-item'},h('div',{class:'gx-cd'},candySvg(84)),h('b',null,g.label))
 if(g.kind==='pars')return h('div',{class:'gx-item'},parIcon(64),h('b',null,g.label))
+if(g.kind==='bundle'&&g.items?.length){
+const el=h('div',{class:'gx-item gx-multi'})
+g.items.forEach((x,i)=>setTimeout(()=>{const n=h('div',{class:'gx-m'},h('div',{class:'gx-sw'},swatch({kind:x.kind,id:x.id,name:x.name,mb:0})||icon('gift')),h('b',null,x.name));i%2?el.prepend(n):el.append(n)},reduce()?0:2600+i*1100))
+return el
+}
 if(g.kind==='bundle')return h('div',{class:'gx-item'},h('div',{class:'gx-big'},icon('gift')),h('b',null,g.label))
 const sw=swatch({kind:g.kind,id:g.item_id,name:g.label,mb:0})
 return h('div',{class:'gx-item'},sw?h('div',{class:'gx-sw'},sw):h('div',{class:'gx-big'},icon('gift')),h('b',null,g.label))

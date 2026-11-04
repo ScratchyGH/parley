@@ -110,6 +110,15 @@ closeDrawers()
 if(r.name!=='pars'&&r.name!=='hollow'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
 const closeOv=()=>go(lastPath||'/')
 const needBack=async()=>{if(lastPath===null){lastPath='/';await renderHome('overview')}}
+if(r.name==='gift'){
+history.replaceState(null,'','/')
+S.nav={kind:'home',page:'overview'}
+await renderHome('overview')
+const {giftCard}=await import('/js/pars.js')
+const {dialog}=await import('/js/util.js')
+dialog('Gift',giftCard(r.code))
+return
+}
 if(r.name==='invite'){
 history.replaceState(null,'','/')
 S.nav={kind:'home',page:'overview'}

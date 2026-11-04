@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel,avatar}from'./util.js'
+import{h,mount,icon,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel,avatar,copyText}from'./util.js'
 import{S,on}from'./state.js'
 import{sv,svg}from'./svg.js'
 import{checkGifts}from'./giftreveal.js'
@@ -251,7 +251,7 @@ await POST('/api/pars/buy',b)
 toast('Purchased '+it.name)
 close();load()
 }catch(x){e.target.disabled=false;fail(x)}
-}}},'Buy for '+price)]})
+}}},'Buy for '+price),COS.has(it.kind)?h('button',{class:'btn',on:{click:async e=>{e.target.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');close();load()}catch(x){e.target.disabled=false;fail(x)}}}},'Buy as gift link for '+price):null]})
 }
 }
 function vanityBuy(d,it){
@@ -261,12 +261,21 @@ const keys=Object.keys(T).map(Number).sort((a,b)=>a===0?1:b===0?-1:a-b)
 const dur=h('select',{class:'sel'},keys.map(k=>h('option',{value:String(k)},lab(k)+' · '+T[k]+' Pars')))
 const sel=h('select',{class:'sel'},S.servers.map(s=>h('option',{value:s.id},s.name)))
 const info=h('p',null)
+const gf=h('input',{type:'checkbox'})
 const upd=()=>{const p=T[dur.value];mount(info,h('b',null,lab(Number(dur.value))),' for ',h('b',null,p+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-p)+'.')}
 dur.addEventListener('change',upd);upd()
-return dialog('Vanity link',h('div',{class:'bd'},info,field('Duration',dur),field('Server',sel),h('p',{class:'hint'},'Belongs to the server. Anyone with Manage Server can use it. Buying again on the same server adds time.')),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async e=>{
+return dialog('Vanity link',h('div',{class:'bd'},info,field('Duration',dur),field('Server',sel),h('p',{class:'hint'},'Belongs to the server. Anyone with Manage Server can use it. Buying again on the same server adds time.'),h('label',{class:'row',style:{gap:'6px'}},gf,'Send as a gift to a server I do not manage')),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async e=>{
 e.target.disabled=true
-try{await POST('/api/pars/buy',{item:it.id,req:rid(),days:Number(dur.value),server_id:sel.value});toast('Vanity link added');close();location.reload()}catch(x){e.target.disabled=false;fail(x)}
+try{await POST('/api/pars/buy',{item:it.id,req:rid(),days:Number(dur.value),server_id:sel.value,gift:gf.checked});toast('Vanity link added');close();location.reload()}catch(x){e.target.disabled=false;fail(x)}
 }}},'Buy')]})
+}
+export function giftCard(code){
+const box=h('div',{class:'unf gcard'},h('span',{class:'hint'},'Loading gift'))
+GET('/api/pars/giftlink/'+encodeURIComponent(code)).then(g=>{
+const btn=h('button',{class:'btn pri sm',on:{click:async()=>{btn.disabled=true;try{await POST('/api/pars/giftlink/'+encodeURIComponent(code)+'/claim',{});toast('Gift claimed: '+g.item.name,'ok');mount(box,h('b',null,'Claimed '+g.item.name))}catch(e){btn.disabled=false;fail(e)}}}},'Claim gift')
+mount(box,h('span',{class:'unf-site'},'Gift from '+g.from),h('div',{class:'gc-sw'},swatch(g.item)),h('b',null,g.item.name),g.item.descr?h('span',{class:'unf-d'},g.item.descr):null,btn)
+}).catch(e=>mount(box,h('span',{class:'hint'},e.message)))
+return box
 }
 export async function parsAdmin(pg){
 const d=await GET('/api/admin/pars')
