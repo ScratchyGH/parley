@@ -112,6 +112,10 @@ return env.DB.prepare('select s.id sid,u.id,u.username,u.display_name,u.avatar_i
 }
 export async function makeSession(c,uid){
 const token=randHex(32)
+const ua=(c.req.headers.get('user-agent')||'').slice(0,200)
+const seen=await c.env.DB.prepare('select 1 x from sessions where user_id=? and ua=? limit 1').bind(uid,ua).first()
+const had=await c.env.DB.prepare('select 1 x from sessions where user_id=? limit 1').bind(uid).first()
+if(had&&!seen)c.ec.waitUntil(alertUser(c.env,uid,'New sign in to your Parley account','Someone signed in from a device we have not seen before: '+(ua.slice(0,80)||'unknown device')+'.'))
 await c.env.DB.prepare('insert into sessions(id,user_id,created_at,expires_at,last_seen,ua,ip) values(?,?,?,?,?,?,?)').bind(await sha(token),uid,now(),now()+SESSION_MS,now(),(c.req.headers.get('user-agent')||'').slice(0,200),(c.req.headers.get('cf-connecting-ip')||'').split(':').slice(0,4).join(':').slice(0,45)).run()
 const stash=readStash(c.req).filter(x=>x.uid!==uid)
 const old=tokenOf(c.req,'sid')

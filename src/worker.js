@@ -42,6 +42,7 @@ import teamupRoutes from'./teamup.js'
 import gamepackRoutes from'./gamepack.js'
 import kidsRoutes from'./kids.js'
 import supportRoutes from'./support.js'
+import abRoutes from'./ab.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -88,6 +89,7 @@ teamupRoutes(router)
 gamepackRoutes(router)
 kidsRoutes(router)
 supportRoutes(router)
+abRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
 voiceRoutes(router)

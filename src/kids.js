@@ -96,7 +96,7 @@ env.DB.prepare('insert into kp_ksess(hash,device_id,exp) values(?,?,?)').bind(aw
 return t
 }
 const childOut=r=>r?{id:r.id,username:r.username,display_name:r.display_name,avatar:r.avatar,status:r.status,chat_off:r.chat_off?1:0,muted_until:r.muted_until||0}:null
-const CAP=v=>v==='verified'?{kids:5,friends:20}:{kids:1,friends:3}
+const CAP=v=>v==='verified'?{kids:5,friends:20,links:true,long:true,daily:500}:{kids:1,friends:3,links:false,long:false,daily:120}
 async function nameCheck(env,username,excludeId){
 if(!UN.test(username))fail(400,'Usernames use 3 to 16 letters, numbers or underscores')
 const bad=/(fuck|shit|bitch|cunt|dick|cock|pussy|nigg|fag|rape|porn|sex|nazi|kill|die|suicide|hate)/i
@@ -252,7 +252,8 @@ P('GET','/api/kids/me',async c=>{
 const d=await deviceOf(c)
 const ch=d.child_id?await c.env.DB.prepare('select * from kp_children where id=?').bind(d.child_id).first():null
 const cf=ch?await kcfg(c.env,ch.id):KD
-return{device:{id:d.id,label:d.label},child:childOut(ch),theme:cf.theme}
+const pp=ch?await c.env.DB.prepare('select id_status from kp_parents where id=?').bind(ch.parent_id).first():null
+return{device:{id:d.id,label:d.label},child:childOut(ch),theme:cf.theme,limited:!(pp&&pp.id_status==='verified')}
 })
 P('POST','/api/kids/account',async c=>{
 const d=await deviceOf(c)
@@ -541,6 +542,11 @@ if(me.muted_until>t)fail(429,'Chat is paused for a little while. Try again in '+
 const b=await body(c.req,800)
 const text=String(b.text||'').replace(/\s+/g,' ').trim()
 const cf=await kcfg(c.env,me.id)
+const pr=await c.env.DB.prepare('select id_status from kp_parents where id=?').bind(me.parent_id).first()
+const cap=CAP(pr&&pr.id_status)
+if(!cap.links&&/https?:\/\/|www\./i.test(text))fail(422,'Links need your parent to finish the ID check.')
+if(!cap.long&&text.length>300)fail(422,'Messages are limited to 300 characters until your parent finishes the ID check.')
+if(!cap.daily||(await c.env.DB.prepare('select count(*) n from kp_msgs where from_child=? and at>?').bind(me.id,t-86400000).first()).n>=cap.daily)fail(429,'You reached today\'s message limit. Your parent can raise it with the ID check.')
 if(cf.qs&&cf.qe){const d=new Date(t-cf.tz*60000),m=d.getUTCHours()*60+d.getUTCMinutes(),a=mins(cf.qs),e=mins(cf.qe);if(a<=e?m>=a&&m<e:m>=a||m<e)fail(403,'Chat is closed right now. Your parent set quiet hours.')}
 if(cf.links&&/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|gg|tv|me|co|xyz|ru|cn)\b/i.test(text))fail(422,'Links are turned off by your parent.')
 if(cf.cap){const day=new Date(t-cf.tz*60000);day.setUTCHours(0,0,0,0);const n=await c.env.DB.prepare('select count(*) n from kp_msgs where from_child=? and at>?').bind(me.id,day.getTime()+cf.tz*60000).first();if(n.n>=cf.cap)fail(429,'You reached today\'s message limit.')}
