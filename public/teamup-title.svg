@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" width="640" height="200" role="img" aria-label="Gourd Rush: Teamup">
+<defs>
+<linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset=".35" stop-color="#ffa21f"/><stop offset=".75" stop-color="#e2600c"/><stop offset="1" stop-color="#a83a08"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#d9570a"/></linearGradient>
+<linearGradient id="pg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b4cf0"/><stop offset="1" stop-color="#5a2fc8"/></linearGradient>
+<radialGradient id="gl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd24a" stop-opacity=".9"/><stop offset="1" stop-color="#ffd24a" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="96" cy="112" rx="88" ry="78" fill="url(#gl)" opacity=".55"/>
+<g transform="translate(10,22)" stroke="#2a1206" stroke-width="6" stroke-linejoin="round">
+<path d="M88 16c4-12 14-14 22-12-2 8-8 14-16 16z" fill="#4c8a2a"/>
+<path d="M88 20c-34-6-78 14-78 62 0 40 36 72 80 72s82-32 82-72c0-48-48-68-84-62z" fill="url(#gg)"/>
+<path d="M92 24c-18 12-24 40-24 66s8 52 22 62M92 24c18 12 24 40 24 66s-8 52-22 62" fill="none" stroke="#a83a08" stroke-width="4"/>
+<path d="M54 78l14-14 12 18zM112 82l14-18 14 14z" fill="#2a1206" stroke="none"/>
+<path d="M56 114c10 22 22 24 34 24s26-2 38-24c-10 8-20 6-38 6s-26 2-34-6z" fill="#2a1206" stroke="none"/>
+<path d="M64 112l8 12 8-10 10 12 10-12 8 10 8-12" fill="none" stroke="#ffd24a" stroke-width="3"/>
+</g>
+<g stroke="#2a1206" stroke-width="3" stroke-linejoin="round">
+<circle cx="40" cy="176" r="12" fill="#6cc0ff"/><circle cx="96" cy="184" r="12" fill="#ff7ab8"/><circle cx="152" cy="176" r="12" fill="#8be06a"/>
+<circle cx="36" cy="173" r="2" fill="#2a1206" stroke="none"/><circle cx="45" cy="173" r="2" fill="#2a1206" stroke="none"/>
+<circle cx="92" cy="181" r="2" fill="#2a1206" stroke="none"/><circle cx="101" cy="181" r="2" fill="#2a1206" stroke="none"/>
+<circle cx="148" cy="173" r="2" fill="#2a1206" stroke="none"/><circle cx="157" cy="173" r="2" fill="#2a1206" stroke="none"/>
+</g>
+<g font-family="Impact,'Arial Black','Haettenschweiler',sans-serif" font-weight="900" text-anchor="start">
+<g transform="rotate(-3 400 90)">
+<text x="196" y="102" font-size="92" letter-spacing="1" fill="#2a1206" stroke="#2a1206" stroke-width="16" stroke-linejoin="round">GOURD</text>
+<text x="196" y="102" font-size="92" letter-spacing="1" fill="url(#tg)" stroke="#5a1f04" stroke-width="3" stroke-linejoin="round">GOURD</text>
+<text x="196" y="102" font-size="92" letter-spacing="1" fill="none" stroke="#fff3c4" stroke-opacity=".55" stroke-width="1.2" transform="translate(-1.5,-1.5)">GOURD</text>
+<text x="196" y="170" font-size="64" letter-spacing="2" fill="#2a1206" stroke="#2a1206" stroke-width="14" stroke-linejoin="round">RUSH</text>
+<text x="196" y="170" font-size="64" letter-spacing="2" fill="url(#tg)" stroke="#5a1f04" stroke-width="2.5" stroke-linejoin="round">RUSH</text>
+</g>
+<g transform="rotate(-3 520 150)">
+<path d="M384 128h236l-10 22 10 26H384l10-26z" fill="#2a1206" stroke="#2a1206" stroke-width="8" stroke-linejoin="round"/>
+<path d="M384 128h236l-10 22 10 26H384l10-26z" fill="url(#pg)"/>
+<text x="502" y="167" font-size="38" letter-spacing="3" text-anchor="middle" fill="#f4efff" stroke="#1b0b4a" stroke-width="1.5" stroke-linejoin="round">TEAMUP</text>
+</g>
+</g>
+<g fill="#ffd24a" stroke="#2a1206" stroke-width="2"><path d="M612 34l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path d="M178 20l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></g>
+</svg>

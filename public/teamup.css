@@ -197,3 +197,5 @@ html.tes-bug #app{animation:tesbug .22s steps(2) infinite}
 .hs-s span{color:#a8a8b8}
 .hs-won span{color:#7ee0a0}
 .hs-lost span,.hs-left span{color:#e07e7e}
+
+.tu-head h2.tu-logo{transform:none;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:inherit;margin:0 0 4px}.tu-logo img{display:block;width:min(100%,520px);height:auto}
