@@ -12,6 +12,7 @@ import totpRoutes from'./totp.js'
 import pushRoutes from'./push.js'
 import perkRoutes from'./perks.js'
 import parsRoutes,{expireVanity}from'./pars.js'
+import referralRoutes from'./referral.js'
 import programRoutes from'./program.js'
 import screenRoutes from'./screen.js'
 import aiRoutes from'./ai.js'
@@ -65,6 +66,7 @@ totpRoutes(router)
 pushRoutes(router)
 perkRoutes(router)
 parsRoutes(router)
+referralRoutes(router)
 programRoutes(router)
 screenRoutes(router)
 aiRoutes(router)

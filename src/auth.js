@@ -1,7 +1,8 @@
 import{TOS_VERSION}from'./tos.js'
 import{alertUser}from'./email.js'
 import{checkSecondFactor}from'./totp.js'
-import{nameProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
+import{redeemReferral}from'./referral.js'
+import{nameProblem,dnProblem,claimOwner,claimStmt,trimStmt}from'./names.js'
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,opt,color,gradient,limit,body,json}from'./util.js'
 
 export const STATUS="(case when u.status_until is null or u.status_until>cast(strftime('%s','now') as integer)*1000 then u.status_text else '' end) status_text"
@@ -103,7 +104,7 @@ return tokenOf(req,'sx').split('~').map(x=>{const i=x.lastIndexOf('.');return{ui
 }
 export function stashCookie(url,list){
 const secure=url.protocol==='https:'?'; Secure':''
-return `sx=${list.map(x=>x.uid+'.'+x.token).join('~')}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${list.length?SESSION_MS/1000:0}${secure}`
+return `sx=${list.map(x=>x.uid+'.'+x.token).join('~')}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${list.length?34560000:0}${secure}`
 }
 export async function liveSession(env,token){
 if(!/^[a-f0-9]{64}$/.test(token||''))return null
@@ -116,7 +117,7 @@ const stash=readStash(c.req).filter(x=>x.uid!==uid)
 const old=tokenOf(c.req,'sid')
 const cur=old?await liveSession(c.env,old):null
 if(cur&&cur.id!==uid&&!stash.some(x=>x.uid===cur.id))stash.unshift({uid:cur.id,token:old})
-return[cookie(c.url,token,SESSION_MS/1000),stashCookie(c.url,stash.slice(0,4))]
+return[cookie(c.url,token,34560000),stashCookie(c.url,stash.slice(0,4))]
 }
 
 export const ip=c=>c.req.headers.get('cf-connecting-ip')||'local'
@@ -147,6 +148,7 @@ if(bad)fail(400,bad)
 if(await claimOwner(c.env,username))fail(409,'That username is taken or too similar to an existing or previously used one')
 const pw=str(b.password,10,200,'Password')
 const dn=b.display_name?str(b.display_name,1,32,'Display name'):username
+if(dnProblem(dn))fail(400,dnProblem(dn))
 const salt=randHex(16)
 const n=iters(c.env)
 const hash=await pbkdf2(pw,salt,n)
@@ -160,6 +162,7 @@ if(String(e.message).includes('UNIQUE'))fail(409,'That username is taken or too 
 throw e
 }
 const setCookie=await makeSession(c,id)
+try{await redeemReferral(c,b.ref,id)}catch{}
 const u=await c.env.DB.prepare('select * from users where id=?').bind(id).first()
 u.owner=isOwner(c.env,username)
 u.admin=u.owner||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(username.toLowerCase())
@@ -221,7 +224,7 @@ if(!s||s.id!==t.uid)fail(401,'That session expired. Sign in to the account again
 const rest=stash.filter(x=>x!==t)
 const old=tokenOf(c.req,'sid')
 if(c.user&&old)rest.unshift({uid:c.user.id,token:old})
-return json({ok:true},200,{'set-cookie':[cookie(c.url,t.token,SESSION_MS/1000),stashCookie(c.url,rest.slice(0,4))]})
+return json({ok:true},200,{'set-cookie':[cookie(c.url,t.token,34560000),stashCookie(c.url,rest.slice(0,4))]})
 },{auth:false})
 
 r.add('POST','/api/accounts/remove',async c=>{
@@ -265,7 +268,7 @@ r.add('PATCH','/api/me',async c=>{
 const b=await body(c.req,16384)
 const sets=[],vals=[]
 const add=(col,v)=>{sets.push(col+'=?');vals.push(v)}
-if('display_name'in b)add('display_name',str(b.display_name,1,32,'Display name'))
+if('display_name'in b){const dn=str(b.display_name,1,32,'Display name');if(dnProblem(dn))fail(400,dnProblem(dn));add('display_name',dn)}
 if('bio'in b)add('bio',opt(b.bio,500,'Bio'))
 if('pronouns'in b)add('pronouns',opt(b.pronouns,32,'Pronouns'))
 if('status_text'in b){
