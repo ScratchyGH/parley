@@ -525,6 +525,9 @@ const r=await POST(`/api/servers/${sid}/automod/test`,{text:tin.value})
 tout.textContent=r.blocked?'Blocked: '+r.reason:'Allowed. Nothing in the saved rules matches this message.'
 }catch(x){tout.textContent=x.message}
 }}},'Save and test')),tout)
+const wn=h('input',{class:'inp',type:'number',min:0,max:50,style:{width:'100px'}})
+const wa=h('select',{class:'sel','aria-label':'Action at the warn limit'},[['kick','Kick'],['ban','Ban'],['timeout','Time out 24 hours']].map(([v,t])=>h('option',{value:v},t)))
+GET(`/api/servers/${sid}/warn-limit`).then(d=>{wn.value=d.n;wa.value=d.a}).catch(()=>{})
 const van=h('input',{class:'inp',maxLength:32,placeholder:'my-server',value:S.sdata[sid].server.vanity||''})
 const lk=h('div')
 const drawLock=async()=>{try{const l=await GET(`/api/servers/${sid}/lockdown`);mount(lk,l.lockdown_until?h('div',{class:'row'},h('span',null,'Joins are locked until '+fmtStamp(l.lockdown_until)),h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/lockdown`,{on:false});drawLock()}catch(e){fail(e)}}}},'Unlock')):h('button',{class:'btn sm',on:{click:async()=>{try{await POST(`/api/servers/${sid}/lockdown`,{on:true,minutes:60});drawLock()}catch(e){fail(e)}}}},'Lock new joins for 1 hour'))}catch(e){mount(lk,h('div',{class:'err'},e.message))}}
@@ -541,12 +544,14 @@ mount(holder,row('Block links','Messages containing http(s) links are rejected.'
 mount(pg,h('h3',null,'AutoMod'),h('p',{class:'hint'},'Word, link and mention rules run when a message is sent, edited or posted in a poll. Owners, admins and members with Manage Messages or Moderate are exempt from those rules, so test with the box below instead of your own account. Words of 4 or more letters also match with spaces, dots, dashes and look-alike characters (b4d w0rd), and shorter words only match as whole words. Servers that are not 18+ Only always block explicit content for everyone, including moderators.'),
 field('Blocked words and phrases',words,'Up to 100 entries, 2 to 40 characters each.'),testBox,
 field('Maximum mentions per message (0 = no limit)',mm),holder,
+h('h4',{style:{marginTop:'16px'}},'Warn limit'),field('Warnings before action (0 = off)',h('div',{class:'row'},wn,wa),'When a member reaches this many warnings, the action runs once. Overturned warnings do not count.'),
 h('h4',{style:{marginTop:'16px'}},'Raid protection'),field('Lock joins when this many people join within a minute (0 = off)',rj,'The lock lasts 10 minutes. You can unlock earlier.'),lk,
 h('h4',{style:{marginTop:'16px'}},'Vanity invite link'),field('Custom link',h('div',{class:'row'},h('span',{class:'hint',style:{margin:0}},location.host+'/invite/'),van,h('button',{class:'btn sm',on:{click:async()=>{try{const r=await PUT(`/api/servers/${sid}/vanity`,{slug:van.value.trim()||null});S.sdata[sid].server.vanity=r.vanity;toast('Vanity link saved','ok')}catch(e){fail(e)}}}},'Save')),'3 to 32 letters, numbers or dashes. Unlock vanity links for a server in Settings > Pars (25 Pars).'),err,
 h('div',{style:{marginTop:'12px'}},h('button',{class:'btn pri',on:{click:async()=>{
 err.textContent=''
 try{
 await PUT(`/api/servers/${sid}/automod`,{words:words.value.split('\n'),block_links:links,max_mentions:parseInt(mm.value)||0,raid_joins:parseInt(rj.value)||0})
+await PUT(`/api/servers/${sid}/warn-limit`,{n:parseInt(wn.value)||0,a:wa.value})
 toast('AutoMod saved','ok')
 }catch(x){err.textContent=x.message}
 }}},'Save')))
