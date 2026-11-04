@@ -482,7 +482,7 @@ field('CPU usage',row('cpu',cpu),'Lower uses less processing: slower background 
 field('GPU usage',row('gpu',gpu),'Lower uses less graphics power: Low turns off blur, shadows and animations, and renders games at a smaller resolution. Max renders games sharper with more particles.'),
 sw('hwaccel',true,'Hardware acceleration','Off removes layer promotion and blur so the GPU does less work.',()=>{}),
 sw('amoled',false,'AMOLED black','Pure black backgrounds on dark themes. Ignored in performance mode.'),
-field('Background music',h('div',{class:'row'},h('input',{type:'file',accept:'audio/*',on:{change:async e=>{const f=e.target.files[0];if(!f)return;try{await bgmSave(f);await saveSettings({bgm:true});bgmPlay(f);toast('Background music on','ok')}catch(x){fail(x)}}}),h('button',{class:'btn sm',on:{click:async()=>{await bgmClear();try{await saveSettings({bgm:false})}catch(x){fail(x)}}}},'Remove')),'Plays a local file on loop at low volume, every time you open Parley. Nothing is uploaded. Remove it before streaming copyrighted music.')
+field('Background music',h('div',{class:'row'},h('input',{type:'file',accept:'audio/*',on:{change:async e=>{const f=e.target.files[0];if(!f)return;try{await bgmSave(f);await saveSettings({bgm:true});bgmPlay(f);toast('Background music on','ok')}catch(x){fail(x)}}}}),h('button',{class:'btn sm',on:{click:async()=>{await bgmClear();try{await saveSettings({bgm:false})}catch(x){fail(x)}}}},'Remove')),'Plays a local file on loop at low volume, every time you open Parley. Nothing is uploaded. Remove it before streaming copyrighted music.')
 ])
 }
 async function connections(pg){
