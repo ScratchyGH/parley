@@ -1552,3 +1552,4 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .acm.ac_neon{box-shadow:0 0 0 1px var(--accent),0 0 8px var(--accent)}
 .acm.ac_ticket{clip-path:polygon(0 0,100% 0,100% 55%,calc(100% - 6px) 60%,100% 65%,100% 100%,0 100%,0 65%,6px 60%,0 55%)}
 .acm.ac_mini{width:110px;height:64px}.acm.ac_mini .acm-h{height:14px}.acm.ac_mini .acm-a{width:20px;height:20px;top:6px}.acm.ac_mini .acm-n{top:36px}
+.msgs .m,.list .m{content-visibility:auto;contain-intrinsic-size:auto 56px}
