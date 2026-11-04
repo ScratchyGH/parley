@@ -1531,3 +1531,9 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .cm_stripe{background-image:repeating-linear-gradient(45deg,color-mix(in srgb,var(--hl,var(--accent)) 18%,transparent) 0 8px,transparent 8px 16px)}
 @keyframes cmdash{50%{border-color:transparent}}
 .rm .cm_adotted,.perf .cm_adotted{animation:none}
+.gx-multi{flex-direction:row;gap:24px;max-width:96vw}
+.gx-m{display:flex;flex-direction:column;align-items:center;gap:8px;animation:gxmin .6s cubic-bezier(.2,.8,.3,1)}
+.gx-m b{font-size:15px}
+@keyframes gxmin{from{opacity:0;transform:scale(.3)}}
+.gcard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:320px}
+.gc-sw{transform:scale(.8);transform-origin:left top}
