@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dimmed">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#121211">
+<title>Parley support</title>
+<meta name="description" content="Lost your account, banned, or something broken? Send Parley support a message.">
+<link rel="icon" href="/logo-192.png">
+<link rel="stylesheet" href="support.css">
+</head>
+<body>
+<main>
+<a class="back" href="/">Back to Parley</a>
+<h1>Parley support</h1>
+<p class="lead">Lost access, locked out or stuck? Tell us what happened. You do not need to be signed in.</p>
+<section class="box" id="tips">
+<h2>Try this first</h2>
+<ul>
+<li>Forgot your password? On the sign in screen choose Forgot password and use the recovery code you saved when you made the account.</li>
+<li>Linked an email? Choose Reset with email on the same screen.</li>
+<li>Banned or suspended? Sign in once and the appeal form opens. Use the form below if that does not work.</li>
+</ul>
+</section>
+<form class="box" id="f" autocomplete="off">
+<h2>Send a message</h2>
+<label>What do you need help with<select name="kind"><option value="lost">I lost access to my account</option><option value="banned">I was banned or suspended</option><option value="bug">Something is broken</option><option value="other">Something else</option></select></label>
+<label>Your Parley username, if you remember it<input name="username" maxlength="40"></label>
+<label>How can we reach you, such as an email<input name="contact" maxlength="120"></label>
+<label>What happened<textarea name="message" rows="6" maxlength="2000" required></textarea></label>
+<input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+<div class="err" id="err" role="alert"></div>
+<button type="submit">Send</button>
+</form>
+<section class="box" id="done" hidden>
+<h2>Message sent</h2>
+<p>Keep this ticket number and key. Use them below to see our reply.</p>
+<div class="code" id="tk"></div>
+</section>
+<form class="box" id="s" autocomplete="off">
+<h2>Check a ticket</h2>
+<label>Ticket number<input name="id" maxlength="12" required></label>
+<label>Key<input name="key" maxlength="32" required></label>
+<button type="submit">Check</button>
+<div class="res" id="res"></div>
+</form>
+</main>
+<script src="support.js"></script>
+</body>
+</html>
