@@ -439,7 +439,7 @@ const m=await mem(c,c.p.sid)
 must(m,P.MANAGE_CHANNELS)
 const b=await body(c.req)
 const type=b.type||'text'
-if(!['text','announce','voice','forum','stage','rules'].includes(type))fail(400,'Invalid channel type')
+if(!['text','announce','voice','forum','stage','rules','media','ideas'].includes(type))fail(400,'Invalid channel type')
 const count=await c.env.DB.prepare('select count(*) n from channels where server_id=?').bind(m.server.id).first()
 if(count.n>=200)fail(400,'This server has reached the channel limit (200)')
 if(b.category_id){const ok=await c.env.DB.prepare('select 1 x from categories where id=? and server_id=?').bind(b.category_id,m.server.id).first();if(!ok)fail(400,'Category not found')}

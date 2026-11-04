@@ -137,6 +137,7 @@ const attIds=Array.isArray(b.attachments)?[...new Set(b.attachments.map(String))
 let stk=null
 if(b.sticker_id){stk=await stickerFor(c.env,String(b.sticker_id),c.user.id);if(!stk)fail(400,'Sticker not available')}
 if(!content&&!attIds.length&&!stk&&!fwdFiles.length)fail(400,'Message is empty')
+if(rr.ch?.type==='media'&&!attIds.length&&!fwdFiles.length&&!/https?:\/\//i.test(content))fail(400,'This is a media channel. Share a picture, video or link.')
 const lastP=c.env.DB.prepare('select content,created_at from messages where room=? and author_id=? order by id desc limit 1').bind(rr.room,c.user.id).first()
 const nonce=typeof b.nonce==='string'&&b.nonce.length<=40?b.nonce:null
 if(nonce){
