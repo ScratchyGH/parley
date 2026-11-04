@@ -62,6 +62,60 @@ jobs:
           name: win-${{ matrix.key }}
           path: kd/dist/${{ matrix.art }}.exe
           if-no-files-found: error
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: kids
+            path: kids
+            name: Parley Kids
+            id: app.parley.kids
+            art: ParleyKids
+            bg: '#dff3ff'
+          - key: connect
+            path: connect
+            name: PK Connect
+            id: app.parley.connect
+            art: PKConnect
+            bg: '#f3f5fa'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - shell: bash
+        run: |
+          mkdir kd && cd kd && mkdir build
+          cp ../public/logo-512.png build/icon.png
+          cat > package.json <<EOF
+          {"name":"parley-${{ matrix.key }}","version":"1.${{ github.run_number }}.0","description":"${{ matrix.name }}","author":"Parley <parley@example.com>","homepage":"${SITE}/${{ matrix.path }}/","main":"main.js","build":{"appId":"${{ matrix.id }}","productName":"${{ matrix.name }}","directories":{"buildResources":"build"},"files":["main.js","package.json"],"linux":{"target":["AppImage","deb"],"icon":"build/icon.png","category":"Network","maintainer":"Parley <parley@example.com>","artifactName":"${{ matrix.art }}.${ext}"}}}
+          EOF
+          cat > main.js <<'EOF'
+          const{app,BrowserWindow,shell,session}=require('electron')
+          const SITE='__SITE__'
+          if(!app.requestSingleInstanceLock())app.quit()
+          app.whenReady().then(()=>{
+          session.defaultSession.setPermissionRequestHandler((wc,p,cb)=>cb(false))
+          session.defaultSession.setPermissionCheckHandler(()=>false)
+          const w=new BrowserWindow({width:1000,height:760,backgroundColor:'__BG__',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
+          w.loadURL(SITE+'/__PATH__/')
+          w.webContents.on('will-navigate',(e,u)=>{if(!u.startsWith(SITE+'/__PATH__/')){e.preventDefault()}})
+          w.webContents.setWindowOpenHandler(()=>({action:'deny'}))
+          })
+          app.on('window-all-closed',()=>app.quit())
+          EOF
+          sed -i "s|__SITE__|${SITE}|g;s|__PATH__|${{ matrix.path }}|g;s|__BG__|${{ matrix.bg }}|g" main.js
+          npm i --save-dev electron@33 electron-builder@25
+          npx electron-builder --linux --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.key }}
+          path: |
+            kd/dist/${{ matrix.art }}.AppImage
+            kd/dist/${{ matrix.art }}.deb
+          if-no-files-found: error
   android:
     strategy:
       fail-fast: false
@@ -109,7 +163,7 @@ jobs:
           path: ${{ matrix.art }}.apk
           if-no-files-found: error
   publish:
-    needs: [windows, android]
+    needs: [windows, linux, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -119,5 +173,5 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create kids --repo "$GITHUB_REPOSITORY" --title "Parley Kids apps" --notes "Parley Kids and PK Connect for Windows and Android." 2>/dev/null || true
+          gh release create kids --repo "$GITHUB_REPOSITORY" --title "Parley Kids apps" --notes "Parley Kids and PK Connect for Windows, Linux and Android." 2>/dev/null || true
           gh release upload kids out/* --clobber --repo "$GITHUB_REPOSITORY"
