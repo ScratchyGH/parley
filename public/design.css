@@ -1553,3 +1553,47 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .acm.ac_ticket{clip-path:polygon(0 0,100% 0,100% 55%,calc(100% - 6px) 60%,100% 65%,100% 100%,0 100%,0 65%,6px 60%,0 55%)}
 .acm.ac_mini{width:110px;height:64px}.acm.ac_mini .acm-h{height:14px}.acm.ac_mini .acm-a{width:20px;height:20px;top:6px}.acm.ac_mini .acm-n{top:36px}
 .msgs .m,.list .m{content-visibility:auto;contain-intrinsic-size:auto 56px}
+.stmenu{min-width:250px;padding:6px}
+.stmenu hr{margin:6px 0}
+.stc{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:8px;background:var(--surf2);text-align:left}
+.stc:hover{background:var(--hover)}
+.ste{font-size:20px;line-height:1}
+.stt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.stx{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;color:var(--muted)}
+.stx:hover{background:var(--hover);color:var(--strong)}
+.stp{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;border-radius:8px;text-align:left}
+.stp span{display:flex;flex-direction:column}
+.stp small{color:var(--muted);font-size:12px}
+.stp.on{background:var(--sel)}
+.sd{width:12px;height:12px;border-radius:50%;flex:none;background:var(--ok)}
+.sd.idle{background:var(--warn)}.sd.busy{background:var(--err)}.sd.invisible{background:transparent;border:3px solid var(--muted)}
+.emg{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:10px 0}
+.emg button{font-size:20px;padding:4px;border-radius:6px}
+.emg button:hover{background:var(--hover)}
+.emg input{grid-column:1/-1}
+.stdlg{display:flex;flex-direction:column;gap:6px;min-width:min(420px,86vw)}
+.mn{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.mn>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mst{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cnx{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.cnx:empty{display:none}
+.cnc{padding:3px 9px;border-radius:99px;background:var(--surf2);color:var(--text);font-size:12px;text-decoration:none}
+.cnc:hover{background:var(--hover)}
+.tabbar{display:none}
+.app-android{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+.app-android .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:28;background:var(--side);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.app-android .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;color:var(--muted);font-size:11px;font-weight:600;min-height:54px}
+.app-android .tabbar button.on{color:var(--strong)}
+.app-android .tabbar button.on svg{color:var(--accent)}
+.app-android .shell{padding-bottom:calc(54px + env(safe-area-inset-bottom))}
+.app-android.in-chat .tabbar{display:none}
+.app-android.in-chat .shell{padding-bottom:0}
+.app-android .ci,.app-android .mem,.app-android .li{min-height:44px}
+.app-android .ib{min-width:40px;min-height:40px}
+.app-android .btn{min-height:42px}
+.app-android .shell .ws,.app-android .shell .ctx{bottom:calc(54px + env(safe-area-inset-bottom))}
+.app-android.in-chat .shell .ws,.app-android.in-chat .shell .ctx{bottom:0}
+.app-android .scrim .dlg{border-radius:18px 18px 0 0}
+.st-inv a[href*="/invite/"],.st-inv .invc,.st-inv .inv{filter:blur(6px)}
+.st-names .mh b,.st-names .mh .tw-un,.st-names .mem .mn>span:first-child,.st-names .me .who b,.st-names .me .who small,.st-names .ci .nm,.st-names .pcard h3{filter:blur(5px)}
+.st-srv .ctx-h span,.st-srv .ctx .cib span{filter:blur(5px)}
