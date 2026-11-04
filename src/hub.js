@@ -23,7 +23,7 @@ const cid=crypto.randomUUID().replace(/-/g,'').slice(0,10)
 pair[1].serializeAttachment({uid,cid,pres:req.headers.get('x-pres')||'online',p2p:[],tu})
 const presence=[]
 const seen=new Set()
-for(const w of this.ctx.getWebSockets()){const a=w.deserializeAttachment();if(a&&!seen.has(a.uid)){seen.add(a.uid);if(a.pres!=='invisible')presence.push({uid:a.uid,s:a.pres})}}
+for(const w of this.ctx.getWebSockets()){const a=w.deserializeAttachment();if(a&&!seen.has(a.uid)){seen.add(a.uid);if(a.pres!=='invisible')presence.push({uid:a.uid,s:a.pres,a:a.act||null})}}
 const voice=await this.getVoice()
 pair[1].send(JSON.stringify({t:'ready',presence,voice,cid}))
 if(first)await this.broadcast({t:'presence',uid,s:req.headers.get('x-pres')||'online'},null,uid)
@@ -94,6 +94,14 @@ if(m.t==='bw.cursor'){
 const x=Number(m.x),y=Number(m.y)
 if(!Number.isFinite(x)||!Number.isFinite(y))return
 await this.broadcast({t:'bw.cursor',uid:a.uid,x:Math.round(x),y:Math.round(y),b:typeof m.b==='string'?m.b.slice(0,40):''},null,a.uid)
+return
+}
+if(m.t==='activity'){
+let x=null
+const o=m.a
+if(o&&['play','listen','watch','custom'].includes(o.k)&&typeof o.n==='string'&&o.n.trim())x={k:o.k,n:o.n.trim().slice(0,40),t:Number.isFinite(o.t)?Math.min(o.t,Date.now()):Date.now()}
+ws.serializeAttachment({...a,act:x})
+if(a.pres!=='invisible')await this.broadcast({t:'activity',uid:a.uid,a:x})
 return
 }
 if(m.t==='presence'){
