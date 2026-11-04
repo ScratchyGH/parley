@@ -178,3 +178,15 @@ body.kids .top nav a:not([href="#devices"]){display:none}
 @media(max-width:700px){.hseg{margin:0}.top nav{display:none}}
 @font-face{font-family:"Parli-Bold";src:url(/fonts/parli-bold.woff2?v=2) format("woff2");font-weight:700;font-display:swap}
 h1,h2,h3,.brand,.logo{font-family:"Parli-Bold",Bricolage,Figtree,system-ui,sans-serif}
+body{background:radial-gradient(1200px 600px at 12% -5%,rgba(139,92,246,.28),transparent 60%),radial-gradient(900px 520px at 95% 8%,rgba(56,189,248,.2),transparent 60%),radial-gradient(800px 500px at 50% 110%,rgba(236,72,153,.14),transparent 60%),var(--bg);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:48px 48px;-webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000,transparent 75%);mask-image:radial-gradient(ellipse at 50% 20%,#000,transparent 75%)}
+.hero h1{background:linear-gradient(180deg,#fff 30%,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 30px rgba(139,92,246,.35))}
+.pill.solid{box-shadow:0 8px 30px rgba(139,92,246,.45),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .15s,box-shadow .15s}
+.pill.solid:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(139,92,246,.6),inset 0 1px 0 rgba(255,255,255,.45)}
+.top{backdrop-filter:blur(14px);background:rgba(10,8,18,.55);border-bottom:1px solid rgba(255,255,255,.06)}
+section{position:relative}
+section+section::before{content:"";position:absolute;left:10%;right:10%;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.5),transparent)}
+.hero img,.hero picture,.hero .mock,.hero .shot{border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08),0 0 80px rgba(139,92,246,.25)}
+.tiles>*,.cards>*,.grid>*,.faq details{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:16px;backdrop-filter:blur(6px);transition:transform .2s,border-color .2s,box-shadow .2s}
+.tiles>*:hover,.cards>*:hover,.grid>*:hover{transform:translateY(-4px);border-color:rgba(167,139,250,.55);box-shadow:0 16px 40px rgba(0,0,0,.4),0 0 30px rgba(139,92,246,.2)}
+@media(prefers-reduced-motion:no-preference){.hero{animation:gh 14s ease-in-out infinite alternate}@keyframes gh{to{background-position:20px 10px}}}
