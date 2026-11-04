@@ -277,7 +277,9 @@ const sel=h('select',{class:'sel','aria-label':'Time zone',style:{width:'auto',m
 h('option',{value:'',selected:!cur},'Automatic ('+(dev||'device time')+')'),
 h('optgroup',{label:'Common'},TZS.map(([k,l])=>h('option',{value:k,selected:cur===k},l))),
 all.length?h('optgroup',{label:'All time zones'},all.map(k=>h('option',{value:k,selected:cur===k},k.replace(/_/g,' ')))):null)
-return field('Time zone',h('div',{class:'row',style:{flexWrap:'wrap'}},sel,now),'Automatic follows your device. Pick one to show message times in that zone everywhere.')
+const us=/^en-(US|CA|PH)|^es-(US|MX)/.test(navigator.language||'')
+const tf=h('select',{class:'sel','aria-label':'Time format',style:{width:'auto'},on:{change:async e=>{try{await saveSettings({tfmt:e.target.value});tick()}catch(x){fail(x)}}}},[['','Automatic (follows your region)'],['24',(us?'Military time':'24-hour clock')+' (00:00 to 23:59)'],['12','12-hour clock (1 PM, 12 AM)']].map(([v,l])=>h('option',{value:v,selected:setting('tfmt','')===v},l)))
+return h('div',null,field('Time zone',h('div',{class:'row',style:{flexWrap:'wrap'}},sel,now),'Automatic follows your device. Pick one to show message times in that zone everywhere.'),field('Time format',tf,'Applies to message times and Today at labels.'))
 }
 function appearance(pg){
 const themes=[['dimmed','Deep Fjord (default)'],['silver','Silver'],['light','Light'],['contrast','High contrast']]

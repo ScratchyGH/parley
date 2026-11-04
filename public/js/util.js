@@ -164,10 +164,14 @@ const pad=n=>String(n).padStart(2,'0')
 let TZ=''
 export const setTZ=v=>{TZ=v||''}
 export const tzo=()=>TZ?{timeZone:TZ}:{}
+let TF=''
+export const setTF=v=>{TF=v||''}
 export function fmtTime(t){
-const o={hour:'2-digit',minute:'2-digit',hourCycle:'h23',...tzo()}
+const o={hour:TF==='12'?'numeric':'2-digit',minute:'2-digit',...tzo()}
+if(TF==='24')o.hourCycle='h23';else if(TF==='12')o.hour12=true
 if(pref('tw_precise_time'))o.second='2-digit'
-try{return new Date(t).toLocaleTimeString('en-GB',o)}catch{return new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}
+const d=new Date(t),l=TF==='24'?'en-GB':undefined
+try{return d.toLocaleTimeString(l,o)}catch{return d.toLocaleTimeString(l,{hour:o.hour,minute:'2-digit'})}
 }
 export function fmtDate(t){
 return new Date(t).toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric',...tzo()})
