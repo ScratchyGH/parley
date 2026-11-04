@@ -266,7 +266,8 @@ return{servers:rows}
 r.add('GET','/api/servers/:sid',async c=>{
 const m=await mem(c,c.p.sid)
 const[vis,catsR,rolesR,count,emojiR,expc]=await Promise.all([visibleChannels(c.env,m),c.env.DB.prepare('select * from categories where server_id=? order by position').bind(m.server.id).all(),c.env.DB.prepare('select id,name,color,position,perms,is_everyone from roles where server_id=? order by position desc').bind(m.server.id).all(),c.env.DB.prepare('select count(*) n from members where server_id=?').bind(m.server.id).first(),c.env.DB.prepare('select id,name,file_id from emoji where server_id=? order by name').bind(m.server.id).all(),expCfg(c.env)])
-const cats=catsR.results,roles=rolesR.results,emoji=emojiR.results
+const mt=await rmeta(c,m.server.id)
+const cats=catsR.results,roles=rolesR.results.map(x=>({...x,logo:mt[x.id]?.logo||'',give:mt[x.id]?.give||[]})),emoji=emojiR.results
 const s=m.server
 const onb=onbOf(s.onboarding)
 let onboarded=true
@@ -599,14 +600,37 @@ c.pub('s_'+m.server.id,{t:'server.update'})
 return json({id},201)
 })
 
+async function rmeta(c,sid){
+const x=await c.env.DB.prepare('select v from app_settings where k=?').bind('rmeta:'+sid).first()
+try{return JSON.parse(x?.v||'{}')||{}}catch{return{}}
+}
+const putMeta=(c,sid,o)=>c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind('rmeta:'+sid,JSON.stringify(o)).run()
 async function roleCtx(c,give){
 const m=await mem(c,c.p.sid)
+const lim=give&&!(m.base&P.MANAGE_ROLES)&&!m.owner
 if(!(give&&(m.base&(c.p.uid===c.user.id?P.GIVE_SELF:P.GIVE_ANY))))must(m,P.MANAGE_ROLES)
 const role=await c.env.DB.prepare('select * from roles where id=? and server_id=?').bind(c.p.rid,m.server.id).first()
 if(!role)fail(404,'Role not found')
+if(lim){const mt=await rmeta(c,m.server.id);const al=m.roleIds.flatMap(i=>mt[i]?.give||[]);if(al.length&&!al.includes(role.id))fail(403,'You cannot give that role')}
 if(!m.owner&&role.position>=m.top)fail(403,'That role is above your highest role')
 return{m,role}
 }
+
+const PRE=[['Owner','#f1c40f',524287],['Co-Owner','#e67e22',524287&~65536&~131072],['Administrator','#e74c3c',P.ADMIN],['Moderator','#3498db',P.VIEW|P.SEND|P.KICK|P.BAN|P.MODERATE|P.MANAGE_MESSAGES],['Blacklisted','#4d4d4d',0]]
+r.add('POST','/api/servers/:sid/roles/presets',async c=>{
+const m=await mem(c,c.p.sid)
+must(m,P.MANAGE_ROLES)
+if(!m.admin&&!m.owner)fail(403,'Only administrators can add preset roles')
+const have=new Set((await c.env.DB.prepare('select name from roles where server_id=?').bind(m.server.id).all()).results.map(x=>x.name))
+const st=[]
+for(const[n,col,pm]of PRE){
+if(have.has(n))continue
+st.push(c.env.DB.prepare('insert into roles(id,server_id,name,color,position,perms) values(?,?,?,?,(select coalesce(max(position),1)+1 from roles where server_id=?),?)').bind(newId('r'),m.server.id,n,col,m.server.id,pm))
+}
+if(st.length)await c.env.DB.batch(st)
+resync(c,m.server.id)
+return{added:st.length}
+})
 
 r.add('PATCH','/api/servers/:sid/roles/:rid',async c=>{
 const{m,role}=await roleCtx(c)
@@ -615,6 +639,14 @@ const sets=[],vals=[]
 const add=(k,v)=>{sets.push(k+'=?');vals.push(v)}
 if('name'in b&&!role.is_everyone)add('name',str(b.name,1,40,'Role name'))
 if('color'in b)add('color',color(b.color,'Color'))
+if('logo'in b||'give'in b){
+const mt=await rmeta(c,m.server.id)
+const o=mt[role.id]||{}
+if('logo'in b)o.logo=str(b.logo||'',0,8,'Logo')
+if('give'in b){if(!Array.isArray(b.give)||b.give.length>100||b.give.some(x=>typeof x!=='string'))fail(400,'Invalid give list');o.give=b.give.filter(x=>x!==role.id)}
+mt[role.id]=o
+await putMeta(c,m.server.id,mt)
+}
 if('perms'in b){
 const p=limitPerms(m,b.perms)
 if(((p&P.ADMIN)!==(role.perms&P.ADMIN))&&!m.admin)fail(403,'Only administrators can change Administrator')
