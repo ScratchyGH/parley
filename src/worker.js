@@ -43,6 +43,7 @@ import gamepackRoutes from'./gamepack.js'
 import kidsRoutes from'./kids.js'
 import supportRoutes from'./support.js'
 import abRoutes from'./ab.js'
+import turkeyRoutes from'./turkey.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -79,6 +80,7 @@ hookRoutes(router)
 pluginRoutes(router)
 backupRoutes(router)
 botlabRoutes(router)
+turkeyRoutes(router)
 xlabsRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
