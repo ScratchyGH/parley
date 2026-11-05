@@ -93,6 +93,7 @@ import('./bgm.js').then(m=>m.bgmBoot())
 import('./framefit.js').then(m=>m.frameFit())
 import('./activity.js').then(m=>m.startActivity())
 import('./ab.js').then(m=>m.abBoot())
+import('./turkey.js').then(m=>m.turkeyBoot())
 setTimeout(maybeTour,2600)
 }
 
