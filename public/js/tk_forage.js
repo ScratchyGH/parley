@@ -149,7 +149,7 @@ const gr=ground(210,210,5)
 gr.traverse(o=>{if(o.isMesh)o.receiveShadow=true})
 scene.add(gr)
 const dark=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:0x1d1108}))
-dark.position.y=-.05
+dark.position.y=-1.5
 scene.add(dark)
 const rg=rng(77)
 const kinds=['maple','oak','birch','pine','maple','maple']
