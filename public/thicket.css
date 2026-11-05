@@ -80,3 +80,30 @@
 .tk-host{position:absolute;inset:0;overflow:hidden;touch-action:none;user-select:none}
 .tk-close{position:absolute;top:14px;right:14px;z-index:3}
 
+
+.tk-hub .tk-hero{border-radius:3px;background:#7a2e0e;border:2px solid #2a1206;box-shadow:6px 6px 0 #2a1206;position:relative;padding:28px 26px}
+.tk-hub .tk-hero::before{content:"";position:absolute;inset:7px;border:1.5px dashed rgba(253,230,138,.55);border-radius:1px;pointer-events:none}
+.tk-hub .tk-hero h2{font-size:34px;letter-spacing:-.03em;color:#f6e3b4;line-height:1;text-transform:none}
+.tk-hub .tk-hero p{color:#f2d9a4;opacity:1}
+.tk-hub .tk-cd{border-radius:2px;background:#2a1206;color:#f6e3b4;border:1px solid rgba(253,230,138,.4);letter-spacing:0}
+.tk-hub .tk-stat{border-radius:2px;background:#2a1206;border:1px solid rgba(253,230,138,.3)}
+.tk-hub .tk-bar{border-radius:0;height:10px;background:#2a1206;border:1px solid rgba(253,230,138,.4)}
+.tk-hub .tk-bar i{border-radius:0;background:repeating-linear-gradient(90deg,#e8a21f 0 8px,#c77c10 8px 10px)}
+.tk-hub .tk-tabs{gap:0;border-bottom:2px solid #2a1206;margin-bottom:18px}
+.tk-hub .tk-tab{border-radius:7px 7px 0 0;border:2px solid #2a1206;border-bottom:0;margin-right:4px;background:transparent;font-family:var(--disp);font-weight:700;padding:9px 18px}
+.tk-hub .tk-tab.on{background:#a8420f;color:#f6e3b4;transform:translateY(2px)}
+.tk-hub .tk-h{font-family:var(--disp);font-size:19px;letter-spacing:-.02em;color:#e8a21f;text-transform:none;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px dashed rgba(232,162,31,.4)}
+.tk-hub .tk-games{gap:14px}
+.tk-hub .tk-gt{border-radius:3px;box-shadow:5px 5px 0 #2a1206;border:2px solid #2a1206}
+.tk-hub .tk-gt:nth-child(odd){border-radius:3px 14px 3px 14px}
+.tk-hub .tk-gt:nth-child(even){border-radius:14px 3px 14px 3px}
+.tk-hub .tk-gt:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 #2a1206}
+.tk-hub .tk-gt b{font-family:var(--disp);font-size:19px;letter-spacing:-.02em}
+.tk-hub .tk-gt em{border-radius:2px;background:#2a1206}
+.tk-hub .tk-day,.tk-hub .tk-q,.tk-hub .tk-r,.tk-hub .tk-lb-r,.tk-hub .tk-gift{border-radius:3px;border:1.5px dashed rgba(232,162,31,.45);background:transparent;box-shadow:none}
+.tk-hub .tk-day-done,.tk-hub .tk-r-ready,.tk-hub .tk-q-done{border:2px solid #e8a21f;border-style:solid;background:rgba(232,162,31,.08);box-shadow:3px 3px 0 #2a1206}
+.tk-hub .tk-q-art{border-radius:2px;background:#2a1206}
+.tk-hub .tk-q-n,.tk-hub .tk-lb-k{font-family:var(--disp)}
+.tk-hub .tk-r-big{border-style:solid;border-width:2px;border-color:#e8a21f}
+.tk-hub .tk-lb-r.me{box-shadow:none;border-style:solid;border-color:#e8a21f}
+.tk-hub .tk-day-n,.tk-hub .tk-r-t{text-transform:none;letter-spacing:0;font-size:13px}
