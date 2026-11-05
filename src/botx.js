@@ -1,4 +1,5 @@
 import{fail,now,newId,str,limit,body,json,randHex,clamp}from'./util.js'
+import{NOFORK}from'../public/js/licenses.js'
 import{cleanGraph}from'./blockrun.js'
 import{validateGraph}from'./botcheck.js'
 import{runHook}from'./blocks.js'
@@ -190,7 +191,7 @@ const role=await roleOf(c.env,src,c.user.id)
 const listed=src.visibility!=='private'&&(src.visibility==='unlisted'||['approved','legacy'].includes(src.screen_status))
 if(!role&&!listed)fail(404,'Bot not found')
 if(!role){
-if(src.license==='ARR')fail(403,'The author has reserved all rights, so this bot cannot be copied.')
+if(NOFORK.has(src.license))fail(403,'The author has turned off forking for this bot.')
 if(src.license==='Custom'&&b.accept_license!==true)return json({error:'This bot uses a custom license. Read it and confirm to continue.',license_url:src.license_url,needs_accept:true},409)
 }
 const cnt=await c.env.DB.prepare('select count(*) n from users where bot_owner=? and deleted_at is null').bind(c.user.id).first()

@@ -1,7 +1,7 @@
 import{fail,now,newId,str,int,limit,body,json,randHex,sha,clamp}from'./util.js'
 import{P,loadMember}from'./perms.js'
 import{nameProblem}from'./names.js'
-import{LICENSES,TAGS}from'../public/js/licenses.js'
+import{LICENSES,TAGS,isCustom}from'../public/js/licenses.js'
 
 const LIC=new Set(LICENSES.map(l=>l[0]))
 const TAGSET=new Set(TAGS)
@@ -100,7 +100,7 @@ o.visibility=b.visibility
 }
 const lic=o.license??cur?.license??'ARR'
 const lu=o.license_url??cur?.license_url??''
-if(lic==='Custom'&&!lu)fail(400,'Add a link to your license terms')
+if(isCustom(lic)&&!lu)fail(400,'Add a link to your license terms')
 const vis=o.visibility??cur?.visibility??'private'
 const sum=o.summary??cur?.summary??''
 if(vis==='public'){
