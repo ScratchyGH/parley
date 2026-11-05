@@ -4,9 +4,8 @@ const PACKS={hollow:{name:'Haunted Hollow games',price:25,season:'hollow',desc:'
 const owned=(env,uid,id)=>env.DB.prepare('select 1 x from game_unlocks where user_id=? and pack=?').bind(uid,id).first()
 const TG={dash:[400,6,60],stack:[4,6,40],match:[10,6,40]}
 const tgLive=()=>{const d=new Date();return d.getUTCMonth()===10}
-const tgDay=(env,uid)=>env.DB.prepare("select count(*) n,coalesce(sum(delta),0) p from par_tx where user_id=? and kind='tgame' and created_at>?").bind(uid,now()-86400000).first()
 export default function(r){
-r.add('GET','/api/games/turkey',async c=>{const d=await tgDay(c.env,c.user.id);return{live:tgLive(),left:Math.max(0,15-d.p)}})
+r.add('GET','/api/games/turkey',async c=>{return{live:tgLive()}})
 r.add('POST','/api/games/turkey/finish',async c=>{
 if(!tgLive())fail(409,'Thanksgiving games are over')
 limit('tg:'+c.user.id,20,60000)
@@ -15,13 +14,12 @@ const g=TG[String(b.game)]
 if(!g)fail(404,'No such game')
 const score=Math.max(0,Math.min(Number(b.score)||0,100000))
 const secs=Math.max(0,Number(b.secs)||0)
-const d=await tgDay(c.env,c.user.id)
 let pars=0
-if(secs>=15&&d.n<5&&d.p<15)pars=Math.min(g[1],15-d.p,Math.floor(score/g[0]),Math.floor(secs/g[2]*3)+1)
+if(secs>=15)pars=Math.max(1,Math.floor(score/g[0]))+Math.floor(secs/g[2])
 if(pars>0){
 await c.env.DB.batch([c.env.DB.prepare('update users set pars=pars+? where id=?').bind(pars,c.user.id),c.env.DB.prepare('insert into par_tx(id,user_id,delta,kind,ref,note,created_at) values(?,?,?,?,?,?,?)').bind(newId('pt'),c.user.id,pars,'tgame',String(b.game),'Thanksgiving game',now())])
 }
-return{pars,left:Math.max(0,15-d.p-pars)}
+return{pars}
 })
 r.add('GET','/api/games/packs',async c=>{
 const u=await c.env.DB.prepare('select pars from users where id=?').bind(c.user.id).first()
