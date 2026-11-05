@@ -375,6 +375,7 @@ return h('div',{class:'itch'},fr,h('div',{class:'itch-bar row'},h('a',{href:url,
 }
 function unfurlSlot(url){
 const slot=h('div',{class:'unf-slot'})
+try{const lx=new URL(url);if(/^\/api\/levelcard$/.test(lx.pathname)&&/(^|\.)heavengtwashere\.workers\.dev$|^localhost$/.test(lx.hostname)){slot.append(h('img',{src:lx.pathname+lx.search,alt:'Level card',loading:'lazy',style:{maxWidth:'420px',width:'100%',borderRadius:'18px'}}));return slot}}catch{}
 const go=async()=>{
 try{const gx=new URL(url);const gm=gx.origin===location.origin&&gx.pathname.match(/^\/gift\/(\w+)$/);if(gm){const {giftCard}=await import('/js/pars.js');slot.append(giftCard(gm[1]));return}}catch{}
 const em=embedSrc(url)
