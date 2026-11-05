@@ -75,10 +75,20 @@ r.add('GET','/api/admin/users',async c=>{
 guard(c)
 const qs=(c.url.searchParams.get('q')||'').trim().slice(0,40)
 if(qs.length<2)fail(400,'Enter at least 2 characters')
-const rows=(await c.env.DB.prepare("select id,username,display_name,created_at,suspended,suspended_until,suspend_reason,deleted_at,labs from users where username like ? escape '\\' order by created_at desc limit 25").bind('%'+qs.replace(/[\\%_]/g,'\\$&')+'%').all()).results
+const rows=(await c.env.DB.prepare("select id,username,display_name,created_at,suspended,suspended_until,suspend_reason,deleted_at,labs,is_admin from users where username like ? escape '\\' order by created_at desc limit 25").bind('%'+qs.replace(/[\\%_]/g,'\\$&')+'%').all()).results
 return{users:rows}
 })
 
+r.add('POST','/api/admin/users/:id/admin',async c=>{
+ownerOnly(c)
+const b=await body(c.req,64)
+const t=await c.env.DB.prepare('select id,username from users where id=? and deleted_at is null').bind(c.p.id).first()
+if(!t)fail(404,'User not found')
+if(t.id===c.user.id)fail(400,'You are already the owner')
+const on=b.on?1:0
+await c.env.DB.batch([c.env.DB.prepare('update users set is_admin=? where id=?').bind(on,t.id),alog(c,on?'user.admin_grant':'user.admin_revoke',t.id,'')])
+return{ok:true,is_admin:on}
+})
 r.add('POST','/api/admin/users/:id/suspend',async c=>{
 guard(c)
 const b=await body(c.req)
