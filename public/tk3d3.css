@@ -1,0 +1,70 @@
+.tk3{position:absolute;inset:0;overflow:hidden;background:#3b2412;touch-action:none;user-select:none;-webkit-user-select:none;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#f5e6c8}
+.tk3-cv{position:absolute;inset:0}
+.tk3-cv canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+.tk3-ui{position:absolute;inset:0;pointer-events:none}
+.tk3-ui button{pointer-events:auto}
+.tk3-vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(20,8,0,0) 52%,rgba(20,8,0,.62) 100%)}
+.tk3-hurt{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(200,20,10,.15) 30%,rgba(200,20,10,.75) 100%);opacity:0}
+.tk3-low{position:absolute;inset:0;box-shadow:inset 0 0 120px rgba(160,10,0,.55);opacity:0}
+.tk3-low.on{animation:tk3pulse 1s ease-in-out infinite}
+@keyframes tk3pulse{50%{opacity:.7}}
+.tk3-xp{position:absolute;left:0;right:0;top:0;height:10px;background:rgba(0,0,0,.55)}
+.tk3-xpf{height:100%;width:calc(var(--w,0)*100%);background:linear-gradient(#a8f08a,#5cc05a);box-shadow:0 0 10px rgba(123,224,122,.6)}
+.tk3-stat{position:absolute;left:14px;top:22px;display:grid;gap:4px;width:min(240px,42vw)}
+.tk3-hp{position:relative;height:20px;border-radius:10px;background:rgba(0,0,0,.6);overflow:hidden;box-shadow:0 0 0 1px rgba(255,217,138,.25)}
+.tk3-hpf{position:absolute;inset:0;width:calc(var(--w,1)*100%);background:linear-gradient(#ee6a3a,#c2401a);border-radius:10px;transition:width .12s}
+.tk3-hp.lo .tk3-hpf{background:linear-gradient(#f0584a,#b02218)}
+.tk3-hpt{position:absolute;inset:0;display:grid;place-items:center;font:700 12px system-ui;text-shadow:0 1px 2px #000}
+.tk3-lv{font:800 17px system-ui;color:#ffd98a;text-shadow:0 2px 3px #000}
+.tk3-k{font:600 13px system-ui;text-shadow:0 1px 2px #000}
+.tk3-mid{position:absolute;left:50%;top:20px;translate:-50% 0;display:grid;justify-items:center;gap:2px;text-shadow:0 2px 3px #000}
+.tk3-tm{font:800 24px system-ui;letter-spacing:.04em}
+.tk3-wv{font:700 13px system-ui;color:#ffd98a}
+.tk3-boss{display:none;width:min(420px,60vw);height:12px;margin-top:8px;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden}
+.tk3-bossf{height:100%;width:calc(var(--w,1)*100%);background:linear-gradient(#e0463a,#8f1d18)}
+.tk3-boss+.tk3-bosst{display:none;font:700 13px system-ui;color:#ffd0c0}
+.tk3-mid.bs .tk3-boss{display:block}
+.tk3-mid.bs .tk3-bosst{display:block}
+.tk3-items{position:absolute;left:14px;bottom:14px;right:80px;display:flex;gap:6px;flex-wrap:wrap}
+.tk3-it{position:relative;width:46px;height:46px;border-radius:10px;background:rgba(20,8,0,.62);display:grid;place-items:center;box-shadow:inset 0 0 0 2px #7a9a4a}
+.tk3-it.w{box-shadow:inset 0 0 0 2px #e0a028}
+.tk3-ic{width:34px;height:34px;display:block}
+.tk3-ic.big{width:72px;height:72px}
+.tk3-pips{position:absolute;left:5px;bottom:3px;display:flex;gap:2px}
+.tk3-pips i{width:5px;height:3px;background:#ffd98a;border-radius:1px}
+.tk3-btn{font:700 16px system-ui;color:#f5e6c8;background:#33200f;border:2px solid #7a5a38;border-radius:10px;padding:12px 22px;cursor:pointer;min-width:220px;touch-action:manipulation}
+.tk3-btn:hover{background:#4a3020}
+.tk3-btn.pri{background:#d9841c;border-color:#ffd98a;color:#2a1404}
+.tk3-btn.pri:hover{background:#f0a23a}
+.tk3-pause{position:absolute;top:44px;right:14px;min-width:0;padding:8px 14px;font-size:13px;background:rgba(0,0,0,.45)}
+.tk3-bn{position:absolute;left:0;right:0;top:26%;text-align:center;display:grid;gap:6px;opacity:0;text-shadow:0 3px 6px #000;pointer-events:none}
+.tk3-bn b{font:800 clamp(26px,5vw,42px) system-ui;color:#ffe0a0}
+.tk3-bn span{font:600 15px system-ui}
+.tk3-bn.on{animation:tk3bn var(--d,3s) ease both}
+@keyframes tk3bn{0%{opacity:0;transform:translateY(10px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+.tk3-dnl{position:absolute;inset:0;overflow:hidden}
+.tk3-dn{position:absolute;left:0;top:0;translate:-50% -50%;display:none;font:800 13px system-ui;text-shadow:0 1px 0 #000,0 0 4px #000}
+.tk3-dn.big{font-size:18px}
+.tk3-joy{position:absolute;left:0;top:0;width:100px;height:100px;margin:-50px 0 0 -50px;border-radius:50%;border:3px solid rgba(255,255,255,.4);display:none}
+.tk3-joy.on{display:block}
+.tk3-joy i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,255,255,.5)}
+.tk3-ov{position:absolute;inset:0;background:rgba(10,4,0,.74);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;overflow:auto;pointer-events:auto}
+.tk3-ot{margin:0;font:800 clamp(28px,6vw,46px) system-ui;color:#ffe0a0;text-align:center}
+.tk3-os{margin:0;font:600 15px system-ui}
+.tk3-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.tk3-card{position:relative;width:min(250px,86vw);min-height:250px;display:grid;justify-items:center;align-content:start;gap:8px;padding:18px 14px;border-radius:14px;background:#33200f;border:2px solid #7a9a4a;color:#f5e6c8;cursor:pointer;transition:transform .12s,background .12s;touch-action:manipulation}
+.tk3-card.w{border-color:#e0a028}
+.tk3-card.h{border-color:#7be07a}
+.tk3-card:hover{transform:translateY(-4px);background:#4a2e16}
+.tk3-card b{font:800 19px system-ui;color:#ffe0a0}
+.tk3-card i{font:600 13px system-ui;color:#e0a028;font-style:normal}
+.tk3-card span{font:500 13px system-ui;text-align:center}
+.tk3-card em{position:absolute;bottom:8px;font:600 13px system-ui;color:#8a6a44;font-style:normal}
+.tk3-pn{display:grid;gap:12px}
+.tk3-rows{display:grid;gap:8px;width:min(300px,86vw)}
+.tk3-row{display:flex;justify-content:space-between;font:500 16px system-ui}
+.tk3-row b{font:700 18px system-ui;color:#ffd98a}
+.tk3-pars{margin:0;font:700 18px system-ui}
+.tk3-pars.ok{color:#7be07a}
+@media (max-width:640px){.tk3-cards{flex-direction:column;align-items:center}.tk3-card{min-height:0;grid-template-columns:auto 1fr;justify-items:start;text-align:left;width:min(420px,92vw)}.tk3-card .tk3-ic.big{grid-row:span 3;width:56px;height:56px}.tk3-card em{display:none}.tk3-btn{min-width:200px}}
+@media (prefers-reduced-motion:reduce){.tk3-low.on{animation:none;opacity:.4}}

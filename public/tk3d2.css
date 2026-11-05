@@ -1,0 +1,36 @@
+.tk3-hud{position:absolute;inset:0;pointer-events:none;font-family:Georgia,'Palatino Linotype',Palatino,serif;color:#fbeed2;text-shadow:0 2px 10px rgba(0,0,0,.65);overflow:hidden;user-select:none}
+.tk3-score{position:absolute;top:16px;left:50%;transform:translateX(-50%);text-align:center;min-width:140px}
+.tk3-score b{display:block;font-size:clamp(40px,8vw,78px);line-height:1;font-weight:700;font-variant-numeric:tabular-nums;color:#fff3d6}
+.tk3-score span{display:block;margin-top:4px;font-size:14px;letter-spacing:.04em;opacity:.8}
+.tk3-side{position:absolute;top:18px;left:18px;font-size:15px;line-height:1.5;opacity:.9}
+.tk3-side b{font-size:22px;color:#ffc46b;font-variant-numeric:tabular-nums}
+.tk3-mute{position:absolute;left:14px;bottom:14px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,230,190,.35);background:rgba(30,16,8,.55);color:#fbeed2;font:inherit;font-size:13px;cursor:pointer;pointer-events:auto;backdrop-filter:blur(4px)}
+.tk3-mute:hover{background:rgba(70,38,16,.75)}
+.tk3-mute:focus-visible,.tk3-btn:focus-visible{outline:2px solid #ffc46b;outline-offset:2px}
+.tk3-flash{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-size:clamp(26px,6vw,54px);font-weight:700;font-style:italic;color:#ffd27a;white-space:nowrap;opacity:0}
+.tk3-flash.go{animation:tk3flash .8s ease-out}
+.tk3-flash.big{color:#fff1b8}
+@keyframes tk3flash{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}60%{opacity:1;transform:translate(-50%,-55%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(1)}}
+.tk3-panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 32px));box-sizing:border-box;padding:26px 28px 24px;border-radius:18px;text-align:center;background:linear-gradient(180deg,rgba(58,30,12,.92),rgba(28,14,6,.94));border:1px solid rgba(255,214,150,.35);box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,236,200,.18);pointer-events:auto;animation:tk3panel .35s ease-out}
+@keyframes tk3panel{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.tk3-panel h2{margin:0 0 8px;font-size:clamp(28px,6vw,38px);font-weight:700;color:#ffd48a;letter-spacing:.01em}
+.tk3-panel p{margin:6px 0;font-size:15px;line-height:1.45;color:#f3dfbd}
+.tk3-panel .big{font-size:clamp(44px,10vw,64px);font-weight:700;color:#fff3d6;line-height:1.05;margin:4px 0}
+.tk3-panel .dim{font-size:13px;opacity:.7}
+.tk3-row{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.tk3-btn{font:inherit;font-size:16px;font-weight:700;padding:11px 24px;border-radius:999px;border:1px solid rgba(255,214,150,.4);background:rgba(255,236,200,.08);color:#fbeed2;cursor:pointer;min-height:44px}
+.tk3-btn:hover{background:rgba(255,236,200,.16)}
+.tk3-btn.pri{background:linear-gradient(180deg,#f5a83a,#d9780f);color:#2a1202;border-color:#ffd48a;text-shadow:none}
+.tk3-btn.pri:hover{background:linear-gradient(180deg,#ffbb55,#e68a1c)}
+.tk3-hint{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:14px;opacity:.75;font-style:italic}
+.tk3-pop{position:absolute;transform:translate(-50%,-50%);font-weight:700;font-size:20px;color:#fff1c4;white-space:nowrap;animation:tk3pop 1s ease-out forwards;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.tk3-pop.big{font-size:28px;color:#ffd27a}
+@keyframes tk3pop{0%{opacity:0;margin-top:6px;scale:.6}15%{opacity:1;scale:1.15}100%{opacity:0;margin-top:-52px;scale:1}}
+.tk3m-time{position:absolute;top:104px;left:50%;transform:translateX(-50%);width:min(340px,calc(100% - 40px));height:12px;border-radius:999px;background:rgba(20,10,4,.6);border:1px solid rgba(255,214,150,.3);overflow:hidden}
+.tk3m-time i{display:block;height:100%;transform-origin:left center;background:linear-gradient(90deg,#f5a83a,#ffd27a);border-radius:inherit}
+.tk3m-time.low i{background:linear-gradient(90deg,#d6322c,#ff7a4a)}
+.tk3m-secs{position:absolute;top:120px;left:50%;transform:translateX(-50%);font-size:15px;font-variant-numeric:tabular-nums;opacity:.85}
+.tk3m-chain{position:absolute;top:18px;right:18px;text-align:right;font-size:15px;opacity:.9}
+.tk3m-chain b{font-size:22px;color:#ffc46b}
+@media (prefers-reduced-motion:reduce){.tk3-panel,.tk3-flash.go,.tk3-pop{animation-duration:.01s}}
+@media (max-width:560px){.tk3-side{top:14px;left:12px;font-size:13px}.tk3m-chain{top:14px;right:12px;font-size:13px}.tk3m-time{top:92px}.tk3m-secs{top:108px}}
