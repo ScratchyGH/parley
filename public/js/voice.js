@@ -600,7 +600,7 @@ V.muted=true
 setState()
 emit('voice:update')
 })
-addEventListener('beforeunload',()=>{if(V.ch&&V.hub)wsSend(V.hub,{t:'voice.leave'})})
+addEventListener('pagehide',()=>{if(V.ch&&V.hub)wsSend(V.hub,{t:'voice.leave'})})
 
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition
 export const captionsSupported=!!SR
