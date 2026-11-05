@@ -18,6 +18,8 @@ import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,c
 import{openSettings,settingsPage}from'./settings.js'
 import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
+import{playIntro}from'./intro.js'
+playIntro()
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
 import{startThicket,thicketPage,acornSvg}from'./thicket.js'

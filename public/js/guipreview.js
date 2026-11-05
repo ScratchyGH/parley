@@ -4,6 +4,7 @@ import{render}from'./md.js'
 import{whatsNew,updatesBoard}from'./whatsnew.js'
 import{tosGate,privacyDialog,termsDialog,shortTerms}from'./legal.js'
 import{installDialog}from'./botspage.js'
+import{playIntro}from'./intro.js'
 
 const SAMPLE='# Heading\n## Smaller heading\n-# small print\n**bold** *italic* __underline__ ~~strike~~ ==highlight== x^2 H~2~O ||spoiler||\n> quote\n>>> multi\nline quote\n- bullet\n- [x] done task\n- [ ] open task\n1. first\n2. second\n---\n| Name | Score |\n|:--|--:|\n| Ada | 10 |\n| Bo | 7 |\n```js\nconst a=1\n```\nTime: <t:1893456000:F> and <t:1893456000:R>\n[a link](https://example.com)'
 export function guiPreview(){
@@ -23,6 +24,7 @@ mount(gal,h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,m
 mount(box,h('p',{class:'hint'},'Everything here opens in preview mode. Nothing is saved, sent or changed.'),
 group('Popups',btn('What\'s new',()=>whatsNew(true)),btn('Updates board',updatesBoard),btn('Terms gate',()=>tosGate(true)),btn('Short terms',shortTerms),btn('Privacy policy',privacyDialog),btn('Terms of service',termsDialog)),
 group('Dialogs',btn('Confirm',()=>confirmBox('Delete this thing?','This is how a confirmation looks.','Delete',false)),btn('Confirm, danger',()=>confirmBox('Delete this thing?','This is how a dangerous confirmation looks.','Delete',true)),btn('Plain dialog',()=>dialog('Example dialog',h('div',{class:'bd'},h('p',null,'Body text goes here.')),{footer:c=>[h('button',{class:'btn',on:{click:c}},'Cancel'),h('button',{class:'btn pri',on:{click:c}},'Save')]})),btn('Add bot to server',()=>installDialog({id:'preview',name:'Sample bot',installs:0}))),
+group('Animations',btn('Intro animation',()=>playIntro(true))),
 group('Toasts',btn('Success',()=>toast('Saved','ok')),btn('Error',()=>toast('Something went wrong','err')),btn('Info',()=>toast('Heads up'))),
 group('Menus',btn('Menu',e=>{const r=e.currentTarget.getBoundingClientRect();menu([{head:'Example'},{label:'Copy',icon:'copy',fn:()=>{}},{label:'Edit',icon:'edit',fn:()=>{}},'-',{label:'Delete',icon:'trash',danger:true,fn:()=>{}}],r.left,r.bottom+4)})),
 h('h4',{style:{margin:'0 0 8px'}},'Message syntax'),h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:'10px',marginBottom:'18px'}},ta,out),
