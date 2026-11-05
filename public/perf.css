@@ -9,3 +9,7 @@ html[data-cpu="0"] .itch{display:none!important}
 html:not([data-gpu="4"]) .main::before{animation:none!important}
 html:not([data-gpu="3"]):not([data-gpu="4"]).fall body::after{display:none!important}
 html[data-gpu="0"] [class*="ef_"]::before,html[data-gpu="0"] [class*="ef_"]::after,html[data-gpu="1"] .ef_aurora::before,html[data-gpu="1"] .ef_void::before{animation:none!important}
+
+.updb{max-width:calc(100vw - 24px);box-sizing:border-box}
+.updb button{pointer-events:auto;min-height:44px;touch-action:manipulation}
+@media (pointer:coarse){.updb{left:50%!important;bottom:calc(90px + env(safe-area-inset-bottom))!important}}
