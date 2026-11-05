@@ -583,12 +583,13 @@ for(const r of Object.keys(S.unread)){const u=unreadOf(r);if(u){m+=u.mentions;an
 document.title=document.title.replace(/^\(\d+\) /,'')
 if(m)document.title=`(${m}) ${document.title}`
 })
-addEventListener('beforeunload',()=>{})
+addEventListener('pageshow',e=>{if(e.persisted&&S.me){retime();loadUnread().catch(()=>{});loadNotifCount().catch(()=>{})}})
 
 startP2P()
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwa=e})
 addEventListener('appinstalled',()=>{window.__pwa=null})
-if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.t==='goto'&&S.me)go(e.data.url)})
+if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.t==='goto'&&S.me)go(e.data.url);else if(e.data?.t==='sw-updated')import('./update.js').then(m=>m.checkUpdate())})
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{}),{once:true})
 boot()
 
 function kaboom(msg){let n=0;const t=setInterval(()=>{const vis=e=>{const r=e.getBoundingClientRect();return r.width>=8&&r.height>=8};const w=document.querySelector('.mw[data-id="'+msg.id+'"] .av');let a=w&&vis(w)?w:null;if(!a){const l=[...document.querySelectorAll('.av[data-uid="'+msg.author.id+'"]')].filter(vis);a=l[l.length-1]}if(a){clearInterval(t);import('./cakefx.js').then(m=>m.throwCake(a))}else if(++n>8)clearInterval(t)},200)}

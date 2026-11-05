@@ -27,6 +27,7 @@ setTimeout(tick,1000)
 }
 tick()
 }
+export const checkUpdate=()=>check()
 export function startUpdates(){
 check()
 setInterval(check,45000)

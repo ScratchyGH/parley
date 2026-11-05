@@ -82,8 +82,20 @@ const s=socks.get(r)
 if(!s||!s.ws||s.ws.readyState>1){if(s)s.tries=0;connect(r)}
 }
 }
+let hiddenAt=0
+function resume(long){
+if(long)for(const r of wanted){
+const s=socks.get(r)
+if(s?.ws&&s.ws.readyState===1){const o=s.ws;s.ws=null;o.onclose=null;try{o.close(1000)}catch{}s.tries=0;connect(r)}
+}
+kick()
+}
 addEventListener('online',kick)
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')kick()})
+addEventListener('pageshow',e=>{if(e.persisted)resume(true)})
+document.addEventListener('visibilitychange',()=>{
+if(document.visibilityState==='hidden'){hiddenAt=Date.now();return}
+resume(hiddenAt&&Date.now()-hiddenAt>60000)
+})
 export function sendAll(obj){
 const s=JSON.stringify(obj)
 for(const v of socks.values())if(v.ws&&v.ws.readyState===1)v.ws.send(s)
