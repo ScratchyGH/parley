@@ -80,3 +80,5 @@ if('Notification'in window&&Notification.permission==='default'){
 const ask=()=>{removeEventListener('pointerdown',ask,true);if(setting('desktop',true))requestDesktop().catch(()=>{})}
 addEventListener('pointerdown',ask,true)
 }
+const bgSync=()=>document.documentElement.classList.toggle('bg',document.hidden||!document.hasFocus())
+addEventListener('visibilitychange',bgSync);addEventListener('blur',bgSync);addEventListener('focus',bgSync)
