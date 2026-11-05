@@ -11,7 +11,7 @@ sv('path',{d:'M86 30l9 3-9 4z',fill:'#f0b429',stroke:'#4a1d08','stroke-width':'2
 sv('path',{d:'M84 38c2 8 0 12-4 14-2-6-2-10 0-14z',fill:'#d6362b',stroke:'#4a1d08','stroke-width':'2'}),
 sv('path',{d:'M40 82v10M58 82v10M34 92h12M52 92h12',stroke:'#f0b429','stroke-width':'4','stroke-linecap':'round'}))
 let busy=false
-function run(tok,ms){
+export function runTurkey(tok,ms){
 if(busy)return
 busy=true
 const t=h('button',{class:'tk-run','aria-label':'Catch the turkey'},art())
@@ -33,7 +33,7 @@ document.body.append(t)
 }
 async function roll(){
 if(document.hidden||!S.me)return
-try{const d=await POST('/api/turkey/roll',{});if(d.spawn)run(d.tok,d.ms)}catch{}
+try{const d=await POST('/api/turkey/roll',{});if(d.spawn)runTurkey(d.tok,d.ms)}catch{}
 }
 export function turkeyBoot(){
 setInterval(roll,120000)
