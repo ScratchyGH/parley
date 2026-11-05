@@ -37,7 +37,7 @@ import modaiRoutes from'./modai.js'
 import banhammerRoutes from'./banhammer.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
-import hollowRoutes from'./hollow.js'
+import thicketRoutes from'./thicket.js'
 import teamupRoutes from'./teamup.js'
 import gamepackRoutes from'./gamepack.js'
 import kidsRoutes from'./kids.js'
@@ -86,7 +86,7 @@ scheduleRoutes(router)
 legalRoutes(router)
 modaiRoutes(router)
 banhammerRoutes(router)
-hollowRoutes(router)
+thicketRoutes(router)
 teamupRoutes(router)
 gamepackRoutes(router)
 kidsRoutes(router)
