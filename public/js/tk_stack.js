@@ -465,7 +465,7 @@ if(c.pl)c.pl.intensity=36*f
 if(tk&&tk.tick)tk.tick(dt,0,'idle')
 bursts.tick(dt)
 if(cur&&st==='play'){
-const om=Math.min(5.2,2.1+n*.045)
+const om=Math.min(3.2,1.3+n*.025)
 cur.ph+=dt*om
 const off=Math.sin(cur.ph)*cur.range
 if(cur.axis)cur.o.position.set(top.x,cur.y,top.z+off)
