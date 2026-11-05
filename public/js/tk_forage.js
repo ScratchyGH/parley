@@ -160,7 +160,7 @@ const t=tree(kinds[(rg()*kinds.length)|0],(rg()*1e5)|0)
 if(i%2)t.position.set(a,0,b);else t.position.set(b,0,a)
 t.rotation.y=rg()*TAU
 t.scale.multiplyScalar(1.4+rg()*1.1)
-t.traverse(o=>{if(o.isMesh){o.castShadow=!lite;o.receiveShadow=true}})
+t.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}})
 scene.add(t)
 }
 function inst(geo,m,n,fn){
