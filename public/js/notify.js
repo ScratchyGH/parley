@@ -82,3 +82,12 @@ addEventListener('pointerdown',ask,true)
 }
 const bgSync=()=>document.documentElement.classList.toggle('bg',document.hidden||!document.hasFocus())
 addEventListener('visibilitychange',bgSync);addEventListener('blur',bgSync);addEventListener('focus',bgSync)
+try{
+if(!sessionStorage.getItem('intro')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+sessionStorage.setItem('intro','1')
+const el=document.createElement('div');el.className='intro'
+const im=document.createElement('img');im.src='/logo-192.png';im.alt=''
+el.append(im);document.body.append(el)
+setTimeout(()=>el.remove(),1500)
+}
+}catch{}

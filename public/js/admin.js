@@ -58,6 +58,7 @@ if(q.value.trim().length<2){mount(list);return}
 try{
 const d=await GET('/api/admin/users?q='+encodeURIComponent(q.value.trim()))
 mount(list,d.users.map(u=>h('div',{class:'li'},h('div',{class:'grow'},h('b',null,u.display_name+' (@'+u.username+')'),h('small',null,'Joined '+fmtStamp(u.created_at)+(u.suspended?' · suspended'+(u.suspended_until?' until '+fmtStamp(u.suspended_until):' (permanent)'):'')+(u.deleted_at?' · deleted':''))),
+S.me.owner&&!u.deleted_at&&u.id!==S.me.id?h('button',{class:'btn sm'+(u.is_admin?' pri':''),title:'Only the owner can give or remove admin',on:{click:async()=>{try{await POST(`/api/admin/users/${u.id}/admin`,{on:!u.is_admin});u.is_admin=u.is_admin?0:1;run()}catch(e){fail(e)}}}},u.is_admin?'Admin on':'Admin off'):null,
 u.deleted_at?null:h('button',{class:'btn sm'+(u.labs?' pri':''),title:'Give or take away the Experimental tab',on:{click:async()=>{try{await POST(`/api/admin/users/${u.id}/labs`,{on:!u.labs});u.labs=u.labs?0:1;run()}catch(e){fail(e)}}}},u.labs?'Experimental on':'Experimental off'),
 u.deleted_at||u.id===S.me.id?null:h('button',{class:'btn sm'+(u.suspended?'':' dng'),on:{click:async()=>{
 if(!u.suspended){suspendDialog(u,run);return}
