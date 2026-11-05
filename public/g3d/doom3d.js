@@ -671,7 +671,11 @@ ctx.fillStyle='#d8c9b0';ctx.fillText(lockFail?'Drag to turn, click to fire. WASD
 ctx.textAlign='left'
 }
 }
+let tickErr=0
 function tick(now){
+try{tick0(now)}catch(e){tickErr++;props.length=0;if(tickErr>20){cancelAnimationFrame(raf);over=true;mount.textContent='Hollow Siege hit an error: '+(e&&e.message)}}
+}
+function tick0(now){
 raf=requestAnimationFrame(tick)
 const dt=Math.min(.05,(now-lastT)/1000)
 lastT=now
