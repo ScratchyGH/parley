@@ -1,7 +1,7 @@
 import{h,GET,POST,icon,sleep,toast}from'./util.js'
 import{gaming}from'./gamebar.js'
 import{swatch,parIcon}from'./pars.js'
-import{candySvg}from'./hollow.js'
+import{acornSvg as candySvg}from'./thicket.js'
 import{sv,svg}from'./svg.js'
 let busy=false
 const shown=new Set()

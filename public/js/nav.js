@@ -11,7 +11,7 @@ if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)retu
 const a=e.target.closest?.('a[href]')
 if(!a||a.target||a.hasAttribute('download')||a.origin!==location.origin)return
 const p=a.pathname
-if(!/^\/(bots|lab|discover|friends|settings|s|dm|pars|hollow)(\/|$)/.test(p))return
+if(!/^\/(bots|lab|discover|friends|settings|s|dm|pars|hollow|thicket)(\/|$)/.test(p))return
 e.preventDefault()
 go(p+a.search)
 })
@@ -25,7 +25,7 @@ if(p[0]==='s'&&p[2]==='settings')return{name:'ssettings',sid:p[1],page:p[3]||''}
 if(p[0]==='s')return{name:'server',sid:p[1],ch:p[2]||null,m}
 if(p[0]==='discover')return{name:'discover'}
 if(p[0]==='pars')return{name:'pars'}
-if(p[0]==='hollow')return{name:'hollow'}
+if(p[0]==='hollow'||p[0]==='thicket')return{name:'thicket'}
 if(p[0]==='docs')return{name:'docs'}
 if(p[0]==='games')return{name:'games'}
 if(p[0]==='lab'){

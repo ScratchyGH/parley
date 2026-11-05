@@ -3,7 +3,7 @@ import{sendAll}from'./net.js'
 import{h,icon,dialog,field,toast,fail}from'./util.js'
 const LK='parley.act'
 const L={play:'Playing ',listen:'Listening to ',watch:'Watching ',custom:''}
-const R=[[/^\/games/,'play','Parley Games'],[/^\/hollow/,'play','The Haunted Hollow'],[/^\/pars/,'custom','Browsing the Pars shop'],[/^\/bots|^\/lab/,'custom','Building a bot']]
+const R=[[/^\/games/,'play','Parley Games'],[/^\/(thicket|hollow)/,'play','The Thankful Thicket'],[/^\/pars/,'custom','Browsing the Pars shop'],[/^\/bots|^\/lab/,'custom','Building a bot']]
 let manual=null,auto=null
 try{manual=JSON.parse(localStorage.getItem(LK)||'null')}catch{}
 export const myAct=()=>manual||auto
