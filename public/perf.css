@@ -18,3 +18,7 @@ html[data-gpu="0"] [class*="ef_"]::before,html[data-gpu="0"] [class*="ef_"]::aft
 .par-card:not(:hover) *,.par-card:not(:hover) *::before,.par-card:not(:hover) *::after{animation-play-state:paused!important}
 .par-grid{content-visibility:auto;contain-intrinsic-size:auto 600px}
 .par-card .frm,.par-card .av{will-change:auto}
+html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!important}
+.sb,.main,.mem-list{contain:layout style}
+.unf-th img,.mw img{content-visibility:auto}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
