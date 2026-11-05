@@ -149,10 +149,11 @@ cv.style.setProperty('inset','0')
 cv.style.setProperty('width','100%')
 cv.style.setProperty('height','100%')
 cv.style.setProperty('display','block')
-const sk=o.sky||['#6f93bd','#ffd7a1','#d99a62']
+const sk=Array.isArray(o.sky)?o.sky:['#6f93bd','#ffd7a1','#d99a62']
 const scene=new T.Scene()
 scene.background=new T.Color(sk[1])
-if(typeof o.fog==='number')scene.fog=new T.FogExp2(sk[1],o.fog)
+if(typeof o.fog==='number'&&o.fog<1)scene.fog=new T.FogExp2(sk[1],o.fog)
+else if(typeof o.fog==='number')scene.fog=new T.Fog(o.fog,40,230)
 else{const f=o.fog||{};scene.fog=new T.Fog(f.color||sk[1],f.near==null?60:f.near,f.far||260)}
 const camera=new T.PerspectiveCamera(55,1,.1,700)
 const sun=new T.DirectionalLight(0xffd6a0,2.6)

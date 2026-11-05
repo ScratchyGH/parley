@@ -3,8 +3,8 @@ const TAU=Math.PI*2
 const B=1800
 const S=.05
 const OFF=Math.PI/2
-const CH=34
-const CZ=24
+const CH=40
+const CZ=28
 const rnd=(a,b)=>a+Math.random()*(b-a)
 const clamp=(v,a,b)=>v<a?a:v>b?b:v
 const cc=c=>typeof c==='number'?c:parseInt(c.length===4?c.slice(1).split('').map(x=>x+x).join(''):c.slice(1),16)
@@ -135,6 +135,7 @@ const GEO_RING2=new THREE.RingGeometry(1.5,1.7,40).rotateX(-Math.PI/2)
 const GEO_DISC=new THREE.CircleGeometry(1,24).rotateX(-Math.PI/2)
 const GEO_PLANE=new THREE.PlaneGeometry(1,1)
 const MA=mat(0xffffff,{roughness:1,flatShading:true})
+const MP=mat(0xffffff,{roughness:1})
 const MROCK=mat(0x7b7468,{roughness:.95,flatShading:true})
 const MNOVA=new THREE.MeshBasicMaterial({color:0xe07a3a,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending})
 const MGRAVY=new THREE.MeshStandardMaterial({color:0x7a4a1c,roughness:.4,transparent:true,opacity:.85,depthWrite:false})
@@ -176,9 +177,9 @@ return im
 const dr=rng(311)
 const AR=B*S-4
 inst(GEO_ROCK,MROCK,lite?16:26,(d,i)=>{const s=.4+dr()*.9;d.position.set((dr()*2-1)*AR,s*.3,(dr()*2-1)*AR);d.rotation.set(dr()*3,dr()*3,dr()*3);d.scale.set(s*1.3,s*.7,s)})
-inst(GEO_STUMP,MA,lite?8:16,(d,i,im)=>{const s=.7+dr()*.6;d.position.set((dr()*2-1)*AR,0,(dr()*2-1)*AR);d.rotation.set(0,dr()*TAU,0);d.scale.set(s,s,s);im.setColorAt(i,_c.set(0xffffff))})
+inst(GEO_STUMP,MV,lite?8:16,(d,i,im)=>{const s=.7+dr()*.6;d.position.set((dr()*2-1)*AR,0,(dr()*2-1)*AR);d.rotation.set(0,dr()*TAU,0);d.scale.set(s,s,s);im.setColorAt(i,_c.set(0xffffff))})
 const pileCols=[0xd9641c,0xc23a1b,0xe8a21f,0xa8481a,0x8f2d14,0xf0c23a]
-inst(GEO_PILE,MA,lite?24:46,(d,i,im)=>{const s=1.1+dr()*1.6;d.position.set((dr()*2-1)*AR,.05,(dr()*2-1)*AR);d.rotation.set(0,dr()*TAU,0);d.scale.set(s,.14+dr()*.1,s*(.7+dr()*.5));im.setColorAt(i,_c.set(pileCols[(dr()*pileCols.length)|0]))})
+inst(GEO_PILE,MP,lite?24:46,(d,i,im)=>{const s=1.1+dr()*1.6;d.position.set((dr()*2-1)*AR,.05,(dr()*2-1)*AR);d.rotation.set(0,dr()*TAU,0);d.scale.set(s,.14+dr()*.1,s*(.7+dr()*.5));im.setColorAt(i,_c.set(pileCols[(dr()*pileCols.length)|0]))})
 const tplPump=fruit('pumpkin')
 for(let i=0;i<(lite?10:22);i++){
 const o=tplPump.clone()
@@ -192,7 +193,7 @@ scene.add(o)
 const fx=burst(scene)
 const lvs=red?null:leaves(scene,lite?40:120,60)
 const pivot=new THREE.Group()
-const tk=turkey({pilgrim:true,scale:.7})
+const tk=turkey({pilgrim:true,scale:1})
 tk.group.traverse(o=>{if(o.isMesh)o.castShadow=!lite})
 pivot.add(tk.group)
 scene.add(pivot)
