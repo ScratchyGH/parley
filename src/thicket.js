@@ -4,7 +4,7 @@ const SEASON='thicket'
 const DAY=864e5
 const GRACE=DAY
 const GIFT_COST=40
-const SHOP=[['bd_leaf',120],['bd_feather',150],['ti_grateful',200],['bb_hearth',260],['np_pie',320],['nf_gold_leaf',380],['fr_acornring',480],['fr_maple',560]]
+const SHOP=[['bd_leaf',120],['bd_feather',150],['ti_grateful',200],['bb_hearth',260],['np_pie',320],['nf_gold_leaf',380],['ef_tk_steam',360],['ef_tk_firefly',420],['ef_tk_ember',450],['fr_acornring',480],['fr_maple',560],['fr_wheat',640],['fr_vine',700],['fr_pilgrim',760],['fr_candle',820],['fr_foxhood',880],['fr_antlers',980],['fr_piecrust',1080],['fr_moon',1250]]
 const GIFT_POOL=['bd_leaf','ti_grateful','nf_gold_leaf','bb_hearth','np_pie','bd_feather']
 const TRICKS=['A basket of slightly squashed pears','A very confident squirrel','A pie with no filling','A scarecrow that waves back','A single perfect maple leaf','A suspiciously large acorn']
 let cache=null,cacheAt=0
