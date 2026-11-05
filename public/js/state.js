@@ -211,7 +211,8 @@ const rm=s.reduced_motion===undefined?matchMedia('(prefers-reduced-motion: reduc
 root.classList.toggle('rm',!!rm||!!s.performance)
 root.classList.toggle('perf',!!s.performance)
 root.classList.toggle('nohw',s.hwaccel===false)
-root.classList.toggle('amoled',!!s.amoled&&!s.performance)
+root.classList.toggle('amoled',!!s.amoled&&!s.performance&&dark)
+amoled()
 for(const k of['mail','inv','names','dm','srv'])root.classList.toggle('st-'+k,st(k))
 const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
@@ -222,9 +223,17 @@ try{const c=JSON.parse(localStorage.getItem('parley:look')||'null');if(c&&c.s){a
 return false
 }
 
+const AM=[['--bg','#000'],['--side','#000'],['--panel','#050505'],['--surf2','#0a0a0a'],['--sel','#111'],['--border','#1c1c1c']]
+function amoled(){
+const b=document.body
+if(!b)return
+const on=document.documentElement.classList.contains('amoled')
+for(const[k,v]of AM){if(on)b.style.setProperty(k,v,'important');else if(b.style.getPropertyPriority(k)==='important')b.style.removeProperty(k)}
+}
+export function applyThemeObj(t){applyThemeObj0(t);amoled()}
 const THEME_VARS=['--bg','--side','--panel','--surf2','--sel','--border','--text','--strong','--muted','--accent','--hi','--blue','--on-accent','--hover','--neutral','--sbg-img','--sdim']
 const lum=c=>{const m=/^#([0-9a-f]{6})$/i.exec(c||'');if(!m)return null;const n=parseInt(m[1],16),f=v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4};return .2126*f(n>>16)+.7152*f((n>>8)&255)+.0722*f(n&255)}
-export function applyThemeObj(t){
+function applyThemeObj0(t){
 const b=document.body
 for(const k of THEME_VARS)b.style.removeProperty(k)
 b.classList.remove('sthemed')

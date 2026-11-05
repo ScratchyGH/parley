@@ -150,11 +150,11 @@ return o
 const GAMES={dash:['Turkey Dash','Press space or tap to jump. Grab pies, dodge pilgrim hats.',dash],stack:['Pie Stack','Press space or tap to drop the sliding pie. Overhang gets trimmed.',stack],match:['Gobble Match','Flip two cards at a time to find all eight autumn pairs. Arrow keys and Enter work too.',match]}
 export function openTg(kind){
 const[title,desc,make]=GAMES[kind]
-const cv=h('canvas',{width:W,height:H,class:'tg-cv',tabindex:0,'aria-label':title})
-const left=h('div',{class:'tg-left'})
-const x=h('button',{class:'btn sm tg-x',type:'button'},'Close')
-const box=h('div',{class:'tg-box',role:'dialog','aria-modal':'true','aria-label':title},h('h3',null,title),cv,left,x)
-const root=h('div',{class:'tg'},box)
+const cv=h('canvas',{width:W,height:H,class:'tkg-cv',tabindex:0,'aria-label':title})
+const left=h('div',{class:'tkg-left'})
+const x=h('button',{class:'btn sm tkg-x',type:'button'},'Close')
+const box=h('div',{class:'tkg-box',role:'dialog','aria-modal':'true','aria-label':title},h('h3',null,title),cv,left,x)
+const root=h('div',{class:'tkg'},box)
 document.body.append(root)
 const c=cv.getContext('2d')
 let g=null,state='start',raf=0,last=0,paused=false,sent=false,t0=0,res=''

@@ -118,7 +118,8 @@ async function startNight(night,rerender,fp,local){
 let run
 if(!fp&&!local)try{run=(await POST(API+'/night/start',{night})).run}catch(e){toast(e.message||'Could not start','err');return}
 css()
-const [{playNight}]=await Promise.all([import('/g3d/doom3d.js')])
+let playNight
+try{({playNight}=await import('/g3d/doom3d.js'))}catch(e){toast('Hollow Siege could not load: '+(e.message||e),'err');return}
 const box=h('div',{class:'hw-gamebox'})
 const closeBtn=h('button',{class:'btn sm hw-gx','aria-label':'Leave the shift'},'Leave shift')
 const root=h('div',{class:'hw-game',role:'dialog','aria-modal':'true','aria-label':'Hollow Siege'},box,closeBtn)
@@ -134,7 +135,7 @@ if(!local){await loadHollow()
 rerender?.()}
 }
 closeBtn.addEventListener('click',()=>{if(over)return;over=true;try{stop?.()}catch{}root.remove();if(!fp&&!local)POST(API+'/night/finish',{run,ok:false}).catch(()=>{})})
-stop=playNight(night,box,async r=>{
+try{stop=playNight(night,box,async r=>{
 if(over)return
 if(local){toast(r.ok?'Night '+night+' survived.':'The shift ended.');setTimeout(end,r.ok?1800:700);return}
 if(fp){toast(fp.inf?'Freeplay ended at '+Math.floor(r.secs/60)+':'+String(r.secs%60).padStart(2,'0')+'.':r.ok?'Freeplay survived.':'Freeplay over.');setTimeout(end,r.ok?1800:600);return}
@@ -144,7 +145,7 @@ if(x.ok)toast('Night '+night+' survived. +'+x.candy+' candy.','ok')
 else toast('The shift ended early. No tape this time.')
 }catch(e){toast(e.message||'Could not save the result','err')}
 setTimeout(end,r.ok?2600:1200)
-},fp)
+},fp)}catch(e){toast('Hollow Siege failed to start: '+(e.message||e),'err');over=true;root.remove();if(!fp&&!local)POST(API+'/night/finish',{run,ok:false}).catch(()=>{})}
 }
 function nightsView(d,rerender){
 const nights=d.quests.filter(q=>q.kind==='night')

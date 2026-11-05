@@ -9,7 +9,7 @@ let d
 try{d=await GET('/api/games/packs')}catch(e){mount(page,h('div',{class:'gp-none'},e.message||'Could not load games'));return}
 let tg=null
 try{tg=await GET('/api/games/turkey')}catch{}
-const tgSec=tg&&tg.live?h('section',{class:'gp-card own'},h('div',{class:'gp-h'},h('h3',null,'Thanksgiving'),h('span',{class:'gp-st'},'Through November')),h('p',null,'Free all month. Win a few Pars each day, up to '+tg.left+' more today.'),h('div',{class:'gp-tiles'},...[['dash','Turkey Dash','Run, jump pies, dodge hats.'],['stack','Pie Stack','Build the tallest pie tower.'],['match','Gobble Match','Match the autumn pairs.']].map(t=>h('button',{class:'gp-tile',type:'button',on:{click:async()=>{const x=await import('./tgames.js');x.openTg(t[0])}}},h('b',null,t[1]),h('span',null,t[2]),h('em',null,'Play'))))):null
+const tgSec=tg&&tg.live?h('section',{class:'gp-card own'},h('div',{class:'gp-h'},h('h3',null,'Thanksgiving'),h('span',{class:'gp-st'},'Through November')),h('p',null,'Free all month. Score high and win Pars every run.'),h('div',{class:'gp-tiles'},...[['dash','Turkey Dash','Run, jump pies, dodge hats.'],['stack','Pie Stack','Build the tallest pie tower.'],['match','Gobble Match','Match the autumn pairs.']].map(t=>h('button',{class:'gp-tile',type:'button',on:{click:async()=>{const x=await import('./tgames.js');x.openTg(t[0])}}},h('b',null,t[1]),h('span',null,t[2]),h('em',null,'Play'))))):null
 const cards=d.packs.map(p=>{
 let sure=false
 const buy=h('button',{class:'btn pri',type:'button'},'Unlock for '+p.price+' Pars')
