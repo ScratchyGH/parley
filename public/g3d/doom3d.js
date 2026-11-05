@@ -272,7 +272,7 @@ const slow=document.documentElement.classList.contains('perf')||document.documen
 const PR={crate:{r:.3,m:1.4,hp:30,sz:.5,img:'crate'},barrel:{r:.28,m:1,hp:20,sz:.5,img:'barrel',boom:1},gourd:{r:.24,m:.6,hp:12,sz:.42,img:'gourd'}}
 const props=[]
 const PCAP=slow?6:14
-for(let i=0;i<PCAP;i++){const c=free[Math.floor(hash(i,3,night)*free.length)];if(!c||Math.hypot(c[0]+.5-posX,c[1]+.5-posY)<3)continue;const k=['crate','barrel','gourd'][i%3];props.push({k,x:c[0]+.5,y:c[1]+.5,vx:0,vy:0,hp:PR[k].hp,d:PR[k]})}
+for(let i=0;i<PCAP;i++){const c=free[Math.floor(hash(i,3,night)*free.length)];if(!c||[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]].some(d=>cell(c[0]+d[0],c[1]+d[1])!==0)||Math.hypot(c[0]+.5-posX,c[1]+.5-posY)<3)continue;const k=['crate','barrel','gourd'][i%3];props.push({k,x:c[0]+.5,y:c[1]+.5,vx:0,vy:0,hp:PR[k].hp,d:PR[k]})}
 let pvx=0,pvy=0
 let enemies=[],pickups=[],wave=1,maxWave=fp?.inf?999:5,hp=100,t=0,over=false,shotCd=0,kills=0,flash=0,hurt=0,bob=0,recoil=0,bannerT=0,banner='',waitNext=0,raf=0,lastT=performance.now(),locked=false,fireHeld=false
 const keys={}
