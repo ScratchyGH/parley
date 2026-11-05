@@ -62,7 +62,7 @@ const b=await body(c.req,512),p=P[b.p]
 if(!p)fail(400,'Unknown service')
 const n=String(b.name||'').trim()
 if(!p.ok.test(n))fail(400,'That username does not look right')
-const code='parley-'+randHex(4)
+const W='apple river cloud maple tiger stone happy green lemon piano ocean candy forest rabbit silver garden window pencil bridge sunny'.split(' '),pk=()=>W[crypto.getRandomValues(new Uint8Array(1))[0]%W.length],code=pk()+' '+pk()+' '+pk()+' '+pk()
 await put(c.env,'connp:'+c.user.id+':'+b.p,{n,code,exp:now()+1800000})
 return{code,name:n}
 })
@@ -76,7 +76,7 @@ if(!s||s.exp<now())fail(400,'Start again, the code expired')
 let u
 try{u=await p.look(s.n)}catch{fail(502,p.name+' did not answer, try again in a minute')}
 if(!u)fail(404,'Could not find that '+p.name+' account')
-if(!u.text.includes(s.code))fail(400,'The code is not on that '+p.name+' profile yet. Save it there and try again.')
+const nz=t=>String(t||'').toLowerCase().replace(/[^a-z]+/g,' ');if(!(' '+nz(u.text)+' ').includes(' '+nz(s.code)+' '))fail(400,'The code is not on that '+p.name+' profile yet. Save it there and try again.')
 const xk='connx:'+b.p+':'+u.id,x=await get(c.env,xk)
 if(x&&x!==c.user.id)fail(409,'That '+p.name+' account is already linked to another Parley account')
 const o=await get(c.env,'conn:'+c.user.id)||{}
