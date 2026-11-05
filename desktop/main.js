@@ -1,5 +1,13 @@
 const{app,BrowserWindow,shell,session,desktopCapturer,ipcMain}=require('electron')
 if(process.platform==='linux'){app.commandLine.appendSwitch('enable-features','WebRTCPipeWireCapturer');app.commandLine.appendSwitch('ozone-platform-hint','auto');app.commandLine.appendSwitch('password-store','basic');app.commandLine.appendSwitch('disable-features','HardwareMediaKeyHandling')}
+const fs=require('fs'),FP=require('path').join(app.getPath('userData'),'flags.json')
+const FK=['lowmem','scale1','nogpubuf','nohw']
+let FL={}
+try{FL=JSON.parse(fs.readFileSync(FP,'utf8'))}catch{}
+if(FL.lowmem)app.commandLine.appendSwitch('js-flags','--max-old-space-size=512')
+if(FL.scale1)app.commandLine.appendSwitch('force-device-scale-factor','1')
+if(FL.nogpubuf)app.commandLine.appendSwitch('disable-gpu-memory-buffer-video-frames')
+if(FL.nohw)app.disableHardwareAcceleration()
 const U='https://parley.heavengtwashere.workers.dev/?web=1'
 const O='https://parley.heavengtwashere.workers.dev'
 if(!app.requestSingleInstanceLock())app.quit()
@@ -15,8 +23,12 @@ p.on('closed',()=>fin(null))
 p.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent(html))
 p.once('ready-to-show',()=>p.show())
 })
+const trusted=e=>(e.senderFrame?.url||'').startsWith(O)
+ipcMain.handle('flags-get',e=>trusted(e)?FL:{})
+ipcMain.handle('flags-set',(e,f)=>{if(!trusted(e))return;FL={};for(const k of FK)FL[k]=!!(f&&f[k]);fs.writeFileSync(FP,JSON.stringify(FL))})
+ipcMain.handle('flags-restart',e=>{if(!trusted(e))return;app.relaunch();app.exit(0)})
 app.whenReady().then(()=>{
-const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#0a0a09',autoHideMenuBar:true,icon:__dirname+'/icon.png',webPreferences:{contextIsolation:true,sandbox:true,backgroundThrottling:false}})
+const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#0a0a09',autoHideMenuBar:true,icon:__dirname+'/icon.png',webPreferences:{contextIsolation:true,sandbox:true,backgroundThrottling:false,preload:__dirname+'/preload.js'}})
 const ses=w.webContents.session
 ses.setPermissionRequestHandler((wc,perm,cb,d)=>cb(['media','notifications','fullscreen','clipboard-sanitized-write','clipboard-read'].includes(perm)&&(d.requestingUrl||'').startsWith(O)))
 ses.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(O)&&['media','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
