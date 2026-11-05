@@ -1,5 +1,6 @@
 import{fail,now,newId,randHex,sha,pbkdf2,safeEq,str,int,limit,body}from'./util.js'
 import{moderate}from'./kidsmod.js'
+import kids2 from'./kids2.js'
 const SQL=[
 'create table if not exists kp_parents(id text primary key,username text not null,pass_hash text not null,pass_salt text not null,rec_hash text not null,created_at integer not null)',
 'create unique index if not exists kp_parents_u on kp_parents(lower(username))',
@@ -22,10 +23,19 @@ const SQL=[
 'create table if not exists kp_msgs(id integer primary key autoincrement,fid text not null,from_child text not null,body text not null,at integer not null)',
 'create index if not exists kp_msgs_f on kp_msgs(fid,id)',
 'create table if not exists kp_reports(id text primary key,reporter text not null,about text not null,msg_id integer,body text not null,status text not null default \'open\',at integer not null)',
-'create table if not exists kp_idchecks(parent_id text primary key,image text,status text not null,created_at integer not null)'
+'create table if not exists kp_idchecks(parent_id text primary key,image text,status text not null,created_at integer not null)',
+'create table if not exists kp_wallet(child_id text primary key,pars integer not null default 0,day text not null default \'\',earned integer not null default 0,bonus_day text not null default \'\',eq text not null default \'{}\')',
+'create table if not exists kp_owned(child_id text not null,item text not null,at integer not null,primary key(child_id,item))',
+'create table if not exists kp_servers(id text primary key,owner text not null,name text not null,color text not null default \'blue\',created_at integer not null)',
+'create table if not exists kp_smem(server_id text not null,child_id text not null,role text not null default \'member\',status text not null,inv_by text,at integer not null,primary key(server_id,child_id))',
+'create index if not exists kp_smem_c on kp_smem(child_id)',
+'create table if not exists kp_chan(id text primary key,server_id text not null,name text not null,at integer not null)',
+'create index if not exists kp_chan_s on kp_chan(server_id)',
+'create table if not exists kp_smsg(id integer primary key autoincrement,chan text not null,from_child text not null,body text not null,at integer not null)',
+'create index if not exists kp_smsg_c on kp_smsg(chan,id)'
 ]
 let ready=null
-const ALT=['alter table kp_devices add column consent_at integer','alter table kp_devices add column consent_ver text','alter table kp_parents add column id_status text not null default \'none\'','alter table kp_children add column fcode text','alter table kp_children add column strikes integer not null default 0','alter table kp_children add column strike_reset integer not null default 0','alter table kp_children add column muted_until integer not null default 0','alter table kp_children add column chat_off integer not null default 0','create unique index if not exists kp_children_fcode on kp_children(fcode)']
+const ALT=['alter table kp_friends add column b_acc integer not null default 1','alter table kp_children add column last_seen integer not null default 0','alter table kp_reports add column src text not null default \'dm\'','alter table kp_devices add column consent_at integer','alter table kp_devices add column consent_ver text','alter table kp_parents add column id_status text not null default \'none\'','alter table kp_children add column fcode text','alter table kp_children add column strikes integer not null default 0','alter table kp_children add column strike_reset integer not null default 0','alter table kp_children add column muted_until integer not null default 0','alter table kp_children add column chat_off integer not null default 0','create unique index if not exists kp_children_fcode on kp_children(fcode)']
 const ensure=env=>{
 if(!ready)ready=(async()=>{
 await env.DB.batch(SQL.map(s=>env.DB.prepare(s)))
@@ -39,6 +49,11 @@ env.DB.prepare('delete from kp_chal where exp<?').bind(t),
 env.DB.prepare('delete from kp_devices where status=\'new\' and paired_exp<?').bind(t-d),
 env.DB.prepare('delete from kp_children where status=\'rejected\' and created_at<?').bind(t-30*d),
 env.DB.prepare('delete from kp_msgs where at<?').bind(t-30*d),
+env.DB.prepare('delete from kp_smsg where at<?').bind(t-30*d),
+env.DB.prepare('delete from kp_wallet where child_id not in(select id from kp_children)'),
+env.DB.prepare('delete from kp_owned where child_id not in(select id from kp_children)'),
+env.DB.prepare('delete from kp_smem where child_id not in(select id from kp_children)'),
+env.DB.prepare('delete from kp_servers where id not in(select server_id from kp_smem where role=\'owner\')'),
 env.DB.prepare('delete from kp_reports where at<?').bind(t-90*d)
 ])
 })().catch(e=>{ready=null;throw e})
@@ -430,6 +445,13 @@ const p=await parentOf(c)
 const ch=await c.env.DB.prepare('select * from kp_children where id=? and parent_id=?').bind(c.p.id,p.id).first()
 if(!ch)fail(404,'No such child')
 await c.env.DB.batch([
+c.env.DB.prepare('delete from kp_smsg where from_child=? or chan in(select id from kp_chan where server_id in(select server_id from kp_smem where child_id=? and role=\'owner\'))').bind(ch.id,ch.id),
+c.env.DB.prepare('delete from kp_chan where server_id in(select server_id from kp_smem where child_id=? and role=\'owner\')').bind(ch.id),
+c.env.DB.prepare('delete from kp_smem where server_id in(select server_id from kp_smem where child_id=? and role=\'owner\')').bind(ch.id),
+c.env.DB.prepare('delete from kp_smem where child_id=?').bind(ch.id),
+c.env.DB.prepare('delete from kp_servers where owner=?').bind(ch.id),
+c.env.DB.prepare('delete from kp_wallet where child_id=?').bind(ch.id),
+c.env.DB.prepare('delete from kp_owned where child_id=?').bind(ch.id),
 c.env.DB.prepare('delete from kp_children where id=?').bind(ch.id),
 c.env.DB.prepare('update kp_devices set child_id=null where child_id=?').bind(ch.id),
 logp(c.env,p.id,'child','Child account deleted: '+ch.username)
@@ -456,6 +478,12 @@ await db.batch([
 db.prepare('delete from kp_ksess where device_id in(select id from kp_devices where parent_id=?)').bind(p.id),
 db.prepare('delete from kp_codes where parent_id=?').bind(p.id),
 db.prepare('delete from kp_devices where parent_id=?').bind(p.id),
+db.prepare('delete from kp_smsg where from_child in(select id from kp_children where parent_id=?1) or chan in(select id from kp_chan where server_id in(select id from kp_servers where owner in(select id from kp_children where parent_id=?1)))').bind(p.id),
+db.prepare('delete from kp_chan where server_id in(select id from kp_servers where owner in(select id from kp_children where parent_id=?1))').bind(p.id),
+db.prepare('delete from kp_smem where server_id in(select id from kp_servers where owner in(select id from kp_children where parent_id=?1)) or child_id in(select id from kp_children where parent_id=?1)').bind(p.id),
+db.prepare('delete from kp_servers where owner in(select id from kp_children where parent_id=?1)').bind(p.id),
+db.prepare('delete from kp_wallet where child_id in(select id from kp_children where parent_id=?1)').bind(p.id),
+db.prepare('delete from kp_owned where child_id in(select id from kp_children where parent_id=?1)').bind(p.id),
 db.prepare('delete from kp_children where parent_id=?').bind(p.id),
 db.prepare('delete from kp_log where parent_id=?').bind(p.id),
 db.prepare('delete from kp_psess where parent_id=?').bind(p.id),
@@ -469,8 +497,41 @@ const d=await deviceOf(c)
 if(!d.child_id)fail(403,'Make your account first')
 const ch=await c.env.DB.prepare('select * from kp_children where id=?').bind(d.child_id).first()
 if(!ch||ch.status!=='active')fail(403,'Your parent has not approved your account yet')
+if(ch.last_seen<now()-30000){ch.last_seen=now();await c.env.DB.prepare('update kp_children set last_seen=? where id=?').bind(now(),ch.id).run()}
 if(!ch.fcode){ch.fcode=pick(8);await c.env.DB.prepare('update kp_children set fcode=? where id=? and fcode is null').bind(ch.fcode,ch.id).run()}
 return ch
+}
+const vet=async(c,me,text)=>{
+if(me.chat_off)fail(403,'Chat is paused. Ask your parent.')
+const t=now()
+if(me.muted_until>t)fail(429,'Chat is paused for a little while. Try again in '+Math.ceil((me.muted_until-t)/60000)+' min.')
+const cf=await kcfg(c.env,me.id)
+const pr=await c.env.DB.prepare('select id_status from kp_parents where id=?').bind(me.parent_id).first()
+const cap=CAP(pr&&pr.id_status)
+if(!cap.links&&/https?:\/\/|www\./i.test(text))fail(422,'Links need your parent to finish the ID check.')
+if(!cap.long&&text.length>300)fail(422,'Messages are limited to 300 characters until your parent finishes the ID check.')
+if(!cap.daily||(await c.env.DB.prepare('select (select count(*) from kp_msgs where from_child=?1 and at>?2)+(select count(*) from kp_smsg where from_child=?1 and at>?2) n').bind(me.id,t-86400000).first()).n>=cap.daily)fail(429,'You reached today\'s message limit. Your parent can raise it with the ID check.')
+if(cf.qs&&cf.qe){const d=new Date(t-cf.tz*60000),m=d.getUTCHours()*60+d.getUTCMinutes(),a=mins(cf.qs),e=mins(cf.qe);if(a<=e?m>=a&&m<e:m>=a||m<e)fail(403,'Chat is closed right now. Your parent set quiet hours.')}
+if(cf.links&&/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|gg|tv|me|co|xyz|ru|cn)\b/i.test(text))fail(422,'Links are turned off by your parent.')
+if(cf.cap){const day=new Date(t-cf.tz*60000);day.setUTCHours(0,0,0,0);const n=await c.env.DB.prepare('select (select count(*) from kp_msgs where from_child=?1 and at>?2)+(select count(*) from kp_smsg where from_child=?1 and at>?2) n').bind(me.id,day.getTime()+cf.tz*60000).first();if(n.n>=cf.cap)fail(429,'You reached today\'s message limit.')}
+const v=moderate(text)
+if(!v.ok){
+if(v.cat==='empty'||v.cat==='long')fail(400,v.msg)
+let st=me.strike_reset<t?0:me.strikes
+const reset=me.strike_reset<t?t+86400000:me.strike_reset
+st++
+let mute=0,off=0,msg=v.msg
+if(v.serious)mute=30*60000
+else if(st>=10)off=1
+else if(st>=6)mute=60*60000
+else if(st>=3)mute=10*60000
+const ops=[c.env.DB.prepare('update kp_children set strikes=?,strike_reset=?,muted_until=?,chat_off=? where id=?').bind(st,reset,mute?t+mute:me.muted_until,off?1:me.chat_off,me.id)]
+if(v.serious||off||mute>=60*60000)ops.push(logp(c.env,me.parent_id,'safety',me.display_name+' tried to send a message that was blocked ('+v.cat+')'+(off?'. Chat was turned off until you turn it back on.':mute?'. Chat is paused for '+Math.round(mute/60000)+' min.':'.')))
+await c.env.DB.batch(ops)
+if(off)msg='Chat is paused. Ask your parent.'
+else if(mute)msg+=' Chat is paused for '+Math.round(mute/60000)+' min.'
+fail(422,msg)
+}
 }
 const friendRow=async(c,fid,me)=>{
 const f=await c.env.DB.prepare('select * from kp_friends where id=? and (a=? or b=?)').bind(fid,me.id,me.id).first()
@@ -481,8 +542,29 @@ const other=(f,me)=>f.a===me.id?f.b:f.a
 const alertP=(env,pid,kind,detail)=>logp(env,pid,kind,detail)
 P('GET','/api/kids/friends',async c=>{
 const me=await myChild(c)
-const rows=await c.env.DB.prepare('select f.*,k.username,k.display_name,k.avatar from kp_friends f join kp_children k on k.id=(case when f.a=?1 then f.b else f.a end) where (f.a=?1 or f.b=?1) and f.status in(\'active\',\'pending\')').bind(me.id).all()
-return{code:me.fcode,chat:!me.chat_off,muted:Math.max(0,me.muted_until-now()),friends:rows.results.map(r=>({id:r.id,username:r.username,display_name:r.display_name,avatar:r.avatar,status:r.status,mine:r.a===me.id}))}
+const rows=await c.env.DB.prepare('select f.*,k.id cid,k.username,k.display_name,k.avatar,k.last_seen,w.eq from kp_friends f join kp_children k on k.id=(case when f.a=?1 then f.b else f.a end) left join kp_wallet w on w.child_id=k.id where (f.a=?1 or f.b=?1) and f.status in(\'active\',\'pending\')').bind(me.id).all()
+const t=now()
+return{code:me.fcode,chat:!me.chat_off,muted:Math.max(0,me.muted_until-t),friends:rows.results.map(r=>({id:r.id,cid:r.cid,username:r.username,display_name:r.display_name,avatar:r.avatar,status:r.status,mine:r.a===me.id,incoming:r.status==='pending'&&r.b===me.id&&!r.b_acc,online:r.last_seen>t-90000,eq:r.eq||'{}'}))}
+})
+P('POST','/api/kids/friends/:id/accept',async c=>{
+const me=await myChild(c)
+const f=await friendRow(c,c.p.id,me)
+if(f.b!==me.id||f.status!=='pending')fail(404,'Nothing to accept')
+const on=f.a_ok&&f.b_ok
+await c.env.DB.prepare('update kp_friends set b_acc=1,status=? where id=?').bind(on?'active':'pending',f.id).run()
+return{ok:true}
+})
+P('POST','/api/kids/friends/:id/decline',async c=>{
+const me=await myChild(c)
+await c.env.DB.prepare('delete from kp_friends where id=? and b=? and status=\'pending\'').bind(c.p.id,me.id).run()
+return{ok:true}
+})
+P('POST','/api/kids/friends/:id/remove',async c=>{
+const me=await myChild(c)
+const f=await friendRow(c,c.p.id,me)
+const o=await c.env.DB.prepare('select display_name from kp_children where id=?').bind(other(f,me)).first()
+await c.env.DB.batch([c.env.DB.prepare('delete from kp_friends where id=? and status=\'active\'').bind(f.id),logp(c.env,me.parent_id,'friend',me.display_name+' removed '+(o?o.display_name:'a friend'))])
+return{ok:true}
 })
 P('POST','/api/kids/friends',async c=>{
 const me=await myChild(c)
@@ -501,7 +583,7 @@ if(n.n>=CAP(pr&&pr.id_status).friends)fail(403,'You have the most friends allowe
 const id=newId('fr'),t=now()
 const same=me.parent_id===o.parent_id
 await c.env.DB.batch([
-c.env.DB.prepare('insert into kp_friends(id,a,b,a_ok,b_ok,status,created_at) values(?,?,?,0,0,\'pending\',?)').bind(id,me.id,o.id,t),
+c.env.DB.prepare('insert into kp_friends(id,a,b,a_ok,b_ok,b_acc,status,created_at) values(?,?,?,0,0,0,\'pending\',?)').bind(id,me.id,o.id,t),
 logp(c.env,me.parent_id,'friend',me.display_name+' asked to be friends with '+o.display_name+'. Approve it in Friends.'),
 ...(same?[]:[logp(c.env,o.parent_id,'friend',o.display_name+' got a friend request from '+me.display_name+'. Approve it in Friends.')])
 ])
@@ -536,39 +618,10 @@ const me=await myChild(c)
 limit('kpm:'+me.id,20,60000)
 const f=await friendRow(c,c.p.id,me)
 if(f.status!=='active')fail(403,'You cannot chat with this friend')
-if(me.chat_off)fail(403,'Chat is paused. Ask your parent.')
-const t=now()
-if(me.muted_until>t)fail(429,'Chat is paused for a little while. Try again in '+Math.ceil((me.muted_until-t)/60000)+' min.')
 const b=await body(c.req,800)
 const text=String(b.text||'').replace(/\s+/g,' ').trim()
-const cf=await kcfg(c.env,me.id)
-const pr=await c.env.DB.prepare('select id_status from kp_parents where id=?').bind(me.parent_id).first()
-const cap=CAP(pr&&pr.id_status)
-if(!cap.links&&/https?:\/\/|www\./i.test(text))fail(422,'Links need your parent to finish the ID check.')
-if(!cap.long&&text.length>300)fail(422,'Messages are limited to 300 characters until your parent finishes the ID check.')
-if(!cap.daily||(await c.env.DB.prepare('select count(*) n from kp_msgs where from_child=? and at>?').bind(me.id,t-86400000).first()).n>=cap.daily)fail(429,'You reached today\'s message limit. Your parent can raise it with the ID check.')
-if(cf.qs&&cf.qe){const d=new Date(t-cf.tz*60000),m=d.getUTCHours()*60+d.getUTCMinutes(),a=mins(cf.qs),e=mins(cf.qe);if(a<=e?m>=a&&m<e:m>=a||m<e)fail(403,'Chat is closed right now. Your parent set quiet hours.')}
-if(cf.links&&/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|gg|tv|me|co|xyz|ru|cn)\b/i.test(text))fail(422,'Links are turned off by your parent.')
-if(cf.cap){const day=new Date(t-cf.tz*60000);day.setUTCHours(0,0,0,0);const n=await c.env.DB.prepare('select count(*) n from kp_msgs where from_child=? and at>?').bind(me.id,day.getTime()+cf.tz*60000).first();if(n.n>=cf.cap)fail(429,'You reached today\'s message limit.')}
-const v=moderate(text)
-if(!v.ok){
-if(v.cat==='empty'||v.cat==='long')fail(400,v.msg)
-let st=me.strike_reset<t?0:me.strikes
-const reset=me.strike_reset<t?t+86400000:me.strike_reset
-st++
-let mute=0,off=0,msg=v.msg
-if(v.serious)mute=30*60000
-else if(st>=10)off=1
-else if(st>=6)mute=60*60000
-else if(st>=3)mute=10*60000
-const ops=[c.env.DB.prepare('update kp_children set strikes=?,strike_reset=?,muted_until=?,chat_off=? where id=?').bind(st,reset,mute?t+mute:me.muted_until,off?1:me.chat_off,me.id)]
-if(v.serious||off||mute>=60*60000)ops.push(logp(c.env,me.parent_id,'safety',me.display_name+' tried to send a message that was blocked ('+v.cat+')'+(off?'. Chat was turned off until you turn it back on.':mute?'. Chat is paused for '+Math.round(mute/60000)+' min.':'.')))
-await c.env.DB.batch(ops)
-if(off)msg='Chat is paused. Ask your parent.'
-else if(mute)msg+=' Chat is paused for '+Math.round(mute/60000)+' min.'
-fail(422,msg)
-}
-await c.env.DB.prepare('insert into kp_msgs(fid,from_child,body,at) values(?,?,?,?)').bind(f.id,me.id,text,t).run()
+await vet(c,me,text)
+await c.env.DB.prepare('insert into kp_msgs(fid,from_child,body,at) values(?,?,?,?)').bind(f.id,me.id,text,now()).run()
 return{ok:true}
 })
 P('POST','/api/kids/report',async c=>{
@@ -599,10 +652,10 @@ const f=await c.env.DB.prepare('select f.*,ka.parent_id pa,kb.parent_id pb from 
 if(!f||f.status!=='pending'||(f.pa!==p.id&&f.pb!==p.id))fail(404,'Nothing to approve')
 const a=f.a_ok||f.pa===p.id?1:0,b=f.b_ok||f.pb===p.id?1:0
 await c.env.DB.batch([
-c.env.DB.prepare('update kp_friends set a_ok=?,b_ok=?,status=? where id=?').bind(a,b,a&&b?'active':'pending',f.id),
+c.env.DB.prepare('update kp_friends set a_ok=?,b_ok=?,status=? where id=?').bind(a,b,a&&b&&f.b_acc?'active':'pending',f.id),
 logp(c.env,p.id,'friend','Friend request approved')
 ])
-return{ok:true,active:!!(a&&b)}
+return{ok:true,active:!!(a&&b&&f.b_acc)}
 })
 P('POST','/api/connect/friends/:id/remove',async c=>{
 const p=await parentOf(c)
@@ -668,4 +721,5 @@ await ensure(c.env)
 await c.env.DB.prepare('update kp_reports set status=\'closed\' where id=?').bind(c.p.id).run()
 return{ok:true}
 })
+kids2(r,{ensure,deviceOf,myChild,parentOf,CAP,logp,vet,kcfg,P})
 }
