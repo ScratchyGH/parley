@@ -109,11 +109,22 @@ h('div',{class:'par-hero'},parIcon(40),h('div',{style:{flex:'1',minWidth:0}},h('
 h('nav',{class:'sh-nav','aria-label':'Shop sections'},[...tss.map(i=>['ts-'+i.id,i.name]),reg.length?['bn','Bundles']:null,...cats.map(([k,l])=>[k,l]),['gift','Gift Pars'],['own','Your items']].filter(Boolean).map(([id,l])=>{const b=h('button',{'data-sec':id,on:{click:()=>go(id)}},l);navBtns.push(b);return b})),
 ...tss.map(i=>tsSection(d,i)),
 reg.length?sec('bn','Bundles','Hover to pause',carousel(d,reg)):null,
-...cats.map(([k,l])=>sec(k,l,null,h('div',{class:'par-grid'},items.filter(i=>i.kind===k).map(it=>card(d,it))))),
+...cats.map(([k,l])=>sec(k,l,null,lazyGrid(d,items.filter(i=>i.kind===k)))),
 sec('gift','Gift Pars',null,giftBox(d)),
 sec('own','Your items',null,own(d)),
 sec('hist','History',null,hist(d)))
 if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const id=e.target.id.replace(/^sh-/,'');navBtns.forEach(b=>b.classList.toggle('on',b.dataset.sec===id))}},{rootMargin:'-20% 0px -70% 0px'});box.querySelectorAll('.par-sec').forEach(x=>io.observe(x))}
+}
+function lazyGrid(d,list){
+const g=h('div',{class:'par-grid'})
+let n=0
+const more=()=>{const e=list.slice(n,n+8);n+=e.length;e.forEach(it=>g.insertBefore(card(d,it),sen));if(n>=list.length){sen.remove();io.disconnect()}else{io.unobserve(sen);io.observe(sen)}}
+const sen=h('div',{class:'par-sen',style:{height:'1px',gridColumn:'1/-1'}})
+const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting))more()},{rootMargin:'400px 0px'})
+g.append(sen)
+more()
+io.observe(sen)
+return g
 }
 function giftBtn(d,it,vk){
 return h('button',{class:'gift-b',title:'Send as a gift',on:{click:()=>giftDialog(d,it,vk)}},icon('gift'))
