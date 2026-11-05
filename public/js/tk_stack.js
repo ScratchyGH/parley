@@ -1,473 +1,539 @@
-import{h}from'./util.js'
-const sty=(e,o)=>{for(const k in o)e.style.setProperty(k,o[k])}
-const PAL=[['#e8913a','#a8561a','#ffd28f'],['#c9473b','#86261f','#f4a794'],['#8f5d36','#563219','#dcab72'],['#d9a441','#9a6b17','#fff1b5'],['#86456f','#4b2142','#d9a3cb']]
-const NOTES=[523,587,659,784,880,1047,1175]
+import{stage,THREE,pie,fruit,turkey,cornucopia,burst,mat,audio,disposeObj}from'./tk3d.js'
+const BK='tk_stack_best'
+const LH=.8
+const D=6
+const PLATE=.2
+const NOTES=[523,587,659,784,880,1047,1175,1319,1568]
+const KINDS=['pumpkin','apple','pecan']
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function unit(o){
+const g=new THREE.Group()
+g.add(o)
+const b=new THREE.Box3().setFromObject(g)
+const s=new THREE.Vector3()
+b.getSize(s)
+o.scale.set(o.scale.x/Math.max(s.x,1e-6),o.scale.y/Math.max(s.y,1e-6),o.scale.z/Math.max(s.z,1e-6))
+const b2=new THREE.Box3().setFromObject(g)
+const c=new THREE.Vector3()
+b2.getCenter(c)
+o.position.set(o.position.x-c.x,o.position.y-b2.min.y,o.position.z-c.z)
+return g
+}
+function fit(o,d){
+const g=new THREE.Group()
+g.add(o)
+const b=new THREE.Box3().setFromObject(g)
+const s=new THREE.Vector3()
+b.getSize(s)
+o.scale.multiplyScalar(d/Math.max(s.x,s.y,s.z,1e-6))
+const b2=new THREE.Box3().setFromObject(g)
+const c=new THREE.Vector3()
+b2.getCenter(c)
+o.position.set(o.position.x-c.x,o.position.y-b2.min.y,o.position.z-c.z)
+return g
+}
+function shade(o,on){
+if(!on)return
+o.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}})
+}
+function glowTex(){
+const c=document.createElement('canvas')
+c.width=c.height=128
+const x=c.getContext('2d')
+const g=x.createRadialGradient(64,64,0,64,64,64)
+g.addColorStop(0,'rgba(255,220,150,1)')
+g.addColorStop(.25,'rgba(255,160,60,.55)')
+g.addColorStop(1,'rgba(255,120,20,0)')
+x.fillStyle=g
+x.fillRect(0,0,128,128)
+const t=new THREE.CanvasTexture(c)
+t.colorSpace=THREE.SRGBColorSpace
+return t
+}
+function bgTex(){
+const c=document.createElement('canvas')
+c.width=4
+c.height=256
+const x=c.getContext('2d')
+const g=x.createLinearGradient(0,0,0,256)
+g.addColorStop(0,'#0d0705')
+g.addColorStop(.55,'#2a150a')
+g.addColorStop(1,'#5a2c10')
+x.fillStyle=g
+x.fillRect(0,0,4,256)
+const t=new THREE.CanvasTexture(c)
+t.colorSpace=THREE.SRGBColorSpace
+return t
+}
 export default function launch(host,api){
-const LH=36,W0=210,KEY='tk_best_stack'
-const cv=document.createElement('canvas')
-sty(cv,{position:'absolute',inset:'0',width:'100%',height:'100%',display:'block'})
-host.append(cv)
-const g=cv.getContext('2d')
-let w=1,hh=1,dpr=1,s=1,range=220
-let st='ready',t=0,secs=0,score=0,chain=0,maxChain=0,cam=0,camT=0,shake=0,flash=0,doneT=0
-let layers=[],cur=null,parts=[],debris=[],pops=[],leaves=[],stars=[]
-let best=0,ov=null,last=0,raf=0,dead=false,ac=null,mute=false
-try{best=+localStorage.getItem(KEY)||0}catch{}
-const red=()=>api.reduced()
-const lite=()=>api.lite()
-function au(){
-if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch{}}
-if(ac&&ac.state==='suspended')ac.resume()
-return ac
+if(!document.getElementById('tk3css')){
+const l=document.createElement('link')
+l.id='tk3css'
+l.rel='stylesheet'
+l.href='/tk3d2.css'
+document.head.append(l)
 }
-function tone(f,d,type,v,sl,delay){
-if(mute)return
-const a=au()
-if(!a)return
-const t0=a.currentTime+(delay||0)
-const o=a.createOscillator(),gn=a.createGain()
-o.type=type
-o.frequency.setValueAtTime(f,t0)
-if(sl)o.frequency.exponentialRampToValueAtTime(Math.max(20,sl),t0+d)
-gn.gain.setValueAtTime(v,t0)
-gn.gain.exponentialRampToValueAtTime(0.001,t0+d)
-o.connect(gn)
-gn.connect(a.destination)
-o.start(t0)
-o.stop(t0+d+0.03)
+const red=api.reduced()
+const lite=api.lite()
+let best=0
+try{best=+localStorage.getItem(BK)||0}catch{}
+const s=stage(host,{lite,exp:1.05})
+const scene=s.scene
+const camera=s.camera
+camera.fov=38
+camera.updateProjectionMatrix()
+scene.background=bgTex()
+scene.fog=new THREE.Fog(0x1b0f08,34,90)
+scene.add(new THREE.HemisphereLight(0xffe2b8,0x2a1608,.6))
+const sun=s.sun
+if(sun){
+sun.color.set(0xffe0b0)
+sun.intensity=Math.max(sun.intensity||0,1.6)
+sun.castShadow=!lite
+sun.shadow.camera.left=-16
+sun.shadow.camera.right=16
+sun.shadow.camera.top=16
+sun.shadow.camera.bottom=-16
+sun.shadow.camera.far=120
+sun.shadow.bias=-.0008
+scene.add(sun.target)
 }
-function thud(v){
-tone(110,.16,'sine',.45*v,42)
-tone(70,.12,'triangle',.3*v,35)
+const AU=audio()
+const ctx=AU&&AU.ctx
+let muted=false
+function tone(f,d,ty,v,sl){
+if(muted||!ctx)return
+try{
+const t=ctx.currentTime
+const o=ctx.createOscillator()
+const g=ctx.createGain()
+o.type=ty||'sine'
+o.frequency.setValueAtTime(f,t)
+if(sl)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*sl),t+d)
+g.gain.setValueAtTime(0,t)
+g.gain.linearRampToValueAtTime(v||.1,t+.01)
+g.gain.exponentialRampToValueAtTime(.0001,t+d)
+o.connect(g)
+g.connect(ctx.destination)
+o.start(t)
+o.stop(t+d+.05)
+}catch{}
 }
-function chime(c){
-const f=NOTES[Math.min(c-1,NOTES.length-1)]
-tone(f,.35,'sine',.22)
-tone(f*2,.3,'triangle',.1,0,.03)
-tone(f*1.5,.4,'sine',.08,0,.06)
+function setMuted(m){
+muted=m
+mb.textContent=m?'Off':'Snd'
+try{if(AU&&AU.music)AU.music(!m)}catch{}
 }
-function fit(){
-w=host.clientWidth||innerWidth
-hh=host.clientHeight||innerHeight
-dpr=Math.min(devicePixelRatio||1,2)
-cv.width=Math.round(w*dpr)
-cv.height=Math.round(hh*dpr)
-s=Math.max(.35,Math.min(w/520,hh/800))
-range=Math.max(110,Math.min(300,w/(2*s)-W0/2+30))
-const n=red()?5:lite()?9:20
-leaves=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*hh,r:Math.random()*6,vr:(Math.random()-.5)*3,vy:22+Math.random()*34,sw:Math.random()*6,c:['#d9742a','#b3402a','#e4a63a','#8f5d36'][Math.floor(Math.random()*4)],z:.6+Math.random()*.8}))
-stars=Array.from({length:30},()=>({x:Math.random()*w,y:Math.random()*hh*.35,p:Math.random()*6}))
+const table=new THREE.Group()
+scene.add(table)
+const wood=mat(0x6b3a1c,{roughness:.62})
+const slab=new THREE.Mesh(new THREE.BoxGeometry(38,1.2,24),wood)
+slab.position.y=-.6
+table.add(slab)
+for(let i=-5;i<=5;i++){
+const g=new THREE.Mesh(new THREE.BoxGeometry(.04,.02,24),mat(0x3d2010,{roughness:.9}))
+g.position.set(i*3.4,.01,0)
+table.add(g)
 }
-function mk(){
-const top=layers[layers.length-1]
-return{x:cur&&cur.dir>0?range:-range,dir:cur&&cur.dir>0?-1:1,w:top.w,y:-(top.i+1)*LH-5*LH,vy:0,drop:false,p:(top.i+1)%PAL.length,hide:false}
+const linen=new THREE.Mesh(new THREE.BoxGeometry(26,.06,13),mat(0xf0e2c6,{roughness:.95}))
+linen.position.y=.03
+table.add(linen)
+const trim=new THREE.Mesh(new THREE.BoxGeometry(26.2,.05,.5),mat(0xb2432a,{roughness:.9}))
+trim.position.set(0,.065,5.7)
+table.add(trim)
+const trim2=trim.clone()
+trim2.position.z=-5.7
+table.add(trim2)
+const plate=new THREE.Mesh(new THREE.CylinderGeometry(4.3,3.6,.2,48),mat(0xf6f0e4,{roughness:.35}))
+plate.position.y=.14
+table.add(plate)
+const rim=new THREE.Mesh(new THREE.TorusGeometry(4.2,.12,10,56),mat(0xc9a24a,{roughness:.3,metalness:.5}))
+rim.rotation.x=Math.PI/2
+rim.position.y=.24
+table.add(rim)
+const glow=glowTex()
+const candles=[]
+const cpos=[[-9,-4],[9,-4],[-8.5,4.6],[8.8,4.2]]
+for(const[x,z]of cpos){
+const g=new THREE.Group()
+const st=new THREE.Mesh(new THREE.CylinderGeometry(.7,.85,.18,20),mat(0xc9a24a,{roughness:.3,metalness:.6}))
+st.position.y=.15
+g.add(st)
+const body=new THREE.Mesh(new THREE.CylinderGeometry(.3,.32,2.2,18),mat(0xf3e6c8,{roughness:.6}))
+body.position.y=1.3
+g.add(body)
+const fl=new THREE.Mesh(new THREE.SphereGeometry(.16,12,10),new THREE.MeshBasicMaterial({color:0xffd27a}))
+fl.scale.set(1,1.8,1)
+fl.position.y=2.65
+g.add(fl)
+const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glow,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}))
+sp.scale.set(3.2,3.2,1)
+sp.position.y=2.7
+g.add(sp)
+let pl=null
+if(!lite&&candles.length<3){
+pl=new THREE.PointLight(0xffa84a,38,16,2)
+pl.position.y=2.9
+g.add(pl)
+}
+g.position.set(x,0,z)
+table.add(g)
+candles.push({fl,sp,pl,ph:Math.random()*6})
+}
+function dish(o,d,x,z,y){
+const f=fit(o,d)
+f.position.set(x,y||.06,z)
+f.rotation.y=Math.random()*6
+table.add(f)
+}
+const pl1=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.2,.14,32),mat(0xf6f0e4,{roughness:.35}))
+pl1.position.set(-6.5,.13,-1.8)
+table.add(pl1)
+dish(fruit('pumpkin'),2,-6.5,-1.8,.2)
+const pl2=pl1.clone()
+pl2.position.set(7,.13,-2)
+table.add(pl2)
+dish(fruit('apple'),1.6,6.7,-2.1,.2)
+dish(fruit('apple'),1.4,7.6,-1.6,.2)
+dish(fruit('corn'),2.4,-7.6,3,.06)
+dish(fruit('acorn'),1,7.4,2.2,.06)
+dish(fruit('grapes'),1.6,-5.4,3.6,.06)
+const cc=fit(cornucopia(),5)
+cc.position.set(0,.06,-6)
+cc.rotation.y=.3
+table.add(cc)
+const tk=turkey({pilgrim:true,scale:1})
+const tg=fit(tk.group,3)
+tg.position.set(-10.5,.06,.4)
+table.add(tg)
+tg.rotation.y=Math.PI*.5
+shade(table,!lite)
+const protos=KINDS.map(k=>unit(pie(k)))
+const tower=new THREE.Group()
+scene.add(tower)
+const bursts=burst(scene)
+const deb=[]
+const rings=[]
+const embers=(()=>{
+const n=lite?60:160
+const g=new THREE.BufferGeometry()
+const p=new Float32Array(n*3)
+for(let i=0;i<n;i++){p[i*3]=(Math.random()-.5)*40;p[i*3+1]=Math.random()*40;p[i*3+2]=(Math.random()-.5)*30}
+g.setAttribute('position',new THREE.BufferAttribute(p,3))
+const m=new THREE.Points(g,new THREE.PointsMaterial({map:glow,size:.5,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.7}))
+m.frustumCulled=false
+scene.add(m)
+return{m,p,n}
+})()
+const hud=el('div','tk3-hud')
+const sc=el('div','tk3-score')
+const scN=el('b',null,'0')
+const scS=el('span',null,'')
+sc.append(scN,scS)
+const side=el('div','tk3-side')
+const sideB=el('b',null,'0')
+side.append(el('div',null,'Best'),sideB)
+const flash=el('div','tk3-flash')
+const mb=el('button','tk3-mute','Snd')
+mb.type='button'
+mb.setAttribute('aria-label','Toggle sound')
+const hint=el('div','tk3-hint','Click, tap or press Space to drop')
+hud.append(sc,side,flash,mb,hint)
+host.append(hud)
+sideB.textContent=best
+let st='ready'
+let score=0
+let chain=0
+let perfects=0
+let n=0
+let t0=0
+let clock=0
+let shakeA=0
+let camY=2
+let camD=15
+let az=.72
+let panel=null
+let cur=null
+let top=null
+let tilt=0
+let overT=0
+let finished=false
+let dead=false
+function showFlash(txt,big){
+flash.textContent=txt
+flash.classList.remove('go','big')
+void flash.offsetWidth
+flash.classList.add('go')
+if(big)flash.classList.add('big')
+}
+function makePanel(h,lines,big,btns){
+if(panel)panel.remove()
+panel=el('div','tk3-panel')
+panel.append(el('h2',null,h))
+if(big!=null)panel.append(el('div','big',big))
+for(const l of lines)panel.append(el('p',l[1]||null,l[0]))
+const row=el('div','tk3-row')
+for(const b of btns){
+const x=el('button','tk3-btn'+(b[2]?' pri':''),b[0])
+x.type='button'
+x.addEventListener('pointerdown',e=>e.stopPropagation())
+x.addEventListener('click',b[1])
+row.append(x)
+}
+panel.append(row)
+hud.append(panel)
+return panel
+}
+function clearPanel(){
+if(panel){panel.remove();panel=null}
+}
+function layerObj(k,sx,sz){
+const o=protos[k%3].clone(true)
+o.scale.set(sx,LH,sz)
+shade(o,!lite)
+return o
 }
 function reset(){
-layers=[{x:0,w:W0,i:0,p:0,sq:0}]
-parts=[];debris=[];pops=[]
-score=0;chain=0;maxChain=0;cam=0;camT=0;secs=0;shake=0;flash=0;t=0
-cur=null
-cur=mk()
-cur.x=-range
-st='ready'
-if(ov){ov.remove();ov=null}
-}
-function spawn(n,x,y,cols,sp,up){
-const cap=lite()?60:240
-for(let i=0;i<n&&parts.length<cap;i++){
-const a=Math.random()*Math.PI*2,v=sp*(.3+Math.random())
-parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-up,life:0,max:.5+Math.random()*.6,c:cols[i%cols.length],sz:2+Math.random()*4})
-}
-}
-function pop(txt,x,y,c,big){
-pops.push({x,y,txt,c,life:0,max:big?1.3:.9,big})
-}
-function speedNow(){return 190+Math.min(layers.length,40)*8.5}
-function land(){
-const top=layers[layers.length-1]
-const dx=cur.x-top.x
-const cl=cur.x-cur.w/2,cr=cur.x+cur.w/2,tl=top.x-top.w/2,tr=top.x+top.w/2
-const l=Math.max(cl,tl),r=Math.min(cr,tr),ow=r-l
-const y=cur.y
-if(ow<8){
-debris.push({x:cur.x,y,w:cur.w,vx:cur.dir*70,vy:-140,rot:0,vr:cur.dir*1.6,p:cur.p})
-cur.hide=true
-thud(1)
-tone(240,.6,'sawtooth',.16,50)
-if(!red())shake=16
+for(const l of [...tower.children])tower.remove(l)
+for(const d of deb)scene.remove(d.o)
+deb.length=0
+score=0
 chain=0
-st='dying';doneT=0
+perfects=0
+n=0
+finished=false
+scN.textContent='0'
+scS.textContent=''
+const o=layerObj(2,D,D)
+o.position.set(0,PLATE,0)
+tower.add(o)
+top={o,x:0,z:0,sx:D,sz:D,y:PLATE}
+spawnCur()
+}
+function spawnCur(){
+n++
+const axis=n%2
+const o=layerObj(n,top.sx,top.sz)
+const y=top.y+LH
+o.position.set(top.x,y,top.z)
+tower.add(o)
+cur={o,axis,ph:axis?Math.PI*.5:-Math.PI*.5,sx:top.sx,sz:top.sz,y,range:D*.95+1}
+}
+function begin(){
+reset()
+clearPanel()
+hint.style.setProperty('opacity','0')
+st='play'
+t0=clock
+if(ctx&&ctx.state==='suspended')ctx.resume()
+try{if(AU&&AU.music&&!muted)AU.music(true)}catch{}
+}
+function addDebris(k,x,y,z,sx,sz,vx,vz){
+const o=layerObj(k,sx,sz)
+o.position.set(x,y,z)
+scene.add(o)
+deb.push({o,vx,vy:0,vz,rx:(Math.random()-.5)*3,rz:(Math.random()-.5)*3})
+}
+function ring(y,sx,sz){
+const g=new THREE.Mesh(new THREE.TorusGeometry(.5,.035,8,48),new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:.95}))
+g.rotation.x=Math.PI/2
+g.position.set(top.x,y,top.z)
+g.scale.set(Math.max(sx,.5)*1.02,Math.max(sz,.5)*1.02,1)
+scene.add(g)
+rings.push({g,t:0,sx:Math.max(sx,.5),sz:Math.max(sz,.5)})
+}
+function drop(){
+if(st!=='play'||!cur)return
+const ax=cur.axis
+const pos=ax?cur.o.position.z:cur.o.position.x
+const c0=ax?top.z:top.x
+const s0=ax?top.sz:top.sx
+const sp=ax?cur.sz:cur.sx
+const lo=Math.max(c0-s0/2,pos-sp/2)
+const hi=Math.min(c0+s0/2,pos+sp/2)
+const ov=hi-lo
+const delta=pos-c0
+const k=n
+if(ov<=.06){
+st='over'
+overT=0
+deb.push({o:cur.o,vx:ax?0:Math.sign(delta||1)*1.2,vy:0,vz:ax?Math.sign(delta||1)*1.2:0,rx:(Math.random()-.5)*2,rz:(Math.random()-.5)*2,keep:true})
+tower.remove(cur.o)
+scene.add(cur.o)
+tone(180,.5,'sawtooth',.12,.4)
+tone(120,.7,'sine',.14,.3)
+chain=0
+shakeA=red?0:.5
+cur=null
 return
 }
-let nx,nw,perf=false
-if(Math.abs(dx)<=7){
-perf=true
-nx=top.x
-nw=Math.min(W0,cur.w+(chain>=2?9:0))
+const perfect=Math.abs(delta)<.15
+let nc=(lo+hi)/2
+let ns=ov
+if(perfect){
+nc=c0
+ns=s0
+perfects++
 chain++
+if(chain>=5&&ns<D)ns=Math.min(D,ns+.35)
 }else{
 chain=0
-nx=(l+r)/2
-nw=ow
-if(cl<tl)debris.push({x:(cl+tl)/2,y,w:tl-cl,vx:-50,vy:-60,rot:0,vr:-1.8,p:cur.p})
-if(cr>tr)debris.push({x:(cr+tr)/2,y,w:cr-tr,vx:50,vy:-60,rot:0,vr:1.8,p:cur.p})
+const dc=delta>0?(hi+pos+sp/2)/2:(pos-sp/2+lo)/2
+const dw=delta>0?pos+sp/2-hi:lo-(pos-sp/2)
+const dp=ax?[top.x,dc]:[dc,top.z]
+addDebris(k,dp[0],cur.y,dp[1],ax?cur.sx:Math.max(dw,.05),ax?Math.max(dw,.05):cur.sz,ax?0:Math.sign(delta)*1.6,ax?Math.sign(delta)*1.6:0)
 }
-maxChain=Math.max(maxChain,chain)
-const L={x:nx,w:nw,i:top.i+1,p:cur.p,sq:1}
-layers.push(L)
-let add=10
-if(perf){
-add+=chain*8
-if(chain%5===0){add+=50;pop('Feast bonus +50',nx,y-LH*2,'#ffe27a',true)}
-chime(chain)
-spawn(lite()?10:26,nx,y-LH/2,['#ffe27a','#fff6c8','#ffb347'],240,120)
-pops.push({x:nx,y:y-LH/2,life:0,max:.55,ring:true,c:'#ffe27a'})
-pop(chain>1?'Perfect x'+chain:'Perfect',nx,y-LH*1.6,'#fff2b8',chain>1)
-if(!red())flash=.35
+const nx=ax?top.x:nc
+const nz=ax?nc:top.z
+const nsx=ax?cur.sx:ns
+const nsz=ax?ns:cur.sz
+cur.o.scale.set(nsx,LH,nsz)
+cur.o.position.set(nx,cur.y,nz)
+top={o:cur.o,x:nx,z:nz,sx:nsx,sz:nsz,y:cur.y}
+let gain=1
+if(perfect){
+gain+=Math.min(chain,8)
+if(chain%5===0)gain+=10
+ring(cur.y+LH,nsx,nsz)
+bursts.emit(new THREE.Vector3(nx,cur.y+LH,nz),red?6:18,0xffd27a,3.5)
+tone(NOTES[Math.min(chain-1,NOTES.length-1)],.35,'triangle',.14)
+tone(NOTES[Math.min(chain-1,NOTES.length-1)]*2,.5,'sine',.07)
+showFlash(chain>1?'Perfect x'+chain:'Perfect',chain>=5)
+shakeA=red?0:.12
 }else{
-thud(.7)
-spawn(lite()?5:12,nx,y,['#ffd28f','#e8913a','#a8561a'],150,80)
+tone(260,.12,'sine',.12,.6)
+bursts.emit(new THREE.Vector3(nx,cur.y+LH*.5,nz),red?3:8,0xc98a3c,2)
+shakeA=red?0:.05
 }
-score+=add
-if(!red())shake=Math.max(shake,perf?5:8)
-camT=Math.max(0,(L.i-2)*LH)
-cur=mk()
+score+=gain
+scN.textContent=score
+scS.textContent=chain>1?'Chain x'+chain:''
+spawnCur()
 }
-function update(dt){
-t+=dt
-if(st==='play')secs+=dt
-cam+=(camT-cam)*Math.min(1,dt*5)
-shake*=Math.max(0,1-dt*9)
-flash*=Math.max(0,1-dt*5)
-for(const l of layers)l.sq*=Math.max(0,1-dt*8)
-if(cur&&!cur.hide&&(st==='play'||st==='ready')){
-if(!cur.drop){
-cur.x+=cur.dir*speedNow()*dt*(st==='ready'?.6:1)
-if(cur.x>range){cur.x=range;cur.dir=-1}
-if(cur.x<-range){cur.x=-range;cur.dir=1}
-}else{
-const top=layers[layers.length-1]
-const ty=-(top.i+1)*LH
-cur.vy+=4400*dt
-cur.y+=cur.vy*dt
-if(cur.y>=ty){cur.y=ty;land()}
+function end(){
+if(finished)return
+finished=true
+const secs=(clock-t0)
+const nb=score>best
+if(nb){best=score;try{localStorage.setItem(BK,String(best))}catch{}}
+sideB.textContent=best
+const lines=[[nb&&score>0?'New best':'Best '+best,'dim']]
+const pn=makePanel('Tower fell',lines,score,[['Play again',()=>begin(),true],['Close',()=>api.close()]])
+const pars=el('p',null,'Saving score')
+pn.insertBefore(pars,pn.querySelector('.tk3-row'))
+Promise.resolve(api.finish(score,secs)).then(r=>{pars.textContent=r&&r.pars>0?'+'+r.pars+' Pars':'No Pars this run'}).catch(()=>{pars.textContent=''})
 }
-}
-if(st==='dying'){
-doneT+=dt
-if(doneT>1)showOver()
-}
-for(const d of debris){
-d.vy+=1500*dt
-d.x+=d.vx*dt
-d.y+=d.vy*dt
-d.rot+=d.vr*dt
-}
-debris=debris.filter(d=>d.y<cam+1400)
-for(const p of parts){
-p.life+=dt
-p.vy+=520*dt
-p.x+=p.vx*dt
-p.y+=p.vy*dt
-}
-parts=parts.filter(p=>p.life<p.max)
-for(const p of pops){
-p.life+=dt
-if(!p.ring)p.y-=40*dt
-}
-pops=pops.filter(p=>p.life<p.max)
-for(const l of leaves){
-l.y+=l.vy*l.z*dt
-l.sw+=dt*1.6
-l.x+=Math.sin(l.sw)*30*dt+10*dt
-l.r+=l.vr*dt
-if(l.y>hh+10){l.y=-10;l.x=Math.random()*w}
-if(l.x>w+10)l.x=-10
-}
-}
-function sway(hgt){
-let com=0
-for(const l of layers)com+=l.x
-com/=layers.length
-const wob=Math.min(.06,Math.abs(com)/900+layers.length*.00028)*(red()?.35:1)
-return Math.sin(t*2.1)*wob*hgt
-}
-function pie(x,y,wd,p,sq,top){
-const c=PAL[p%PAL.length]
-g.save()
-g.translate(x,y)
-g.scale(1,1-sq*.22)
-g.beginPath()
-g.roundRect(-wd/2,-LH,wd,LH,12)
-const gr=g.createLinearGradient(0,-LH,0,0)
-gr.addColorStop(0,c[2])
-gr.addColorStop(.3,c[0])
-gr.addColorStop(1,c[1])
-g.fillStyle=gr
-g.fill()
-g.save()
-g.clip()
-g.fillStyle=c[2]
-g.globalAlpha=.75
-for(let k=-wd/2;k<wd/2+10;k+=12){
-g.beginPath()
-g.arc(k+6,-LH+3,6.5,0,Math.PI*2)
-g.fill()
-}
-g.globalAlpha=.4
-g.fillStyle=c[1]
-for(let k=0;k<wd;k+=17){
-g.beginPath()
-g.arc(-wd/2+8+k,-LH*.45+Math.sin(k*1.7)*4,2.6,0,Math.PI*2)
-g.fill()
-}
-g.globalAlpha=1
-const sh=g.createLinearGradient(-wd/2,0,wd/2,0)
-sh.addColorStop(0,'rgba(255,255,255,.22)')
-sh.addColorStop(.35,'rgba(255,255,255,0)')
-sh.addColorStop(1,'rgba(0,0,0,.25)')
-g.fillStyle=sh
-g.fillRect(-wd/2,-LH,wd,LH)
-g.restore()
-g.beginPath()
-g.roundRect(-wd/2,-LH,wd,LH,12)
-g.strokeStyle='rgba(45,18,6,.6)'
-g.lineWidth=2
-g.stroke()
-if(top&&!red()){
-g.strokeStyle='rgba(255,255,255,.35)'
-g.lineWidth=3
-g.lineCap='round'
-for(let k=0;k<3;k++){
-const bx=(k-1)*wd*.22
-g.beginPath()
-g.moveTo(bx,-LH-4)
-g.bezierCurveTo(bx+10*Math.sin(t*2+k),-LH-16,bx-10*Math.sin(t*2+k),-LH-26,bx+6*Math.sin(t*3+k),-LH-38)
-g.globalAlpha=.35+.2*Math.sin(t*2+k)
-g.stroke()
-}
-g.globalAlpha=1
-}
-g.restore()
-}
-function bg(){
-g.setTransform(dpr,0,0,dpr,0,0)
-const sk=g.createLinearGradient(0,0,0,hh)
-sk.addColorStop(0,'#1d0f2b')
-sk.addColorStop(.45,'#7a2f35')
-sk.addColorStop(.8,'#ef9a4a')
-sk.addColorStop(1,'#ffd48a')
-g.fillStyle=sk
-g.fillRect(0,0,w,hh)
-for(const q of stars){
-g.globalAlpha=.4+.4*Math.sin(t*2+q.p)
-g.fillStyle='#fff4d6'
-g.fillRect(q.x,q.y+cam*s*.02,1.6,1.6)
-}
-g.globalAlpha=1
-const sx=w*.74,sy=hh*.3+cam*s*.05
-const sg=g.createRadialGradient(sx,sy,0,sx,sy,hh*.3)
-sg.addColorStop(0,'rgba(255,230,160,.95)')
-sg.addColorStop(.18,'rgba(255,200,110,.6)')
-sg.addColorStop(1,'rgba(255,170,80,0)')
-g.fillStyle=sg
-g.fillRect(0,0,w,hh)
-const cols=['#5b2744','#44203a','#2d1630']
-for(let k=0;k<3;k++){
-const base=hh*(.58+.1*k)+cam*s*(.05+.05*k)
-g.fillStyle=cols[k]
-g.beginPath()
-g.moveTo(0,hh+40)
-for(let x=0;x<=w+16;x+=16)g.lineTo(x,base-(Math.sin(x*.006+k*2.1)*34+Math.sin(x*.015+k)*14)*s*1.2)
-g.lineTo(w,hh+40)
-g.fill()
-}
-}
-function world(){
-const ox=(Math.random()-.5)*shake*dpr,oy=(Math.random()-.5)*shake*dpr
-g.setTransform(dpr*s,0,0,dpr*s,dpr*w/2+ox,dpr*(hh*.8+cam*s)+oy)
-}
-function draw(){
-bg()
-g.setTransform(dpr,0,0,dpr,0,0)
-for(const l of leaves){
-g.save()
-g.translate(l.x,l.y)
-g.rotate(l.r)
-g.fillStyle=l.c
-g.globalAlpha=.8
-g.beginPath()
-g.ellipse(0,0,6*l.z,3*l.z,0,0,Math.PI*2)
-g.fill()
-g.restore()
-}
-world()
-const tb=g.createLinearGradient(0,0,0,300)
-tb.addColorStop(0,'#7a3b24')
-tb.addColorStop(1,'#3a170f')
-g.fillStyle=tb
-g.fillRect(-3000,0,6000,3000)
-g.fillStyle='#e9b25c'
-g.fillRect(-3000,0,6000,4)
-g.strokeStyle='rgba(0,0,0,.18)'
-g.lineWidth=2
-for(let k=1;k<8;k++){
-g.beginPath()
-g.moveTo(-3000,k*42)
-g.lineTo(3000,k*42)
-g.stroke()
-}
-g.fillStyle='rgba(0,0,0,.28)'
-g.beginPath()
-g.ellipse(0,6,W0/2+50,12,0,0,Math.PI*2)
-g.fill()
-g.fillStyle='#f1e7d1'
-g.beginPath()
-g.ellipse(0,2,W0/2+34,11,0,0,Math.PI*2)
-g.fill()
-g.strokeStyle='#c9b78f'
-g.lineWidth=2
-g.stroke()
-for(let i=0;i<layers.length;i++){
-const l=layers[i]
-pie(l.x+sway(i*LH),-i*LH,l.w,l.p,l.sq,i===layers.length-1&&st!=='dying')
-}
-if(cur&&!cur.hide)pie(cur.x+(cur.drop?0:0),cur.y,cur.w,cur.p,0,false)
-for(const d of debris){
-g.save()
-g.translate(d.x,d.y-LH/2)
-g.rotate(d.rot)
-g.translate(0,LH/2)
-pie(0,0,d.w,d.p,0,false)
-g.restore()
-}
-for(const p of parts){
-g.globalAlpha=1-p.life/p.max
-g.fillStyle=p.c
-g.fillRect(p.x-p.sz/2,p.y-p.sz/2,p.sz,p.sz)
-}
-g.globalAlpha=1
-g.textAlign='center'
-for(const p of pops){
-const k=p.life/p.max
-if(p.ring){
-g.strokeStyle=p.c
-g.globalAlpha=1-k
-g.lineWidth=4*(1-k)+1
-g.beginPath()
-g.ellipse(p.x,p.y,40+k*130,12+k*30,0,0,Math.PI*2)
-g.stroke()
-g.globalAlpha=1
-continue
-}
-g.globalAlpha=k<.7?1:1-(k-.7)/.3
-g.font='bold '+(p.big?30:24)+'px Georgia,serif'
-g.lineWidth=5
-g.strokeStyle='rgba(40,12,4,.85)'
-g.strokeText(p.txt,p.x,p.y)
-g.fillStyle=p.c
-g.fillText(p.txt,p.x,p.y)
-}
-g.globalAlpha=1
-g.setTransform(dpr,0,0,dpr,0,0)
-if(flash>.01){
-g.fillStyle='rgba(255,236,170,'+flash*.5+')'
-g.fillRect(0,0,w,hh)
-}
-const vg=g.createRadialGradient(w/2,hh/2,hh*.35,w/2,hh/2,hh*.85)
-vg.addColorStop(0,'rgba(0,0,0,0)')
-vg.addColorStop(1,'rgba(10,2,0,.5)')
-g.fillStyle=vg
-g.fillRect(0,0,w,hh)
-g.textAlign='center'
-g.font='bold '+Math.round(54*Math.max(.7,s))+'px Georgia,serif'
-g.lineWidth=7
-g.strokeStyle='rgba(40,12,4,.8)'
-g.strokeText(score,w/2,Math.round(hh*.12))
-g.fillStyle='#fff3de'
-g.fillText(score,w/2,Math.round(hh*.12))
-g.font='16px Georgia,serif'
-g.fillStyle='rgba(255,236,200,.85)'
-g.fillText('Best '+best+(chain>1?'   Chain x'+chain:''),w/2,Math.round(hh*.12)+26)
-if(st==='ready'){
-g.globalAlpha=.7+.3*Math.sin(t*4)
-g.font='bold 24px Georgia,serif'
-g.lineWidth=5
-g.strokeStyle='rgba(40,12,4,.85)'
-g.strokeText('Tap or press Space to drop',w/2,hh*.3)
-g.fillStyle='#fff3de'
-g.fillText('Tap or press Space to drop',w/2,hh*.3)
-g.globalAlpha=1
-}
-}
-function showOver(){
-st='over'
-if(score>best){
-best=score
-try{localStorage.setItem(KEY,String(best))}catch{}
-}
-const title=h('h2',null,'The tower fell')
-sty(title,{margin:'0','font-size':'30px'})
-const sc=h('div',null,String(score))
-sty(sc,{'font-size':'72px','font-weight':'bold','line-height':'1','color':'#ffe27a'})
-const info=h('div',null,'Best '+best+'   Tallest chain x'+maxChain+'   Height '+(layers.length-1))
-sty(info,{opacity:'.85'})
-const pr=h('div',null,secs<15?'Play 15 seconds or more to earn Pars':'Saving score')
-sty(pr,{color:'#ffd9a0','font-size':'18px','min-height':'24px'})
-const again=h('button',{class:'btn',type:'button'},'Play again')
-const quit=h('button',{class:'btn sm',type:'button'},'Close')
-again.addEventListener('click',reset)
-quit.addEventListener('click',()=>api.close())
-const row=h('div',null,again,quit)
-sty(row,{display:'flex',gap:'10px','margin-top':'8px'})
-ov=h('div',{class:'tk-go'},title,sc,info,pr,row)
-sty(ov,{position:'absolute',inset:'0',display:'flex','flex-direction':'column','align-items':'center','justify-content':'center',gap:'12px',background:'rgba(18,8,4,.72)','backdrop-filter':'blur(4px)',color:'#fff3de','font-family':'Georgia,serif','text-align':'center'})
-host.append(ov)
-api.finish(score,secs).then(d=>{
-if(dead||!d)return
-if(secs>=15)pr.textContent=d.pars>0?'+'+d.pars+' Pars':'No Pars this run'
-})
-}
-function press(){
-au()
-if(st==='ready'){st='play';return}
-if(st==='play'&&cur&&!cur.drop&&!cur.hide){cur.drop=true;cur.vy=260}
-}
-const onKey=e=>{
-if(e.code==='Space'||e.key==='Enter'||e.key==='ArrowDown'){
-if(ov)return
-e.preventDefault()
-if(!e.repeat)press()
-}
-if(e.key==='m'||e.key==='M')mute=!mute
-}
-const onDown=e=>{
-e.preventDefault()
-press()
-}
-function frame(now){
+function act(){
 if(dead)return
-raf=requestAnimationFrame(frame)
-const dt=Math.min(.05,(now-last)/1000||0)
-last=now
-update(dt)
-draw()
+if(ctx&&ctx.state==='suspended')ctx.resume()
+if(st==='ready')begin()
+else if(st==='play')drop()
 }
-fit()
-reset()
-const ro=new ResizeObserver(fit)
-ro.observe(host)
+const onDown=e=>{if(e.button!=null&&e.button>0)return;act()}
+const onKey=e=>{
+if(e.code==='Space'||e.code==='Enter'||e.code==='ArrowDown'){e.preventDefault();if(!e.repeat)act()}
+else if(e.code==='KeyM'){setMuted(!muted)}
+else if(e.code==='KeyR'&&st==='over'&&finished)begin()
+}
+host.addEventListener('pointerdown',onDown)
 addEventListener('keydown',onKey)
-cv.addEventListener('pointerdown',onDown)
-raf=requestAnimationFrame(t0=>{last=t0;frame(t0)})
+mb.addEventListener('pointerdown',e=>e.stopPropagation())
+mb.addEventListener('click',()=>setMuted(!muted))
+makePanel('Pie Stack',[['Time each drop to stack the pies. Anything that overhangs gets cut off.'],['Land one dead center for a Perfect, and chain them to grow the pie back.','dim'],['Best '+best,'dim']],null,[['Start',()=>begin(),true]])
+reset()
+const tmpV=new THREE.Vector3()
+function frame(dt0,t){
+let dt=dt0
+if(dt>1)dt/=1000
+dt=Math.min(dt||.016,.05)
+clock+=dt
+const e=embers
+for(let i=0;i<e.n;i++){
+e.p[i*3+1]+=dt*(.5+(i%5)*.12)
+e.p[i*3]+=Math.sin(clock*.5+i)*dt*.3
+if(e.p[i*3+1]>camY+28)e.p[i*3+1]=camY-14
+if(e.p[i*3+1]<camY-16)e.p[i*3+1]=camY+20
+}
+e.m.geometry.attributes.position.needsUpdate=true
+for(const c of candles){
+if(red)continue
+const f=.85+Math.sin(clock*9+c.ph)*.08+Math.sin(clock*23+c.ph*2)*.05
+c.fl.scale.set(1,1.8*f,1)
+c.sp.material.opacity=.7+f*.3
+if(c.pl)c.pl.intensity=36*f
+}
+if(tk&&tk.tick)tk.tick(dt,0,'idle')
+bursts.tick(dt)
+if(cur&&st==='play'){
+const om=Math.min(5.2,2.1+n*.045)
+cur.ph+=dt*om
+const off=Math.sin(cur.ph)*cur.range
+if(cur.axis)cur.o.position.set(top.x,cur.y,top.z+off)
+else cur.o.position.set(top.x+off,cur.y,top.z)
+}
+for(let i=deb.length-1;i>=0;i--){
+const d=deb[i]
+d.vy-=22*dt
+d.o.position.x+=d.vx*dt
+d.o.position.y+=d.vy*dt
+d.o.position.z+=d.vz*dt
+d.o.rotation.x+=d.rx*dt
+d.o.rotation.z+=d.rz*dt
+if(d.o.position.y<-30){scene.remove(d.o);deb.splice(i,1)}
+}
+for(let i=rings.length-1;i>=0;i--){
+const r=rings[i]
+r.t+=dt
+const p=r.t/.55
+const k=1+p*.9
+r.g.scale.set(r.sx*k,r.sz*k,1)
+r.g.material.opacity=Math.max(0,.95*(1-p))
+if(p>=1){scene.remove(r.g);r.g.geometry.dispose();r.g.material.dispose();rings.splice(i,1)}
+}
+const topY=top?top.y+LH:1
+const sway=red?0:Math.min(1,n/40)*.035
+tower.rotation.z=Math.sin(clock*1.1)*sway
+tower.rotation.x=Math.cos(clock*.9)*sway*.7
+if(st==='over'){
+overT+=dt
+tilt=Math.min(1,overT/1.4)
+}
+const ty=st==='over'?Math.max(2,topY*.5):Math.max(2.2,topY-.5)
+camY+=(ty-camY)*Math.min(1,dt*2.6)
+const asp=s.w()/Math.max(1,s.h())
+const baseD=Math.max(14,6.2/(Math.tan(camera.fov*Math.PI/360)*Math.min(asp,1.6)))
+const td=st==='over'?baseD+topY*.7:baseD+Math.min(8,topY*.12)
+camD+=(td-camD)*Math.min(1,dt*1.8)
+az+=dt*(red?0:.03)
+const el0=.42+tilt*.1
+camera.position.set(Math.sin(az)*camD*Math.cos(el0),camY+camD*Math.sin(el0)+1.2,Math.cos(az)*camD*Math.cos(el0))
+if(shakeA>0){
+camera.position.x+=(Math.random()-.5)*shakeA
+camera.position.y+=(Math.random()-.5)*shakeA
+shakeA=Math.max(0,shakeA-dt*1.4)
+}
+camera.lookAt(0,camY+.8,0)
+if(sun){
+sun.position.set(7,topY+16,9)
+sun.target.position.set(0,topY-2,0)
+sun.target.updateMatrixWorld()
+}
+if(st==='over'&&!finished&&overT>1.5)end()
+if(tg){
+tmpV.set(top?top.x:0,0,top?top.z:0)
+tg.rotation.y=Math.atan2(tmpV.x-tg.position.x,tmpV.z-tg.position.z)
+}
+}
+s.loop(frame)
 return()=>{
 dead=true
-cancelAnimationFrame(raf)
-ro.disconnect()
 removeEventListener('keydown',onKey)
-cv.removeEventListener('pointerdown',onDown)
-if(ac){try{ac.close()}catch{}}
-cv.remove()
-if(ov)ov.remove()
+host.removeEventListener('pointerdown',onDown)
+try{if(AU&&AU.music)AU.music(false)}catch{}
+try{s.stop()}catch{}
+try{disposeObj(scene)}catch{}
+try{s.dispose()}catch{}
+hud.remove()
+try{if(ctx&&ctx.close)ctx.close()}catch{}
 }
 }
