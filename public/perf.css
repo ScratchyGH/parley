@@ -13,3 +13,8 @@ html[data-gpu="0"] [class*="ef_"]::before,html[data-gpu="0"] [class*="ef_"]::aft
 .updb{max-width:calc(100vw - 24px);box-sizing:border-box}
 .updb button{pointer-events:auto;min-height:44px;touch-action:manipulation}
 @media (pointer:coarse){.updb{left:50%!important;bottom:calc(90px + env(safe-area-inset-bottom))!important}}
+
+.par-card{content-visibility:auto;contain-intrinsic-size:auto 190px;contain:layout style}
+.par-card:not(:hover) *,.par-card:not(:hover) *::before,.par-card:not(:hover) *::after{animation-play-state:paused!important}
+.par-grid{content-visibility:auto;contain-intrinsic-size:auto 600px}
+.par-card .frm,.par-card .av{will-change:auto}
