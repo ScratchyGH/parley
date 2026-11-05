@@ -6,7 +6,7 @@ export const TK_GAMES=[
 ['catch','Cornucopia Catch','Catch the falling harvest, dodge the rotten.',()=>import('./tk_catch.js')],
 ['forage','Thicket Survivors','Hold the clearing against the fox pack.',()=>import('./tk_forage.js')]
 ]
-export function openTk(id){
+export function openTk(id,opt){
 if(!document.getElementById('fallcss'))document.head.append(h('link',{id:'fallcss',rel:'stylesheet',href:'/thicket.css'}))
 const g=TK_GAMES.find(x=>x[0]===id)
 if(!g)return
@@ -24,6 +24,7 @@ close,
 reduced:()=>matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.classList.contains('rm'),
 lite:()=>document.documentElement.classList.contains('perf'),
 async finish(score,secs){
+if(opt&&opt.finish)return opt.finish(Math.floor(score),Math.floor(secs))
 try{const d=await POST('/api/games/turkey/finish',{game:id,score:Math.floor(score),secs:Math.floor(secs)});if(d.pars>0)toast('+'+d.pars+' Pars','ok');return d}catch(e){toast(e.message||'Could not save the score','err');return{pars:0}}
 }
 }
