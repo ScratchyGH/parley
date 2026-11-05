@@ -312,7 +312,7 @@ sw('send_ctrl_enter',false,'Send with Ctrl+Enter','Enter inserts a new line inst
 function notifications(pg){
 mount(pg,h('h3',null,'Notifications'),
 sw('sound',true,'Notification sounds','A short tone for new mentions and direct messages while this tab is open.'),
-sw('desktop',false,'Desktop notifications','Shown for mentions and direct messages when this tab is not focused. Works only while Parley is open in a browser tab.',async v=>{if(v){const ok=await requestDesktop();if(!ok){toast('Notifications are blocked in your browser settings','err');saveSettings({desktop:false}).then(()=>notifications(pg))}}}),
+sw('desktop',true,'Desktop notifications','Shown for mentions and direct messages when this tab is not focused. Works only while Parley is open in a browser tab.',async v=>{if(v){const ok=await requestDesktop();if(!ok){toast('Notifications are blocked in your browser settings','err');saveSettings({desktop:false}).then(()=>notifications(pg))}}}),
 row('Test desktop notification','Sends one right now so you can check your browser and system settings.',h('button',{class:'btn sm',on:{click:async()=>{try{toast((await testDesktop())?'Sent. Look for it in your system notifications':'Notifications are blocked or unsupported in this browser',null)}catch(e){fail(e)}}}},'Send test')),
 sw('n_dm',true,'Direct messages','Sound and desktop alerts for new direct messages.'),
 sw('n_mention',true,'Mentions and replies','Sound and desktop alerts when you are mentioned in a server.'),

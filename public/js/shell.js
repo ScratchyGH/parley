@@ -161,10 +161,11 @@ const users=S.voice[c.id]||{}
 const ids=Object.keys(users)
 return h('div',null,row,ids.map(id=>{
 const uu=id===S.me.id?S.me:S.users.get(id)||{id,display_name:'Member'}
-return h('div',{class:'vp'+(users[id].sp?' sp':'')},avatar(uu,'sm'),h('span',{class:'nm',style:{flex:'1',overflow:'hidden',textOverflow:'ellipsis'}},uu.display_name),users[id].m?icon('micoff','s'):null,users[id].scr?icon('screen','s'):null,users[id].vid?icon('video','s'):null)
+return h('div',{class:'vp'+(V.speaking.has(id)?' sp':''),'data-u':id},avatar(uu,'sm'),h('span',{class:'nm',style:{flex:'1',overflow:'hidden',textOverflow:'ellipsis'}},uu.display_name),users[id].m?icon('micoff','s'):null,users[id].scr?icon('screen','s'):null,users[id].vid?icon('video','s'):null)
 }))
 }
 
+on('voice:speaking',()=>document.querySelectorAll('.vp[data-u]').forEach(e=>e.classList.toggle('sp',V.speaking.has(e.dataset.u))))
 let DR=null
 const posSort=(a,b)=>a.position-b.position
 function dg(el,sid,kind,id){

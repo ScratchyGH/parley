@@ -555,15 +555,15 @@ for(const v of w.buf){const x=(v-128)/128;sum+=x*x}
 const rms=Math.sqrt(sum/w.buf.length)
 if(id==='me'){const t=V.mic?.getAudioTracks()[0];if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{});if(t&&!V.muted&&!V.deaf){if(t.readyState==='ended')reviveMic();else if(rms<.0003){if((V.dead=(V.dead||0)+1)>30){V.dead=0;reviveMic()}}else V.dead=0}}
 const uid=id==='me'?S.me.id:id
-w.nf=w.nf==null?rms:w.nf*.98+Math.min(rms,w.nf*1.5+.002)*.02
-const thr=Math.max(.004,Math.min(.02,w.nf*2.2+.003))
+w.nf=w.nf==null?rms:w.nf*.99+Math.min(rms,w.nf*1.3+.001)*.01
+const thr=Math.max(.0025,Math.min(.012,w.nf*1.8+.002))
 let speaking=rms>thr
 if(id==='me'&&(V.muted||V.deaf)){
 if(rms>0.08&&!V.deaf&&V.mic&&Date.now()-(V.nudge||0)>30000&&(V.loud=(V.loud||0)+1)>12){V.nudge=Date.now();V.loud=0;toast('You are muted. Others cannot hear you.')}
 speaking=false
 }else V.loud=0
 if(speaking)w.on=Date.now()
-const act=speaking||Date.now()-w.on<350
+const act=speaking||Date.now()-w.on<500
 if(act!==V.speaking.has(uid)){act?V.speaking.add(uid):V.speaking.delete(uid);changed=true}
 }
 if(changed)emit('voice:speaking')

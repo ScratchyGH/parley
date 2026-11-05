@@ -55,7 +55,7 @@ o.stop(ctx.currentTime+.25)
 }catch{}
 }
 export function desktop(title,body,tag,onclick){
-if(!setting('desktop',false)||quiet()||!('Notification'in window)||Notification.permission!=='granted')return
+if(!setting('desktop',true)||quiet()||!('Notification'in window)||Notification.permission!=='granted')return
 if(document.hasFocus()&&!document.hidden)return
 const opts={body:String(body).slice(0,140),tag,silent:true,icon:'/logo-192.png'}
 try{
@@ -74,4 +74,9 @@ if(!r)return false
 await r.showNotification('Parley',{...opts,data:{url:'/'}})
 }
 return true
+}
+
+if('Notification'in window&&Notification.permission==='default'){
+const ask=()=>{removeEventListener('pointerdown',ask,true);if(setting('desktop',true))requestDesktop().catch(()=>{})}
+addEventListener('pointerdown',ask,true)
 }
