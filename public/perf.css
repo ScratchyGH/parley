@@ -22,3 +22,9 @@ html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!importa
 .sb,.main,.mem-list{contain:layout style}
 .unf-th img,.mw img{content-visibility:auto}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+.intro{position:fixed;inset:0;z-index:2147483600;background:#0a0a09;display:grid;place-items:center;animation:introOut .5s ease .9s forwards;pointer-events:none}
+.intro img{width:96px;height:96px;border-radius:24px;animation:introPop .8s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes introPop{from{opacity:0;transform:scale(.6) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes introOut{to{opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){.intro{display:none}}
+html[data-gpu="0"] .intro{display:none}
