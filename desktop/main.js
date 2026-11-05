@@ -1,5 +1,5 @@
 const{app,BrowserWindow,shell,session,desktopCapturer,ipcMain}=require('electron')
-if(process.platform==='linux')app.commandLine.appendSwitch('enable-features','WebRTCPipeWireCapturer')
+if(process.platform==='linux'){app.commandLine.appendSwitch('enable-features','WebRTCPipeWireCapturer');app.commandLine.appendSwitch('ozone-platform-hint','auto');app.commandLine.appendSwitch('password-store','basic');app.commandLine.appendSwitch('disable-features','HardwareMediaKeyHandling')}
 const U='https://parley.heavengtwashere.workers.dev/?web=1'
 const O='https://parley.heavengtwashere.workers.dev'
 if(!app.requestSingleInstanceLock())app.quit()
@@ -16,16 +16,16 @@ p.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent(html))
 p.once('ready-to-show',()=>p.show())
 })
 app.whenReady().then(()=>{
-const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#0a0a09',autoHideMenuBar:true,icon:__dirname+'/icon.png',webPreferences:{contextIsolation:true,sandbox:true}})
+const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#0a0a09',autoHideMenuBar:true,icon:__dirname+'/icon.png',webPreferences:{contextIsolation:true,sandbox:true,backgroundThrottling:false}})
 const ses=w.webContents.session
 ses.setPermissionRequestHandler((wc,perm,cb,d)=>cb(['media','notifications','fullscreen','clipboard-sanitized-write','clipboard-read'].includes(perm)&&(d.requestingUrl||'').startsWith(O)))
 ses.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(O)&&['media','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
 ses.setDisplayMediaRequestHandler(async(req,cb)=>{
 try{
 if(!req.userGesture||!(req.frame?.url||'').startsWith(O))return cb({})
-const src=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:420,height:260}})
+const src=await desktopCapturer.getSources({types:process.platform==='linux'?['screen']:['screen','window'],thumbnailSize:process.platform==='linux'?{width:0,height:0}:{width:420,height:260}})
 if(!src.length)return cb({})
-const id=await pick(w,src)
+const id=process.platform==='linux'?src[0].id:await pick(w,src)
 const s=src.find(x=>x.id===id)
 if(!s)return cb({})
 const r={video:s}
