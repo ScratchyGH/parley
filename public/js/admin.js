@@ -10,13 +10,13 @@ import{aiBadge,modaiPanel,handledList}from'./modai.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
+const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],['ad','AD'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
+const fn={ad:b=>b.append(h('div',{class:'li'},h('div',null,h('b',null,'AD.mp4'),h('p',{class:'hint'},'Parley promo video, 1080p')),h('a',{class:'btn sm',href:'/ad/AD.mp4',download:'AD.mp4'},'Download')),h('video',{src:'/ad/AD.mp4',controls:true,preload:'none',width:'100%'})),backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),h('button',{class:'btn sm',type:'button',style:{marginBottom:'10px'},on:{click:async()=>{const{botScreen}=await import('./botscreen.js');const ov=h('div',{style:{position:'fixed',inset:'0',zIndex:'9999',background:'var(--bg,#111)',overflow:'auto'}});document.body.append(ov);botScreen(ov,{name:'Example Bot',description:'This is a test of the bot sign-in screen.',servers:3},{preview:true,done:()=>ov.remove()})}}},'Preview bot sign-in screen'),nav,body)
