@@ -30,11 +30,12 @@ if(!e.isTrusted)return
 const ms=Math.round(performance.now()-shown)
 const pts=path.filter(q=>q[2]>performance.now()-2500)
 const ys=new Set(pts.map(q=>Math.round(q[0]/3)+':'+Math.round(q[1]/3)))
-if(ms<900||pts.length<5||ys.size<5){toast('Move your mouse to the button and click it',null);return}
+const tch=matchMedia('(pointer:coarse)').matches||e.pointerType==='touch'
+if(ms<900||(!tch&&(pts.length<5||ys.size<5))){toast('Move your mouse to the button and click it',null);return}
 removeEventListener('pointermove',pm)
-try{const r=await POST('/api/pars/ack',{tok:ck.tok,ms,p:ys.size});if(r.ok){chk.remove();chk=null;toast('Thanks, still earning Pars',null)}}catch{}
+try{const r=await POST('/api/pars/ack',{tok:ck.tok,ms,p:tch?5:ys.size});if(r.ok){chk.remove();chk=null;toast('Thanks, still earning Pars',null)}}catch{}
 }}},'I am here')
-chk=h('div',{class:'updb',role:'alert',style:{top:'auto',bottom:(20+Math.random()*60)+'px',left:(20+Math.random()*55)+'%'}},h('b',null,'Still there?'),h('span',null,'Click to keep earning Pars'),b)
+chk=h('div',{class:'updb',role:'alert',style:matchMedia('(pointer:coarse)').matches?{top:'auto',bottom:'90px',left:'50%'}:{top:'auto',bottom:(20+Math.random()*60)+'px',left:(20+Math.random()*55)+'%'}},h('b',null,'Still there?'),h('span',null,'Click to keep earning Pars'),b)
 document.body.append(chk)
 }
 export function startPars(){
