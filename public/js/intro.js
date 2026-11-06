@@ -6,8 +6,10 @@ sessionStorage.setItem('intro','1')
 }
 document.querySelector('.intro')?.remove()
 const el=document.createElement('div');el.className='intro'
-const im=document.createElement('img');im.src='/logo-192.png';im.alt=''
-el.append(im);document.body.append(el)
-setTimeout(()=>el.remove(),2000)
+const glow=document.createElement('div');glow.className='intro-glow'
+const im=document.createElement('img');im.src='/mascot.webp';im.alt=''
+const wm=document.createElement('div');wm.className='intro-wm';wm.textContent='Parley'
+el.append(glow,im,wm);document.body.append(el)
+setTimeout(()=>el.remove(),2900)
 }catch{}
 }
