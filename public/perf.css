@@ -29,3 +29,11 @@ html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!importa
 @keyframes introOut{to{opacity:0;visibility:hidden}}
 html .intro,html[data-gpu] .intro{animation:introOut .5s ease 1.4s forwards!important}
 html .intro img,html[data-gpu] .intro img{animation:introPop .8s cubic-bezier(.2,.9,.3,1.2) both!important}
+.btn.pri.buy{background:linear-gradient(180deg,#ffd45a,#e0a416)!important;color:#1b1400!important;border-color:transparent!important;box-shadow:0 4px 14px -6px #e0a416!important;font-weight:700}
+.btn.pri.buy:disabled{opacity:.45;filter:grayscale(.6)}
+.dialog footer,.dlg footer,dialog footer{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.dialog footer .btn,.dlg footer .btn,dialog footer .btn{flex:0 1 auto;max-width:100%;white-space:normal}
+.li.gpm{flex-wrap:wrap}.li.gpm .grow{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li.gpm label{margin-left:0!important;font-size:13px}
+.gpm-set{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.gpm-set label{font-size:13px}
