@@ -51,7 +51,7 @@ cont.disabled=false
 }
 const cwrap=h('div',{class:'pc-custom'},h('span',{class:'pc-ico'},providerLogo('custom',24)),url)
 const body=h('div',{class:'pc'},h('div',{class:'pc-row',role:'radiogroup','aria-label':'AI provider'},boxes),cwrap,extra,h('div',{class:'hint'},'Keys are sent with this request only and are never saved. Pollinations and Ch.at are free services run by third parties and can be slow or busy.'),h('div',{class:'row',style:{justifyContent:'flex-end',marginTop:'10px'}},h('button',{class:'btn',on:{click:()=>finish(false)}},'Nevermind'),cont))
-const d=dialog('Provider Chooser',body,{sticky:true,onclose:()=>{if(!settled){settled=true;resolve(null)}}})
+const d=dialog('Provider Chooser',h('div',{class:'bd'},body),{sticky:true,cls:'pc-dlg',onclose:()=>{if(!settled){settled=true;resolve(null)}}})
 function finish(ok){
 if(settled)return
 if(!ok){
