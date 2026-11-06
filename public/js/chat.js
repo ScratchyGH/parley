@@ -297,7 +297,7 @@ const inNp=!!m.author.nameplate
 if(inNp){if(bdg)nm.append(bdg);if(ttl)nm.append(ttl)}
 main.append(h('div',{class:'mh'},nm,un,inNp?null:bdg,inNp?null:ttl,gtag(m.author.guild_tag,m.author.guild_tag_emoji,m.author.guild_tag_icon_id),h('time',{dateTime:new Date(m.created_at).toISOString(),title:new Date(m.created_at).toLocaleString(undefined,tzo()),'data-t':m.created_at},fmtStamp(m.created_at)),m.pinned?icon('pin','s'):null))
 }
-if(m.content&&LC.test(m.content))main.append(lcardNode(LC.exec(m.content)[1]))
+if(m.content&&LC.test(m.content)){const rest=m.content.replace(new RegExp(LC.source,'g'),'').trim();if(rest)main.append(h('div',{class:'mb'},render(rest,ctx)));main.append(lcardNode(LC.exec(m.content)[1]))}
 else if(m.content){
 const body=h('div',{class:'mb'},render(m.content,ctx))
 if(m.edited_at)body.append(' ',h('span',{class:'ed',title:'Edited '+new Date(m.edited_at).toLocaleString()},'(edited)'))

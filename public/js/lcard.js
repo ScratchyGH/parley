@@ -1,5 +1,5 @@
 import{h,GET,avatar,coverBg}from'./util.js'
-export const LC=/^\s*\[\[lc:([A-Za-z0-9_-]{8,200})\]\]\s*$/
+export const LC=/\[\[lc:([A-Za-z0-9_-]{8,300})\]\]/
 export function lcardNode(key){
 const box=h('div',{class:'lcard lcard-load','aria-label':'Level card',on:{contextmenu:e=>e.preventDefault()}})
 GET('/api/lc/'+key).then(d=>{
