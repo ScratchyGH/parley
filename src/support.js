@@ -4,6 +4,9 @@ const get=async(env,k)=>{const r=await env.DB.prepare('select v from app_setting
 const put=(env,k,o)=>env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind(k,JSON.stringify(o)).run()
 const KINDS=['lost','banned','bug','other']
 const UA={'user-agent':'Parley/1 (+https://parley.heavengtwashere.workers.dev)',accept:'application/json'}
+const ent=s=>String(s||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&#x27;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+const meta=(h,k)=>{const m=new RegExp('<meta[^>]+(?:property|name)="'+k+'"[^>]+content="([^"]*)"','i').exec(h)||new RegExp('<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="'+k+'"','i').exec(h);return m?ent(m[1]):''}
+const page=async u=>{const r=await fetch(u,{headers:{...UA,accept:'text/html'},redirect:'follow'});return r.ok?await r.text():null}
 const P={
 roblox:{name:'Roblox',ok:/^[A-Za-z0-9_]{3,20}$/,url:i=>'https://www.roblox.com/users/'+i.id+'/profile',async look(n){
 const a=await fetch('https://users.roblox.com/v1/usernames/users',{method:'POST',headers:{...UA,'content-type':'application/json'},body:JSON.stringify({usernames:[n],excludeBannedUsers:true})}).then(r=>r.json())
@@ -48,21 +51,47 @@ if(!tk.access_token)return null
 const d=await fetch('https://api.twitch.tv/helix/users?login='+encodeURIComponent(n),{headers:{'client-id':env.TWITCH_CLIENT_ID,authorization:'Bearer '+tk.access_token}}).then(r=>r.json())
 const u=d.data&&d.data[0];if(!u)return null
 return{id:u.id,name:u.login,text:u.description||''}}},
-youtube:{name:'YouTube',need:['YOUTUBE_API_KEY'],ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:i=>'https://www.youtube.com/channel/'+i.id,async look(n,env){
+youtube:{name:'YouTube',hint:'the very start of your channel description (About)',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:i=>'https://www.youtube.com/channel/'+i.id,async look(n,env){
+if(!env.YOUTUBE_API_KEY){
+const h=await page('https://www.youtube.com/@'+encodeURIComponent(n.replace(/^@/,'')))
+if(!h)return null
+const id=/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{20,})"/.exec(h)
+if(!id)return null
+return{id:id[1],name:n.replace(/^@/,''),text:meta(h,'og:description')||meta(h,'description')}
+}
 const d=await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle='+encodeURIComponent('@'+n.replace(/^@/,''))+'&key='+env.YOUTUBE_API_KEY).then(r=>r.json())
 const u=d.items&&d.items[0];if(!u)return null
-return{id:u.id,name:(u.snippet.customUrl||u.snippet.title||n).replace(/^@/,''),text:u.snippet.description||''}}}
+return{id:u.id,name:(u.snippet.customUrl||u.snippet.title||n).replace(/^@/,''),text:u.snippet.description||''}}},
+x:{name:'X',hint:'your X bio',ok:/^@?[A-Za-z0-9_]{1,15}$/,url:i=>'https://x.com/'+i.name,async look(n){
+const nm=n.replace(/^@/,'')
+const r=await fetch('https://api.fxtwitter.com/'+encodeURIComponent(nm),{headers:UA})
+if(!r.ok)return null
+const u=(await r.json()).user
+if(!u)return null
+return{id:String(u.id),name:u.screen_name,text:u.description||''}}},
+tiktok:{name:'TikTok',hint:'your TikTok bio',ok:/^@?[A-Za-z0-9._]{2,24}$/,url:i=>'https://www.tiktok.com/@'+i.name,async look(n){
+const nm=n.replace(/^@/,'')
+const h=await page('https://www.tiktok.com/@'+encodeURIComponent(nm))
+if(!h)return null
+const id=/"uniqueId":"([^"]+)"/.exec(h),sg=/"signature":"((?:[^"\\]|\\.)*)"/.exec(h),ui=/"id":"(\d{6,})","shortId"/.exec(h)
+if(!id)return null
+let tx='';try{tx=JSON.parse('"'+(sg?sg[1]:'')+'"')}catch{}
+return{id:ui?ui[1]:id[1].toLowerCase(),name:id[1],text:tx}}},
+kofi:{name:'Ko-fi',hint:'your Ko-fi page About text',ok:/^[A-Za-z0-9_]{2,40}$/,url:i=>'https://ko-fi.com/'+i.name,async look(n){
+const h=await page('https://ko-fi.com/'+encodeURIComponent(n))
+if(!h)return null
+return{id:n.toLowerCase(),name:n,text:meta(h,'og:description')||meta(h,'description')}}},
+soundcloud:{name:'SoundCloud',hint:'your SoundCloud bio',ok:/^[A-Za-z0-9_-]{2,40}$/,url:i=>'https://soundcloud.com/'+i.name,async look(n){
+const h=await page('https://soundcloud.com/'+encodeURIComponent(n))
+if(!h)return null
+return{id:n.toLowerCase(),name:n,text:meta(h,'og:description')||meta(h,'description')}}}
 }
 const ready=(p,env)=>!p.need||p.need.every(k=>env[k])
 const L={
 youtube:{name:'YouTube',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:n=>'https://www.youtube.com/@'+n.replace(/^@/,'')},
 twitch:{name:'Twitch',ok:/^[A-Za-z0-9_]{3,25}$/,url:n=>'https://www.twitch.tv/'+n},
-x:{name:'X',ok:/^@?[A-Za-z0-9_]{1,15}$/,url:n=>'https://x.com/'+n.replace(/^@/,'')},
-tiktok:{name:'TikTok',ok:/^@?[A-Za-z0-9._]{2,24}$/,url:n=>'https://www.tiktok.com/@'+n.replace(/^@/,'')},
 instagram:{name:'Instagram',ok:/^@?[A-Za-z0-9._]{1,30}$/,url:n=>'https://www.instagram.com/'+n.replace(/^@/,'')},
-spotify:{name:'Spotify',ok:/^[A-Za-z0-9._-]{2,40}$/,url:n=>'https://open.spotify.com/user/'+n},
-soundcloud:{name:'SoundCloud',ok:/^[A-Za-z0-9_-]{2,40}$/,url:n=>'https://soundcloud.com/'+n},
-kofi:{name:'Ko-fi',ok:/^[A-Za-z0-9_]{2,40}$/,url:n=>'https://ko-fi.com/'+n}
+spotify:{name:'Spotify',ok:/^[A-Za-z0-9._-]{2,40}$/,url:n=>'https://open.spotify.com/user/'+n}
 }
 const pubList=o=>Object.entries(o||{}).filter(([p])=>P[p]||L[p]).map(([p,v])=>P[p]&&!v.u?{p,label:P[p].name,name:v.name,url:P[p].url(v),at:v.at,verified:true}:{p,label:(L[p]||P[p]).name,name:v.name,url:(L[p]||{url:()=>P[p].url(v)}).url(v.name),at:v.at,verified:false})
 export default function(r){
