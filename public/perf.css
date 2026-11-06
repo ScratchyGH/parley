@@ -41,3 +41,11 @@ html .intro img,html[data-gpu] .intro img{animation:introPop .8s cubic-bezier(.2
 .par-card .pc-act{flex-wrap:wrap}
 .par-card .pc-act .par-price{margin-right:auto}
 .par-card .pc-act .btn{margin-left:0}
+.dlg.pc-dlg{width:min(580px,100%)}
+.pc{min-width:0}
+.pc-box{min-width:0;overflow:hidden}
+.pc-box b{font-size:14px}
+.pc-box small{line-height:1.3}
+.pc-custom{width:100%;box-sizing:border-box}
+.pc .hint{line-height:1.5}
+@media(max-width:560px){.pc-row{grid-template-columns:1fr}.pc-box{flex-direction:row;justify-content:flex-start;text-align:left;gap:12px;padding:10px 12px}}
