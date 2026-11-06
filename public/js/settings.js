@@ -1,4 +1,5 @@
 import{privacyDialog,termsDialog}from'./legal.js'
+import{connIcon}from'./connicons.js'
 import{h,mount,icon,stxt,GET,POST,PATCH,DEL,avatar,heroBox,toast,fail,closeTopDialog,confirmBox,field,toggle,copyText,saveBlob,fmtRel}from'./util.js'
 import{gifPicker,importGif}from'./gifs.js'
 import{historyBox}from'./imghist.js'
@@ -497,10 +498,10 @@ const draw=()=>mount(box,d.providers.map(pv=>{
 const cur=list.find(x=>x.p===pv.p),s=sess[pv.p]
 const nm=h('input',{class:'inp',maxLength:40,placeholder:pv.label+' username','aria-label':pv.label+' username'})
 return h('div',{class:'card',style:{marginBottom:'10px'}},
-h('div',{class:'row'},h('b',null,pv.label),cur?h('a',{href:cur.url,target:'_blank',rel:'noopener noreferrer'},cur.name):h('span',{class:'hint',style:{margin:0}},'Not linked'),cur?h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{try{list=(await DEL('/api/connections/'+pv.p)).list;draw()}catch(e){fail(e)}}}},'Disconnect'):null),
-!cur&&!s?h('div',{class:'row'},nm,h('button',{class:'btn',type:'button',on:{click:async()=>{try{sess[pv.p]=await POST('/api/connections/start',{p:pv.p,name:nm.value.trim()});draw()}catch(e){fail(e)}}}},'Link')):null,
+h('div',{class:'row'},connIcon(pv.p,20),h('b',null,pv.label),cur?h('a',{href:cur.url,target:'_blank',rel:'noopener noreferrer'},cur.name):h('span',{class:'hint',style:{margin:0}},'Not linked'),cur?h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{try{list=(await DEL('/api/connections/'+pv.p)).list;draw()}catch(e){fail(e)}}}},'Disconnect'):null),
+!cur&&!s?h('div',{class:'row'},nm,h('button',{class:'btn',type:'button',on:{click:async()=>{try{if(pv.verify===false){list=(await POST('/api/connections/link',{p:pv.p,name:nm.value.trim()})).list;draw();toast(pv.label+' added','ok')}else{sess[pv.p]=await POST('/api/connections/start',{p:pv.p,name:nm.value.trim()});draw()}}catch(e){fail(e)}}}},pv.verify===false?'Add':'Link')):null,
 s&&!cur?h('div',null,h('p',{class:'hint'},'Put this code anywhere in the bio or description of '+s.name+' on '+pv.label+', save it, then press Verify. You can remove it afterwards.'),h('div',{class:'card',style:{fontFamily:'var(--mono)',userSelect:'all',textAlign:'center'}},s.code),h('div',{class:'row'},h('button',{class:'btn pri',type:'button',on:{click:async()=>{try{list=(await POST('/api/connections/verify',{p:pv.p})).list;delete sess[pv.p];draw();toast(pv.label+' linked','ok')}catch(e){fail(e)}}}},'Verify'),h('button',{class:'btn',type:'button',on:{click:()=>{delete sess[pv.p];draw()}}},'Cancel'))):null)
 }))
-mount(pg,h('h3',null,'Connections'),h('div',{class:'hint'},'Prove an account is yours with a one-time code. Linked accounts show on your profile.'),box)
+mount(pg,h('h3',null,'Connections'),h('div',{class:'hint'},'Verified services need a one-time code in your bio. Others are added by username and show as unverified. Everything shows as icons on your profile.'),box)
 draw()
 }
