@@ -27,6 +27,7 @@ import caseRoutes from'./cases.js'
 import emailRoutes from'./email.js'
 import templateRoutes from'./templates.js'
 import{sweepExplicitServers}from'./servers.js'
+import{screenQueue}from'./screen.js'
 import botxRoutes from'./botx.js'
 import{roleOf}from'./botlab.js'
 import hookRoutes from'./devhooks.js'
@@ -277,6 +278,7 @@ await Promise.allSettled(pend)
 await xlabsCron(env,ec)
 await deliverReminders(env,ec).catch(()=>{})
 await Promise.allSettled(pend)
+try{await screenQueue(env,2)}catch{}
 }catch(e){console.error('scheduled send',String(e&&e.message||e))}
 const ks=(await env.DB.prepare("select k,v from app_settings where k in ('last_sweep','prune_v1')").all().catch(()=>({results:[]}))).results
 const last=ks.find(x=>x.k==='last_sweep')

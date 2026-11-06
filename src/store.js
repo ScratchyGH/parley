@@ -230,3 +230,12 @@ async abort(){await be.remove(key)}
 }
 return self
 }
+
+export async function putAny(env,key0,buf,opts){
+const bare=key0.replace(/^[a-z0-9]+~/,'')
+const tries=[place(env,bare,buf.byteLength)]
+if(env.FILES&&env.FILES.shim)for(const tg of['d','b1','b2','b3'])if(tg==='d'||env['BLOB'+tg[1]])tries.push(tg+'~'+bare)
+let err
+for(const k of tries){try{await env.FILES.put(k,buf,opts);return k}catch(e){err=e;console.error('putAny',k.split('~')[0],String(e&&e.message||e))}}
+throw err
+}

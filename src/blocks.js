@@ -82,6 +82,8 @@ if(o&&o.n&&await warnCount(c,sid,uid)===o.n)await punish(c,sid,actor,uid,o.a,'Re
 export function makeIo(c,botId,sid,room,user,message){
 const uid=user.id
 return{
+adjXp:async(mode,amt)=>{const k=vkey('xp','user',uid);let cur=Number(await getVar(c,botId,sid,k))||0;amt=Math.max(0,Math.min(1e9,Math.floor(Number(amt))||0));cur=mode==='give'?cur+amt:mode==='take'?Math.max(0,cur-amt):mode==='set'?amt:0;await putVar(c,botId,sid,k,cur);return cur},
+cardKey:()=>btoa(botId+'|'+sid+'|'+uid).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),
 xp:async(amt,cd)=>{
 const k=vkey('xp','user',uid)
 let cur=await getVar(c,botId,sid,k),up=false
@@ -283,6 +285,7 @@ api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),webh
 as:async()=>io,
 xp:async(a,cd)=>{const cur=(mem.get('xp')||0)+a;mem.set('xp',cur);const l=levelOf(cur);return{xp:cur,level:l,next:50*(l+1)*(l+2)-cur,up:levelOf(cur)>levelOf(cur-a)}},
 xpGet:async()=>mem.get('xp')||0,
+adjXp:async(m,a)=>{let cur=mem.get('xp')||0;a=Math.max(0,Math.floor(Number(a))||0);cur=m==='give'?cur+a:m==='take'?Math.max(0,cur-a):m==='set'?a:0;mem.set('xp',cur);sent.push({note:'Changes XP ('+m+') to '+cur});return cur},
 top:async()=>[{name:user.display_name||'You',v:mem.get('xp')||0}],
 getSecret:async()=>'',setSecret:async()=>false,
 warns:async()=>mem.get('user:warns')||0,

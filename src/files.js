@@ -115,11 +115,21 @@ const look=p.scan&&p.mime.startsWith('image/')&&len>=1500&&len<=3145728
 if(look&&explicitText(p.name))fail(422,'This image was blocked by the explicit content filter')
 const scanP=look?imageExplicit(c.env,new Uint8Array(buf)):Promise.resolve(false)
 const id=newId('f')
-const key=place(c.env,`u/${c.user.id}/${id}`,len)
+const key0=place(c.env,`u/${c.user.id}/${id}`,len)
 const opts={httpMetadata:{contentType:p.mime}}
 if(want)opts.sha256=want
-let obj
-try{obj=await c.env.FILES.put(key,buf,opts)}catch(x){fail(400,'Checksum mismatch or storage error')}
+let obj,key=key0
+const tries=[key0]
+if(c.env.FILES&&c.env.FILES.shim){for(const tg of['d','b1','b2','b3'])if(!key0.startsWith(tg+'~')&&(tg==='d'||c.env['BLOB'+tg[1]]))tries.push(tg+'~'+key0.replace(/^[a-z0-9]+~/,''))}
+let lastErr
+for(const k of tries){
+try{obj=await c.env.FILES.put(k,buf,opts);key=k;lastErr=null;break}catch(x){
+lastErr=x
+if(String(x&&x.message)==='checksum')fail(400,'Checksum mismatch: the file changed while uploading. Try again.')
+console.error('upload store',k.split('~')[0],String(x&&x.message||x))
+}
+}
+if(lastErr)fail(503,'Storage is busy right now. Try again in a moment.')
 if(await scanP){await c.env.FILES.delete(key);fail(422,'This image was blocked by the explicit content filter')}
 const sum=want||(obj&&obj.checksums&&obj.checksums.sha256?hex(obj.checksums.sha256):null)
 if(await hashBlocked(c.env,sum)){await c.env.FILES.delete(key);fail(422,'This file is not allowed on Parley')}

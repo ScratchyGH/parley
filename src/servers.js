@@ -1,5 +1,5 @@
 import{ownsVanity}from'./pars.js'
-import{place}from'./store.js'
+import{place,putAny}from'./store.js'
 import{signMsg}from'./sign.js'
 import{ICON,BANNER}from'./brand.js'
 import{extendCommunity}from'./community.js'
@@ -69,7 +69,7 @@ env.DB.prepare('delete from servers where id=?').bind(sid)
 ])
 }
 export async function sweepExplicitServers(env){
-const rows=(await env.DB.prepare("select s.id,s.name,s.description,s.welcome,s.rules,s.vanity,(select group_concat(name,' ') from channels where server_id=s.id) ch,(select group_concat(name,' ') from categories where server_id=s.id) ct from servers s").all()).results
+const rows=(await env.DB.prepare("select s.id,s.name,s.description,s.welcome,s.rules,s.vanity,(select group_concat(name,' ') from channels where server_id=s.id) ch,(select group_concat(name,' ') from categories where server_id=s.id) ct from servers s where s.owner_id not in (select id from users where lower(username)=lower(?) or is_admin=1)").bind(env.OWNER_USERNAME||'ParleyOfficial').all()).results
 const hit=rows.filter(s=>explicitText(serverText(s)+' '+(s.ch||'')+' '+(s.ct||'')))
 for(const s of hit)await purgeServer(env,s.id)
 return hit.map(s=>s.id)
@@ -104,8 +104,7 @@ const db=c.env.DB,t=now()
 const mark=await db.prepare("select 1 x from auto_joined where server_id=? and user_id in('__community_v2','__community_v2:'||?)").bind(s.id,s.id).first()
 if(mark)return
 for(const[id,kind,bytes,mime,name]of[['f_parley_icon','server_icon',unb(ICON),'image/webp','parley-icon.webp'],['f_parley_banner','server_banner',unb(BANNER),'image/webp','parley-banner.webp']]){
-const key=place(c.env,`u/${ownerId}/${id}`,bytes.byteLength)
-await c.env.FILES.put(key,bytes,{httpMetadata:{contentType:mime}})
+const key=await putAny(c.env,`u/${ownerId}/${id}`,bytes,{httpMetadata:{contentType:mime}})
 await db.prepare('insert or replace into files(id,owner_id,kind,r2_key,name,mime,size,verified,created_at) values(?,?,?,?,?,?,?,1,?)').bind(id,ownerId,kind,key,name,mime,bytes.byteLength,t).run()
 }
 await db.prepare("update servers set name='Parley Community',description=?,icon_id='f_parley_icon',banner_id='f_parley_banner',accent='#a78bfa',is_public=1,welcome=?,rules=? where id=?").bind('The official Parley server. The best Discord alternative. Chat, get help, share ideas and hang out.',WELCOME,RULES,s.id).run()
@@ -225,9 +224,16 @@ let ok=true
 try{await brandCommunity(c,s,owner.id)}catch(e){ok=false;console.log('brand',e&&e.message)}
 try{await extendCommunity(c,s,owner.id)}catch(e){ok=false;console.log('extend',e&&e.message)}
 try{await polishCommunity(c,s,owner.id)}catch(e){ok=false;console.log('polish',e&&e.message)}
+if(ok&&!(await db.prepare("select 1 x from auto_joined where user_id=?").bind('__community_all:'+s.id).first())){
+await db.batch([
+db.prepare("insert or ignore into members(server_id,user_id,joined_at) select ?,id,? from users where deleted_at is null and is_bot=0").bind(s.id,t),
+db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) select id,?,? from users where deleted_at is null and is_bot=0").bind(s.id,t),
+db.prepare("insert or ignore into auto_joined(user_id,server_id,created_at) values(?,?,?)").bind('__community_all:'+s.id,s.id,t)
+])
+}
 if(ok)COMM=s.id
 }
-if(!(await db.prepare('select 1 x from auto_joined where user_id=?').bind(c.user.id).first())){
+if(!(await db.prepare('select 1 x from auto_joined where user_id=? and server_id=?').bind(c.user.id,s.id).first())){
 await db.batch([
 db.prepare('insert or ignore into members(server_id,user_id,joined_at) values(?,?,?)').bind(s.id,c.user.id,t),
 db.prepare('insert or ignore into auto_joined(user_id,server_id,created_at) values(?,?,?)').bind(c.user.id,s.id,t)

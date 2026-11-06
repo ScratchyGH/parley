@@ -52,12 +52,22 @@ else if(t.reply)t.status='answered'
 await put(c.env,'sup:'+t.id,t)
 return{ok:true}
 })
-r.add('GET','/api/levelcard',async c=>{
-const q=c.url.searchParams,L=Math.max(0,Math.min(999,parseInt(q.get('l'))||0)),m=Math.max(1,Math.min(1e9,parseInt(q.get('m'))||1)),x=Math.max(0,Math.min(m,parseInt(q.get('c'))||0))
-const t=(q.get('t')||'Member').replace(/[^\p{L}\p{N} _.'-]/gu,'').slice(0,28)||'Member',w=Math.round(x/m*340)
-const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="130" viewBox="0 0 420 130"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#35d0ff"/></linearGradient></defs><rect width="420" height="130" rx="18" fill="#15151a"/><rect x="1" y="1" width="418" height="128" rx="17" fill="none" stroke="#2a2a35" stroke-width="2"/><text x="24" y="44" font-family="system-ui,Segoe UI,sans-serif" font-size="22" font-weight="700" fill="#fff">${t}</text><text x="396" y="44" text-anchor="end" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#35d0ff">Level ${L}</text><rect x="24" y="68" width="372" height="18" rx="9" fill="#2a2a35"/><rect x="24" y="68" width="${Math.max(18,w+16)}" height="18" rx="9" fill="url(#g)"/><text x="24" y="112" font-family="system-ui,sans-serif" font-size="14" fill="#9a9aa8">${x} / ${m} XP</text></svg>`
-return new Response(svg,{headers:{'content-type':'image/svg+xml','cache-control':'public, max-age=300','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'"}})
-},{auth:false})
+r.add('GET','/api/lc/:k',async c=>{
+limit('lc:'+c.user.id,120,60000)
+let raw=''
+try{raw=atob(String(c.p.k).replace(/-/g,'+').replace(/_/g,'/'))}catch{fail(404,'Not found')}
+const[bot,sid,uid]=raw.split('|')
+if(!bot||!sid||!uid)fail(404,'Not found')
+const me=await c.env.DB.prepare('select 1 x from members where server_id=? and user_id=?').bind(sid,c.user.id).first()
+if(!me)fail(404,'Not found')
+const u=await c.env.DB.prepare('select id,display_name,avatar_id,banner_id,accent,frame from users where id=? and deleted_at is null').bind(uid).first()
+if(!u)fail(404,'Not found')
+const xv=await c.env.DB.prepare('select v from bot_vars where bot_id=? and server_id=? and k=?').bind(bot,sid,'xp:'+uid).first()
+const xp=Math.max(0,Number(xv&&xv.v)||0)
+const L=Math.max(0,Math.floor((-1+Math.sqrt(1+xp/12.5))/2)),lo=50*L*(L+1),hi=50*(L+1)*(L+2)
+const rk=await c.env.DB.prepare("select count(*) n from bot_vars where bot_id=? and server_id=? and k like 'xp:%' and cast(v as real)>?").bind(bot,sid,xp).first()
+return{name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,accent:u.accent,frame:u.frame,level:L,cur:xp-lo,max:hi-lo,xp,rank:(rk&&rk.n||0)+1}
+})
 r.add('GET','/api/connections',async c=>{
 const o=await get(c.env,'conn:'+c.user.id)
 return{list:pubList(o),providers:Object.entries(P).map(([k,v])=>({p:k,label:v.name}))}
