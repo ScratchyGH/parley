@@ -30,7 +30,7 @@ html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!importa
 .li.gpm label{margin-left:0!important;font-size:13px}
 .gpm-set{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
 .gpm-set label{font-size:13px}
-.wwrap .bdg{right:auto;left:calc(50% + 8px);bottom:-3px}
+.wwrap .bdg{left:auto;right:-6px;bottom:-6px;top:auto}
 .par-card .pc-act{flex-wrap:wrap}
 .par-card .pc-act .par-price{margin-right:auto}
 .par-card .pc-act .btn{margin-left:0}
@@ -54,3 +54,24 @@ html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!importa
 @keyframes introOut{to{opacity:0;visibility:hidden;transform:scale(1.04)}}
 html .intro,html[data-gpu] .intro{animation:introOut .6s ease 2.3s forwards!important}
 html .intro img,html[data-gpu] .intro img{animation:introPop .9s cubic-bezier(.2,.9,.3,1.15) both,introFloat 2.4s ease-in-out .9s infinite!important}
+.msgs .m:hover,.msgs .m:focus-within,.list .m:hover{content-visibility:visible;contain:none}
+@media(hover:hover){
+.m:focus-within:not(:hover) .mact{display:none}
+.m:focus-within:not(:hover):has(:focus-visible) .mact{display:flex}
+}
+.lcard{width:min(420px,100%);border-radius:16px;overflow:hidden;background:#15151b;border:1px solid #2a2a35;user-select:none;-webkit-user-select:none;margin:4px 0}
+.lcard-load{min-height:120px}
+.lc-ban{height:72px;background:linear-gradient(135deg,#3a2f6b,#1b1b26) center/cover}
+.lc-body{display:flex;gap:12px;padding:0 16px 14px;align-items:flex-start}
+.lc-av{margin-top:-26px;flex:none;border-radius:50%;box-shadow:0 0 0 4px #15151b}
+.lc-av .av{width:56px;height:56px}
+.lc-main{flex:1;min-width:0;padding-top:8px}
+.lc-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.lc-name{color:#fff;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-lv{color:#35d0ff;font-weight:700;flex:none}
+.lc-bar{height:10px;border-radius:6px;background:#2a2a35;margin:8px 0 6px;overflow:hidden}
+.lc-fill{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#7c5cff,#35d0ff)}
+.lc-sub{display:flex;justify-content:space-between;font-size:12px;color:#9a9aa8}
+.ib>.bdg{position:absolute}
+.ib>.bdg{top:-4px;right:-5px}
+.hrow .bdg{margin-left:auto;flex:none}
