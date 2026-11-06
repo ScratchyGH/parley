@@ -135,7 +135,7 @@ const eq=d[it.kind]===it.id
 const cant=d.balance<it.price
 const wl=(d.wish||[]).includes(it.id)
 const heart=have?null:h('button',{class:'btn sm',type:'button','aria-pressed':String(wl),title:wl?'Remove from wishlist':'Add to wishlist',on:{click:async e=>{try{const r=await POST('/api/pars/wishlist',{item:it.id});d.wish=r.ids;e.currentTarget.setAttribute('aria-pressed',String(r.ids.includes(it.id)));e.currentTarget.textContent=r.ids.includes(it.id)?'♥':'♡'}catch(x){fail(x)}}}},wl?'♥':'♡')
-return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),heart,have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
+return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),heart,have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri buy',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
 }
 function preview(d,it,v){
 const ids=v.items||[]
@@ -162,7 +162,7 @@ const have=owns(d,marker(it,key))
 const cant=d.balance<v.price
 const toggle=keys.length>1?h('div',{class:'vt',role:'group','aria-label':'Version'},keys.map(k=>h('button',{class:k===key?'on':'','aria-pressed':String(k===key),on:{click:()=>{key=k;draw()}}},vs[k].label))):null
 const prev=key==='modern'?vs.legacy:null
-mount(wrap,preview(d,it,v),h('b',{style:{fontSize:'17px',color:'var(--strong)'}},it.name),toggle,contents(d,v,prev),h('div',{class:'hint',style:{margin:0,minHeight:'2.6em'}},key==='legacy'?'The classic set, as it was before the update.':key==='modern'?'Everything in Legacy, plus the new extras (highlighted).':it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+v.price),h('button',{class:'btn pri',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,key)}},have?'Owned':'Buy'),giftBtn(d,it,key)))
+mount(wrap,preview(d,it,v),h('b',{style:{fontSize:'17px',color:'var(--strong)'}},it.name),toggle,contents(d,v,prev),h('div',{class:'hint',style:{margin:0,minHeight:'2.6em'}},key==='legacy'?'The classic set, as it was before the update.':key==='modern'?'Everything in Legacy, plus the new extras (highlighted).':it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+v.price),h('button',{class:'btn pri buy',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,key)}},have?'Owned':'Buy'),giftBtn(d,it,key)))
 }
 draw()
 return wrap
@@ -180,7 +180,7 @@ const clock=h('span',{class:'ts-time'})
 const upd=()=>{const n=Date.now();if(n<start){clock.textContent='Starts in '+left(start-n)}else{const ms=end-n;clock.textContent=ms>0?left(ms)+' left':'Ended'}}
 upd();const t=setInterval(()=>{if(!clock.isConnected){clearInterval(t);return}upd()},1000);tick.push(t)
 const tag=soon?'Admin preview · starts '+new Date(start).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}):'Limited time'
-return h('section',{class:'par-sec',id:'sh-ts-'+it.id},h('div',{class:'ts'+(bd.season?' sx-'+bd.season:'')},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},tag),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
+return h('section',{class:'par-sec',id:'sh-ts-'+it.id},h('div',{class:'ts'+(bd.season?' sx-'+bd.season:'')},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},tag),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri buy',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
 }
 function own(d){
 const rows=d.owned.filter(o=>!String(o.item_id).startsWith('bundle:'))
@@ -261,7 +261,7 @@ const where=h('div',null)
 const modes=it.kind==='boost'?[['server','A server I am in'],['self','My account'],['user','Gift to someone']]:[]
 const drawW=()=>mount(where,modes.length?h('div',{class:'tabs',style:{marginBottom:'8px'}},modes.map(([k,l])=>h('button',{class:mode===k?'on':'',on:{click:()=>{mode=k;drawW()}}},l))):null,mode==='server'||bv?field('Server',sel):null,mode==='user'?field('Person',who):null)
 drawW()
-return dialog('Confirm purchase',h('div',{class:'bd'},h('p',null,h('b',null,it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')),' for ',h('b',null,price+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-price)+'.'),h('p',{class:'hint'},bv?'The vanity link is added to the server you pick for '+(bv>=365?'1 year':bv+' days')+'. You can only buy each bundle once.':isB?'You can only buy each bundle once. Items you already own are not charged again, but the price stays the same.':it.kind==='vanity'?'Belongs to the server. Anyone with Manage Server can use it.':it.kind==='boost'?'Belongs to the target you pick: a server, your account, or the person you gift it to. It cannot be refunded.':'Belongs to your account.'),where),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async e=>{
+return dialog('Confirm purchase',h('div',{class:'bd'},h('p',null,h('b',null,it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')),' for ',h('b',null,price+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-price)+'.'),h('p',{class:'hint'},bv?'The vanity link is added to the server you pick for '+(bv>=365?'1 year':bv+' days')+'. You can only buy each bundle once.':isB?'You can only buy each bundle once. Items you already own are not charged again, but the price stays the same.':it.kind==='vanity'?'Belongs to the server. Anyone with Manage Server can use it.':it.kind==='boost'?'Belongs to the target you pick: a server, your account, or the person you gift it to. It cannot be refunded.':'Belongs to your account.'),where),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri buy',on:{click:async e=>{
 e.target.disabled=true
 try{
 const b={item:it.id,req:rid()}
@@ -273,7 +273,7 @@ await POST('/api/pars/buy',b)
 toast('Purchased '+it.name)
 close();load()
 }catch(x){e.target.disabled=false;fail(x)}
-}}},'Buy for '+price),COS.has(it.kind)?h('button',{class:'btn',on:{click:async e=>{e.target.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');close();load()}catch(x){e.target.disabled=false;fail(x)}}}},'Buy as gift link for '+price):null]})
+}}},'Buy for '+price),COS.has(it.kind)?h('button',{class:'btn pri buy',on:{click:async e=>{e.target.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');close();load()}catch(x){e.target.disabled=false;fail(x)}}}},'Buy as gift link for '+price):null]})
 }
 }
 function vanityBuy(d,it){
