@@ -14,12 +14,13 @@ draw(d)
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
 }
 function draw(d){
-const why={pending_human:'A person will review this bot before it can be listed. You will see the decision here.',approved:'This bot passed screening.',legacy:'This bot was listed before screening existed.',rejected:'This bot was rejected. Fix the issues below, then resubmit, or appeal if you think the decision is wrong.',needs_review:'Some things need attention before this bot can be listed. Fix them and resubmit.',changes_requested:'A reviewer asked for changes. Update the bot and resubmit.',unscreened:'Screening runs when you set the bot to Listed.'}[d.status]||''
+const why={pending_human:'Three review agents are checking this bot. The decision shows up here within a few minutes.',approved:'This bot passed screening.',legacy:'This bot was listed before screening existed.',rejected:'This bot was rejected. Fix the issues below, then resubmit, or appeal if you think the decision is wrong.',needs_review:'Some things need attention before this bot can be listed. Fix them and resubmit.',changes_requested:'A reviewer asked for changes. Update the bot and resubmit.',unscreened:'Screening runs when you set the bot to Listed.'}[d.status]||''
 const reason=h('textarea',{class:'inp',rows:3,maxLength:1500,placeholder:'Why should this be reconsidered?'})
 const canFix=['rejected','needs_review','changes_requested','unscreened'].includes(d.status)
 mount(box,
-h('div',{class:'row',style:{gap:'10px',alignItems:'center'}},screenPill({status:d.status}),d.score!=null?h('span',{class:'hint',style:{margin:0}},'Quality score '+d.score+'/100, uncertainty '+d.uncertainty+'%'+(d.uncertainty>=25?' (25% or more goes to a person)':'')):null),
+h('div',{class:'row',style:{gap:'10px',alignItems:'center'}},screenPill({status:d.status}),d.score!=null?h('span',{class:'hint',style:{margin:0}},'Quality score '+d.score+'/100'):null),
 h('p',{class:'hint'},why+' Screening checks quality and spam only. It is separate from security scanning.'),
+(d.report&&d.report.panel&&d.report.panel.length)?h('div',{class:'hint'},d.report.panel.map(v=>h('div',null,h('b',null,v.agent),': ',v.verdict==='approve'?'approved':'rejected',v.reason?' - '+v.reason:''))):null,
 findings(d.report),
 d.report&&d.report.ai?h('div',{class:'hint'},'Optional AI check ('+d.report.ai.provider+'): '+(d.report.ai.verdict==='unavailable'?'unavailable, skipped':d.report.ai.verdict)):null,
 canFix?h('div',{class:'row',style:{gap:'8px',marginTop:'8px'}},h('button',{class:'btn',type:'button',on:{click:async e=>{e.target.disabled=true;try{const r=await POST('/api/bothub/'+p.id+'/screen',{});toast('Result: '+(LABEL[r.status]||r.status));load()}catch(x){fail(x);e.target.disabled=false}}}},'Run screening again')):null,

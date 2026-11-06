@@ -295,5 +295,6 @@ return frag
 }
 
 export function plain(text,max=140){
+text=String(text||'').replace(/\[\[lc:[A-Za-z0-9_-]+\]\]/g,'Level card')
 return String(text||'').replace(/<:([a-zA-Z0-9_]{2,32}):f_[a-z0-9]{16}>/g,':$1:').replace(/<#ch_[a-z0-9]+>/g,'#channel').replace(/<@&?[a-z0-9_]+>/g,'@mention').replace(/```[\s\S]*?```/g,' [code] ').replace(/\|\|([\s\S]+?)\|\|/g,'[spoiler]').replace(/[*_~`>]/g,'').replace(/\s+/g,' ').trim().slice(0,max)
 }
