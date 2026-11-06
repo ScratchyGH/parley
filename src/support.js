@@ -15,8 +15,47 @@ const r=await fetch('https://api.github.com/users/'+encodeURIComponent(n),{heade
 if(!r.ok)return null
 const d=await r.json()
 return{id:String(d.id),name:d.login,text:d.bio||''}}}
+,
+steam:{name:'Steam',ok:/^[A-Za-z0-9_-]{2,32}$/,url:i=>'https://steamcommunity.com/profiles/'+i.id,async look(n){
+const u='https://steamcommunity.com/'+(/^\d{17}$/.test(n)?'profiles/':'id/')+encodeURIComponent(n)+'/?xml=1'
+const x=await fetch(u,{headers:UA}).then(r=>r.text())
+const id=/<steamID64>(\d{17})<\/steamID64>/.exec(x);if(!id)return null
+const nm=/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/s.exec(x),sm=/<summary><!\[CDATA\[(.*?)\]\]><\/summary>/s.exec(x)
+return{id:id[1],name:nm?nm[1]:n,text:(sm?sm[1]:'').replace(/<[^>]*>/g,' ')}}},
+bluesky:{name:'Bluesky',ok:/^[A-Za-z0-9.-]{3,80}$/,url:i=>'https://bsky.app/profile/'+i.name,async look(n){
+const r=await fetch('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor='+encodeURIComponent(n),{headers:UA})
+if(!r.ok)return null
+const d=await r.json()
+return{id:d.did,name:d.handle,text:d.description||''}}},
+gitlab:{name:'GitLab',ok:/^[A-Za-z0-9_.-]{2,40}$/,url:i=>'https://gitlab.com/'+i.name,async look(n){
+const a=await fetch('https://gitlab.com/api/v4/users?username='+encodeURIComponent(n),{headers:UA}).then(r=>r.json())
+const u=Array.isArray(a)&&a[0];if(!u)return null
+const d=await fetch('https://gitlab.com/api/v4/users/'+u.id,{headers:UA}).then(r=>r.json())
+return{id:String(u.id),name:u.username,text:[d.bio,d.bio_html,d.skype,d.linkedin,d.twitter].filter(Boolean).join(' ')}}},
+lichess:{name:'Lichess',ok:/^[A-Za-z0-9_-]{2,30}$/,url:i=>'https://lichess.org/@/'+i.name,async look(n){
+const r=await fetch('https://lichess.org/api/user/'+encodeURIComponent(n),{headers:UA})
+if(!r.ok)return null
+const d=await r.json()
+return{id:d.id,name:d.username,text:(d.profile&&d.profile.bio)||''}}},
+reddit:{name:'Reddit',ok:/^[A-Za-z0-9_-]{3,20}$/,url:i=>'https://www.reddit.com/user/'+i.name,async look(n){
+const r=await fetch('https://www.reddit.com/user/'+encodeURIComponent(n)+'/about.json',{headers:UA})
+if(!r.ok)return null
+const d=(await r.json()).data
+if(!d)return null
+return{id:d.id,name:d.name,text:(d.subreddit&&d.subreddit.public_description)||''}}}
 }
-const pubList=o=>Object.entries(o||{}).filter(([p])=>P[p]).map(([p,v])=>({p,label:P[p].name,name:v.name,url:P[p].url(v),at:v.at}))
+const L={
+youtube:{name:'YouTube',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:n=>'https://www.youtube.com/@'+n.replace(/^@/,'')},
+twitch:{name:'Twitch',ok:/^[A-Za-z0-9_]{3,25}$/,url:n=>'https://www.twitch.tv/'+n},
+x:{name:'X',ok:/^@?[A-Za-z0-9_]{1,15}$/,url:n=>'https://x.com/'+n.replace(/^@/,'')},
+tiktok:{name:'TikTok',ok:/^@?[A-Za-z0-9._]{2,24}$/,url:n=>'https://www.tiktok.com/@'+n.replace(/^@/,'')},
+instagram:{name:'Instagram',ok:/^@?[A-Za-z0-9._]{1,30}$/,url:n=>'https://www.instagram.com/'+n.replace(/^@/,'')},
+spotify:{name:'Spotify',ok:/^[A-Za-z0-9._-]{2,40}$/,url:n=>'https://open.spotify.com/user/'+n},
+soundcloud:{name:'SoundCloud',ok:/^[A-Za-z0-9_-]{2,40}$/,url:n=>'https://soundcloud.com/'+n},
+kofi:{name:'Ko-fi',ok:/^[A-Za-z0-9_]{2,40}$/,url:n=>'https://ko-fi.com/'+n},
+chessdotcom:{name:'Chess.com',ok:/^[A-Za-z0-9_-]{3,25}$/,url:n=>'https://www.chess.com/member/'+n}
+}
+const pubList=o=>Object.entries(o||{}).filter(([p])=>P[p]||L[p]).map(([p,v])=>P[p]?{p,label:P[p].name,name:v.name,url:P[p].url(v),at:v.at,verified:true}:{p,label:L[p].name,name:v.name,url:L[p].url(v.name),at:v.at,verified:false})
 export default function(r){
 r.add('POST','/api/support',async c=>{
 limit('sup:'+ipOf(c),5,3600000)
@@ -70,7 +109,7 @@ return{name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,a
 })
 r.add('GET','/api/connections',async c=>{
 const o=await get(c.env,'conn:'+c.user.id)
-return{list:pubList(o),providers:Object.entries(P).map(([k,v])=>({p:k,label:v.name}))}
+return{list:pubList(o),providers:[...Object.entries(P).map(([k,v])=>({p:k,label:v.name,verify:true})),...Object.entries(L).map(([k,v])=>({p:k,label:v.name,verify:false}))]}
 })
 r.add('POST','/api/connections/start',async c=>{
 limit('connst:'+c.user.id,20,3600000)
@@ -81,6 +120,17 @@ if(!p.ok.test(n))fail(400,'That username does not look right')
 const W='apple river cloud maple tiger stone happy green lemon piano ocean candy forest rabbit silver garden window pencil bridge sunny'.split(' '),pk=()=>W[crypto.getRandomValues(new Uint8Array(1))[0]%W.length],code=pk()+' '+pk()+' '+pk()+' '+pk()
 await put(c.env,'connp:'+c.user.id+':'+b.p,{n,code,exp:now()+1800000})
 return{code,name:n}
+})
+r.add('POST','/api/connections/link',async c=>{
+limit('connln:'+c.user.id,30,3600000)
+const b=await body(c.req,256),p=L[b.p]
+if(!p)fail(400,'Unknown service')
+const n=String(b.name||'').trim()
+if(!p.ok.test(n))fail(400,'That username does not look right')
+const o=await get(c.env,'conn:'+c.user.id)||{}
+o[b.p]={id:n,name:n.replace(/^@/,''),at:now()}
+await put(c.env,'conn:'+c.user.id,o)
+return{list:pubList(o)}
 })
 r.add('POST','/api/connections/verify',async c=>{
 limit('connvf:'+c.user.id,20,3600000)
