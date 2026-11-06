@@ -93,15 +93,16 @@ return{xp:cur,level:l,next:50*(l+1)*(l+2)-cur,up}
 xpGet:()=>getVar(c,botId,sid,vkey('xp','user',uid)),
 top:async n=>{
 const rows=(await c.env.DB.prepare("select substr(k,4) u,v from bot_vars where bot_id=? and server_id=? and k like 'xp:%' order by v desc limit ?").bind(botId,sid,n).all()).results
-const out=[]
-for(const x of rows){const u=await c.env.DB.prepare('select display_name from users where id=?').bind(x.u).first();out.push({name:u?u.display_name:'Member',v:x.v})}
-return out
+if(!rows.length)return[]
+const us=(await c.env.DB.prepare('select id,display_name from users where id in ('+rows.map(()=>'?').join(',')+')').bind(...rows.map(x=>x.u)).all()).results
+const nm=new Map(us.map(u=>[u.id,u.display_name]))
+return rows.map(x=>({name:nm.get(x.u)||'Member',v:x.v}))
 },
 getSecret:async k=>{const r=await c.env.DB.prepare('select v from bot_vars where bot_id=? and server_id=? and k=?').bind(botId,sid,'sec_'+k).first();return r?String(r.v):''},
 setSecret:async(k,v)=>{const m=await loadMember(c.env,sid,uid);if(!m||!(m.admin||m.owner||(m.base&P.MANAGE_SERVER)))return false;await putVar(c,botId,sid,'sec_'+k,v);return true},
 as:async t=>{
 const id=(t.match(/<@([a-z0-9_]+)>/i)||[])[1]||t.replace(/^@/,'')
-const u=await c.env.DB.prepare('select u.id,u.username,u.display_name from members m join users u on u.id=m.user_id where m.server_id=? and (u.id=? or lower(u.username)=lower(?))').bind(sid,id,id).first()
+const u=await c.env.DB.prepare('select u.id,u.username,u.display_name from members m join users u on u.id=m.user_id where m.server_id=? and (u.id=? or u.username=?)').bind(sid,id,id).first()
 return u?makeIo(c,botId,sid,room,u,message):new Proxy({},{get:()=>async()=>0})
 },
 send:(text,reply)=>say(c,room,sid,botId,text,reply&&message?message.id:null),

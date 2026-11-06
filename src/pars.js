@@ -49,7 +49,7 @@ return{key,items:Array.isArray(x.items)?x.items:[],vanity_days:Number(x.vanity_d
 async function findUser(env,name){
 const n=String(name||'').trim().replace(/^@/,'')
 if(!/^[\p{L}\p{M}\p{N}_.-]{3,24}$/u.test(n))fail(400,'Enter a username')
-const u=await env.DB.prepare('select id,username,display_name,is_bot,created_at from users where lower(username)=lower(?) and deleted_at is null').bind(n).first()
+const u=await env.DB.prepare('select id,username,display_name,is_bot,created_at from users where username=? and deleted_at is null').bind(n).first()
 if(!u||u.is_bot)fail(404,'User not found')
 return u
 }
@@ -129,7 +129,7 @@ return{ok:true}
 r.add('POST','/api/pars/gifts/seen',async c=>{
 const b=await body(c.req)
 const ids=(Array.isArray(b.ids)?b.ids:[]).slice(0,50).map(String)
-for(const id of ids)await c.env.DB.prepare('update gift_inbox set seen=1 where id=? and user_id=?').bind(id,c.user.id).run()
+if(ids.length)await c.env.DB.prepare('update gift_inbox set seen=1 where user_id=? and id in ('+ids.map(()=>'?').join(',')+')').bind(c.user.id,...ids).run()
 return{ok:true}
 })
 r.add('GET','/api/pars',async c=>{

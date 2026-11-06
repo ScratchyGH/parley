@@ -288,6 +288,7 @@ await prune(env,t)
 return
 }
 await env.DB.prepare("insert into app_settings(k,v) values('last_sweep',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()
+try{await env.DB.prepare('pragma optimize').run()}catch{}
 try{await dailyBackup(env)}catch(e){console.error('backup',String(e&&e.message||e))}
 try{await expireVanity(env)}catch(e){}
 const orphans=(await env.DB.prepare('select id,r2_key from files where kind=? and message_id is null and created_at<?').bind('attachment',t-86400000).all()).results
