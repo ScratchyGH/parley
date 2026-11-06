@@ -45,12 +45,6 @@ const r=await fetch('https://api.chess.com/pub/player/'+encodeURIComponent(n.toL
 if(!r.ok)return null
 const d=await r.json()
 return{id:String(d.player_id),name:d.username,text:d.location||''}}},
-twitch:{name:'Twitch',need:['TWITCH_CLIENT_ID','TWITCH_CLIENT_SECRET'],ok:/^[A-Za-z0-9_]{3,25}$/,url:i=>'https://www.twitch.tv/'+i.name,async look(n,env){
-const tk=await fetch('https://id.twitch.tv/oauth2/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.TWITCH_CLIENT_ID,client_secret:env.TWITCH_CLIENT_SECRET,grant_type:'client_credentials'})}).then(r=>r.json())
-if(!tk.access_token)return null
-const d=await fetch('https://api.twitch.tv/helix/users?login='+encodeURIComponent(n),{headers:{'client-id':env.TWITCH_CLIENT_ID,authorization:'Bearer '+tk.access_token}}).then(r=>r.json())
-const u=d.data&&d.data[0];if(!u)return null
-return{id:u.id,name:u.login,text:u.description||''}}},
 youtube:{name:'YouTube',hint:'the very start of your channel description (About)',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:i=>'https://www.youtube.com/channel/'+i.id,async look(n,env){
 if(!env.YOUTUBE_API_KEY){
 const h=await page('https://www.youtube.com/@'+encodeURIComponent(n.replace(/^@/,'')))
@@ -88,10 +82,7 @@ return{id:n.toLowerCase(),name:n,text:meta(h,'og:description')||meta(h,'descript
 }
 const ready=(p,env)=>!p.need||p.need.every(k=>env[k])
 const L={
-youtube:{name:'YouTube',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:n=>'https://www.youtube.com/@'+n.replace(/^@/,'')},
-twitch:{name:'Twitch',ok:/^[A-Za-z0-9_]{3,25}$/,url:n=>'https://www.twitch.tv/'+n},
-instagram:{name:'Instagram',ok:/^@?[A-Za-z0-9._]{1,30}$/,url:n=>'https://www.instagram.com/'+n.replace(/^@/,'')},
-spotify:{name:'Spotify',ok:/^[A-Za-z0-9._-]{2,40}$/,url:n=>'https://open.spotify.com/user/'+n}
+youtube:{name:'YouTube',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:n=>'https://www.youtube.com/@'+n.replace(/^@/,'')}
 }
 const pubList=o=>Object.entries(o||{}).filter(([p])=>P[p]||L[p]).map(([p,v])=>P[p]&&!v.u?{p,label:P[p].name,name:v.name,url:P[p].url(v),at:v.at,verified:true}:{p,label:(L[p]||P[p]).name,name:v.name,url:(L[p]||{url:()=>P[p].url(v)}).url(v.name),at:v.at,verified:false})
 export default function(r){
