@@ -37,13 +37,23 @@ const r=await fetch('https://lichess.org/api/user/'+encodeURIComponent(n),{heade
 if(!r.ok)return null
 const d=await r.json()
 return{id:d.id,name:d.username,text:(d.profile&&d.profile.bio)||''}}},
-reddit:{name:'Reddit',ok:/^[A-Za-z0-9_-]{3,20}$/,url:i=>'https://www.reddit.com/user/'+i.name,async look(n){
-const r=await fetch('https://www.reddit.com/user/'+encodeURIComponent(n)+'/about.json',{headers:UA})
+chessdotcom:{name:'Chess.com',hint:'the Location field of your Chess.com profile',ok:/^[A-Za-z0-9_-]{3,25}$/,url:i=>'https://www.chess.com/member/'+i.name,async look(n){
+const r=await fetch('https://api.chess.com/pub/player/'+encodeURIComponent(n.toLowerCase()),{headers:UA})
 if(!r.ok)return null
-const d=(await r.json()).data
-if(!d)return null
-return{id:d.id,name:d.name,text:(d.subreddit&&d.subreddit.public_description)||''}}}
+const d=await r.json()
+return{id:String(d.player_id),name:d.username,text:d.location||''}}},
+twitch:{name:'Twitch',need:['TWITCH_CLIENT_ID','TWITCH_CLIENT_SECRET'],ok:/^[A-Za-z0-9_]{3,25}$/,url:i=>'https://www.twitch.tv/'+i.name,async look(n,env){
+const tk=await fetch('https://id.twitch.tv/oauth2/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.TWITCH_CLIENT_ID,client_secret:env.TWITCH_CLIENT_SECRET,grant_type:'client_credentials'})}).then(r=>r.json())
+if(!tk.access_token)return null
+const d=await fetch('https://api.twitch.tv/helix/users?login='+encodeURIComponent(n),{headers:{'client-id':env.TWITCH_CLIENT_ID,authorization:'Bearer '+tk.access_token}}).then(r=>r.json())
+const u=d.data&&d.data[0];if(!u)return null
+return{id:u.id,name:u.login,text:u.description||''}}},
+youtube:{name:'YouTube',need:['YOUTUBE_API_KEY'],ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:i=>'https://www.youtube.com/channel/'+i.id,async look(n,env){
+const d=await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle='+encodeURIComponent('@'+n.replace(/^@/,''))+'&key='+env.YOUTUBE_API_KEY).then(r=>r.json())
+const u=d.items&&d.items[0];if(!u)return null
+return{id:u.id,name:(u.snippet.customUrl||u.snippet.title||n).replace(/^@/,''),text:u.snippet.description||''}}}
 }
+const ready=(p,env)=>!p.need||p.need.every(k=>env[k])
 const L={
 youtube:{name:'YouTube',ok:/^@?[A-Za-z0-9._-]{3,30}$/,url:n=>'https://www.youtube.com/@'+n.replace(/^@/,'')},
 twitch:{name:'Twitch',ok:/^[A-Za-z0-9_]{3,25}$/,url:n=>'https://www.twitch.tv/'+n},
@@ -52,10 +62,9 @@ tiktok:{name:'TikTok',ok:/^@?[A-Za-z0-9._]{2,24}$/,url:n=>'https://www.tiktok.co
 instagram:{name:'Instagram',ok:/^@?[A-Za-z0-9._]{1,30}$/,url:n=>'https://www.instagram.com/'+n.replace(/^@/,'')},
 spotify:{name:'Spotify',ok:/^[A-Za-z0-9._-]{2,40}$/,url:n=>'https://open.spotify.com/user/'+n},
 soundcloud:{name:'SoundCloud',ok:/^[A-Za-z0-9_-]{2,40}$/,url:n=>'https://soundcloud.com/'+n},
-kofi:{name:'Ko-fi',ok:/^[A-Za-z0-9_]{2,40}$/,url:n=>'https://ko-fi.com/'+n},
-chessdotcom:{name:'Chess.com',ok:/^[A-Za-z0-9_-]{3,25}$/,url:n=>'https://www.chess.com/member/'+n}
+kofi:{name:'Ko-fi',ok:/^[A-Za-z0-9_]{2,40}$/,url:n=>'https://ko-fi.com/'+n}
 }
-const pubList=o=>Object.entries(o||{}).filter(([p])=>P[p]||L[p]).map(([p,v])=>P[p]?{p,label:P[p].name,name:v.name,url:P[p].url(v),at:v.at,verified:true}:{p,label:L[p].name,name:v.name,url:L[p].url(v.name),at:v.at,verified:false})
+const pubList=o=>Object.entries(o||{}).filter(([p])=>P[p]||L[p]).map(([p,v])=>P[p]&&!v.u?{p,label:P[p].name,name:v.name,url:P[p].url(v),at:v.at,verified:true}:{p,label:(L[p]||P[p]).name,name:v.name,url:(L[p]||{url:()=>P[p].url(v)}).url(v.name),at:v.at,verified:false})
 export default function(r){
 r.add('POST','/api/support',async c=>{
 limit('sup:'+ipOf(c),5,3600000)
@@ -109,12 +118,23 @@ return{name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,a
 })
 r.add('GET','/api/connections',async c=>{
 const o=await get(c.env,'conn:'+c.user.id)
-return{list:pubList(o),providers:[...Object.entries(P).map(([k,v])=>({p:k,label:v.name,verify:true})),...Object.entries(L).map(([k,v])=>({p:k,label:v.name,verify:false}))]}
+return{list:pubList(o),providers:[...Object.entries(P).filter(([k,v])=>ready(v,c.env)).map(([k,v])=>({p:k,label:v.name,verify:true,hint:v.hint||'bio'})),...Object.entries(L).filter(([k])=>!(P[k]&&ready(P[k],c.env))).map(([k,v])=>({p:k,label:v.name,verify:false}))]}
 })
 r.add('POST','/api/connections/start',async c=>{
 limit('connst:'+c.user.id,20,3600000)
-const b=await body(c.req,512),p=P[b.p]
-if(!p)fail(400,'Unknown service')
+const b=await body(c.req,512)
+const p0=P[b.p]&&ready(P[b.p],c.env)?P[b.p]:null
+if(!p0){
+const lp=L[b.p]
+if(!lp)fail(400,'Unknown service')
+const ln=String(b.name||'').trim()
+if(!lp.ok.test(ln))fail(400,'That username does not look right')
+const lo=await get(c.env,'conn:'+c.user.id)||{}
+lo[b.p]={id:ln,name:ln.replace(/^@/,''),at:now(),u:1}
+await put(c.env,'conn:'+c.user.id,lo)
+return{linked:true,list:pubList(lo)}
+}
+const p=p0
 const n=String(b.name||'').trim()
 if(!p.ok.test(n))fail(400,'That username does not look right')
 const W='apple river cloud maple tiger stone happy green lemon piano ocean candy forest rabbit silver garden window pencil bridge sunny'.split(' '),pk=()=>W[crypto.getRandomValues(new Uint8Array(1))[0]%W.length],code=pk()+' '+pk()+' '+pk()+' '+pk()
@@ -140,7 +160,7 @@ const k='connp:'+c.user.id+':'+b.p
 const s=await get(c.env,k)
 if(!s||s.exp<now())fail(400,'Start again, the code expired')
 let u
-try{u=await p.look(s.n)}catch{fail(502,p.name+' did not answer, try again in a minute')}
+try{u=await p.look(s.n,c.env)}catch{fail(502,p.name+' did not answer, try again in a minute')}
 if(!u)fail(404,'Could not find that '+p.name+' account')
 const nz=t=>String(t||'').toLowerCase().replace(/[^a-z]+/g,' ');if(!(' '+nz(u.text)+' ').includes(' '+nz(s.code)+' '))fail(400,'The code is not on that '+p.name+' profile yet. Save it there and try again.')
 const xk='connx:'+b.p+':'+u.id,x=await get(c.env,xk)
