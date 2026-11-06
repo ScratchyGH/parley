@@ -1,4 +1,4 @@
-import{h,mount,icon,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel,avatar,copyText}from'./util.js'
+import{h,mount,icon,GET,POST,PUT,fail,toast,field,dialog,rid,fmtRel,avatar,copyText,confirmBox}from'./util.js'
 import{S,on}from'./state.js'
 import{sv,svg}from'./svg.js'
 import{checkGifts}from'./giftreveal.js'
@@ -129,13 +129,18 @@ return g
 function giftBtn(d,it,vk){
 return h('button',{class:'gift-b',title:'Send as a gift',on:{click:()=>giftDialog(d,it,vk)}},icon('gift'))
 }
+function linkBtn(d,it){
+if(!COS.has(it.kind))return null
+const cant=d.balance<it.price
+return h('button',{class:'gift-b',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'Buy as a gift link',on:{click:async e=>{if(!await confirmBox('Buy as gift link',it.name+' for '+it.price+' Pars. You get a link to send in any chat.','Buy and copy link',false))return;const b=e.currentTarget;b.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');load()}catch(x){b.disabled=false;fail(x)}}}},icon('link'))
+}
 function card(d,it){
 const have=(COS.has(it.kind)||it.kind==='unlock')&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 const cant=d.balance<it.price
 const wl=(d.wish||[]).includes(it.id)
 const heart=have?null:h('button',{class:'btn sm',type:'button','aria-pressed':String(wl),title:wl?'Remove from wishlist':'Add to wishlist',on:{click:async e=>{try{const r=await POST('/api/pars/wishlist',{item:it.id});d.wish=r.ids;e.currentTarget.setAttribute('aria-pressed',String(r.ids.includes(it.id)));e.currentTarget.textContent=r.ids.includes(it.id)?'♥':'♡'}catch(x){fail(x)}}}},wl?'♥':'♡')
-return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),heart,have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri buy',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),giftBtn(d,it)))
+return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),heart,have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri buy',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),linkBtn(d,it),giftBtn(d,it)))
 }
 function preview(d,it,v){
 const ids=v.items||[]
