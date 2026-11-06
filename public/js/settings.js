@@ -512,6 +512,6 @@ else if(s)body=h('div',{class:'cn-verify'},h('p',{class:'hint'},'Put this code i
 else body=h('div',{class:'cn-act'},nm,h('button',{class:'btn pri',type:'button',on:{click:go}},pv.verify?'Link':'Add'))
 return h('div',{class:'cn-card'},head,body)
 }))
-mount(pg,h('h3',null,'Connections'),h('p',{class:'hint'},'Linked accounts show as icons on your profile. Verified ones are proven with a code in your bio. YouTube, Twitch and X are added without proof until the server has their API keys.'),box)
+mount(pg,h('h3',null,'Connections'),h('p',{class:'hint'},'Linked accounts show as icons on your profile. Verified ones are proven with a code in your bio. Twitch needs the server to have Twitch API keys, so until then it is added without proof. Instagram and Spotify have no public bio, so they are unverified.'),box)
 draw()
 }
