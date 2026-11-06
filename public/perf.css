@@ -37,3 +37,7 @@ html .intro img,html[data-gpu] .intro img{animation:introPop .8s cubic-bezier(.2
 .li.gpm label{margin-left:0!important;font-size:13px}
 .gpm-set{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
 .gpm-set label{font-size:13px}
+.wwrap .bdg{right:auto;left:calc(50% + 8px);bottom:-3px}
+.par-card .pc-act{flex-wrap:wrap}
+.par-card .pc-act .par-price{margin-right:auto}
+.par-card .pc-act .btn{margin-left:0}
