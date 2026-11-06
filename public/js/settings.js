@@ -490,18 +490,28 @@ field('Background music',h('div',{class:'row'},h('input',{type:'file',accept:'au
 ])
 }
 async function connections(pg){
-const box=h('div'),sess={}
+const box=h('div',{class:'cn-grid'}),sess={}
 let d
 try{d=await GET('/api/connections')}catch(e){mount(pg,h('div',{class:'err'},e.message));return}
 let list=d.list
 const draw=()=>mount(box,d.providers.map(pv=>{
 const cur=list.find(x=>x.p===pv.p),s=sess[pv.p]
 const nm=h('input',{class:'inp',maxLength:40,placeholder:pv.label+' username','aria-label':pv.label+' username'})
-return h('div',{class:'card',style:{marginBottom:'10px'}},
-h('div',{class:'row'},connIcon(pv.p,20),h('b',null,pv.label),cur?h('a',{href:cur.url,target:'_blank',rel:'noopener noreferrer'},cur.name):h('span',{class:'hint',style:{margin:0}},'Not linked'),cur?h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{try{list=(await DEL('/api/connections/'+pv.p)).list;draw()}catch(e){fail(e)}}}},'Disconnect'):null),
-!cur&&!s?h('div',{class:'row'},nm,h('button',{class:'btn',type:'button',on:{click:async()=>{try{if(pv.verify===false){list=(await POST('/api/connections/link',{p:pv.p,name:nm.value.trim()})).list;draw();toast(pv.label+' added','ok')}else{sess[pv.p]=await POST('/api/connections/start',{p:pv.p,name:nm.value.trim()});draw()}}catch(e){fail(e)}}}},pv.verify===false?'Add':'Link')):null,
-s&&!cur?h('div',null,h('p',{class:'hint'},'Put this code anywhere in the bio or description of '+s.name+' on '+pv.label+', save it, then press Verify. You can remove it afterwards.'),h('div',{class:'card',style:{fontFamily:'var(--mono)',userSelect:'all',textAlign:'center'}},s.code),h('div',{class:'row'},h('button',{class:'btn pri',type:'button',on:{click:async()=>{try{list=(await POST('/api/connections/verify',{p:pv.p})).list;delete sess[pv.p];draw();toast(pv.label+' linked','ok')}catch(e){fail(e)}}}},'Verify'),h('button',{class:'btn',type:'button',on:{click:()=>{delete sess[pv.p];draw()}}},'Cancel'))):null)
+const go=async()=>{
+try{
+const r=await POST('/api/connections/start',{p:pv.p,name:nm.value.trim()})
+if(r.linked){list=r.list;draw();toast(pv.label+' added','ok')}else{sess[pv.p]=r;draw()}
+}catch(e){fail(e)}
+}
+nm.addEventListener('keydown',e=>{if(e.key==='Enter')go()})
+const chip=cur?h('span',{class:'cn-chip '+(cur.verified?'ok':'')},cur.verified?'Verified':'Not verified'):h('span',{class:'cn-chip'},'Not linked')
+const head=h('div',{class:'cn-head'},h('span',{class:'cn-ico'},connIcon(pv.p,24)),h('div',{class:'cn-t'},h('b',null,pv.label),cur?h('a',{href:cur.url,target:'_blank',rel:'noopener noreferrer'},cur.name):h('small',null,pv.verify?'Proves it is yours with a code':'Shown on your profile as unverified')),chip)
+let body=null
+if(cur)body=h('div',{class:'cn-act'},h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{try{list=(await DEL('/api/connections/'+pv.p)).list;draw()}catch(e){fail(e)}}}},'Disconnect'))
+else if(s)body=h('div',{class:'cn-verify'},h('p',{class:'hint'},'Put this code in '+(pv.hint==='bio'||!pv.hint?'the bio or description':pv.hint)+' of '+s.name+' on '+pv.label+', save, then press Verify. You can remove it afterwards.'),h('div',{class:'cn-code',on:{click:()=>copyText(s.code)},title:'Click to copy'},s.code),h('div',{class:'cn-act'},h('button',{class:'btn pri',type:'button',on:{click:async()=>{try{list=(await POST('/api/connections/verify',{p:pv.p})).list;delete sess[pv.p];draw();toast(pv.label+' linked','ok')}catch(e){fail(e)}}}},'Verify'),h('button',{class:'btn',type:'button',on:{click:()=>{delete sess[pv.p];draw()}}},'Cancel')))
+else body=h('div',{class:'cn-act'},nm,h('button',{class:'btn pri',type:'button',on:{click:go}},pv.verify?'Link':'Add'))
+return h('div',{class:'cn-card'},head,body)
 }))
-mount(pg,h('h3',null,'Connections'),h('div',{class:'hint'},'Verified services need a one-time code in your bio. Others are added by username and show as unverified. Everything shows as icons on your profile.'),box)
+mount(pg,h('h3',null,'Connections'),h('p',{class:'hint'},'Linked accounts show as icons on your profile. Verified ones are proven with a code in your bio. YouTube, Twitch and X are added without proof until the server has their API keys.'),box)
 draw()
 }
