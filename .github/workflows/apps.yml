@@ -180,13 +180,102 @@ jobs:
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/;s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
           mkdir -p ~/.android && if [ -n "$KS" ]; then echo "$KS" | base64 -d > ~/.android/debug.keystore; fi
+          sed -i 's#<application#<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/><application#' android/app/src/main/AndroidManifest.xml
+          PK=android/app/src/main/java/app/parley/android
+          mkdir -p $PK
+          cat > $PK/Updater.java <<'EOF3'
+          package app.parley.android;
+          import android.content.Intent;
+          import android.content.pm.PackageInfo;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.provider.Settings;
+          import androidx.core.content.FileProvider;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          import java.io.File;
+          import java.io.FileOutputStream;
+          import java.io.InputStream;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
+          @CapacitorPlugin(name = "Updater")
+          public class Updater extends Plugin {
+          @PluginMethod
+          public void info(PluginCall call) {
+          try {
+          PackageInfo p = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0);
+          JSObject o = new JSObject();
+          o.put("code", Build.VERSION.SDK_INT >= 28 ? p.getLongVersionCode() : (long) p.versionCode);
+          call.resolve(o);
+          } catch (Exception e) {
+          call.reject("info failed");
+          }
+          }
+          @PluginMethod
+          public void install(PluginCall call) {
+          final String url = call.getString("url");
+          if (url == null || !url.startsWith("https://github.com/ScratchyGH/parley/")) {
+          call.reject("bad url");
+          return;
+          }
+          if (Build.VERSION.SDK_INT >= 26 && !getContext().getPackageManager().canRequestPackageInstalls()) {
+          Intent s = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getContext().getPackageName()));
+          s.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+          getContext().startActivity(s);
+          call.reject("allow");
+          return;
+          }
+          new Thread(() -> {
+          try {
+          File f = new File(getContext().getCacheDir(), "update.apk");
+          HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+          c.setConnectTimeout(15000);
+          c.setReadTimeout(30000);
+          InputStream in = c.getInputStream();
+          FileOutputStream out = new FileOutputStream(f);
+          byte[] b = new byte[65536];
+          int n;
+          while ((n = in.read(b)) > 0) out.write(b, 0, n);
+          out.close();
+          in.close();
+          Uri u = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f);
+          Intent i = new Intent(Intent.ACTION_VIEW);
+          i.setDataAndType(u, "application/vnd.android.package-archive");
+          i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+          getContext().startActivity(i);
+          call.resolve();
+          } catch (Exception e) {
+          call.reject("download failed");
+          }
+          }).start();
+          }
+          }
+          EOF3
+          cat > $PK/MainActivity.java <<'EOF3'
+          package app.parley.android;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+          @Override
+          public void onCreate(Bundle b) {
+          registerPlugin(Updater.class);
+          super.onCreate(b);
+          }
+          }
+          EOF3
           npx cap sync android
           cd android && ./gradlew assembleDebug
           cp app/build/outputs/apk/debug/app-debug.apk ../../Parley.apk
+          echo '{"code":${{ github.run_number }}}' > ../../android.json
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: Parley.apk
+          path: |
+            Parley.apk
+            android.json
   ubuntutouch:
     runs-on: ubuntu-latest
     steps:
