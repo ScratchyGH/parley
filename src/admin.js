@@ -15,16 +15,25 @@ export default function(r){
 dbRoutes(r)
 r.add('GET','/api/admin/chat',async c=>{
 guard(c)
-const rows=(await c.env.DB.prepare('select m.id,m.body,m.created_at,u.username,u.display_name,u.avatar_id from admin_chat m join users u on u.id=m.user_id order by m.created_at desc limit 80').all()).results
-return{messages:rows.reverse()}
+const after=Number(c.url.searchParams.get('after'))||0
+const rows=(await c.env.DB.prepare('select m.id,m.user_id,m.body,m.created_at,u.username,u.display_name,u.avatar_id from admin_chat m join users u on u.id=m.user_id where m.created_at>? order by m.created_at desc limit 100').bind(after).all()).results
+return{messages:rows.reverse(),me:c.user.id,owner:!!c.user.owner}
 })
 r.add('POST','/api/admin/chat',async c=>{
 guard(c)
 limit('admchat:'+c.user.id,60,60000)
 const b=await body(c.req,3000)
-const t=str(b.body,1,1000)
+const t=str(b.body,1,1500)
 await c.env.DB.prepare('insert into admin_chat(id,user_id,body,created_at) values(?,?,?,?)').bind(newId('ac'),c.user.id,t,now()).run()
 if(Math.random()<0.05)await c.env.DB.prepare('delete from admin_chat where created_at<?').bind(now()-30*86400000).run()
+return{ok:true}
+})
+r.add('DELETE','/api/admin/chat/:id',async c=>{
+guard(c)
+const m=await c.env.DB.prepare('select user_id from admin_chat where id=?').bind(c.p.id).first()
+if(!m)return{ok:true}
+if(m.user_id!==c.user.id&&!c.user.owner)fail(403,'You can only delete your own messages')
+await c.env.DB.prepare('delete from admin_chat where id=?').bind(c.p.id).run()
 return{ok:true}
 })
 r.add('GET','/api/admin/stats',async c=>{

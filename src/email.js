@@ -4,7 +4,7 @@ import{iters,ip}from'./auth.js'
 const RE=/^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/
 const mask=e=>{const[a,b]=e.split('@');return a.slice(0,2)+'***@'+b}
 const six=()=>String(crypto.getRandomValues(new Uint32Array(1))[0]%1000000).padStart(6,'0')
-export const mailOn=env=>!!env.RESEND_API_KEY
+export const mailOn=env=>!!(env.SMTP_HOST||env.BREVO_API_KEY||env.RESEND_API_KEY)
 const esc=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 function view(m){
 const text=[m.title,'',...m.lines,...(m.code?['','Your code: '+m.code]:[]),...(m.note?['',m.note]:[]),'','Parley'].join('\n')
@@ -13,8 +13,25 @@ const html=`<!doctype html><html><body style="margin:0;padding:0;background:#f3f
 return{text,html}
 }
 export async function sendMailDetail(env,to,subject,msg){
-if(!env.RESEND_API_KEY)return{ok:false,error:'RESEND_API_KEY is not set on the Worker'}
+if(!mailOn(env))return{ok:false,error:'No mail service is set. Add SMTP_HOST, SMTP_USER and SMTP_PASS (or BREVO_API_KEY) to the Worker.'}
 const{text,html}=view(msg)
+if(env.SMTP_HOST){
+try{
+const from=env.MAIL_FROM||env.SMTP_FROM||('Parley <'+env.SMTP_USER+'>')
+await Promise.race([(await import('./smtp.js')).smtpSend(env,{from,to,subject,text,html}),new Promise((_,j)=>setTimeout(()=>j(new Error('The mail server did not answer in time')),12000))])
+return{ok:true,via:'smtp'}
+}catch(e){console.error('smtp',String(e&&e.message||e));return{ok:false,error:'SMTP: '+String(e&&e.message||e)}}
+}
+if(env.BREVO_API_KEY){
+try{
+const f=env.MAIL_FROM||env.SMTP_FROM||'',m=/^(.*?)\s*<(.+)>$/.exec(f),sender=m?{name:m[1].replace(/"/g,'')||'Parley',email:m[2]}:{name:'Parley',email:f}
+if(!sender.email)return{ok:false,error:'Set MAIL_FROM to the sender address you verified in Brevo'}
+const r=await fetch('https://api.brevo.com/v3/smtp/email',{method:'POST',headers:{'api-key':env.BREVO_API_KEY,'content-type':'application/json'},body:JSON.stringify({sender,to:[{email:to}],subject,htmlContent:html,textContent:text})})
+if(r.ok)return{ok:true,via:'brevo'}
+let m2='';try{m2=(await r.json()).message||''}catch{}
+return{ok:false,status:r.status,error:'Brevo: '+(m2||r.status)}
+}catch(e){return{ok:false,error:'Could not reach Brevo: '+String(e&&e.message||e)}}
+}
 const ctl=new AbortController()
 const t=setTimeout(()=>ctl.abort(),8000)
 try{
@@ -75,7 +92,8 @@ const b=await body(c.req)
 const to=str(b.email,3,120,'Email').trim().toLowerCase()
 if(!RE.test(to))fail(400,'Enter a valid email address')
 const r=await sendMailDetail(c.env,to,'Parley test email',{title:'Test email',lines:['If you can read this, Parley can send email.'],note:'Sent from the admin panel.'})
-return{ok:r.ok,error:r.error||null,from:c.env.MAIL_FROM||'Parley <onboarding@resend.dev>',key:!!c.env.RESEND_API_KEY}
+const via=c.env.SMTP_HOST?'SMTP ('+c.env.SMTP_HOST+')':c.env.BREVO_API_KEY?'Brevo':c.env.RESEND_API_KEY?'Resend':'none'
+return{ok:r.ok,error:r.error||null,from:c.env.MAIL_FROM||c.env.SMTP_FROM||c.env.SMTP_USER||'Parley <onboarding@resend.dev>',via,key:via!=='none'}
 })
 r.add('POST','/api/me/email/verify',async c=>{
 limit('emv:'+c.user.id,20,3600000)
