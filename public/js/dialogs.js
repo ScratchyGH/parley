@@ -1,6 +1,6 @@
 import{actWidget}from'./activity.js'
 import{connIcon}from'./connicons.js'
-import{h,mount,icon,stxt,GET,POST,PATCH,PUT,DEL,upload,avatar,heroBox,gtag,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
+import{h,mount,icon,stxt,GET,POST,PATCH,PUT,DEL,upload,previewFile,avatar,heroBox,gtag,toast,fail,dialog,confirmBox,field,toggle,copyText,popup,menu,closeMenu,fmtRel}from'./util.js'
 import{render}from'./md.js'
 import{S,emit,cacheUser,user,conv,convTitle,convOther,can,loadServers,loadServer,loadConvs,loadFriends}from'./state.js'
 import{go}from'./nav.js'
@@ -23,7 +23,7 @@ try{await fn()}catch(x){err.textContent=x.message;btn.disabled=false}
 export function pickImage(accept='image/png,image/jpeg,image/webp,image/gif'){
 return new Promise(res=>{
 const i=h('input',{type:'file',accept,style:{display:'none'}})
-i.onchange=()=>res(i.files[0]||null)
+i.onchange=async()=>{const f=i.files[0]||null;res(f&&await previewFile(f)?f:null)}
 i.oncancel=()=>res(null)
 document.body.append(i)
 i.click()

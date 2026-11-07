@@ -153,6 +153,13 @@ p.abort=()=>xhr.abort()
 return p
 }
 
+export function previewFile(file,label='Upload'){
+return new Promise(res=>{
+const url=URL.createObjectURL(file);let done=false
+const fin=v=>{if(done)return;done=true;URL.revokeObjectURL(url);res(v)}
+dialog('Preview',h('div',{class:'bd pv'},h('img',{class:'pvimg',src:url,alt:'Preview of '+file.name}),h('p',{class:'hint'},file.name+' · '+fmtSize(file.size))),{sticky:true,onclose:()=>fin(false),footer:close=>[h('button',{class:'btn',type:'button',on:{click:close}},'Cancel'),h('button',{class:'btn pri',type:'button',on:{click:()=>{fin(true);close()}}},label)]})
+})
+}
 export const fileUrl=id=>'/api/files/'+id
 export const gtag=(t,e,i)=>t?h('span',{class:'gtag',title:'Server tag'},i?h('img',{src:fileUrl(i),alt:'',loading:'lazy'}):e?h('span',{class:'gte'},e):null,t):null
 export function fmtSize(n){

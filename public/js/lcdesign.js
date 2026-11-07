@@ -1,4 +1,4 @@
-import{h,icon,toast,upload,dialog,coverBg}from'./util.js'
+import{h,icon,toast,upload,dialog,coverBg,previewFile}from'./util.js'
 import{lcDraw,DEFD,FONTS,encDesign,decDesign}from'./lcard.js'
 const SAMPLE={name:'Your name',level:7,cur:120,max:350,rank:3}
 const NAMES={n:'Name',l:'Level',x:'XP text',k:'Rank',a:'Picture',b:'Level bar'}
@@ -103,7 +103,7 @@ panel.replaceChildren(...kids)
 }
 const file=h('input',{type:'file',accept:'image/png,image/jpeg,image/webp,image/gif',class:'lcd-file',on:{change:async e=>{
 const f=e.target.files[0];e.target.value=''
-if(!f)return
+if(!f||!await previewFile(f,'Use this picture'))return
 try{const d=await upload(f,{kind:'banner'});bg=d.id;draw();toast('Picture added','ok')}catch(er){toast(er.message||'Upload failed','err')}
 }}})
 const bgRow=h('div',{class:'lcd-bg'},

@@ -1,4 +1,4 @@
-import{h,toast,dialog}from'./util.js'
+import{h,toast,dialog,previewFile}from'./util.js'
 import{displayBlob,isAnimated}from'./codec.js'
 
 async function bitmapOf(file){
@@ -67,6 +67,6 @@ setTimeout(()=>i.remove(),60000)
 export async function pickCropped(opts){
 const f=await pick('image/png,image/jpeg,image/webp,image/gif,image/avif,image/jxl')
 if(!f)return null
-if(await isAnimated(f)){toast('Animated image kept as is (not cropped)','ok');return f}
+if(await isAnimated(f)){if(!await previewFile(f,'Use this picture'))return null;toast('Animated image kept as is (not cropped)','ok');return f}
 return cropDialog(f,opts)
 }
