@@ -1,5 +1,6 @@
 import{h,icon}from'./util.js'
 import{go}from'./nav.js'
+import{checkAppUpdate}from'./appupd.js'
 const T=[['menu','Servers',null],['chat','Home','/'],['users','Friends','/friends'],['compass','Discover','/discover'],['user','You','/settings']]
 export function androidApp(){
 const app=/ParleyAndroid\//.test(navigator.userAgent),pwa=/Android/i.test(navigator.userAgent)&&matchMedia('(display-mode:standalone)').matches
@@ -23,6 +24,8 @@ addEventListener('keyboardWillShow',()=>kb(true));addEventListener('keyboardDidS
 const typing=e=>/^(INPUT|TEXTAREA)$/.test(e.target?.tagName)||e.target?.isContentEditable
 addEventListener('focusin',e=>{if(typing(e))kb(true)})
 addEventListener('focusout',()=>setTimeout(()=>{if(!typing({target:document.activeElement}))kb(false)},120))
+setTimeout(()=>checkAppUpdate(),4000)
+addEventListener('focus',()=>checkAppUpdate())
 const A=window.Capacitor?.Plugins?.App
 if(A?.addListener)A.addListener('backButton',({canGoBack})=>{
 const sc=[...document.querySelectorAll('.scrim')].pop()
