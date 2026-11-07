@@ -85,8 +85,14 @@ jobs:
           const check=()=>{lastCheck=Date.now();return autoUpdater.checkForUpdates().catch(()=>{})}
           setTimeout(check,5000)
           setInterval(check,3600*1000)
-          app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check();refresh()})
+          app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check();if(!wayland)refresh()})
           }
+          if(process.platform==='linux'){
+          app.commandLine.appendSwitch('enable-features','WebRTCPipeWireCapturer,WaylandWindowDecorations')
+          app.commandLine.appendSwitch('ozone-platform-hint','auto')
+          app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer')
+          }
+          const wayland=process.platform==='linux'&&(process.env.XDG_SESSION_TYPE==='wayland'||!!process.env.WAYLAND_DISPLAY)
           const lock=app.requestSingleInstanceLock()
           if(!lock)app.quit()
           app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus()}})
@@ -95,6 +101,11 @@ jobs:
           session.defaultSession.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(SITE)&&['media','display-capture','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
           session.defaultSession.setDisplayMediaRequestHandler(async(req,cb)=>{
           try{
+          if(wayland){
+          const ws=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:0,height:0},fetchWindowIcons:false})
+          if(!ws.length)return cb({})
+          return cb({video:ws[0]})
+          }
           let src=cache.length&&Date.now()-cacheAt<30000?cache:await grab()
           refresh()
           if(!src.length)return cb({})
@@ -109,7 +120,7 @@ jobs:
           win=new BrowserWindow({width:1280,height:800,backgroundColor:'#050505',autoHideMenuBar:true,icon:require('path').join(__dirname,'build','icon.png'),webPreferences:{contextIsolation:true,sandbox:true}})
           win.webContents.setUserAgent(win.webContents.getUserAgent()+' ParleyDesktop/2')
           win.loadURL(SITE)
-          win.webContents.once('did-finish-load',()=>setTimeout(()=>{refresh();mkPicker()},1500))
+          if(!wayland)win.webContents.once('did-finish-load',()=>setTimeout(()=>{refresh();mkPicker()},1500))
           win.on('close',()=>{quitting=true})
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
           if(app.isPackaged&&process.platform!=='darwin')updates()
