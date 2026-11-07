@@ -1001,6 +1001,7 @@ applyView()
 draw()
 validate()
 setTimeout(()=>{if(g.nodes.length)fit()},120)
+window.parleyUnsaved=()=>!!dirty&&document.body.contains(stage)
 const guard=e=>{if(!document.body.contains(stage)){removeEventListener('beforeunload',guard);closed=true;try{ws?.close()}catch{};return}if(dirty)e.preventDefault()}
 addEventListener('beforeunload',guard)
 addEventListener('resize',()=>requestAnimationFrame(wire))

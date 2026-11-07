@@ -2,6 +2,7 @@ import{h}from'./util.js'
 import{V}from'./voice.js'
 import{gaming}from'./gamebar.js'
 let cur=null,busy=false
+const unsaved=()=>{try{return!!(window.parleyUnsaved&&window.parleyUnsaved())}catch{return false}}
 const check=async()=>{
 if(busy)return
 try{
@@ -9,16 +10,19 @@ const r=await fetch('/api/health?lite=1',{cache:'no-store'})
 const d=await r.json()
 if(!d||!d.build)return
 if(cur===null){cur=d.build;return}
-if(d.build!==cur){if(document.hidden&&!V.ch&&!V.joining&&!gaming()){location.reload();return}restart()}
+if(d.build!==cur){if(document.hidden&&!V.ch&&!V.joining&&!gaming()&&!unsaved()){location.reload();return}restart()}
 }catch{}
 }
 function restart(){
 busy=true
 const t=h('span',null,'5')
-const b=h('div',{class:'updb',role:'status','aria-live':'polite'},h('b',null,'Parley updated'),h('span',null,'Restarting in ',t,' seconds'))
+const sp=h('span',null,'Restarting in ',t,' seconds')
+const b=h('div',{class:'updb',role:'status','aria-live':'polite'},h('b',null,'Parley updated'),sp)
 document.body.append(b)
-let n=5
+let n=5,wait=false
 const tick=()=>{
+if(unsaved()){if(!wait){wait=true;sp.textContent='Waiting for you to save your block'}n=5;setTimeout(tick,1500);return}
+if(wait){wait=false;sp.replaceChildren('Restarting in ',t,' seconds')}
 if(V.ch||V.joining){t.textContent='when your call ends';setTimeout(tick,2000);return}
 if(gaming()){t.textContent='when your game ends';setTimeout(tick,2000);return}
 t.textContent=String(n)
@@ -44,6 +48,7 @@ const t=h('span',null,'5')
 const b=h('div',{class:'updb',role:'status','aria-live':'polite'},h('b',null,'Parley updated'),h('span',null,'Restarting in ',t,' seconds'),h('small',{style:{opacity:.7,marginLeft:'8px'}},'preview only'))
 document.body.append(b)
 if(mode==='call'){t.textContent='when your call ends';setTimeout(()=>b.remove(),5000);return}
+if(mode==='blocks'){b.querySelector('span').textContent='Waiting for you to save your block';setTimeout(()=>b.remove(),5000);return}
 if(mode==='game'){t.textContent='when your game ends';setTimeout(()=>b.remove(),5000);return}
 let n=5
 const tick=()=>{
