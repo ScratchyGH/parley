@@ -189,6 +189,20 @@ await put(c.env,'conn:'+c.user.id,o)
 await put(c.env,xk,c.user.id)
 return go('ok')
 })
+r.add('POST','/api/admin/users/:id/steam',async c=>{
+if(!c.user.owner)fail(404,'Not found')
+const b=await body(c.req,300)
+const m=/(\d{17})/.exec(String(b.id||''))
+if(!m)fail(400,'Enter a Steam profile link with a 17-digit ID, or the ID itself')
+const t=await c.env.DB.prepare('select id from users where id=? and deleted_at is null').bind(c.p.id).first()
+if(!t)fail(404,'User not found')
+let name=m[1]
+try{const x=await fetch('https://steamcommunity.com/profiles/'+m[1]+'/?xml=1',{headers:UA}).then(r=>r.ok?r.text():'');const pn=/<steamID>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/steamID>/.exec(x);if(pn&&pn[1].trim())name=pn[1].trim().slice(0,40)}catch{}
+const o=await get(c.env,'conn:'+t.id)||{}
+o.steam={id:m[1],name,at:now(),u:1}
+await put(c.env,'conn:'+t.id,o)
+return{ok:true,name}
+})
 r.add('POST','/api/connections/start',async c=>{
 limit('connst:'+c.user.id,20,3600000)
 const b=await body(c.req,512)
