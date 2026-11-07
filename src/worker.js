@@ -39,9 +39,6 @@ import modaiRoutes from'./modai.js'
 import banhammerRoutes from'./banhammer.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
-import thicketRoutes from'./thicket.js'
-import teamupRoutes from'./teamup.js'
-import gamepackRoutes from'./gamepack.js'
 import supportRoutes from'./support.js'
 import abRoutes from'./ab.js'
 import turkeyRoutes from'./turkey.js'
@@ -87,9 +84,6 @@ scheduleRoutes(router)
 legalRoutes(router)
 modaiRoutes(router)
 banhammerRoutes(router)
-thicketRoutes(router)
-teamupRoutes(router)
-gamepackRoutes(router)
 supportRoutes(router)
 abRoutes(router)
 toolsRoutes(router)
@@ -221,7 +215,6 @@ return env
 
 async function cardFor(env,url){
 const p=url.pathname
-if(p==='/games'||p.startsWith('/games/'))return['Parley Games','Gourd Rush, Siege, Night Shift and more. Play with friends, free, right in your browser.']
 if(p.startsWith('/gift/'))return['You were sent a gift on Parley','Open the link to claim it. Frames, name styles, vanity links and more.']
 if(p==='/weareparley')return['Parley','Your not supposed to be here.']
 const m=p.match(/^\/invite\/([\w-]{2,40})$/)
@@ -320,7 +313,6 @@ try{await env.DB.exec('PRAGMA optimize')}catch(e){}
 async function prune(env,t){
 const D=86400000
 const q=[
-"delete from event_night_runs where started_at<"+(t-D),
 "delete from mod_log where created_at<"+(t-14*D)+" and (action like 'db.%' or action like 'channel.%' or action like 'maintenance.%' or action in ('automod.update','server.update','pars.grant'))",
 "delete from mod_log where created_at<"+(t-180*D),
 "delete from bot_versions where id in (select id from (select id,row_number() over (partition by project_id order by rev desc) n from bot_versions) where n>3)",

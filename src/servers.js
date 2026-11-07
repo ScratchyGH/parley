@@ -13,7 +13,6 @@ import{PUBLIC,STATUS,GTAG}from'./auth.js'
 import{explicitText,serverText}from'./safety.js'
 import{runJoin}from'./blocks.js'
 import{caseStmt}from'./cases.js'
-import{thicketBump}from'./thicket.js'
 
 const like=s=>'%'+s.replace(/[\\%_]/g,'\\$&')+'%'
 const themeOf=v=>{try{return v?JSON.parse(v):null}catch{return null}}
@@ -865,7 +864,6 @@ const res=await c.env.DB.prepare('update invites set uses=uses+1 where code=? an
 if(!res.meta.changes)fail(404,'This invite is invalid or has expired')
 }
 await joinServer(c,inv.server_id)
-thicketBump(c,c.user.id,'join',1)
 }
 return{server_id:inv.server_id}
 })
