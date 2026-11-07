@@ -1,5 +1,5 @@
-.fall body::after{content:"";position:fixed;inset:-10% 0 0 0;pointer-events:none;z-index:2;opacity:.55;background-image:radial-gradient(ellipse 9px 5px at 8% 10%,#ea580c 98%,transparent),radial-gradient(ellipse 8px 4px at 22% 40%,#f59e0b 98%,transparent),radial-gradient(ellipse 10px 5px at 37% 15%,#dc2626 98%,transparent),radial-gradient(ellipse 8px 4px at 51% 55%,#d97706 98%,transparent),radial-gradient(ellipse 9px 5px at 66% 25%,#ea580c 98%,transparent),radial-gradient(ellipse 8px 4px at 79% 62%,#f59e0b 98%,transparent),radial-gradient(ellipse 10px 5px at 92% 33%,#b45309 98%,transparent);background-size:100% 50%;background-repeat:repeat-y;animation:tkfall 22s linear infinite}
-@keyframes tkfall{from{background-position:0 0}to{background-position:30px 100%}}
+
+
 .fall.rm body::after,.fall.perf body::after{display:none}
 @media (prefers-reduced-motion:reduce){.fall body::after{display:none}}
 .fall-rail svg{filter:drop-shadow(0 0 6px rgba(245,158,11,.55))}
