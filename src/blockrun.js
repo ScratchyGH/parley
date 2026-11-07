@@ -67,7 +67,7 @@ xp:{out:YN,spec:{name:24,amount:4,cooldown:5},def:{name:'xp',amount:'15',cooldow
 xpban:{out:YN,spec:{mode:['ban','unban','check'],target:60,allow:120},def:{mode:'ban',target:'',allow:''}},
 hidecmd:{out:YN,spec:{allow:120},def:{allow:''}},
 botdm:{out:NX,spec:{target:60,text:400},def:{target:'',text:''}},
-connectbot:{out:YN,spec:{key:48,name:24},def:{key:'',name:'linked'}},
+connectbot:{out:NX,spec:{key:48,name:24},def:{key:'',name:'linked'}},
 linkvar:{out:NX,spec:{mode:['get','set'],bot:24,var:24,value:40,scope:['server','user']},def:{mode:'get',bot:'linked',var:'xp',value:'',scope:'user'}},
 setxp:{out:YN,spec:{name:24,mode:['give','take','set','reset'],amount:9,target:60,allow:120},def:{name:'xp',mode:'give',amount:'100',target:'',allow:''}},
 xplevelrole:{out:NX,spec:{level:3,role:40,target:60},def:{level:'5',role:'',target:''}},
@@ -495,7 +495,7 @@ acts++
 const tt=await tio(P,R),txt=R(P.text).slice(0,400)
 if(txt.trim())await tt.dm(txt)
 log.push({id:n.id,did:'botdm'});break}
-case'connectbot':{branch=await io.linkConnect(R(P.key).trim(),(P.name||'linked').toLowerCase());break}
+case'connectbot':{await io.linkConnect(R(P.key).trim(),(P.name||'linked').toLowerCase());break}
 case'linkvar':{
 if(P.mode==='set'){if(acts>=8)break;acts++;await io.linkSet((P.bot||'linked').toLowerCase(),(P.var||'xp').toLowerCase(),P.scope,R(P.value))}
 else{const v=await io.linkGet((P.bot||'linked').toLowerCase(),(P.var||'xp').toLowerCase(),P.scope);setv((P.var||'xp').toLowerCase(),String(v))}
