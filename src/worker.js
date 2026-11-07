@@ -1,3 +1,4 @@
+import{sweepGone}from'./wipe.js'
 import{Hub}from'./hub.js'
 import{HttpError,json,fail,now,newId,limit}from'./util.js'
 import{sessionUser,authRoutes}from'./auth.js'
@@ -306,6 +307,7 @@ env.DB.prepare('delete from invites where (expires_at is not null and expires_at
 env.DB.prepare('delete from notifications where created_at<?').bind(t-60*86400000)
 ])
 try{await sweepExplicitServers(env)}catch(e){}
+try{await sweepGone(env,t)}catch(e){}
 try{
 const D=86400000
 await env.DB.batch([30,90,365].map(n=>env.DB.prepare("update messages set deleted_at=?,content='' where deleted_at is null and pinned=0 and created_at<? and server_id in (select id from servers where retention_days=?)").bind(t,t-n*D,n)))

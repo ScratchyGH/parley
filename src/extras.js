@@ -1,3 +1,4 @@
+import{wipeUser}from'./wipe.js'
 import{VC,fail,now,newId,msgId,str,opt,int,limit,body,json,clamp,sha,randHex,placeholders}from'./util.js'
 import{P,resolveRoom,loadMember,need}from'./perms.js'
 import{hydrate,publishMsg}from'./messages.js'
@@ -319,6 +320,7 @@ const m=await srv(c,c.p.sid,P.MANAGE_SERVER)
 const w=await c.env.DB.prepare('select * from webhooks where id=? and server_id=?').bind(c.p.wid,m.server.id).first()
 if(!w)fail(404,'Webhook not found')
 await c.env.DB.batch([c.env.DB.prepare('delete from webhooks where id=?').bind(w.id),c.env.DB.prepare('update users set deleted_at=?,suspended=1 where id=?').bind(now(),w.bot_user_id),c.logStmt(m.server.id,'webhook.delete',w.id,w.name)])
+await wipeUser(c.env,w.bot_user_id)
 return{ok:true}
 })
 r.add('POST','/api/webhooks/:id/:token',async c=>{

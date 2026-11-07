@@ -1,3 +1,4 @@
+import{wipeUser}from'./wipe.js'
 import{fail,now,newId,str,int,limit,body,json,randHex,sha,clamp}from'./util.js'
 import{P,loadMember}from'./perms.js'
 import{nameProblem}from'./names.js'
@@ -286,6 +287,7 @@ c.env.DB.prepare('delete from bot_releases where project_id=?').bind(p.id),
 c.env.DB.prepare('delete from bot_installs where project_id=?').bind(p.id),
 c.env.DB.prepare('delete from bot_projects where id=?').bind(p.id)
 ])
+await wipeUser(c.env,p.bot_id)
 return{ok:true}
 })
 r.add('POST','/api/bothub/:id/releases',async c=>{

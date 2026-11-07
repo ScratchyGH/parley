@@ -72,6 +72,11 @@ export default function(r){
 r.add('GET','/api/pars/gifts',async c=>{
 const gifts=(await c.env.DB.prepare('select id,from_name,kind,item_id,label,amount,created_at from gift_inbox where user_id=? and seen=0 order by created_at limit 12').bind(c.user.id).all()).results
 for(const g of gifts){
+if(g.kind==='multi'){
+const ids=String(g.item_id||'').split(',').filter(Boolean).slice(0,12)
+if(ids.length)g.items=(await c.env.DB.prepare(`select id,kind,name from par_items where id in (${ids.map(()=>'?').join(',')})`).bind(...ids).all()).results
+continue
+}
 if(g.kind!=='bundle')continue
 const it=await c.env.DB.prepare('select data from par_items where id=?').bind(g.item_id).first()
 let d={};try{d=JSON.parse(it?.data||'{}')}catch{}
