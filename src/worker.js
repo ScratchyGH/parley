@@ -42,6 +42,8 @@ import streakRoutes from'./streaks.js'
 import supportRoutes from'./support.js'
 import abRoutes from'./ab.js'
 import turkeyRoutes from'./turkey.js'
+import teamupRoutes from'./teamup.js'
+import gamepackRoutes from'./gamepack.js'
 import voiceRoutes from'./voice.js'
 import{TOS_VERSION,tosExempt}from'./tos.js'
 import scheduleRoutes,{deliverDue}from'./schedule.js'
@@ -79,6 +81,8 @@ pluginRoutes(router)
 backupRoutes(router)
 botlabRoutes(router)
 turkeyRoutes(router)
+teamupRoutes(router)
+gamepackRoutes(router)
 xlabsRoutes(router)
 scheduleRoutes(router)
 legalRoutes(router)
@@ -217,6 +221,7 @@ async function cardFor(env,url){
 const p=url.pathname
 if(p.startsWith('/gift/'))return['You were sent a gift on Parley','Open the link to claim it. Frames, name styles, vanity links and more.']
 if(p==='/weareparley')return['Parley','Your not supposed to be here.']
+if(p==='/games'||p.startsWith('/games/'))return['Parley Games','Gourd Rush, Siege, Night Shift and more. Play with friends, free, right in your browser.']
 const m=p.match(/^\/invite\/([\w-]{2,40})$/)
 if(m){
 try{

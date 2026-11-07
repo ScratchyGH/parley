@@ -1,29 +1,8 @@
 import{fail,now,newId,body,limit}from'./util.js'
 import{seasonWindow}from'./seasons.js'
-import{thicketBump}from'./thicket.js'
-const PACKS={hollow:{name:'Haunted Hollow games',price:25,season:'thicket',desc:'Gourd Rush, Terror Night, Hollow Siege and Gourd Rush: Teamup. Yours to play in the app any time, even after the season ends.'}}
+const PACKS={hollow:{name:'Haunted Hollow games',price:25,season:'spook',desc:'Gourd Rush, Terror Night, Hollow Siege and Gourd Rush: Teamup. Yours to play in the app any time, even after the season ends.'}}
 const owned=(env,uid,id)=>env.DB.prepare('select 1 x from game_unlocks where user_id=? and pack=?').bind(uid,id).first()
-const TG={dash:[400,6,60],stack:[4,6,40],match:[10,6,40],catch:[300,6,40],forage:[500,6,60]}
-const tgLive=()=>{const w=seasonWindow('thicket');return!!(w&&w.live)}
 export default function(r){
-r.add('GET','/api/games/turkey',async c=>{return{live:tgLive()}})
-r.add('POST','/api/games/turkey/finish',async c=>{
-if(!tgLive())fail(409,'Thanksgiving games are over')
-limit('tg:'+c.user.id,20,60000)
-const b=await body(c.req,200)
-const g=TG[String(b.game)]
-if(!g)fail(404,'No such game')
-const score=Math.max(0,Math.min(Number(b.score)||0,100000))
-const secs=Math.max(0,Number(b.secs)||0)
-let pars=0
-if(secs>=15)pars=Math.max(1,Math.floor(score/g[0]))+Math.floor(secs/g[2])
-if(pars>0){
-await c.env.DB.batch([c.env.DB.prepare('update users set pars=pars+? where id=?').bind(pars,c.user.id),c.env.DB.prepare('insert into par_tx(id,user_id,delta,kind,ref,note,created_at) values(?,?,?,?,?,?,?)').bind(newId('pt'),c.user.id,pars,'tgame',String(b.game),'Thanksgiving game',now())])
-}
-thicketBump(c,c.user.id,'play',1)
-thicketBump(c,c.user.id,'play_'+String(b.game),1)
-return{pars}
-})
 r.add('GET','/api/games/packs',async c=>{
 const u=await c.env.DB.prepare('select pars from users where id=?').bind(c.user.id).first()
 const packs=[]
