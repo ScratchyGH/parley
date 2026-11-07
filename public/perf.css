@@ -150,3 +150,16 @@ html .intro img,html[data-gpu] .intro img{animation:introPop .9s cubic-bezier(.2
 @keyframes smrow{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .rm *,.perf *,.rm *::before,.perf *::before{animation-duration:.001ms!important;transition-duration:.001ms!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+.ach{display:flex;flex-direction:column;max-height:55vh;min-height:220px;overflow:auto;padding:8px;border:1px solid var(--line,#2a2a35);border-radius:12px;background:var(--bg2,#17171d);margin-bottom:8px}
+.ach-day{align-self:center;font-size:11px;color:#9a9aa8;margin:10px 0 4px}
+.ach-m{display:flex;gap:10px;padding:4px 8px;border-radius:8px;position:relative}
+.ach-m:hover{background:rgba(255,255,255,.04)}
+.ach-m.g .ach-sp{width:32px;flex:none}
+.ach-b{min-width:0;flex:1;overflow-wrap:anywhere}
+.ach-h{display:flex;gap:8px;align-items:baseline}
+.ach-h small{color:#9a9aa8}
+.ach-t{line-height:1.45}
+.ach-x{position:absolute;right:6px;top:4px;opacity:0}
+.ach-m:hover .ach-x,.ach-x:focus-visible{opacity:1}
+.ach-in{align-items:flex-end}
+.ach-in .inp{resize:none;flex:1;max-height:140px}
