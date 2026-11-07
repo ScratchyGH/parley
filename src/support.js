@@ -25,7 +25,7 @@ let n=String(n0||'').trim()
 const m=/steamcommunity\.com\/(profiles|id)\/([A-Za-z0-9_-]+)/i.exec(n);if(m)n=m[2]
 const dec=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&amp;/g,'&').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()
 const base='https://steamcommunity.com/'+(/^\d{17}$/.test(n)?'profiles/':'id/')+encodeURIComponent(n)+'/'
-const hd={...UA,'Accept-Language':'en-US,en;q=0.9'}
+const hd={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',accept:'text/html,application/xml,*/*','Accept-Language':'en-US,en;q=0.9',cookie:'birthtime=0; lastagecheckage=1-0-1990; wants_mature_content=1'}
 let x=''
 try{const r=await fetch(base+'?xml=1',{headers:hd});if(r.ok)x=await r.text()}catch{}
 const id=/<steamID64>\s*(\d{17})\s*<\/steamID64>/.exec(x)
@@ -251,7 +251,7 @@ const s=await get(c.env,k)
 if(!s||s.exp<now())fail(400,'Start again, the code expired')
 let u
 try{u=await p.look(s.n,c.env)}catch{fail(502,p.name+' did not answer, try again in a minute')}
-if(!u)fail(404,'Could not find that '+p.name+' account. Paste your profile link or custom ID, and make the profile and its summary public.')
+if(!u)fail(404,b.p==='steam'?'Steam did not let us read that profile. Use the Sign in with Steam button instead, it needs no public profile.':'Could not find that '+p.name+' account. Paste your profile link or custom ID, and make the profile and its summary public.')
 const nz=t=>String(t||'').toLowerCase().replace(/[^a-z]+/g,' ');if(!(' '+nz(u.text)+' ').includes(' '+nz(s.code)+' '))fail(400,'The code is not on that '+p.name+' profile yet. Save it there and try again.')
 const xk='connx:'+b.p+':'+u.id,x=await get(c.env,xk)
 if(x&&x!==c.user.id)fail(409,'That '+p.name+' account is already linked to another Parley account')

@@ -242,6 +242,7 @@ if(!url.pathname.startsWith('/api/')){
 let res=await env.ASSETS.fetch(req)
 const h=new Headers(res.headers)
 for(const[k,v]of Object.entries(SEC))h.set(k,v)
+if(url.pathname==='/get'||url.pathname.startsWith('/get/')){h.delete('x-frame-options');const cs=h.get('content-security-policy');if(cs)h.set('content-security-policy',cs.replace("frame-ancestors 'none'",'frame-ancestors https://scratchygh.github.io'))}
 const card=await cardFor(env,url)
 if(card&&(h.get('content-type')||'').includes('text/html')){
 const m={'og:title':card[0],'twitter:title':card[0],'og:description':card[1],'twitter:description':card[1],'description':card[1],'og:url':url.href}
