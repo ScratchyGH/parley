@@ -18,8 +18,6 @@ import{openServerSettings,channelSettings,leaveServer}from'./ssettings.js'
 import{accountsDialog}from'./accounts.js'
 import{eventsDialog}from'./dialogs2.js'
 import{streakChip}from'./streakui.js'
-import{thicketBtn,onThicket}from'./thicket.js'
-import{fallOn}from'./fall.js'
 
 export const el={}
 let panel=null
@@ -71,7 +69,6 @@ if(u.mentions)return h('span',{class:'bdg'},u.mentions>99?'99+':u.mentions)
 return null
 }
 
-onThicket(()=>{if(el.rail)renderRail()})
 export function renderRail(){
 if(!el.rail)return
 const kids=[]
@@ -95,7 +92,6 @@ w.addEventListener('drop',e=>{if(!dragId||dragId===s.id)return;e.preventDefault(
 kids.push(w)
 }
 kids.push(h('button',{class:'wbtn',title:'Create or join a server','aria-label':'Create or join a server',on:{click:()=>createServerDialog()}},icon('plus')))
-if(fallOn())kids.push(thicketBtn(S.nav.kind==='thicket',go))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='discover'?' on':''),title:'Discover servers','aria-label':'Discover servers',on:{click:()=>go('/discover')}},icon('compass')))
 kids.push(h('button',{class:'wbtn'+(S.nav.kind==='lab'?' on':''),title:'Bot Lab','aria-label':'Bot Lab','aria-current':S.nav.kind==='lab'?'page':null,on:{click:()=>go('/lab')}},icon('flask')))
 kids.push(h('button',{class:'wbtn kd-rail'+(S.nav.kind==='docs'?' on':''),title:'Kandie’s Docs','aria-label':'Kandie’s Docs','aria-current':S.nav.kind==='docs'?'page':null,on:{click:()=>go('/docs')}},kandieArt(26)))
@@ -274,7 +270,6 @@ h('button',{class:'qs',on:{click:()=>quickSwitcher()}},icon('search','s'),h('spa
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page==='overview'?' on':''),on:{click:()=>{go('/');closeDrawers()}}},icon('chat'),h('span',{class:'nm'},'Home')),
 h('button',{class:'ci'+(S.nav.kind==='home'&&S.nav.page!=='overview'?' on':''),on:{click:()=>{go('/friends');closeDrawers()}}},icon('users'),h('span',{class:'nm'},'Friends'),inc?h('span',{class:'bdg',style:{borderColor:'var(--side)'}},inc):null),
 h('button',{class:'ci'+(S.nav.kind==='pars'?' on':''),on:{click:()=>{go('/pars');closeDrawers()}}},parIcon(18),h('span',{class:'nm'},'Pars shop'),S.me?.pars?h('span',{class:'par-chip'},String(S.me.pars)):null),
-h('button',{class:'ci'+(S.nav.kind==='games'?' on':''),on:{click:()=>{go('/games');closeDrawers()}}},icon('flask'),h('span',{class:'nm'},'Games')),
 h('button',{class:'ci'+(S.nav.kind==='docs'?' on':''),on:{click:()=>{go('/docs');closeDrawers()}}},h('span',{class:'kd-ci'},kandieArt(18)),h('span',{class:'nm'},'Kandie’s Docs')),
 h('button',{class:'ci',on:{click:()=>emit('ui:panel',{kind:'saved'})}},icon('bookmark'),h('span',{class:'nm'},'Saved messages')),
 h('div',{class:'cat'},h('span',null,'Direct messages'),h('button',{class:'ib',style:{width:'22px',height:'22px'},title:'New message','aria-label':'New message',on:{click:()=>newDmDialog()}},icon('plus','s')))
@@ -325,7 +320,7 @@ if(bid){sbtn.classList.add('hasb');coverBg(sbtn,bid,'linear-gradient(180deg,tran
 head=sbtn
 body=serverBody(S.nav.sid)
 }else{
-head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='docs'?'Docs':k==='games'?'Games':k==='settings'?'Settings':k==='pars'?'Pars shop':'Home'))
+head=h('div',{class:'ctx-h'},h('span',null,k==='discover'?'Discover':k==='bots'?'Bots':k==='lab'?'Bot Lab':k==='docs'?'Docs':k==='settings'?'Settings':k==='pars'?'Pars shop':'Home'))
 body=homeBody()
 }
 const key=k+':'+(S.nav.sid||'')

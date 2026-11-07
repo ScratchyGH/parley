@@ -923,7 +923,15 @@ show(d.key)
 // ---- live collaboration
 let ws,wsRetry=0,closed=false
 const people=new Map()
-function drawPeers(){mount(peers,[...people.values()].filter(x=>x.here).map(x=>h('span',{class:'bk-peer',title:x.name,style:{'--c':x.c}},(x.name||'?').slice(0,1).toUpperCase())))}
+const roster=new Map()
+function drawPeers(){
+const ids=new Set([...roster.keys(),...people.keys()])
+ids.delete(myId)
+const list=[...ids].map(id=>({id,name:roster.get(id)||people.get(id)?.name||'Teammate',here:!!people.get(id)?.here,c:colorOf(id)})).sort((a,b)=>b.here-a.here)
+mount(peers,list.map(x=>h('span',{class:'bk-peer'+(x.here?' on':''),title:x.name+(x.here?' is here now':' is not here'),style:{'--c':x.c}},(x.name||'?').slice(0,1).toUpperCase())))
+}
+function peerSet(uid,on){people.set(uid,{...(people.get(uid)||{}),here:on});drawPeers()}
+GET(`/api/bothub/${p.id}/members`).then(d=>{if(d.owner)roster.set(d.owner.id,d.owner.display_name);for(const m of d.members||[])if(m.status!=='invited')roster.set(m.user_id,m.display_name);drawPeers()}).catch(()=>{})
 const colorOf=id=>{let n=0;for(const ch of id)n=(n*31+ch.charCodeAt(0))>>>0;return`hsl(${n%360} 70% 55%)`}
 const curEls=new Map()
 function connect(){
@@ -941,12 +949,14 @@ c.style.transform=`translate(${m.x}px,${m.y}px)`
 clearTimeout(c._t);c._t=setTimeout(()=>{c.remove();curEls.delete(m.uid)},6000)
 }else if(m.t==='bot.blocks'&&!branch){
 if(m.by===myId)return
-people.set(m.by,{...(people.get(m.by)||{}),name:m.name,here:true,c:colorOf(m.by)});drawPeers()
+people.set(m.by,{...(people.get(m.by)||{}),name:m.name,here:true});drawPeers()
 if(!dirty){try{const d=await GET(`/api/bothub/${p.id}/blocks`);g=d.blocks||{nodes:[],edges:[]};rev=d.rev;lastSaved=JSON.parse(JSON.stringify(g));draw();setStatus(m.name+' saved changes: '+(m.summary||'updated'))}catch{}}
 else setStatus(m.name+' saved changes. Yours merge when you save.')
-}else if(m.t==='ready'||m.t==='hello'){}
+}else if(m.t==='ready'){for(const x of m.presence||[])people.set(x.uid,{...(people.get(x.uid)||{}),here:true});drawPeers()}
+else if(m.t==='presence'){peerSet(m.uid,m.s!=='offline')}
+else if(m.t==='hello'){}
 }
-ws.onclose=()=>{if(closed||!document.body.contains(stage)){return}wsRetry++;setTimeout(connect,Math.min(30000,1000*2**Math.min(wsRetry,5)))}
+ws.onclose=()=>{for(const v of people.values())v.here=false;drawPeers();if(closed||!document.body.contains(stage)){return}wsRetry++;setTimeout(connect,Math.min(30000,1000*2**Math.min(wsRetry,5)))}
 }
 let myId=''
 GET('/api/me').then(d=>{myId=d.user.id}).catch(()=>{})

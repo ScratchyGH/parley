@@ -1,15 +1,17 @@
 import{h,GET,POST,icon,sleep,toast}from'./util.js'
 import{gaming}from'./gamebar.js'
 import{swatch,parIcon}from'./pars.js'
-import{acornSvg as candySvg}from'./thicket.js'
-import{sv,svg}from'./svg.js'
 let busy=false
 const shown=new Set()
 const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches
-const plate=()=>svg(260,'0 0 260 70',sv('defs',null,sv('linearGradient',{id:'gxp',x1:'0',y1:'0',x2:'0',y2:'1'},sv('stop',{offset:'0',['stop-color']:'#f3f4f6'}),sv('stop',{offset:'1',['stop-color']:'#9ca3af'})),sv('radialGradient',{id:'gxq',cx:'.5',cy:'.4',r:'.6'},sv('stop',{offset:'0',['stop-color']:'#e5e7eb'}),sv('stop',{offset:'1',['stop-color']:'#b6bcc6'}))),sv('ellipse',{cx:'130',cy:'38',rx:'126',ry:'28',fill:'#6b7280'}),sv('ellipse',{cx:'130',cy:'34',rx:'126',ry:'28',fill:'url(#gxp)'}),sv('ellipse',{cx:'130',cy:'36',rx:'92',ry:'18',fill:'url(#gxq)',stroke:'#cbd5e1','stroke-width':'2'}),sv('path',{d:'M20 30Q130 4 240 30',fill:'none',stroke:'#fff','stroke-opacity':'.8','stroke-width':'2','stroke-linecap':'round'}))
-const dome=()=>svg(200,'0 0 200 150',sv('defs',null,sv('linearGradient',{id:'gxd',x1:'0',y1:'0',x2:'1',y2:'0'},sv('stop',{offset:'0',['stop-color']:'#9ca3af'}),sv('stop',{offset:'.35',['stop-color']:'#f9fafb'}),sv('stop',{offset:'.7',['stop-color']:'#cbd5e1'}),sv('stop',{offset:'1',['stop-color']:'#6b7280'}))),sv('path',{d:'M8 132Q8 36 100 36Q192 36 192 132Z',fill:'url(#gxd)',stroke:'#4b5563','stroke-width':'2'}),sv('rect',{x:'0',y:'130',width:'200',height:'12',rx:'6',fill:'url(#gxd)',stroke:'#4b5563','stroke-width':'2'}),sv('path',{d:'M26 112Q30 62 74 50',fill:'none',stroke:'#fff','stroke-opacity':'.85','stroke-width':'5','stroke-linecap':'round'}),sv('rect',{x:'92',y:'24',width:'16',height:'14',rx:'3',fill:'#9ca3af',stroke:'#4b5563','stroke-width':'2'}),sv('circle',{cx:'100',cy:'18',r:'11',fill:'url(#gxd)',stroke:'#4b5563','stroke-width':'2'}))
+const face=(c,r,z)=>h('i',{class:'gx-f '+c,style:{transform:`rotateX(${r[0]}deg) rotateY(${r[1]}deg) translateZ(${z}px)`}})
+const sides=(c,z)=>[0,90,180,270].map(a=>face(c,[0,a],z))
+function box(){
+const bo=h('div',{class:'gx-box'},...sides('gx-side',70),face('gx-bot',[-90,0],70),face('gx-in',[-90,0],64))
+const lid=h('div',{class:'gx-lid'},...sides('gx-lside',78),face('gx-ltop',[90,0],22),face('gx-lbot',[-90,0],22),h('div',{class:'gx-bow'},h('i'),h('i'),h('b')))
+return h('div',{class:'gx-3d'},bo,lid)
+}
 function item(g){
-if(g.kind==='candy')return h('div',{class:'gx-item'},h('div',{class:'gx-cd'},candySvg(84)),h('b',null,g.label))
 if(g.kind==='pars')return h('div',{class:'gx-item'},parIcon(64),h('b',null,g.label))
 if((g.kind==='bundle'||g.kind==='multi')&&g.items?.length){
 const el=h('div',{class:'gx-item gx-multi'})
@@ -25,16 +27,17 @@ return new Promise(done=>{
 const root=h('div',{class:'gx',role:'dialog','aria-label':'You received a gift'})
 const title=h('div',{class:'gx-t'},h('b',null,g.from_name),g.kind==='multi'?' sent you '+(g.items?.length||'some')+' gifts':' sent you a gift')
 const it=item(g)
-const dm=h('div',{class:'gx-dome'},dome(),h('i',{class:'gx-puff'}),h('i',{class:'gx-puff b'}),h('i',{class:'gx-puff c'}))
-const stage=h('div',{class:'gx-stage'},h('div',{class:'gx-shadow'}),h('div',{class:'gx-plate'},plate()),it,dm)
+const bx=box()
+const stage=h('div',{class:'gx-stage'},h('div',{class:'gx-shadow'}),bx,it)
 const ok=h('button',{class:'btn pri gx-ok',on:{click:()=>{root.classList.add('gx-out');setTimeout(()=>{root.remove();done()},350)}}},'Nice!')
 root.append(h('div',{class:'gx-glow'}),title,stage,ok)
 document.body.append(root)
-if(reduce()){root.classList.add('gx-calm','gx-rise');return}
+if(reduce()){root.classList.add('gx-still');return}
 const go=(ms,f)=>setTimeout(()=>{if(root.isConnected)f();else done()},ms)
 root.classList.add('gx-drop')
-go(900,()=>{root.classList.remove('gx-drop');dm.classList.add('gx-shake')})
-go(2600,()=>{dm.classList.remove('gx-shake');dm.classList.add('gx-fling');root.classList.add('gx-rise')})
+go(900,()=>{root.classList.remove('gx-drop');bx.classList.add('gx-shake')})
+go(2400,()=>{bx.classList.remove('gx-shake');root.classList.add('gx-open','gx-rise')})
+go(3700,()=>root.classList.add('gx-fall'))
 })
 }
 async function run(){

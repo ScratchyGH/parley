@@ -1,5 +1,4 @@
 import'./perf.js'
-import'./fall.js'
 import{VC,h,mount,icon,GET,POST,PATCH,toast,fail,dialog,closeMenu,closeTopDialog,dialogOpen,debounce,fmtStamp}from'./util.js'
 import{render}from'./md.js'
 import{deviceRequest}from'./devblock.js'
@@ -22,7 +21,6 @@ import{playIntro}from'./intro.js'
 playIntro()
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
-import{startThicket,thicketPage,acornSvg}from'./thicket.js'
 import{showOverlay,hideOverlay}from'./overlay.js'
 import{startDiag}from'./diag.js'
 import{whatsNew}from'./whatsnew.js'
@@ -82,12 +80,10 @@ await Promise.all([loadServers(),loadConvs(),loadFriends(),loadUnread().catch(()
 setRouteHandler(route)
 await route()
 startPars()
-startThicket()
 startDiag()
 startRevamp()
 startUpdates()
 startStreaks(()=>renderCtx())
-{const tc=new URLSearchParams(location.search).get('tu');if(tc&&/^[A-Z0-9]{6}$/.test(tc)){history.replaceState(null,'','/');setTimeout(()=>import('/js/teamup.js').then(x=>x.openTeamup(tc)),900)}}
 setTimeout(whatsNew,1200)
 import('./appnotice.js').then(m=>m.appNotice())
 import('./androidapp.js').then(m=>m.androidApp())
@@ -115,7 +111,7 @@ const r=parse()
 cleanup?.();cleanup=null
 closeChat()
 closeDrawers()
-if(r.name!=='pars'&&r.name!=='thicket'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
+if(r.name!=='pars'&&r.name!=='settings'){hideOverlay();lastPath=location.pathname+location.search}
 const closeOv=()=>go(lastPath||'/')
 const needBack=async()=>{if(lastPath===null){lastPath='/';await renderHome('overview')}}
 if(r.name==='wap'){
@@ -157,16 +153,6 @@ showOverlay('pars','Pars shop',parIcon(20),pg,closeOv)
 document.title='Pars shop • Parley'
 return
 }
-if(r.name==='thicket'){
-await needBack()
-S.nav={kind:'thicket'}
-syncChrome()
-const pg=h('div',{class:'par-page'})
-thicketPage(pg)
-showOverlay('thicket','Thankful Thicket',acornSvg(20),pg,closeOv)
-document.title='Thankful Thicket • Parley'
-return
-}
 if(r.name==='settings'&&r.page==='pars'){go('/pars',true);return}
 if(r.name==='settings'){
 await needBack()
@@ -174,15 +160,6 @@ S.nav={kind:'settings'}
 syncChrome()
 const p=settingsPage(r,topBar,icon)
 showOverlay('settings','Settings',icon('sliders'),p.nodes[1],closeOv)
-document.title=p.title
-return
-}
-if(r.name==='games'){
-S.nav={kind:'games'}
-syncChrome()
-const{gamesPage}=await import('./gamepack.js')
-const p=gamesPage(r)
-layoutMain(...p.nodes)
 document.title=p.title
 return
 }
@@ -414,7 +391,6 @@ loadServers().then(()=>{if(S.nav.sid===id){toast(m.t==='server.deleted'?'This se
 break
 }
 case'notice':toast(m.text);break
-case'tu.invite':import('/js/teamup.js').then(x=>x.showInvite(m));break
 case'bot.device':deviceRequest(m);break
 case'call.ring':
 if(!setting('n_call',true))break
