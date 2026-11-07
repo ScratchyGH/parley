@@ -154,11 +154,45 @@ return{style,name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banne
 })
 r.add('GET','/api/connections',async c=>{
 const o=await get(c.env,'conn:'+c.user.id)
-return{list:pubList(o),providers:[...Object.entries(P).filter(([k,v])=>ready(v,c.env)).map(([k,v])=>({p:k,label:v.name,verify:true,hint:v.hint||'bio'})),...Object.entries(L).filter(([k])=>!(P[k]&&ready(P[k],c.env))).map(([k,v])=>({p:k,label:v.name,verify:false}))]}
+return{list:pubList(o),providers:[...Object.entries(P).filter(([k,v])=>ready(v,c.env)).map(([k,v])=>({p:k,label:v.name,verify:true,openid:k==='steam',hint:v.hint||'bio'})),...Object.entries(L).filter(([k])=>!(P[k]&&ready(P[k],c.env))).map(([k,v])=>({p:k,label:v.name,verify:false}))]}
+})
+r.add('GET','/api/connections/steam/login',async c=>{
+limit('stlogin:'+c.user.id,20,3600000)
+const origin=new URL(c.req.url).origin,nonce=randHex(16)
+await put(c.env,'stn:'+nonce,{u:c.user.id,exp:now()+600000})
+const ret=origin+'/api/connections/steam/return?n='+nonce
+const q=new URLSearchParams({'openid.ns':'http://specs.openid.net/auth/2.0','openid.mode':'checkid_setup','openid.return_to':ret,'openid.realm':origin,'openid.identity':'http://specs.openid.net/auth/2.0/identifier_select','openid.claimed_id':'http://specs.openid.net/auth/2.0/identifier_select'})
+return{url:'https://steamcommunity.com/openid/login?'+q}
+})
+r.add('GET','/api/connections/steam/return',async c=>{
+const u=new URL(c.req.url),home=u.origin+'/settings/connections'
+const go=m=>new Response(null,{status:302,headers:{location:home+(m?'?steam='+m:'')}})
+const n=u.searchParams.get('n')||'',st=await get(c.env,'stn:'+n)
+await c.env.DB.prepare('delete from app_settings where k=?').bind('stn:'+n).run()
+if(!st||st.exp<now()||st.u!==c.user.id)return go('expired')
+const claimed=u.searchParams.get('openid.claimed_id')||''
+const m=/^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/.exec(claimed)
+if(!m||u.searchParams.get('openid.mode')!=='id_res')return go('cancelled')
+if(u.searchParams.get('openid.return_to')!==u.origin+'/api/connections/steam/return?n='+n)return go('failed')
+const vp=new URLSearchParams();for(const[k,v]of u.searchParams)if(k.startsWith('openid.'))vp.set(k,v)
+vp.set('openid.mode','check_authentication')
+let ok=false
+try{const t=await fetch('https://steamcommunity.com/openid/login',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:vp}).then(r=>r.text());ok=/is_valid\s*:\s*true/.test(t)}catch{}
+if(!ok)return go('failed')
+const id=m[1],xk='connx:steam:'+id,x=await get(c.env,xk)
+if(x&&x!==c.user.id)return go('taken')
+let name=id
+try{const t=await fetch('https://steamcommunity.com/profiles/'+id+'/?xml=1',{headers:UA}).then(r=>r.ok?r.text():'');const pn=/<steamID>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/steamID>/.exec(t);if(pn&&pn[1].trim())name=pn[1].trim().slice(0,40)}catch{}
+const o=await get(c.env,'conn:'+c.user.id)||{}
+o.steam={id,name,at:now()}
+await put(c.env,'conn:'+c.user.id,o)
+await put(c.env,xk,c.user.id)
+return go('ok')
 })
 r.add('POST','/api/connections/start',async c=>{
 limit('connst:'+c.user.id,20,3600000)
 const b=await body(c.req,512)
+if(b.p==='steam')fail(400,'Use Sign in with Steam')
 const p0=P[b.p]&&ready(P[b.p],c.env)?P[b.p]:null
 if(!p0){
 const lp=L[b.p]
