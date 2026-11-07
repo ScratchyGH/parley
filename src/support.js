@@ -20,7 +20,7 @@ if(!r.ok)return null
 const d=await r.json()
 return{id:String(d.id),name:d.login,text:d.bio||''}}}
 ,
-steam:{name:'Steam',ok:/^[A-Za-z0-9_-]{2,64}$/,url:i=>'https://steamcommunity.com/profiles/'+i.id,async look(n0){
+steam:{name:'Steam',hint:'the profile summary',ok:/^[A-Za-z0-9_-]{2,64}$/,url:i=>'https://steamcommunity.com/profiles/'+i.id,async look(n0){
 let n=String(n0||'').trim()
 const m=/steamcommunity\.com\/(profiles|id)\/([A-Za-z0-9_-]+)/i.exec(n);if(m)n=m[2]
 const dec=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&amp;/g,'&').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()
@@ -192,7 +192,6 @@ return go('ok')
 r.add('POST','/api/connections/start',async c=>{
 limit('connst:'+c.user.id,20,3600000)
 const b=await body(c.req,512)
-if(b.p==='steam')fail(400,'Use Sign in with Steam')
 const p0=P[b.p]&&ready(P[b.p],c.env)?P[b.p]:null
 if(!p0){
 const lp=L[b.p]
