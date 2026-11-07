@@ -89,8 +89,7 @@ xpBanned:async()=>Number(await getVar(c,botId,sid,'xpban:'+uid))===1,
 dm:async text=>{
 const{slurHit,spammy}=await import('./dmguard.js')
 if(slurHit(text)||spammy(text))return false
-limit('botdm:'+botId,30,3600000)
-limit('botdmu:'+botId+':'+uid,2,600000)
+try{limit('botdm:'+botId,30,3600000);limit('botdmu:'+botId+':'+uid,6,600000)}catch{return false}
 const t=await c.env.DB.prepare('select id,settings,is_bot from users where id=? and deleted_at is null').bind(uid).first()
 if(!t||t.is_bot)return false
 let pol='everyone';try{pol=(JSON.parse(t.settings||'{}').dm_policy)||'everyone'}catch{}
@@ -103,6 +102,9 @@ if(!conv){
 const id=newId('cv'),tt=Date.now()
 await c.env.DB.batch([c.env.DB.prepare('insert into conversations(id,type,dm_key,created_at) values(?,?,?,?)').bind(id,'dm',key,tt),c.env.DB.prepare('insert into conv_members(conv_id,user_id,joined_at,accepted,hidden) values(?,?,?,1,0)').bind(id,botId,tt),c.env.DB.prepare('insert into conv_members(conv_id,user_id,joined_at,accepted,hidden) values(?,?,?,1,0)').bind(id,uid,tt)])
 conv={id}
+}else{
+const tt=Date.now()
+await c.env.DB.batch([c.env.DB.prepare('insert or ignore into conv_members(conv_id,user_id,joined_at,accepted,hidden) values(?,?,?,1,0)').bind(conv.id,botId,tt),c.env.DB.prepare('insert or ignore into conv_members(conv_id,user_id,joined_at,accepted,hidden) values(?,?,?,1,0)').bind(conv.id,uid,tt),c.env.DB.prepare('update conv_members set hidden=0,accepted=1 where conv_id=? and user_id in (?,?)').bind(conv.id,botId,uid)])
 }
 await say(c,conv.id,null,botId,text,null)
 return true
