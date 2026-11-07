@@ -106,7 +106,7 @@ untimeout:{out:NX,spec:{target:60},def:{target:''}},
 kick:{out:NX,spec:{reason:200,target:60},def:{reason:'Removed by bot',target:''}},
 ban:{out:NX,spec:{reason:200,target:60},def:{reason:'Banned by bot',target:''}},
 purge:{out:NX,spec:{count:2,target:60},def:{count:'5',target:''}},
-warnif:{out:YN,spec:{n:2,act:['ban','kick','timeout'],reason:200,target:60},def:{n:'3',act:'ban',reason:'Too many warnings',target:''}},
+warnif:{out:YN,entry:true,spec:{n:2,act:['ban','kick','timeout'],reason:200,target:60},def:{n:'3',act:'ban',reason:'Too many warnings',target:''}},
 warn:{out:NX,spec:{name:24,reason:200,target:60},def:{name:'warns',reason:'Warning from bot',target:''}},
 log:{out:NX,spec:{channel:40,text:1500},def:{channel:'mod-log',text:''}},
 wait:{out:NX,spec:{seconds:1},def:{seconds:'2'}},
@@ -455,6 +455,14 @@ const R2=s=>hid(render(s,vars)),tt=await tio(m.p,R2),v=await tt.xpGet()
 if(levelOf(v)>=Number(m.p.level)&&acts<8){acts++;const got=await tt.role(R2(m.p.role),true);log.push({id:m.id,did:'xplevelrole',role:m.p.role});if(got){const nx=next(m.id,'next');if(nx)await chain(nx,1)}}
 }
 }
+const autoWarn=async w=>{
+for(const m of graph.nodes){
+if(m.type!=='warnif'||graph.edges.some(e=>e.t===m.id))continue
+const R2=x=>hid(render(x,vars)),hit=w>=Number(m.p.n)
+if(hit&&acts<8&&heavy<1){acts++;heavy++;const tt=await tio(m.p,R2);await tt.punish(m.p.act,R2(m.p.reason).slice(0,200));log.push({id:m.id,did:'warnif',value:String(w)})}
+const nx=next(m.id,hit?'yes':'no');if(nx)await chain(nx,1)
+}
+}
 async function chain(start,depth){
 let cur=start
 while(cur&&steps<60){
@@ -539,7 +547,7 @@ case'untimeout':if(acts<8){acts++;await(await tio(P,R)).untimeout();log.push({id
 case'kick':case'ban':if(acts<8&&heavy<1){acts++;heavy++;await(await tio(P,R))[n.type](R(P.reason).slice(0,200));log.push({id:n.id,did:n.type})}break
 case'purge':if(acts<8){acts++;await(await tio(P,R)).purge(Number(P.count));log.push({id:n.id,did:'purge',count:P.count})}break
 case'warnif':{const t=await tio(P,R),w=await t.warns();branch=w>=Number(P.n);if(branch&&acts<8&&heavy<1){acts++;heavy++;await t.punish(P.act,R(P.reason).slice(0,200));log.push({id:n.id,did:'warnif',value:String(w)})}break}
-case'warn':if(acts<8){acts++;const w=await(await tio(P,R)).warn(R(P.reason).slice(0,200));log.push({id:n.id,did:'warn',value:setv(P.name||'warns',String(w))})}break
+case'warn':if(acts<8){acts++;const w=await(await tio(P,R)).warn(R(P.reason).slice(0,200));log.push({id:n.id,did:'warn',value:setv(P.name||'warns',String(w))});await autoWarn(w)}break
 case'log':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P.channel).replace(/^#/,''),t);log.push({id:n.id,did:'log',text:t})}break}
 case'wait':{const ms=Math.min(5000,Number(P.seconds)*1000),left=8000-waited;if(!ctx.dry&&left>0){const w=Math.min(ms,left);waited+=w;await new Promise(r=>setTimeout(r,w))}log.push({id:n.id,did:'wait'});break}
 case'save':if(P.key){await io.save(P.key.toLowerCase(),R(P.value).slice(0,300),P.scope);log.push({id:n.id,did:'save'})}break
