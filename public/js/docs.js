@@ -6,23 +6,55 @@ const SEC=[
 {id:'start',t:'Getting started',k:'account sign up username recovery code login start begin',b:[
 ['p','Parley is a free place for friend groups and communities. You pick a username and go. There is no email to confirm.'],
 ['p','When you make an account you get a recovery code. It is the only key to your account, so save it somewhere safe before you do anything else.'],
-['p','Start with Start a server on Home, or open an invite link from a friend. Direct messages live under Home, and the Friends tab lists everyone you have added.']
+['p','Start with Start a server on Home, or open an invite link from a friend. Direct messages live under Home, and the Friends tab lists everyone you have added. Settings holds your profile, connections, privacy and appearance.']
 ]},
 {id:'servers',t:'Servers, channels and roles',k:'server channel role thread forum stage poll event permissions invite',b:[
 ['p','A server has text channels, voice channels, stages, forums and threads. Roles control who can see, send, connect and manage things, and each channel can override a role.'],
-['p','Scheduled events let members RSVP. You can invite people with an invite link.']
+['p','Scheduled events let members RSVP. You can invite people with an invite link or a vanity link, and moderators get timeouts, bans and a safety log.']
 ]},
 {id:'voice',t:'Voice, video and screen share',k:'voice call video screen share mic microphone ring resolution fps bitrate push to talk',b:[
 ['p','Calls connect people directly, up to 12 in a call. Open Voice settings to pick your microphone, noise control, push to talk, and screen share quality.'],
 ['p','Screen share lets you choose a resolution, a frame rate and a maximum bitrate. Lower the bitrate if viewers see stutter. You can also zoom a stream with the mouse wheel, expand it, or send it full screen.'],
 ['p','To ring someone, open a direct message and press Start voice call. People already in the call can ring others from the call controls.']
 ]},
-{id:'pars',t:'Pars and cosmetics',k:'pars shop banner nameplate frame cosmetics earn',b:[
-['p','Pars are earned by being around. Spend them in the Pars shop on banners, nameplates, frames and seasonal sets. Nothing is sold for money.']
+{id:'pars',t:'Pars and the shop',k:'pars shop earn rate hour cap milestone cosmetics nameplate frame effect badge title bubble card bundle vanity boost',b:[
+['p','Pars are earned by being active in Parley. You earn 5 Pars for every hour of active use, up to 12 hours a day, and you get a bonus at 10, 50, 100 and 250 total hours. There is no popup to click: moving around, typing and scrolling is enough. Pars have no cash value and nothing is sold for money.'],
+['p','Spend them in the Pars shop. It sells nameplates, avatar frames, profile effects, name effects, badges, titles, message bubbles, avatar card styles, custom titles and messages, server boosts, vanity links and seasonal bundles.'],
+['p','Open a bundle to see everything inside it. Bundles can have a Legacy and a Modern set. Items you already own are not charged again, but the bundle price stays the same.']
 ]},
-{id:'lab',t:'Bot Lab: bots without code',k:'bot lab blocks no code command trigger template block builder hosting',b:[
+{id:'vanity',t:'Vanity links',k:'vanity link server custom invite url duration forever',b:[
+['p','A vanity link gives a server a short custom invite address. Buy one from the shop for a duration from 1 day up to forever. Buying again on the same server adds time.'],
+['p','You need the Manage Server permission to buy one for a server. A vanity link can be gifted to a server you do not manage from the vanity dialog.'],
+['p','A bundle that includes a vanity link lets you choose. Tick Add the vanity link and pick a server to get the full bundle. Untick it to buy the bundle without the link, at the lower price.']
+]},
+{id:'gifts',t:'Gifts and gift links',k:'gift send friend link claim inbox bundle present reveal',b:[
+['p','Press the gift button on any cosmetic or bundle to send it to a friend. A friend sees the present open the next time Parley is open, and it also lands in their gift inbox.'],
+['p','The link button buys a gift link instead. You get a link to paste into any chat, and the first person to open it and press claim receives the item. Gift links work for cosmetics, unlocks and bundles. A gifted bundle includes the cosmetics but not the vanity link.'],
+['p','Gifts are final. New accounts can send gifts after 24 hours, and there is a daily limit on how many Pars you can send.']
+]},
+{id:'conn',t:'Connections',k:'connections steam link profile verify openid summary code',b:[
+['p','Open Settings, then Connections to link other accounts to your profile. Linked accounts show on your profile card.'],
+['p','Steam has two ways to link. Sign in with Steam to verify through Steam itself, or type your profile name and put the code Parley gives you in your Steam profile summary, then press Link with code. An account linked by an owner without proof shows as not verified.']
+]},
+{id:'lab',t:'Bot Lab: bots without code',k:'bot lab blocks no code command trigger template block builder hosting test hub',b:[
 ['p','Bot Lab builds bots from blocks. Triggers start a bot, logic blocks decide what happens, and action blocks send messages. Your bot runs on Parley itself, so there is nothing to host.'],
-['p','Open Bot Lab, make a new bot, switch to Code blocks and drag blocks together. Use the test button to try the graph before you publish it to the Bot hub.']
+['p','Open Bot Lab, make a new bot, switch to Code blocks and drag blocks together. Use the test button to try the graph before you publish it to the Bot hub. Test runs only show what a block would do and never send anything.'],
+['p','Blocks need to be wired to a trigger to run. Blocks that work on their own, like Give a role at a level and Connect another bot, do not show that warning.']
+]},
+{id:'team',t:'Working on a bot together',k:'team collaborate invite editor viewer maintainer coowner owner merge key connect another bot share',b:[
+['p','Open a bot in the blocks editor, open the menu and choose Team to invite people. Type their username, pick a role and press Invite.'],
+['p','Roles: Viewer can look at and test the bot. Editor can change blocks. Maintainer can also edit the listing and publish releases. Co-owner can do everything except delete or transfer the bot. Only the owner adds co-owners.'],
+['p','The person you invite gets a notice, then opens Bot Lab, My bots and presses Accept. After that the bot appears in their list and they can open its blocks. You can see who is online in the editor.'],
+['p','To share saved values like XP between two bots, copy a bot’s merge key from the Team dialog and paste it into a Connect another bot block on the other bot. Only share the key with people you fully trust.']
+]},
+{id:'levels',t:'Levels, XP and level cards',k:'level xp rank card leaderboard board designer role picture custom design',b:[
+['p','The Add XP block gives members XP when they chat, with a cooldown. A member reaches level L at 50 x L x (L + 1) XP. Use the Make a level card block to show their level, and Leaderboard to list the top members.'],
+['p','Give a role at a level hands out a role when someone reaches a level. Leave it unconnected and it runs by itself after the XP block. Blocks wired after its then output run once, when the role is first given.'],
+['p','Set Card style to Picture and choose how the card looks, or pick Picture, customized to open the card designer. Drag the name, level, XP text, rank, avatar and bar anywhere, rotate and resize them, change fonts and colors, add your own background picture, then save the design into the block.']
+]},
+{id:'dm',t:'Private messages from a bot',k:'private message dm direct bot block send notice',b:[
+['p','The Send a private message block sends a DM from your bot. Leave Who empty to message the person who triggered it, or enter a username. The text can be up to 400 characters.'],
+['p','It does not send if the person has direct messages turned off, has blocked the bot, or if the text trips the spam filter. A bot can send 30 DMs an hour and up to 6 to the same person every 10 minutes. Use Privately notify the member for rule warnings.']
 ]},
 {id:'token',t:'Bot tokens and authentication',k:'api token bot authorization header auth bearer pb_',b:[
 ['p','To call the API as a bot, make a bot in Bot Lab and create a token from its page. The token starts with pb_ and is shown once, so store it safely.'],
@@ -50,10 +82,6 @@ const SEC=[
 ['p','The same in Python:'],
 ['c','import os, requests\nr = requests.post(\n  "https://parley.heavengtwashere.workers.dev/api/rooms/ROOM_ID/messages",\n  headers={"Authorization": "Bot " + os.environ["PARLEY_TOKEN"]},\n  json={"content": "Hello from Python"},\n)\nprint(r.status_code, r.json())'],
 ['p','There is no real-time gateway for bots yet. Poll the messages route, or build the bot in Bot Lab so it runs on Parley and reacts to messages right away.']
-]},
-{id:'game',t:'Gourd Rush Teamup',k:'game gourd rush teamup squad boss tesvin potion lair',b:[
-['p','Teamup is a co-op survival game you start from Home. Squads hold out until dawn against waves, mimics, crossbow skeletons and bosses.'],
-['p','Potions come from lair pedestals and boss drops. Voice chat inside a match gets quieter with distance. Watch for a boss that is a television.']
 ]}
 ]
 const code=txt=>{

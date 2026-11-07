@@ -48,7 +48,7 @@ const r=await POST('/api/pars/beat',sample())
 if(S.me)S.me.pars=r.balance
 if(r.earned>0)toast('+'+r.earned+' Pars earned',null)
 for(const n of r.notes||[])toast(n)
-if(r.check)showCheck(r.check);else if(chk){chk.remove();chk=null}
+if(chk){chk.remove();chk=null}
 }catch{}
 },60000)
 setTimeout(()=>POST('/api/pars/beat',{w:[],v:true}).catch(()=>{}),1500)
@@ -129,10 +129,12 @@ return g
 function giftBtn(d,it,vk){
 return h('button',{class:'gift-b',title:'Send as a gift',on:{click:()=>giftDialog(d,it,vk)}},icon('gift'))
 }
-function linkBtn(d,it){
-if(!COS.has(it.kind))return null
-const cant=d.balance<it.price
-return h('button',{class:'gift-b',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'Buy as a gift link',on:{click:async e=>{if(!await confirmBox('Buy as gift link',it.name+' for '+it.price+' Pars. You get a link to send in any chat.','Buy and copy link',false))return;const b=e.currentTarget;b.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');load()}catch(x){b.disabled=false;fail(x)}}}},icon('link'))
+function linkBtn(d,it,vk){
+const isB=it.kind==='bundle'
+if(!COS.has(it.kind)&&!isB)return null
+const v=isB?variantsOf(it)[vk]:null,pr=isB?v.gift_price:it.price
+const cant=d.balance<pr
+return h('button',{class:'gift-b',disabled:cant,title:cant?'You need '+(pr-d.balance)+' more Pars':'Buy as a gift link',on:{click:async e=>{if(!await confirmBox('Buy as gift link',it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')+' for '+pr+' Pars. You get a link to send in any chat.'+(isB&&v.vanity_days?' Gift links include the cosmetics but not the vanity link.':''),'Buy and copy link',false))return;const b=e.currentTarget;b.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id,variant:isB?vk:undefined});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');load()}catch(x){b.disabled=false;fail(x)}}}},icon('link'))
 }
 function card(d,it){
 const have=(COS.has(it.kind)||it.kind==='unlock')&&owns(d,it.id)
@@ -167,7 +169,7 @@ const have=owns(d,marker(it,key))
 const cant=d.balance<v.price
 const toggle=keys.length>1?h('div',{class:'vt',role:'group','aria-label':'Version'},keys.map(k=>h('button',{class:k===key?'on':'','aria-pressed':String(k===key),on:{click:()=>{key=k;draw()}}},vs[k].label))):null
 const prev=key==='modern'?vs.legacy:null
-mount(wrap,preview(d,it,v),h('b',{style:{fontSize:'17px',color:'var(--strong)'}},it.name),toggle,contents(d,v,prev),h('div',{class:'hint',style:{margin:0,minHeight:'2.6em'}},key==='legacy'?'The classic set, as it was before the update.':key==='modern'?'Everything in Legacy, plus the new extras (highlighted).':it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+v.price),h('button',{class:'btn pri buy',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,key)}},have?'Owned':'Buy'),giftBtn(d,it,key)))
+mount(wrap,preview(d,it,v),h('b',{style:{fontSize:'17px',color:'var(--strong)'}},it.name),toggle,contents(d,v,prev),h('div',{class:'hint',style:{margin:0,minHeight:'2.6em'}},key==='legacy'?'The classic set, as it was before the update.':key==='modern'?'Everything in Legacy, plus the new extras (highlighted).':it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+v.price),h('button',{class:'btn pri buy',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,key)}},have?'Owned':'Buy'),giftBtn(d,it,key),linkBtn(d,it,key)))
 }
 draw()
 return wrap
@@ -185,7 +187,7 @@ const clock=h('span',{class:'ts-time'})
 const upd=()=>{const n=Date.now();if(n<start){clock.textContent='Starts in '+left(start-n)}else{const ms=end-n;clock.textContent=ms>0?left(ms)+' left':'Ended'}}
 upd();const t=setInterval(()=>{if(!clock.isConnected){clearInterval(t);return}upd()},1000);tick.push(t)
 const tag=soon?'Admin preview · starts '+new Date(start).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}):'Limited time'
-return h('section',{class:'par-sec',id:'sh-ts-'+it.id},h('div',{class:'ts'+(bd.season?' sx-'+bd.season:'')},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},tag),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri buy',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
+return h('section',{class:'par-sec',id:'sh-ts-'+it.id},h('div',{class:'ts'+(bd.season?' sx-'+bd.season:'')},h('div',{class:'pb-prev'},preview(d,it,v)),h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',minWidth:0}},h('span',{class:'ts-tag'},tag),h('h3',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),contents(d,v),clock),h('div',{class:'pb-buy'},h('span',{class:'par-price'},parIcon(20),' '+v.price),h('div',{class:'row',style:{gap:'8px'}},h('button',{class:'btn pri buy',disabled:have||cant,title:have?'You already own this':cant?'You need '+(v.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it,'main')}},have?'Owned':'Get the bundle'),giftBtn(d,it,'main'),linkBtn(d,it,'main')),h('span',{class:'hint',style:{margin:0,color:'#c7d2fe'}},'Gifts cost '+v.gift_price+' and include everything except the vanity link.'))))
 }
 function own(d){
 const rows=d.owned.filter(o=>!String(o.item_id).startsWith('bundle:'))
@@ -260,25 +262,31 @@ const v=isB?variantsOf(it)[vk]:null
 const price=isB?v.price:it.price
 const bv=isB&&v.vanity_days
 let mode=it.kind==='vanity'||bv?'server':it.kind==='boost'?'server':'self'
+let withV=true
+const curPrice=()=>bv&&!withV?v.gift_price:price
+const sum=h('p',null)
+let buyB=null
+const drawS=()=>{const pr=curPrice();mount(sum,h('b',null,it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')),' for ',h('b',null,pr+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-pr)+'.');if(buyB)buyB.textContent='Buy for '+pr}
+const vc=bv?h('label',{class:'bk-check'},h('input',{type:'checkbox',checked:true,on:{change:e=>{withV=e.target.checked;drawW();drawS()}}}),'Add the '+(bv>=365?'1 year':bv+' day')+' vanity link to a server (optional)'):null
 const sel=h('select',{class:'sel'},S.servers.map(s=>h('option',{value:s.id},s.name)))
 const who=h('input',{class:'inp',placeholder:'Username to gift to',maxLength:24})
 const where=h('div',null)
 const modes=it.kind==='boost'?[['server','A server I am in'],['self','My account'],['user','Gift to someone']]:[]
-const drawW=()=>mount(where,modes.length?h('div',{class:'tabs',style:{marginBottom:'8px'}},modes.map(([k,l])=>h('button',{class:mode===k?'on':'',on:{click:()=>{mode=k;drawW()}}},l))):null,mode==='server'||bv?field('Server',sel):null,mode==='user'?field('Person',who):null)
-drawW()
-return dialog('Confirm purchase',h('div',{class:'bd'},h('p',null,h('b',null,it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')),' for ',h('b',null,price+' Pars'),'. You have '+d.balance+', leaving '+(d.balance-price)+'.'),h('p',{class:'hint'},bv?'The vanity link is added to the server you pick for '+(bv>=365?'1 year':bv+' days')+'. You can only buy each bundle once.':isB?'You can only buy each bundle once. Items you already own are not charged again, but the price stays the same.':it.kind==='vanity'?'Belongs to the server. Anyone with Manage Server can use it.':it.kind==='boost'?'Belongs to the target you pick: a server, your account, or the person you gift it to. It cannot be refunded.':'Belongs to your account.'),where),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri buy',on:{click:async e=>{
+const drawW=()=>mount(where,modes.length?h('div',{class:'tabs',style:{marginBottom:'8px'}},modes.map(([k,l])=>h('button',{class:mode===k?'on':'',on:{click:()=>{mode=k;drawW()}}},l))):null,(mode==='server'&&!bv)||(bv&&withV)?field('Server',sel):null,mode==='user'?field('Person',who):null)
+drawW();drawS()
+return dialog('Confirm purchase',h('div',{class:'bd'},sum,vc,h('p',{class:'hint'},bv?'The vanity link is added to the server you pick for '+(bv>=365?'1 year':bv+' days')+' if you keep it ticked. You can only buy each bundle once.':isB?'You can only buy each bundle once. Items you already own are not charged again, but the price stays the same.':it.kind==='vanity'?'Belongs to the server. Anyone with Manage Server can use it.':it.kind==='boost'?'Belongs to the target you pick: a server, your account, or the person you gift it to. It cannot be refunded.':'Belongs to your account.'),where),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),(buyB=h('button',{class:'btn pri buy',on:{click:async e=>{
 e.target.disabled=true
 try{
 const b={item:it.id,req:rid()}
 if(isB)b.variant=vk
 if(it.kind==='boost')b.target=mode
-if(mode==='server'||bv)b.server_id=sel.value
+if((mode==='server'&&!bv)||(bv&&withV))b.server_id=sel.value
 if(mode==='user')b.user=who.value
 await POST('/api/pars/buy',b)
 toast('Purchased '+it.name)
 close();load()
 }catch(x){e.target.disabled=false;fail(x)}
-}}},'Buy for '+price),COS.has(it.kind)?h('button',{class:'btn pri buy',on:{click:async e=>{e.target.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');close();load()}catch(x){e.target.disabled=false;fail(x)}}}},'Buy as gift link for '+price):null]})
+}}},'Buy for '+price)),COS.has(it.kind)||isB?h('button',{class:'btn pri buy',on:{click:async e=>{e.target.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id,variant:isB?vk:undefined});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');close();load()}catch(x){e.target.disabled=false;fail(x)}}}},'Buy as gift link for '+(isB?v.gift_price:price)):null]})
 }
 }
 function vanityBuy(d,it){
