@@ -1,5 +1,3 @@
-insert into par_tx(id,user_id,delta,kind,ref,note,created_at) select 'pt'||lower(hex(randomblob(8))),user_id,25,'refund','game_pack','Refund: event games removed',strftime('%s','now')*1000 from game_unlocks;
-update users set pars=pars+25 where id in(select user_id from game_unlocks);
 delete from gift_inbox where kind='candy' and seen=0;
 drop table if exists event_quests;
 drop table if exists event_progress;
@@ -10,4 +8,3 @@ drop table if exists event_pumpkins;
 drop table if exists event_finds;
 drop table if exists event_gifts;
 drop table if exists event_night_runs;
-drop table if exists game_unlocks;
