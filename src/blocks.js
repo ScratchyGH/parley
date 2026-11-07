@@ -9,7 +9,7 @@ import{messageExplicit,filterOn}from'./safety.js'
 async function say(c,room,sid,botId,text,replyTo){
 const brr=await resolveRoom(c.env,room,botId)
 if(!(brr.perms&P.SEND))return
-if(filterOn(brr.m.server)&&messageExplicit(text))return
+if(brr.m&&filterOn(brr.m.server)&&messageExplicit(text))return
 const id=msgId(),t=now()
 await c.env.DB.batch([
 c.env.DB.prepare('insert into messages(id,room,server_id,author_id,content,reply_to,created_at,nonce,sig) values(?,?,?,?,?,?,?,?,?)').bind(id,room,sid||null,botId,text,replyTo||null,t,null,await signMsg(c.env,{id,room,author_id:botId,created_at:t,content:text})),
