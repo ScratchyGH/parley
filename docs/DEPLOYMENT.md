@@ -21,6 +21,8 @@ Cloudflare D1 is the default database and file store. Each of these is switched 
 
 | Service | Secrets | What it does | Free limits (check current terms) |
 | --- | --- | --- | --- |
+| SMTP (any mailbox, works for every recipient) | `SMTP_HOST` (like `smtp.gmail.com`), `SMTP_PORT` (default `465`), `SMTP_USER`, `SMTP_PASS` (a Gmail app password works), optional `MAIL_FROM` | Sends the same emails through your own mailbox. Used first when `SMTP_HOST` is set. |
+| Brevo | `BREVO_API_KEY`, `MAIL_FROM` (a sender address you verified in Brevo) | Free API sender, used when SMTP is not set. |
 | Resend | `RESEND_API_KEY`, optional variable `MAIL_FROM` (like `Parley <no-reply@example.com>`) | Sends email confirmation codes, password reset codes and security alerts. Without a verified domain Resend only sends from `onboarding@resend.dev` to your own address | 3,000 emails a month on the free plan |
 | Turso | `TURSO_URL` (`libsql://...`), `TURSO_TOKEN` | Replaces D1 as the main database. The schema is created automatically on first request. Also stores files. | about 5 GB. Every query becomes an internet round trip, so expect it to be slower than D1 |
 | Supabase Storage | `SUPABASE_URL`, `SUPABASE_KEY` (service role key), optional `SUPABASE_BUCKET` (default `parley`, create it as a private bucket) | Stores files up to 16 MiB | about 1 GB, 50 MB per object |
