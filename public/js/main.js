@@ -84,6 +84,7 @@ startDiag()
 startRevamp()
 startUpdates()
 startStreaks(()=>renderCtx())
+{const tc=new URLSearchParams(location.search).get('tu');if(tc&&/^[A-Z0-9]{6}$/.test(tc)){history.replaceState(null,'','/');setTimeout(()=>import('/js/teamup.js').then(x=>x.openTeamup(tc)),900)}}
 setTimeout(whatsNew,1200)
 import('./appnotice.js').then(m=>m.appNotice())
 import('./androidapp.js').then(m=>m.androidApp())
@@ -160,6 +161,15 @@ S.nav={kind:'settings'}
 syncChrome()
 const p=settingsPage(r,topBar,icon)
 showOverlay('settings','Settings',icon('sliders'),p.nodes[1],closeOv)
+document.title=p.title
+return
+}
+if(r.name==='games'){
+S.nav={kind:'games'}
+syncChrome()
+const{gamesPage}=await import('./gamepack.js')
+const p=gamesPage(r)
+layoutMain(...p.nodes)
 document.title=p.title
 return
 }
@@ -391,6 +401,7 @@ loadServers().then(()=>{if(S.nav.sid===id){toast(m.t==='server.deleted'?'This se
 break
 }
 case'notice':toast(m.text);break
+case'tu.invite':import('/js/teamup.js').then(x=>x.showInvite(m));break
 case'bot.device':deviceRequest(m);break
 case'call.ring':
 if(!setting('n_call',true))break

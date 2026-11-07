@@ -50,6 +50,10 @@ const SEC=[
 ['p','The same in Python:'],
 ['c','import os, requests\nr = requests.post(\n  "https://parley.heavengtwashere.workers.dev/api/rooms/ROOM_ID/messages",\n  headers={"Authorization": "Bot " + os.environ["PARLEY_TOKEN"]},\n  json={"content": "Hello from Python"},\n)\nprint(r.status_code, r.json())'],
 ['p','There is no real-time gateway for bots yet. Poll the messages route, or build the bot in Bot Lab so it runs on Parley and reacts to messages right away.']
+]},
+{id:'game',t:'Gourd Rush Teamup',k:'game gourd rush teamup squad boss tesvin potion lair',b:[
+['p','Teamup is a co-op survival game you start from Home. Squads hold out until dawn against waves, mimics, crossbow skeletons and bosses.'],
+['p','Potions come from lair pedestals and boss drops. Voice chat inside a match gets quieter with distance. Watch for a boss that is a television.']
 ]}
 ]
 const code=txt=>{

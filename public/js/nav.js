@@ -25,6 +25,7 @@ if(p[0]==='s'&&p[2]==='settings')return{name:'ssettings',sid:p[1],page:p[3]||''}
 if(p[0]==='s')return{name:'server',sid:p[1],ch:p[2]||null,m}
 if(p[0]==='discover')return{name:'discover'}
 if(p[0]==='pars')return{name:'pars'}
+if(p[0]==='games')return{name:'games'}
 if(p[0]==='docs')return{name:'docs'}
 if(p[0]==='lab'){
 if(!p[1])return{name:'lab',view:'mine'}
