@@ -13,6 +13,7 @@ let o={}
 try{o=r?JSON.parse(r.v):{}}catch{}
 const out={...DEF}
 for(const k of Object.keys(DEF))if(Number.isFinite(o[k]))out[k]=o[k]
+out.rate=5
 return out
 }
 const inbox=(env,uid,from,kind,itemId,label,amount)=>env.DB.prepare('insert into gift_inbox(id,user_id,from_name,kind,item_id,label,amount,created_at) values(?,?,?,?,?,?,?,?)').bind(newId('gf'),uid,from,kind,itemId||null,label,amount||0,now()).run().catch(()=>{})
@@ -105,11 +106,18 @@ r.add('POST','/api/pars/giftlink',async c=>{
 limit('pargl:'+c.user.id,10,3600000)
 const b=await body(c.req,500)
 const it=await c.env.DB.prepare('select * from par_items where id=? and enabled=1').bind(String(b.item||'')).first()
-if(!it||!(COSMETIC.includes(it.kind)||it.kind==='unlock'))fail(400,'That item cannot be sent as a link')
-const ok=await c.env.DB.prepare('update users set pars=pars-? where id=? and pars>=?').bind(it.price,c.user.id,it.price).run()
-if(!ok.meta.changes)fail(402,'You need '+it.price+' Pars for this')
+if(!it||!(COSMETIC.includes(it.kind)||it.kind==='unlock'||it.kind==='bundle'))fail(400,'That item cannot be sent as a link')
+let price=it.price,vk=null
+if(it.kind==='bundle'){
+const bun=bundleOf(it,b.variant)
+if(bun.season){const w=seasonWindow(bun.season);if(!c.user.admin&&!(w&&w.live))fail(409,w&&w.status==='upcoming'?'This bundle is not available yet':'This bundle is no longer available')}
+else if(bun.ends_at&&now()>bun.ends_at)fail(409,'This bundle is no longer available')
+price=bun.gift_price;vk=bun.key
+}
+const ok=await c.env.DB.prepare('update users set pars=pars-? where id=? and pars>=?').bind(price,c.user.id,price).run()
+if(!ok.meta.changes)fail(402,'You need '+price+' Pars for this')
 const code=newId('g').slice(-10)
-await c.env.DB.batch([txRow(c.env,c.user.id,-it.price,'purchase','gl:'+code,it.name+' gift link'),c.env.DB.prepare('insert into app_settings(k,v) values(?,?)').bind('glink:'+code,JSON.stringify({i:it.id,f:c.user.username,p:it.price}))])
+await c.env.DB.batch([txRow(c.env,c.user.id,-price,'purchase','gl:'+code,it.name+' gift link'),c.env.DB.prepare('insert into app_settings(k,v) values(?,?)').bind('glink:'+code,JSON.stringify({i:it.id,v:vk,f:c.user.username,p:price}))])
 return json({code,balance:await bal(c.env,c.user.id)},201)
 })
 r.add('GET','/api/pars/giftlink/:code',async c=>{
@@ -124,6 +132,20 @@ const k='glink:'+c.p.code
 const x=await c.env.DB.prepare('select v from app_settings where k=?').bind(k).first()
 if(!x)fail(404,'This gift was already claimed or does not exist')
 const g=JSON.parse(x.v)
+const it=await c.env.DB.prepare('select * from par_items where id=?').bind(g.i).first()
+if(!it)fail(404,'This gift is no longer available')
+if(it.kind==='bundle'){
+const bun=bundleOf(it,g.v)
+const marker='bundle:'+it.id+':'+bun.key
+if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,marker).first())fail(409,'You already own this bundle')
+const del=await c.env.DB.prepare('delete from app_settings where k=?').bind(k).run()
+if(!del.meta.changes)fail(404,'This gift was already claimed')
+const have=new Set(bun.items.length?(await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${bun.items.map(()=>'?').join(',')})`).bind(c.user.id,...bun.items).all()).results.map(y=>y.item_id):[])
+const st=[c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),c.user.id,marker,null,g.f,now())]
+for(const y of bun.items)if(!have.has(y))st.push(c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),c.user.id,y,null,g.f,now()))
+await c.env.DB.batch(st)
+return{ok:true}
+}
 if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id=?').bind(c.user.id,g.i).first())fail(409,'You already own this')
 const del=await c.env.DB.prepare('delete from app_settings where k=?').bind(k).run()
 if(!del.meta.changes)fail(404,'This gift was already claimed')
@@ -182,8 +204,7 @@ if(repeat||flat)strikes++
 sig=[...sig,vec].slice(-6)
 let checkAt=row.check_at,tok=row.check_tok,sent=row.check_sent,paused=row.paused
 if(!checkAt)checkAt=t+(20+Math.random()*25)*60000
-if(sent&&t-sent>180000)paused=1
-if(!sent&&checkAt<=t){tok=Math.random().toString(36).slice(2,14);sent=t}
+paused=0;sent=0;tok=''
 const human=b.v===true&&act>=4&&ev>=8&&kinds>=2&&hard>=2&&dt<=180000&&strikes<3&&!repeat&&!flat&&!paused
 if(human&&sent){sent=0;tok='';checkAt=t+(20+Math.random()*25)*60000}
 let credit=human?Math.min(dt,120000):0
@@ -249,7 +270,8 @@ if(it.kind==='bundle'){
 bun=bundleOf(it,b.variant)
 if(bun.season){const w=seasonWindow(bun.season);if(!c.user.admin&&!(w&&w.live))fail(409,w&&w.status==='upcoming'?'This bundle is not available yet':'This bundle is no longer available')}
 else if(bun.ends_at&&now()>bun.ends_at)fail(409,'This bundle is no longer available')
-price=viaServer?bun.server_price:gifting?bun.gift_price:bun.price
+const wantV=viaServer||(!gifting&&bun.vanity_days>0&&String(b.server_id||'').trim()!=='')
+price=viaServer?bun.server_price:(gifting||!wantV)?bun.gift_price:bun.price
 if(viaServer){
 if(!bun.vanity_days)fail(400,'This bundle has nothing for a server')
 }else{
@@ -258,7 +280,7 @@ if(await c.env.DB.prepare('select 1 x from par_owned where user_id=? and item_id
 const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${bun.items.map(()=>'?').join(',')})`).bind(owner,...bun.items).all()).results.map(x=>x.item_id))
 todo=bun.items.filter(x=>!have.has(x))
 }
-if(viaServer||(!gifting&&bun.vanity_days)){
+if(wantV){
 sid=String(b.server_id||'')
 const m=await loadMember(c.env,sid,c.user.id)
 if(!m)fail(404,'Choose a server for the vanity link')
