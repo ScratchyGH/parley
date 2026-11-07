@@ -1,6 +1,6 @@
 export const SEASONS={
 spook:{name:'Spooked Out',from:[10,1],to:[11,3]},
-thicket:{name:'Thankful Thicket',from:[11,1],to:[12,5]},
+thicket:{name:'Thankful Thicket',from:[11,1],to:[11,5]},
 xmas:{name:'Yuletide',from:[12,10],to:[12,28]},
 nye:{name:'Midnight Countdown',from:[12,29],to:[1,7]},
 love:{name:'Lovestruck',from:[2,1],to:[2,15]},
