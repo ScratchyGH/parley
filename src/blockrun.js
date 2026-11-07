@@ -71,7 +71,7 @@ connectbot:{out:NX,entry:true,spec:{key:48,name:24},def:{key:'',name:'linked'}},
 linkvar:{out:NX,spec:{mode:['get','set'],bot:24,var:24,value:40,scope:['server','user']},def:{mode:'get',bot:'linked',var:'xp',value:'',scope:'user'}},
 setxp:{out:YN,spec:{name:24,mode:['give','take','set','reset'],amount:9,target:60,allow:120},def:{name:'xp',mode:'give',amount:'100',target:'',allow:''}},
 xplevelrole:{out:NX,spec:{level:3,role:40,target:60},def:{level:'5',role:'',target:''}},
-rankcard:{out:NX,spec:{layout:['banner','full','custom','blur','solid','split'],bgid:40,pfp:['left','center','ring','square','hidden'],bar:['round','square','thin','thick','segment'],barcolor:9,textcolor:9,name:24,xp:24,shape:['image','plain','box','round','bar'],font:['normal','bold','mono','double'],title:60,width:2,fill:2,empty:2},def:{layout:'banner',bgid:'',pfp:'left',bar:'round',barcolor:'#7c5cff',textcolor:'#ffffff',name:'card',xp:'xp',shape:'image',font:'bold',title:'{username}',width:'12',fill:'▰',empty:'▱'}},
+rankcard:{out:NX,spec:{layout:['banner','full','custom','blur','solid','split'],bgid:40,pfp:['left','center','ring','square','hidden'],bar:['round','square','thin','thick','segment'],barcolor:9,textcolor:9,design:700,name:24,xp:24,shape:['image','plain','box','round','bar'],font:['normal','bold','mono','double'],title:60,width:2,fill:2,empty:2},def:{layout:'banner',bgid:'',pfp:'left',bar:'round',barcolor:'#7c5cff',textcolor:'#ffffff',design:'',name:'card',xp:'xp',shape:'image',font:'bold',title:'{username}',width:'12',fill:'▰',empty:'▱'}},
 board:{out:NX,spec:{name:24,count:2,font:['normal','bold','mono','double']},def:{name:'board',count:'10',font:'normal'}},
 setsecret:{out:NX,spec:{key:24,value:300},def:{key:'webhookurl',value:'{args}'}},
 getsecret:{out:NX,spec:{name:24,key:24},def:{name:'secret',key:'webhookurl'}},
@@ -510,7 +510,7 @@ const tt=await tio(P,R),v=await tt.adjXp(P.mode,Number(R(P.amount)))
 setv((P.name||'xp').toLowerCase(),String(v));setv((P.name||'xp').toLowerCase()+'_level',String(levelOf(v)))
 branch=true;log.push({id:n.id,did:'setxp',mode:P.mode});break}
 case'xplevelrole':{const tt=await tio(P,R),v=await tt.xpGet();if(P.role&&levelOf(v)>=Number(P.level)&&acts<8){acts++;await tt.role(R(P.role),true);log.push({id:n.id,did:'xplevelrole',role:P.role})}break}
-case'rankcard':{const x=await io.xpGet(),t=cardText(P,{title:R(P.title)},x,io.cardKey?io.cardKey(['layout','bgid','pfp','bar','barcolor','textcolor'].map(k=>String(P[k]||'').replace(/[|,]/g,'')).join(',')):'');setv(P.name||'card',t);log.push({id:n.id,did:'rankcard'});break}
+case'rankcard':{const x=await io.xpGet(),t=cardText(P,{title:R(P.title)},x,io.cardKey?io.cardKey(['layout','bgid','pfp','bar','barcolor','textcolor','design'].map(k=>String(P[k]||'').replace(k==='design'?/[^A-Za-z0-9_-]/g:/[|,]/g,'')).join(',')):'');setv(P.name||'card',t);log.push({id:n.id,did:'rankcard'});break}
 case'board':{const rows=await io.top(Math.max(1,Math.min(20,Number(P.count)||10)));setv(P.name||'board',rows.map((x,i)=>(i+1)+'. '+fnt(x.name,P.font)+' · Level '+levelOf(x.v)+' ('+x.v+' XP)').join('\n')||'No one has XP yet');log.push({id:n.id,did:'board'});break}
 case'setsecret':if(acts<8){acts++;const v=render(P.value,vars).trim().slice(0,300);if(v&&await io.setSecret(P.key,v)){await io.del();await io.notice('Saved '+P.key+'.')}log.push({id:n.id,did:'setsecret'})}break
 case'getsecret':{const v=await io.getSecret(P.key);if(v){secrets.add(v);vars[(P.name||'secret').toLowerCase()]=v}log.push({id:n.id,did:'getsecret'});break}

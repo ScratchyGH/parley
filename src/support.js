@@ -133,6 +133,12 @@ else if(t.reply)t.status='answered'
 await put(c.env,'sup:'+t.id,t)
 return{ok:true}
 })
+const lcDesign=s=>{try{const j=JSON.parse(atob(String(s).replace(/-/g,'+').replace(/_/g,'/')));const n=(v,a,b,d)=>{v=Number(v);return Number.isFinite(v)?Math.max(a,Math.min(b,Math.round(v*10)/10)):d},col=v=>/^[0-9a-f]{6}$/i.test(v||'')?String(v):null,o={};
+for(const k of['n','l','x','k']){const a=j[k];if(Array.isArray(a))o[k]=[n(a[0],-20,110,0),n(a[1],-20,110,0),n(a[2],6,120,16),n(a[3],-180,180,0),Math.round(n(a[4],0,17,0)),col(a[5]),a[6]?1:0]}
+let a=j.a;if(Array.isArray(a))o.a=[n(a[0],-20,110,0),n(a[1],-20,110,0),n(a[2],16,220,64),n(a[3],-180,180,0),Math.round(n(a[4],0,2,0)),col(a[5]),a[6]?1:0]
+a=j.b;if(Array.isArray(a))o.b=[n(a[0],-20,110,0),n(a[1],-20,110,0),n(a[2],5,100,70),n(a[3],2,60,12),n(a[4],-180,180,0),col(a[5]),a[6]?1:0,col(a[7]),n(a[8],0,30,6)]
+o.d=n(j.d,0,90,35)
+return o}catch{return null}}
 r.add('GET','/api/lc/:k',async c=>{
 limit('lc:'+c.user.id,120,60000)
 let raw=''
@@ -150,7 +156,8 @@ const rk=await c.env.DB.prepare("select count(*) n from bot_vars where bot_id=? 
 const sp=String(stx||'').split(','),hex=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:null,en=(v,a,d)=>a.includes(v)?v:d
 const style={layout:en(sp[0],['banner','full','custom','blur','solid','split'],'banner'),pfp:en(sp[2],['left','center','ring','square','hidden'],'left'),bar:en(sp[3],['round','square','thin','thick','segment'],'round'),barcolor:hex(sp[4]),textcolor:hex(sp[5]),bg:null}
 if(/^[A-Za-z0-9_-]{4,40}$/.test(sp[1]||'')){const f=await c.env.DB.prepare("select id from files where id=? and mime like 'image/%'").bind(sp[1]).first().catch(()=>null);if(f)style.bg=f.id}
-return{style,name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,accent:u.accent,frame:u.frame,level:L,cur:xp-lo,max:hi-lo,xp,rank:(rk&&rk.n||0)+1}
+const design=sp[6]?lcDesign(sp[6]):null
+return{design,style,name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,accent:u.accent,frame:u.frame,level:L,cur:xp-lo,max:hi-lo,xp,rank:(rk&&rk.n||0)+1}
 })
 r.add('GET','/api/connections',async c=>{
 const o=await get(c.env,'conn:'+c.user.id)
