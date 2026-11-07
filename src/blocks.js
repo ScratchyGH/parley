@@ -272,6 +272,7 @@ let ch=0
 if(add)ch=(await c.env.DB.prepare('insert or ignore into member_roles(server_id,user_id,role_id) values(?,?,?)').bind(sid,uid,role.id).run()).meta?.changes||0
 else ch=(await c.env.DB.prepare('delete from member_roles where server_id=? and user_id=? and role_id=?').bind(sid,uid,role.id).run()).meta?.changes||0
 if(ch)c.pub('s_'+sid,{t:'member.update',uid})
+return ch>0
 }
 }
 }
@@ -332,7 +333,7 @@ hasRole:async()=>false,
 del:async()=>{sent.push({note:'Deletes the message'})},
 pin:async()=>{sent.push({note:'Pins the message'})},
 timeout:async m=>{sent.push({note:'Times the member out for '+m+' minutes'})},
-role:async(n,a)=>{sent.push({note:(a?'Gives':'Takes')+' the role '+n})}
+role:async(n,a)=>{sent.push({note:(a?'Gives':'Takes')+' the role '+n});return true}
 }
 const log=await execute(graph,{user,channel:'general',server:'Your server',text:event==='join'?'':text,event:event||undefined,hook:event==='hook'?hook:undefined,mentioned:/<@bot>/.test(text),attachments:/\[image\]/.test(text)?1:0,replied:/\[reply\]/.test(text),dry:true,at:Date.now()},io)
 return{log,sent}

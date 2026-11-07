@@ -452,7 +452,7 @@ const autoRoles=async()=>{
 for(const m of graph.nodes){
 if(m.type!=='xplevelrole'||!m.p.role||graph.edges.some(e=>e.t===m.id))continue
 const R2=s=>hid(render(s,vars)),tt=await tio(m.p,R2),v=await tt.xpGet()
-if(levelOf(v)>=Number(m.p.level)&&acts<8){acts++;await tt.role(R2(m.p.role),true);log.push({id:m.id,did:'xplevelrole',role:m.p.role})}
+if(levelOf(v)>=Number(m.p.level)&&acts<8){acts++;const got=await tt.role(R2(m.p.role),true);log.push({id:m.id,did:'xplevelrole',role:m.p.role});if(got){const nx=next(m.id,'next');if(nx)await chain(nx,1)}}
 }
 }
 async function chain(start,depth){
