@@ -14,7 +14,8 @@ draw(d)
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
 }
 function draw(d){
-const why={pending_human:'Three review agents are checking this bot. The decision shows up here within a few minutes.',approved:'This bot passed screening.',legacy:'This bot was listed before screening existed.',rejected:'This bot was rejected. Fix the issues below, then resubmit, or appeal if you think the decision is wrong.',needs_review:'Some things need attention before this bot can be listed. Fix them and resubmit.',changes_requested:'A reviewer asked for changes. Update the bot and resubmit.',unscreened:'Screening runs when you set the bot to Listed.'}[d.status]||''
+const etaTxt=d.eta?(d.eta.ahead?d.eta.ahead+' bot'+(d.eta.ahead===1?'':'s')+' ahead of yours. ':'')+'Estimated wait: about '+(d.eta.seconds<90?'1 minute':Math.ceil(d.eta.seconds/60)+' minutes')+'. ':''
+const why={pending_human:etaTxt+'Three review agents are checking this bot. The decision shows up here when they agree.',approved:'This bot passed screening.',legacy:'This bot was listed before screening existed.',rejected:'This bot was rejected. Fix the issues below, then resubmit, or appeal if you think the decision is wrong.',needs_review:'Some things need attention before this bot can be listed. Fix them and resubmit.',changes_requested:'A reviewer asked for changes. Update the bot and resubmit.',unscreened:'Screening runs when you set the bot to Listed.'}[d.status]||''
 const reason=h('textarea',{class:'inp',rows:3,maxLength:1500,placeholder:'Why should this be reconsidered?'})
 const canFix=['rejected','needs_review','changes_requested','unscreened'].includes(d.status)
 mount(box,

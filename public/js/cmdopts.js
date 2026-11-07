@@ -8,6 +8,7 @@ if(!NM.test(name)||out.some(o=>o.name===name))continue
 const t=(p[1]||'text').toLowerCase()
 const o={name,type:'text',choices:[],desc:(p[2]||'').slice(0,60)}
 if(t==='number'||t==='yesno')o.type=t
+else if(t==='user'||t==='username'||t==='member')o.type='user'
 else if(t.includes(',')){o.type='choice';o.choices=(p[1]||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12).map(x=>x.slice(0,25))}
 out.push(o)
 if(out.length>=6)break
@@ -30,6 +31,7 @@ if(o.type==='text'&&i===opts.length-1&&t.length>i)x=t.slice(i).join(' ')
 if(x===undefined){v[o.name]='';continue}
 if(o.type==='number'){if(!Number.isFinite(Number(x)))return{error:o.name+' must be a number'};x=String(Number(x))}
 else if(o.type==='yesno'){const l=x.toLowerCase();if(!['yes','no','true','false','on','off'].includes(l))return{error:o.name+' must be yes or no'};x=['yes','true','on'].includes(l)?'yes':'no'}
+else if(o.type==='user'){x=x.replace(/^@/,'')}
 else if(o.type==='choice'){const f=o.choices.find(c=>c.toLowerCase()===x.toLowerCase());if(!f)return{error:o.name+' must be one of '+o.choices.join(', ')};x=f}
 v[o.name]=x.slice(0,500)
 }

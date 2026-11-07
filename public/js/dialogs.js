@@ -265,13 +265,13 @@ let last=null
 note.addEventListener('focus',()=>{last=note.value})
 note.addEventListener('blur',()=>{if(note.value!==last)PUT('/api/users/'+u.id+'/note',{note:note.value}).catch(e=>fail(e))})
 }
-const wish=h('div',{class:'hint'}),conns=h('div',{class:'cnx'})
-GET('/api/users/'+u.id+'/connections').then(d=>{conns.replaceChildren(...d.list.map(x=>h('a',{class:'cnc cni',href:x.url,target:'_blank',rel:'noopener noreferrer',title:x.label+': '+x.name+(x.verified?' (verified)':''),'aria-label':x.label+': '+x.name},connIcon(x.p,20),x.verified?h('i',{class:'cnv','aria-hidden':'true'}):null)))}).catch(()=>{})
+const wish=h('div',{class:'hint'}),conns=h('div',{class:'cnx'}),pw=h('div')
+GET('/api/users/'+u.id+'/connections').then(d=>{if(d.playing){const g=d.playing;pw.replaceChildren(h('div',{class:'gpw'},g.app?h('img',{class:'gpw-i',src:'/api/gameimg/'+g.app,alt:'',loading:'lazy'}):null,h('div',{class:'gpw-t'},h('small',null,'Playing on '+g.provider),g.link?h('a',{href:g.link,target:'_blank',rel:'noopener noreferrer'},g.game):h('b',null,g.game),g.desc?h('p',null,g.desc):null)))};conns.replaceChildren(...d.list.map(x=>h('a',{class:'cnc cni',href:x.url,target:'_blank',rel:'noopener noreferrer',title:x.label+': '+x.name+(x.verified?' (verified)':''),'aria-label':x.label+': '+x.name},connIcon(x.p,20),x.verified?h('i',{class:'cnv','aria-hidden':'true'}):null)))}).catch(()=>{})
 const mem=sid?S.sdata[sid]?.memberList?.find(m=>m.id===u.id):null
 el.append(hero,h('div',{class:'bd'},avatar(u,'lg',S.pres[u.id]||(own?S.me.presence:null)),
 h('h3',{style:{margin:'8px 0 0',color:'var(--strong)'}},mem?.nickname||u.display_name),
 h('div',{class:'hint',style:{margin:0}},'@'+u.username+(u.pronouns?' · '+u.pronouns:'')),
-stxt(u)?h('div',{style:{margin:'6px 0'}},stxt(u)):null,actWidget(u),conns,
+stxt(u)?h('div',{style:{margin:'6px 0'}},stxt(u)):null,actWidget(u),pw,conns,
 badges,links,
 u.bio?h('div',{class:'mb',style:{margin:'8px 0',maxHeight:'120px',overflow:'auto'}},render(u.bio,{})):null,
 h('div',{class:'hint'},`${data.mutual_servers} mutual server${data.mutual_servers===1?'':'s'} · Joined ${new Date(u.created_at).toLocaleDateString()}`),

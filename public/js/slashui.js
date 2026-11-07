@@ -1,4 +1,5 @@
 import{h,GET}from'./util.js'
+import{S}from'./state.js'
 import{COMMANDS}from'./slash.js'
 import{parseOpts,quote}from'./cmdopts.js'
 const cache=new Map()
@@ -8,7 +9,7 @@ if(!sid)return builtin
 const c=cache.get(sid)
 if(c&&Date.now()-c.t<60000)return c.v
 let bots=[]
-try{bots=(await GET('/api/servers/'+sid+'/commands')).commands.map(x=>({cmd:true,username:x.name,display_name:x.desc||'Command from '+x.bot.name,opts:parseOpts(x.options),bot:{id:x.bot.id,avatar_id:x.bot.avatar_id,display_name:x.bot.name,username:x.bot.name}}))}catch{}
+try{bots=(await GET('/api/servers/'+sid+'/commands')).commands.map(x=>({cmd:true,username:x.name,display_name:x.desc||'Command from '+x.bot.name,opts:parseOpts(x.options),sid,bot:{id:x.bot.id,avatar_id:x.bot.avatar_id,display_name:x.bot.name,username:x.bot.name}}))}catch{}
 const v=[...bots,...builtin]
 cache.set(sid,{t:Date.now(),v})
 return v
@@ -22,7 +23,8 @@ const ch=o.type==='yesno'?['yes','no']:o.choices
 const btns=ch.map(c=>h('button',{type:'button',class:'slc',on:{click:()=>{val[o.name]=c;btns.forEach(b=>b.classList.toggle('on',b===btns[ch.indexOf(c)]))}}},c))
 ctl=h('div',{class:'slcs'},...btns)
 }else{
-ctl=h('input',{class:'inp',type:o.type==='number'?'number':'text',maxLength:500,placeholder:o.type==='number'?'a number':'text','aria-label':o.name,on:{input:e=>{val[o.name]=e.target.value}}})
+if(o.type==='user'){const ml=(S.sdata[item.sid]?.memberList||[]).filter(m=>!m.is_bot),dl=h('datalist',{id:'dl_'+o.name},ml.map(m=>h('option',{value:m.username},m.nickname||m.display_name)));ctl=h('div',null,h('input',{class:'inp',type:'text',maxLength:40,list:'dl_'+o.name,placeholder:'start typing a name','aria-label':o.name,autocomplete:'off',on:{input:e=>{val[o.name]=e.target.value}}}),dl)}
+else ctl=h('input',{class:'inp',type:o.type==='number'?'number':'text',maxLength:500,placeholder:o.type==='number'?'a number':'text','aria-label':o.name,on:{input:e=>{val[o.name]=e.target.value}}})
 els.push(ctl)
 }
 return h('label',{class:'slr'},h('span',{class:'slh'},o.name),h('span',{class:'hint'},o.desc),ctl)

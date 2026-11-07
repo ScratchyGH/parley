@@ -10,13 +10,13 @@ import{aiBadge,modaiPanel,handledList}from'./modai.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
+const tabs=[['stats','Overview'],['gui','GUI preview'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],['achat','Admin chat'],['mailtest','Email test'],['ad','Parley ad'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin())}[cur]
+const fn={backups,stats,gui:b=>b.append(guiPreview()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin()),achat:adminChat,mailtest:mailTest,ad:adTab}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),h('button',{class:'btn sm',type:'button',style:{marginBottom:'10px'},on:{click:async()=>{const{botScreen}=await import('./botscreen.js');const ov=h('div',{style:{position:'fixed',inset:'0',zIndex:'9999',background:'var(--bg,#111)',overflow:'auto'}});document.body.append(ov);botScreen(ov,{name:'Example Bot',description:'This is a test of the bot sign-in screen.',servers:3},{preview:true,done:()=>ov.remove()})}}},'Preview bot sign-in screen'),nav,body)
@@ -283,4 +283,36 @@ const send=async st=>{try{await POST('/api/admin/support/'+t.id,{reply:rp.value,
 return h('div',{class:'li',style:{alignItems:'flex-start'}},h('div',{class:'grow'},h('b',null,t.kind+' / '+t.status+(t.user?' / @'+t.user:'')),h('div',{class:'hint'},(t.contact||'no contact')+' / '+new Date(t.at).toLocaleString()),h('div',null,t.msg),rp),h('button',{class:'btn sm',on:{click:()=>send()}},'Reply'),t.status!=='closed'?h('button',{class:'btn sm dng',on:{click:()=>send('closed')}},'Close'):null)
 }):h('div',{class:'hint'},'No tickets')))
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}
+}
+
+function mailTest(pg){
+const em=h('input',{class:'inp',type:'email',placeholder:'you@example.com','aria-label':'Email address',autocomplete:'email'})
+const out=h('div',{class:'hint',role:'status'})
+const go=h('button',{class:'btn pri',type:'button',on:{click:async()=>{
+go.disabled=true;mount(out,'Sending…')
+try{const d=await POST('/api/admin/email-test',{email:em.value.trim()})
+mount(out,h('div',{class:d.ok?'':'err'},d.ok?'Sent. Check the inbox and spam folder of '+em.value.trim()+'.':'Failed: '+(d.error||'unknown error')),h('small',null,'Sender: '+(d.from||'not set')+' · API key: '+(d.key?'set':'missing')),!d.ok&&/verify|domain|own email|testing/i.test(d.error||'')?h('p',{class:'hint'},'Resend only delivers from its sandbox sender to your own Resend account email. Verify a domain in Resend and set MAIL_FROM to an address on it.'):null)
+}catch(e){mount(out,h('div',{class:'err'},e.message))}
+go.disabled=false}}},'Send test email')
+pg.append(h('h4',null,'Email test'),h('p',{class:'hint'},'Sends one message to the address you enter and shows the exact result from the mail provider.'),h('div',{class:'row'},em,go),out)
+}
+function adTab(pg){
+const v=h('video',{controls:true,preload:'metadata',style:{width:'100%',maxWidth:'960px',borderRadius:'12px',background:'#000'}},h('source',{src:'/ad/ad.mp4',type:'video/mp4'}))
+pg.append(h('h4',null,'Parley ad'),v,h('p',{class:'hint'},'If the video does not play, the ad file has not been uploaded yet.'),h('a',{class:'btn sm',href:'/ad/ad.mp4',download:'parley-ad.mp4'},'Download'))
+}
+async function adminChat(pg){
+const list=h('div',{class:'list',style:{maxHeight:'55vh',overflow:'auto'},'aria-live':'polite'})
+const inp=h('input',{class:'inp',placeholder:'Message the other admins',maxLength:1000,'aria-label':'Message'})
+let timer
+async function load(){
+if(!list.isConnected&&timer){clearInterval(timer);return}
+try{const d=await GET('/api/admin/chat');const atEnd=list.scrollTop+list.clientHeight>=list.scrollHeight-40
+mount(list,d.messages.length?d.messages.map(m=>h('div',{class:'li'},avatar({id:m.id,username:m.username,display_name:m.display_name,avatar_id:m.avatar_id},28),h('div',{class:'grow'},h('b',null,m.display_name),' ',h('small',null,fmtStamp(m.created_at)),h('div',{style:{whiteSpace:'pre-wrap',wordBreak:'break-word'}},m.body)))):h('p',{class:'hint'},'No messages yet.'))
+if(atEnd)list.scrollTop=list.scrollHeight}catch(e){mount(list,h('div',{class:'err'},e.message))}
+}
+async function send(){const t=inp.value.trim();if(!t)return;inp.value='';try{await POST('/api/admin/chat',{body:t});load()}catch(e){fail(e)}}
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send()}})
+pg.append(h('h4',null,'Admin chat'),h('p',{class:'hint'},'Only admins can see this.'),list,h('div',{class:'row'},inp,h('button',{class:'btn pri',type:'button',on:{click:send}},'Send')))
+await load();list.scrollTop=list.scrollHeight
+timer=setInterval(load,5000)
 }

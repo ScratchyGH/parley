@@ -30,15 +30,15 @@ const drawWho=()=>mount(who,caseFilter.user?h('span',{class:'pill'},'Only '+case
 function card(c){
 const sel=h('select',{class:'sel','aria-label':'Case status',on:{change:async e=>{try{await PATCH(`/api/servers/${sid}/cases/${c.num}`,{status:e.target.value});toast('Case updated','ok')}catch(x){fail(x);e.target.value=c.status}}}},STATUS.map(([v,l])=>h('option',{value:v,selected:c.status===v},l)))
 const body=h('div',{class:'grow'},
-h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},h('b',null,'Case '+c.num),h('span',{class:'pill'},c.type),h('span',null,c.display_name?c.display_name+' (@'+c.username+')':'Deleted user')),
+h('div',{class:'case-head'},h('b',null,'Case '+c.num),h('span',{class:'pill'},c.type),h('span',null,c.display_name?c.display_name+' (@'+c.username+')':'Deleted user')),
 h('p',{style:{margin:'6px 0'}},c.reason||'No reason given'),
 c.evidence?h('pre',{class:'mb',style:{whiteSpace:'pre-wrap',margin:'0 0 6px'}},c.evidence):null,
 h('div',{class:'hint'},'By '+(c.mod_name||'unknown')+' on '+fmtStamp(c.created_at)))
-const acts=h('div',{class:'row',style:{gap:'6px',flexWrap:'wrap'}},sel,
+const acts=h('div',{class:'case-acts'},sel,
 h('button',{class:'btn sm',type:'button',on:{click:()=>editDialog(sid,c,()=>load(true))}},'Edit'),
 h('button',{class:'btn sm',type:'button',on:{click:()=>{caseFilter.user=c.user_id;caseFilter.name=c.display_name||c.username||'member';drawWho();load(true)}}},'All for member'),
 canDelete?h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{if(!await confirmBox('Delete case '+c.num,'The case is removed for good. The audit log keeps a note that it was deleted.','Delete',true))return;try{await DEL(`/api/servers/${sid}/cases/${c.num}`);load(true)}catch(x){fail(x)}}}},'Delete'):null)
-return h('div',{class:'bh-row',style:{flexDirection:'column',alignItems:'stretch',gap:'8px'}},body,acts)
+return h('article',{class:'case-card'},body,acts)
 }
 async function load(reset){
 err.textContent=''
