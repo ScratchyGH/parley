@@ -1590,7 +1590,12 @@ html.hid *,html.hid *::before,html.hid *::after{animation-play-state:paused!impo
 .app-android .tabbar button.on{color:var(--strong)}
 .app-android .tabbar button.on svg{color:var(--accent)}
 .app-android .shell{padding-bottom:calc(54px + env(safe-area-inset-bottom))}
-.app-android.in-chat .tabbar{display:none}
+.app-android.in-chat .tabbar,.app-android.kb .tabbar{display:none}
+.app-android.kb .shell{padding-bottom:0}
+.app-android input,.app-android textarea,.app-android select{font-size:16px}
+.app-android .dlg{max-height:calc(100dvh - 24px)}
+.app-android .scrim{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.app-android .tabbar{backdrop-filter:blur(10px)}
 .app-android.in-chat .shell{padding-bottom:0}
 .app-android .ci,.app-android .mem,.app-android .li{min-height:44px}
 .app-android .ib{min-width:40px;min-height:40px}
