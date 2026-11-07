@@ -181,3 +181,36 @@ body:not(.rm):not(.perf) :is(.hh-a>.htile,.sgrid>.scard,.bh-col>.bh-row):nth-chi
 body:not(.rm):not(.perf) :is(.dlg,.modal,.dialog,.toast,.menu,.pop){animation:mtPop .2s cubic-bezier(.2,.8,.2,1) both}
 body:not(.rm):not(.perf) :is(main,.view,#view)>*{animation:mtIn .35s ease both}
 }
+
+.lcd{container-type:inline-size;aspect-ratio:5/2;position:relative}
+.lcd .lc-ban{position:absolute;inset:0;height:auto;clip-path:none;filter:none;transform:none}
+.lcd .lc-ban.lcd-blur{filter:blur(18px) brightness(.6);transform:scale(1.2)}
+.lcd-e{position:absolute;white-space:nowrap;line-height:1.1;transform-origin:50% 50%;text-shadow:0 1px 6px rgba(0,0,0,.45);user-select:none;-webkit-user-select:none}
+.lcd-hide{display:none}
+.lcd-off{opacity:.28}
+.lcd-av{box-sizing:border-box}
+.lcd-av>*{width:100%;height:100%;border-radius:inherit;overflow:hidden}
+.lcd-av .av{width:100%!important;height:100%!important;border-radius:inherit}
+.lcd-av0{border-radius:50%}
+.lcd-av1{border-radius:14%}
+.lcd-av2{border-radius:50%;box-shadow:0 0 0 3px var(--ring,#7c5cff),0 0 18px var(--ring,#7c5cff)}
+.lcd-dummy{display:grid;place-items:center;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;font-weight:800;font-size:150%}
+.lcd-bar{text-shadow:none}
+.lcd-fill{display:block;height:100%;border-radius:inherit}
+.lcd-edit{width:100%;max-width:560px;margin:8px auto;touch-action:none}
+.lcd-edit .lcd-e{cursor:move;touch-action:none;outline:1px dashed rgba(255,255,255,.22)}
+.lcd-edit .lcd-sel{outline:2px solid #7c5cff}
+.lcd-hd{position:absolute;width:14px;height:14px;border-radius:50%;background:#7c5cff;border:2px solid #fff;box-sizing:border-box;touch-action:none;z-index:3}
+.lcd-rot{left:50%;top:-26px;margin-left:-7px;cursor:grab}
+.lcd-rs{right:-8px;bottom:-8px;cursor:nwse-resize}
+.lcd-dlg{width:min(640px,96vw)}
+.lcd-wrap{display:flex;flex-direction:column;gap:10px;padding:14px 18px;max-height:72vh;overflow:auto}
+.lcd-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.lcd-chip{padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:inherit;cursor:pointer}
+.lcd-chip.on{background:var(--hi,#7c5cff);border-color:var(--hi,#7c5cff);color:#fff}
+.lcd-panel,.lcd-bg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end}
+.lcd-r{display:flex;flex-direction:column;gap:4px}
+.lcd-r span{display:flex;justify-content:space-between;font-size:12px}
+.lcd-c{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.lcd-c input{width:44px;height:28px;padding:0;border:0;background:none}
+.lcd-file{display:none}
