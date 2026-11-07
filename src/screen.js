@@ -1,7 +1,8 @@
 import{fail,now,newId,body,limit,str}from'./util.js'
 import{aiAsk}from'./ai.js'
+import{slurHit,spammy}from'./dmguard.js'
 
-const ACT=new Set(['say','sayto','react','delete','pin','timeout','addrole','removerole'])
+const ACT=new Set(['botdm','say','sayto','react','delete','pin','timeout','addrole','removerole'])
 const STORE=new Set(['set','count','setcount'])
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v))
 const gibberish=s=>{
@@ -51,6 +52,15 @@ const say=nodes.filter(n=>n.type==='say'||n.type==='sayto').map(n=>String(n.p.te
 const uniq=new Set(say)
 if(say.length>=5&&uniq.size/say.length<0.4)add('repeat_text','bad','Most messages the bot sends are the same text.',30)
 if(say.some(t=>/(.{3,})\1{6,}/.test(t)||/(.)\1{14,}/.test(t)))add('spam_text','bad','A message repeats the same characters over and over.',30)
+const dms=nodes.filter(n=>n.type==='botdm')
+const texts=nodes.filter(n=>['say','sayto','botdm'].includes(n.type)).map(n=>String(n.p.text||''))
+if(texts.some(slurHit))add('slur','bad','A message contains a slur or hateful language.',60)
+if(dms.length){
+if(dms.some(n=>spammy(String(n.p.text||''))))add('dm_spam','bad','A private message looks like spam (links, repeated text or advertising).',40)
+if(dms.length>3)add('dm_many','warn',dms.length+' blocks send private messages. Members dislike unsolicited messages.',15)
+const gated=dms.every(n=>{for(const [f,ts] of out)if(ts.includes(n.id)){const a=by.get(f);if(a&&['cmd','join','mention','hook','reply'].includes(a.type))return true}return false})
+if(!gated)add('dm_ungated','bad','A private message is sent without a command, join or mention starting it, which can message people who did not ask.',40)
+}
 const bytes=JSON.stringify(g).length
 if(bytes>40000)add('payload_big','warn','The block data is very large ('+Math.round(bytes/1024)+' KB).',15)
 const stores=nodes.filter(n=>STORE.has(n.type))
@@ -180,7 +190,12 @@ const p=await mine(c,c.p.id)
 const rev=(await c.env.DB.prepare('select v.id,v.kind,v.status,v.reason,v.created_at,u.display_name actor from bot_reviews v left join users u on u.id=v.actor_id where v.project_id=? order by v.created_at desc limit 40').bind(p.id).all()).results
 let rep=null
 try{rep=p.screen_report?JSON.parse(p.screen_report):null}catch{}
-return{status:p.screen_status,score:p.screen_score,uncertainty:p.screen_uncertainty,at:p.screen_at,report:rep,reviews:rev}
+let eta=null
+if(['pending_human','needs_review','unscreened'].includes(p.screen_status)){
+const ahead=(await c.env.DB.prepare("select count(*) n from bot_projects where (screen_status in ('pending_human','needs_review') or (screen_status='unscreened' and visibility='public')) and coalesce(screen_at,0)<?").bind(p.screen_at||now()).first()).n
+eta={ahead,seconds:(Math.floor(ahead/2)+1)*60+20}
+}
+return{status:p.screen_status,score:p.screen_score,uncertainty:p.screen_uncertainty,at:p.screen_at,report:rep,reviews:rev,eta}
 })
 r.add('POST','/api/bothub/:id/screen',async c=>{
 const p=await mine(c,c.p.id)

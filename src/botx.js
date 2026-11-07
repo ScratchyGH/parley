@@ -8,7 +8,8 @@ import{mine,roleOf,writeBlocks,freeSlug,slugOf,mint,MAXP,cols,withTags,shape}fro
 import{LISTED}from'./screen.js'
 
 const COPYLEFT=new Set(['MPL-2.0','LGPL-3.0-only','GPL-2.0-only','GPL-3.0-only','AGPL-3.0-only','CC-BY-SA-4.0'])
-const ROLES=['viewer','editor','maintainer']
+const ROLES=['viewer','editor','maintainer','coowner']
+const HI=r=>r==='owner'||r==='coowner'
 const N=(id,type,x,y,p)=>({id,type,x,y,p})
 const E=(f,o,t)=>({f,o,t})
 const TEMPLATES=[
@@ -51,15 +52,16 @@ r.add('POST','/api/bothub/:id/members',async c=>{
 const p=await mine(c,c.p.id,'maintainer')
 limit('botinv:'+c.user.id,30,3600000)
 const b=await body(c.req)
-if(!ROLES.includes(b.role))fail(400,'Choose viewer, editor or maintainer')
+if(!ROLES.includes(b.role))fail(400,'Choose viewer, editor, maintainer or co-owner')
 const u=await c.env.DB.prepare('select id,username from users where username=? and deleted_at is null and is_bot=0 and suspended=0').bind(String(b.username||'').trim().toLowerCase()).first()
 if(!u)fail(404,'No person with that username')
 if(u.id===p.owner_id)fail(400,'That person owns the project')
-if(b.role==='maintainer'&&p.role!=='owner')fail(403,'Only the owner can add maintainers')
+if(b.role==='coowner'&&p.role!=='owner')fail(403,'Only the owner can add a co-owner')
+if(b.role==='maintainer'&&!HI(p.role))fail(403,'Only the owner or a co-owner can add maintainers')
 const n=await c.env.DB.prepare('select count(*) n from bot_members where project_id=?').bind(p.id).first()
 if(n.n>=20)fail(409,'A project can have up to 20 collaborators')
 const ex=await c.env.DB.prepare('select role,status from bot_members where project_id=? and user_id=?').bind(p.id,u.id).first()
-if(ex&&ex.role==='maintainer'&&p.role!=='owner')fail(403,'Only the owner can change a maintainer')
+if(ex&&(ex.role==='maintainer'||ex.role==='coowner')&&!HI(p.role)||ex&&ex.role==='coowner'&&p.role!=='owner')fail(403,'You cannot change that person')
 await c.env.DB.prepare("insert into bot_members(project_id,user_id,role,status,invited_by,created_at) values(?,?,?,?,?,?) on conflict(project_id,user_id) do update set role=excluded.role").bind(p.id,u.id,b.role,'invited',c.user.id,now()).run()
 c.pub('u_'+u.id,{t:'notice',text:c.user.display_name+' invited you to work on the bot '+p.name+' as '+b.role+'. Open Bot Lab to accept.'})
 return json({ok:true},201)
@@ -73,7 +75,7 @@ if(c.p.uid===p.owner_id)fail(403,'The owner cannot be removed. Transfer ownershi
 if(c.p.uid!==c.user.id){
 const t=await c.env.DB.prepare('select role from bot_members where project_id=? and user_id=?').bind(p.id,c.p.uid).first()
 if(!t)fail(404,'Not a collaborator')
-if(role!=='owner'&&!(role==='maintainer'&&t.role!=='maintainer'))fail(403,'You cannot remove that person')
+if(role!=='owner'&&!(role==='coowner'&&t.role!=='coowner')&&!(role==='maintainer'&&t.role!=='maintainer'&&t.role!=='coowner'))fail(403,'You cannot remove that person')
 }
 await c.env.DB.prepare('delete from bot_members where project_id=? and user_id=?').bind(p.id,c.p.uid).run()
 return{ok:true}
@@ -94,6 +96,18 @@ c.env.DB.prepare("insert or replace into bot_members(project_id,user_id,role,sta
 return{ok:true}
 })
 
+r.add('GET','/api/bothub/:id/mergekey',async c=>{
+const p=await mine(c,c.p.id,'coowner')
+let k=p.merge_key
+if(!k){k='mk_'+randHex(16);await c.env.DB.prepare('update bot_projects set merge_key=? where id=?').bind(k,p.id).run()}
+return{key:k}
+})
+r.add('POST','/api/bothub/:id/mergekey',async c=>{
+const p=await mine(c,c.p.id,'coowner')
+const k='mk_'+randHex(16)
+await c.env.DB.batch([c.env.DB.prepare('update bot_projects set merge_key=? where id=?').bind(k,p.id),c.env.DB.prepare('delete from bot_links where other_bot_id=?').bind(p.bot_id)])
+return{key:k}
+})
 r.add('GET','/api/bothub/:id/versions',async c=>{
 const p=await mine(c,c.p.id,'viewer')
 const rows=(await c.env.DB.prepare('select v.id,v.rev,v.summary,v.created_at,u.display_name author from bot_versions v left join users u on u.id=v.author_id where v.project_id=? order by v.created_at desc,v.rev desc limit 60').bind(p.id).all()).results

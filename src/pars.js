@@ -428,6 +428,7 @@ const b=await body(c.req,1000)
 const n=Math.round(Number(b.amount))
 if(!Number.isFinite(n)||n===0||Math.abs(n)>100000)fail(400,'Amount must be a non-zero number up to 100000')
 const u=await findUser(c.env,b.user)
+if(u.id===c.user.id&&!c.user.owner)fail(403,'Only ParleyOfficial can give itself Pars')
 const note=typeof b.note==='string'?b.note.slice(0,80):''
 await grant(c.env,u.id,n,'bonus',null,(n>0?'Bonus':'Adjustment')+(note?': '+note:''))
 await c.env.DB.prepare('insert into mod_log(id,server_id,actor_id,action,target_id,detail,created_at) values(?,?,?,?,?,?,?)').bind(newId('ml'),null,c.user.id,'pars.grant',u.id,n+' '+note,now()).run()

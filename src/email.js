@@ -12,16 +12,25 @@ const p=t=>`<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:#374
 const html=`<!doctype html><html><body style="margin:0;padding:0;background:#f3f4f6"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px"><tr><td align="center"><table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;font-family:Helvetica,Arial,sans-serif"><tr><td style="padding:24px 32px;border-bottom:1px solid #e5e7eb;font-size:18px;font-weight:700;letter-spacing:.3px;color:#111827">Parley</td></tr><tr><td style="padding:32px"><h1 style="margin:0 0 16px;font-size:20px;line-height:28px;color:#111827">${esc(m.title)}</h1>${m.lines.map(p).join('')}${m.code?`<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px"><tr><td style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:14px 24px;font-family:Consolas,Menlo,monospace;font-size:28px;letter-spacing:8px;font-weight:700;color:#111827">${esc(m.code)}</td></tr></table>`:''}${m.note?`<p style="margin:0;font-size:13px;line-height:20px;color:#6b7280">${esc(m.note)}</p>`:''}</td></tr><tr><td style="padding:20px 32px;border-top:1px solid #e5e7eb;font-size:12px;line-height:18px;color:#9ca3af">You received this because of activity on your Parley account. Parley will never ask for your password by email.</td></tr></table></td></tr></table></body></html>`
 return{text,html}
 }
-export async function sendMail(env,to,subject,msg){
-if(!env.RESEND_API_KEY)return false
+export async function sendMailDetail(env,to,subject,msg){
+if(!env.RESEND_API_KEY)return{ok:false,error:'RESEND_API_KEY is not set on the Worker'}
 const{text,html}=view(msg)
 const ctl=new AbortController()
-const t=setTimeout(()=>ctl.abort(),6000)
+const t=setTimeout(()=>ctl.abort(),8000)
 try{
-const r=await fetch('https://api.resend.com/emails',{method:'POST',signal:ctl.signal,headers:{authorization:'Bearer '+env.RESEND_API_KEY,'content-type':'application/json'},body:JSON.stringify({from:env.MAIL_FROM||'Parley <onboarding@resend.dev>',to:[to],subject,text,html})})
-return r.ok
-}catch{return false}finally{clearTimeout(t)}
+const from=env.MAIL_FROM||'Parley <onboarding@resend.dev>'
+const r=await fetch('https://api.resend.com/emails',{method:'POST',signal:ctl.signal,headers:{authorization:'Bearer '+env.RESEND_API_KEY,'content-type':'application/json'},body:JSON.stringify({from,to:[to],subject,text,html})})
+if(r.ok)return{ok:true}
+let m=''
+try{const j=await r.json();m=j.message||j.name||''}catch{}
+console.error('resend',r.status,m)
+let hint=''
+if(/own email|testing emails|verify a domain|domain is not verified/i.test(m)||(r.status===403&&!env.MAIL_FROM))hint=' Resend only lets onboarding@resend.dev send to the email on your Resend account. Verify a domain at resend.com/domains and set MAIL_FROM to an address on it.'
+else if(r.status===401||r.status===403)hint=' The Resend API key was rejected. Create a new one with sending access.'
+return{ok:false,status:r.status,error:(m||('Resend returned '+r.status))+hint}
+}catch(e){return{ok:false,error:'Could not reach Resend: '+String(e&&e.message||e)}}finally{clearTimeout(t)}
 }
+export async function sendMail(env,to,subject,msg){return(await sendMailDetail(env,to,subject,msg)).ok}
 export async function alertUser(env,userId,subject,text){
 const u=await env.DB.prepare('select email,email_verified from users where id=?').bind(userId).first()
 if(u&&u.email&&u.email_verified)await sendMail(env,u.email,subject,{title:subject,lines:[text],note:'If this was not you, sign in and change your password, or reset it with this email address.'})
@@ -55,8 +64,18 @@ const taken=await c.env.DB.prepare('select 1 x from users where lower(email)=? a
 if(taken)fail(409,'That email is already used by another account')
 await c.env.DB.prepare('update users set email=?,email_verified=0 where id=?').bind(email,c.user.id).run()
 const code=await issue(c.env,c.user.id,'verify',email)
-if(!await sendMail(c.env,email,'Confirm your email for Parley',{title:'Confirm your email',lines:['Enter this code in Parley settings to confirm this email address.'],code,note:'The code expires in 15 minutes. If you did not request it, you can ignore this email.'}))fail(502,'Could not send the email. Try again later.')
+const sm=await sendMailDetail(c.env,email,'Confirm your email for Parley',{title:'Confirm your email',lines:['Enter this code in Parley settings to confirm this email address.'],code,note:'The code expires in 15 minutes. If you did not request it, you can ignore this email.'})
+if(!sm.ok)fail(502,c.user.admin?'Could not send the email: '+sm.error:'Could not send the email right now. The server mail settings may need fixing. Try again later.')
 return{ok:true,email:mask(email)}
+})
+r.add('POST','/api/admin/email-test',async c=>{
+if(!c.user.admin)fail(404,'Not found')
+limit('emt:'+c.user.id,10,3600000)
+const b=await body(c.req)
+const to=str(b.email,3,120,'Email').trim().toLowerCase()
+if(!RE.test(to))fail(400,'Enter a valid email address')
+const r=await sendMailDetail(c.env,to,'Parley test email',{title:'Test email',lines:['If you can read this, Parley can send email.'],note:'Sent from the admin panel.'})
+return{ok:r.ok,error:r.error||null,from:c.env.MAIL_FROM||'Parley <onboarding@resend.dev>',key:!!c.env.RESEND_API_KEY}
 })
 r.add('POST','/api/me/email/verify',async c=>{
 limit('emv:'+c.user.id,20,3600000)

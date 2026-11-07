@@ -19,12 +19,24 @@ if(!r.ok)return null
 const d=await r.json()
 return{id:String(d.id),name:d.login,text:d.bio||''}}}
 ,
-steam:{name:'Steam',ok:/^[A-Za-z0-9_-]{2,32}$/,url:i=>'https://steamcommunity.com/profiles/'+i.id,async look(n){
-const u='https://steamcommunity.com/'+(/^\d{17}$/.test(n)?'profiles/':'id/')+encodeURIComponent(n)+'/?xml=1'
-const x=await fetch(u,{headers:UA}).then(r=>r.text())
-const id=/<steamID64>(\d{17})<\/steamID64>/.exec(x);if(!id)return null
-const nm=/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/s.exec(x),sm=/<summary><!\[CDATA\[(.*?)\]\]><\/summary>/s.exec(x)
-return{id:id[1],name:nm?nm[1]:n,text:(sm?sm[1]:'').replace(/<[^>]*>/g,' ')}}},
+steam:{name:'Steam',ok:/^[A-Za-z0-9_-]{2,64}$/,url:i=>'https://steamcommunity.com/profiles/'+i.id,async look(n0){
+let n=String(n0||'').trim()
+const m=/steamcommunity\.com\/(profiles|id)\/([A-Za-z0-9_-]+)/i.exec(n);if(m)n=m[2]
+const dec=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&amp;/g,'&').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()
+const base='https://steamcommunity.com/'+(/^\d{17}$/.test(n)?'profiles/':'id/')+encodeURIComponent(n)+'/'
+const hd={...UA,'Accept-Language':'en-US,en;q=0.9'}
+let x=''
+try{const r=await fetch(base+'?xml=1',{headers:hd});if(r.ok)x=await r.text()}catch{}
+const id=/<steamID64>\s*(\d{17})\s*<\/steamID64>/.exec(x)
+if(id){
+const nm=/<steamID>([\s\S]*?)<\/steamID>/.exec(x),sm=/<summary>([\s\S]*?)<\/summary>/.exec(x)
+const ig=/<inGameInfo>[\s\S]*?<gameName>([\s\S]*?)<\/gameName>[\s\S]*?<gameLink>([\s\S]*?)<\/gameLink>(?:[\s\S]*?<gameIcon>([\s\S]*?)<\/gameIcon>)?/.exec(x)
+return{id:id[1],name:dec(nm&&nm[1])||n,text:dec(sm&&sm[1])}
+}
+let hx='';try{const r=await fetch(base,{headers:hd});if(r.ok)hx=await r.text()}catch{}
+const sid=/"steamid":"(\d{17})"/.exec(hx);if(!sid)return null
+const pn=/<span class="actual_persona_name">([\s\S]*?)<\/span>/.exec(hx),bio=/<div class="profile_summary[^"]*">([\s\S]*?)<\/div>/.exec(hx)
+return{id:sid[1],name:dec(pn&&pn[1])||n,text:dec(bio&&bio[1])}}},
 bluesky:{name:'Bluesky',ok:/^[A-Za-z0-9.-]{3,80}$/,url:i=>'https://bsky.app/profile/'+i.name,async look(n){
 const r=await fetch('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor='+encodeURIComponent(n),{headers:UA})
 if(!r.ok)return null
@@ -124,7 +136,7 @@ r.add('GET','/api/lc/:k',async c=>{
 limit('lc:'+c.user.id,120,60000)
 let raw=''
 try{raw=atob(String(c.p.k).replace(/-/g,'+').replace(/_/g,'/'))}catch{fail(404,'Not found')}
-const[bot,sid,uid]=raw.split('|')
+const[bot,sid,uid,stx]=raw.split('|')
 if(!bot||!sid||!uid)fail(404,'Not found')
 const me=await c.env.DB.prepare('select 1 x from members where server_id=? and user_id=?').bind(sid,c.user.id).first()
 if(!me)fail(404,'Not found')
@@ -134,7 +146,10 @@ const xv=await c.env.DB.prepare('select v from bot_vars where bot_id=? and serve
 const xp=Math.max(0,Number(xv&&xv.v)||0)
 const L=Math.max(0,Math.floor((-1+Math.sqrt(1+xp/12.5))/2)),lo=50*L*(L+1),hi=50*(L+1)*(L+2)
 const rk=await c.env.DB.prepare("select count(*) n from bot_vars where bot_id=? and server_id=? and k like 'xp:%' and cast(v as real)>?").bind(bot,sid,xp).first()
-return{name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,accent:u.accent,frame:u.frame,level:L,cur:xp-lo,max:hi-lo,xp,rank:(rk&&rk.n||0)+1}
+const sp=String(stx||'').split(','),hex=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:null,en=(v,a,d)=>a.includes(v)?v:d
+const style={layout:en(sp[0],['banner','full','custom','blur','solid','split'],'banner'),pfp:en(sp[2],['left','center','ring','square','hidden'],'left'),bar:en(sp[3],['round','square','thin','thick','segment'],'round'),barcolor:hex(sp[4]),textcolor:hex(sp[5]),bg:null}
+if(/^[A-Za-z0-9_-]{4,40}$/.test(sp[1]||'')){const f=await c.env.DB.prepare("select id from files where id=? and mime like 'image/%'").bind(sp[1]).first().catch(()=>null);if(f)style.bg=f.id}
+return{style,name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,accent:u.accent,frame:u.frame,level:L,cur:xp-lo,max:hi-lo,xp,rank:(rk&&rk.n||0)+1}
 })
 r.add('GET','/api/connections',async c=>{
 const o=await get(c.env,'conn:'+c.user.id)
@@ -201,8 +216,37 @@ await put(c.env,'conn:'+c.user.id,o)
 await c.env.DB.prepare('delete from app_settings where k=?').bind('connx:'+c.p.p+':'+v.id).run()
 return{list:pubList(o)}
 })
+const PLAY=new Map()
+async function playing(o){
+const st=o&&o.steam;if(!st||st.u||!st.id)return null
+const hit=PLAY.get(st.id);if(hit&&hit.t>Date.now())return hit.v
+let v=null
+try{
+const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:UA}).then(r=>r.ok?r.text():'')
+const g=/<inGameInfo>([\s\S]*?)<\/inGameInfo>/.exec(x)
+if(g){
+const un=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').trim()
+const nm=/<gameName>([\s\S]*?)<\/gameName>/.exec(g[1]),ln=/<gameLink>([\s\S]*?)<\/gameLink>/.exec(g[1])
+const app=/\/app\/(\d+)/.exec(un(ln&&ln[1]))
+if(nm){
+v={game:un(nm[1]).slice(0,80),app:app?app[1]:null,link:app?'https://store.steampowered.com/app/'+app[1]:null,provider:'Steam',desc:''}
+if(app){try{const d=await fetch('https://store.steampowered.com/api/appdetails?appids='+app[1]+'&filters=short_description',{headers:UA}).then(r=>r.json());const dd=d&&d[app[1]]&&d[app[1]].data;if(dd&&dd.short_description)v.desc=String(dd.short_description).replace(/<[^>]*>/g,'').slice(0,160)}catch{}}
+}}
+}catch{}
+if(PLAY.size>500)PLAY.clear()
+PLAY.set(st.id,{t:Date.now()+(v?60000:30000),v})
+return v
+}
 r.add('GET','/api/users/:uid/connections',async c=>{
 limit('connget:'+c.user.id,120,60000)
-return{list:pubList(await get(c.env,'conn:'+c.p.uid))}
+const o=await get(c.env,'conn:'+c.p.uid)
+return{list:pubList(o),playing:await playing(o)}
+})
+r.add('GET','/api/gameimg/:app',async c=>{
+limit('gimg:'+c.user.id,200,60000)
+if(!/^\d{1,10}$/.test(c.p.app))fail(404,'Not found')
+const res=await fetch('https://cdn.cloudflare.steamstatic.com/steam/apps/'+c.p.app+'/header.jpg',{headers:UA})
+if(!res.ok)fail(404,'Not found')
+return new Response(res.body,{headers:{'content-type':'image/jpeg','cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
 })
 }

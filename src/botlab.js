@@ -8,7 +8,7 @@ const TAGSET=new Set(TAGS)
 const VIS=['private','unlisted','public']
 export const MAXP=10
 const RES=new Set(['meta','mine','new','api','admin','invites','templates'])
-const RANK={viewer:1,editor:2,maintainer:3,owner:4}
+const RANK={viewer:1,editor:2,maintainer:3,coowner:4,owner:5}
 
 const url=(v,n)=>{
 if(v==null||v==='')return ''
@@ -41,6 +41,11 @@ export async function mint(env,bid){
 const token='pb_'+randHex(32)
 await env.DB.batch([env.DB.prepare('delete from bot_tokens where bot_id=?').bind(bid),env.DB.prepare('insert into bot_tokens(token_hash,bot_id,created_at) values(?,?,?)').bind(await sha(token),bid,now())])
 return token
+}
+async function canSee(env,sid,uid,m,allow){
+if(m.admin||(m.base&(P.MODERATE|P.MANAGE_MESSAGES))!==0)return true
+for(const rn of String(allow||'').split(',').map(x=>x.trim()).filter(Boolean))if(await env.DB.prepare('select 1 x from member_roles mr join roles r on r.id=mr.role_id where mr.server_id=? and mr.user_id=? and lower(r.name)=lower(?)').bind(sid,uid,rn).first())return true
+return false
 }
 export async function roleOf(env,p,uid){
 if(p.owner_id===uid)return'owner'
@@ -309,7 +314,11 @@ const out=[]
 for(const row of rows){
 let g
 try{g=JSON.parse(row.blocks)}catch{continue}
-for(const n of (g.nodes||[]).filter(n=>n.type==='cmd').slice(0,25))out.push({bot:{id:row.bot_id,name:row.display_name||row.name,avatar_id:row.avatar_id||null},name:String(n.p.name||'').toLowerCase(),prefix:n.p.prefix||'!',desc:String(n.p.desc||'').slice(0,100),options:String(n.p.options||'')})
+for(const n of (g.nodes||[]).filter(n=>n.type==='cmd').slice(0,25)){
+const hid=(g.nodes||[]).find(x=>x.type==='hidecmd'&&(g.edges||[]).some(e=>e.f===n.id&&e.t===x.id))
+if(hid&&!(await canSee(c.env,c.p.sid,c.user.id,m,hid.p&&hid.p.allow)))continue
+out.push({bot:{id:row.bot_id,name:row.display_name||row.name,avatar_id:row.avatar_id||null},name:String(n.p.name||'').toLowerCase(),prefix:n.p.prefix||'!',desc:String(n.p.desc||'').slice(0,100),options:String(n.p.options||'')})
+}
 }
 return{commands:out.slice(0,100)}
 })

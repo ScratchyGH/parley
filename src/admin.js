@@ -13,6 +13,20 @@ const alog=(c,action,target,detail='')=>c.env.DB.prepare('insert into mod_log(id
 
 export default function(r){
 dbRoutes(r)
+r.add('GET','/api/admin/chat',async c=>{
+guard(c)
+const rows=(await c.env.DB.prepare('select m.id,m.body,m.created_at,u.username,u.display_name,u.avatar_id from admin_chat m join users u on u.id=m.user_id order by m.created_at desc limit 80').all()).results
+return{messages:rows.reverse()}
+})
+r.add('POST','/api/admin/chat',async c=>{
+guard(c)
+limit('admchat:'+c.user.id,60,60000)
+const b=await body(c.req,3000)
+const t=str(b.body,1,1000)
+await c.env.DB.prepare('insert into admin_chat(id,user_id,body,created_at) values(?,?,?,?)').bind(newId('ac'),c.user.id,t,now()).run()
+if(Math.random()<0.05)await c.env.DB.prepare('delete from admin_chat where created_at<?').bind(now()-30*86400000).run()
+return{ok:true}
+})
 r.add('GET','/api/admin/stats',async c=>{
 guard(c)
 const q=s=>c.env.DB.prepare(s).first()

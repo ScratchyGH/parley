@@ -17,6 +17,7 @@ c.env.DB.prepare('update channels set last_msg=? where id=?').bind(id,room)
 ])
 const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
 const[message]=await hydrate(c.env,[row],botId)
+if(!sid)await c.env.DB.prepare('update conversations set last_msg=?,last_message_at=? where id=?').bind(id,t,room).run().catch(()=>{})
 await publishMsg(c,brr,{t:'msg.new',m:message,ment:{users:[],everyone:false,roles:[]}})
 }
 
@@ -83,9 +84,42 @@ export function makeIo(c,botId,sid,room,user,message){
 const uid=user.id
 return{
 adjXp:async(mode,amt)=>{const k=vkey('xp','user',uid);let cur=Number(await getVar(c,botId,sid,k))||0;amt=Math.max(0,Math.min(1e9,Math.floor(Number(amt))||0));cur=mode==='give'?cur+amt:mode==='take'?Math.max(0,cur-amt):mode==='set'?amt:0;await putVar(c,botId,sid,k,cur);return cur},
-cardKey:()=>btoa(botId+'|'+sid+'|'+uid).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),
+xpBan:async b=>{await putVar(c,botId,sid,'xpban:'+uid,b?1:0)},
+xpBanned:async()=>Number(await getVar(c,botId,sid,'xpban:'+uid))===1,
+dm:async text=>{
+const{slurHit,spammy}=await import('./dmguard.js')
+if(slurHit(text)||spammy(text))return false
+limit('botdm:'+botId,30,3600000)
+limit('botdmu:'+botId+':'+uid,2,600000)
+const t=await c.env.DB.prepare('select id,settings,is_bot from users where id=? and deleted_at is null').bind(uid).first()
+if(!t||t.is_bot)return false
+let pol='everyone';try{pol=(JSON.parse(t.settings||'{}').dm_policy)||'everyone'}catch{}
+if(pol==='none')return false
+const blk=await c.env.DB.prepare('select 1 x from blocks where (user_id=? and blocked_id=?) or (user_id=? and blocked_id=?)').bind(uid,botId,botId,uid).first().catch(()=>null)
+if(blk)return false
+const key=[botId,uid].sort().join(':')
+let conv=await c.env.DB.prepare('select id from conversations where dm_key=?').bind(key).first()
+if(!conv){
+const id=newId('cv'),tt=Date.now()
+await c.env.DB.batch([c.env.DB.prepare('insert into conversations(id,type,dm_key,created_at) values(?,?,?,?)').bind(id,'dm',key,tt),c.env.DB.prepare('insert into conv_members(conv_id,user_id,joined_at,accepted,hidden) values(?,?,?,1,0)').bind(id,botId,tt),c.env.DB.prepare('insert into conv_members(conv_id,user_id,joined_at,accepted,hidden) values(?,?,?,1,0)').bind(id,uid,tt)])
+conv={id}
+}
+await say(c,conv.id,null,botId,text,null)
+return true
+},
+linkConnect:async(key,alias)=>{
+if(!key)return false
+const o=await c.env.DB.prepare('select bot_id from bot_projects where merge_key=?').bind(key).first()
+if(!o||o.bot_id===botId)return false
+await c.env.DB.prepare('insert or replace into bot_links(bot_id,alias,other_bot_id) values(?,?,?)').bind(botId,alias,o.bot_id).run()
+return true
+},
+linkGet:async(alias,k,scope)=>{const l=await c.env.DB.prepare('select other_bot_id o from bot_links where bot_id=? and alias=?').bind(botId,alias).first();if(!l)return 0;return(await getVar(c,l.o,sid,vkey(k,scope,uid)))||0},
+linkSet:async(alias,k,scope,v)=>{const l=await c.env.DB.prepare('select other_bot_id o from bot_links where bot_id=? and alias=?').bind(botId,alias).first();if(!l)return;await putVar(c,l.o,sid,vkey(k,scope,uid),/^-?\d+(\.\d+)?$/.test(v)?Number(v):v)},
+cardKey:st=>btoa(botId+'|'+sid+'|'+uid+(st?'|'+st:'')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),
 xp:async(amt,cd)=>{
 const k=vkey('xp','user',uid)
+if(Number(await getVar(c,botId,sid,'xpban:'+uid))===1){const cx=Number(await getVar(c,botId,sid,k))||0,lx=levelOf(cx);return{xp:cx,level:lx,next:50*(lx+1)*(lx+2)-cx,up:false}}
 let cur=await getVar(c,botId,sid,k),up=false
 const ck=vkey('cd_xp','user',uid),last=await getVar(c,botId,sid,ck),t=Date.now()
 if(!last||t-last>=cd*1000){await putVar(c,botId,sid,ck,t);const before=levelOf(cur);cur=await addVar(c,botId,sid,k,amt);up=levelOf(cur)>before}
@@ -285,7 +319,7 @@ api:(k,i)=>runApi('t:'+user.id,k,i),http:(u,pt)=>runHttp('t:'+user.id,u,pt),webh
 as:async()=>io,
 xp:async(a,cd)=>{const cur=(mem.get('xp')||0)+a;mem.set('xp',cur);const l=levelOf(cur);return{xp:cur,level:l,next:50*(l+1)*(l+2)-cur,up:levelOf(cur)>levelOf(cur-a)}},
 xpGet:async()=>mem.get('xp')||0,
-adjXp:async(m,a)=>{let cur=mem.get('xp')||0;a=Math.max(0,Math.floor(Number(a))||0);cur=m==='give'?cur+a:m==='take'?Math.max(0,cur-a):m==='set'?a:0;mem.set('xp',cur);sent.push({note:'Changes XP ('+m+') to '+cur});return cur},
+xpBan:async()=>{},xpBanned:async()=>false,dm:async x=>{sent.push({note:'Sends a private message: '+x});return true},linkConnect:async k=>!!k,linkGet:async()=>0,linkSet:async()=>{},adjXp:async(m,a)=>{let cur=mem.get('xp')||0;a=Math.max(0,Math.floor(Number(a))||0);cur=m==='give'?cur+a:m==='take'?Math.max(0,cur-a):m==='set'?a:0;mem.set('xp',cur);sent.push({note:'Changes XP ('+m+') to '+cur});return cur},
 top:async()=>[{name:user.display_name||'You',v:mem.get('xp')||0}],
 getSecret:async()=>'',setSecret:async()=>false,
 warns:async()=>mem.get('user:warns')||0,
