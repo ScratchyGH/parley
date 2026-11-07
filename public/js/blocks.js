@@ -603,7 +603,7 @@ else if(kind==='check')return h('label',{class:'bk-check'},h('input',{type:'chec
 else c=h('input',{class:'inp',value:n.p[k],maxLength:200,disabled:dis,'aria-label':label,on:{input:e=>set(e.target.value)}})
 return h('label',{class:'bk-f'},h('span',null,label),c)
 }
-const isEntry=t=>DEFS[t].tone==='trig'||DEFS[t].tone==='sub'||DEFS[t].tone==='note'
+const isEntry=t=>t==='warnif'||t==='xplevelrole'||DEFS[t].tone==='trig'||DEFS[t].tone==='sub'||DEFS[t].tone==='note'
 function removeNodes(ids){
 g.nodes=g.nodes.filter(x=>!ids.has(x.id));g.edges=g.edges.filter(e=>!ids.has(e.f)&&!ids.has(e.t));sel.clear();mark();draw()
 }
