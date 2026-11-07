@@ -70,8 +70,8 @@ botdm:{out:NX,spec:{target:60,text:400},def:{target:'',text:''}},
 connectbot:{out:NX,entry:true,spec:{key:48,name:24},def:{key:'',name:'linked'}},
 linkvar:{out:NX,spec:{mode:['get','set'],bot:24,var:24,value:40,scope:['server','user']},def:{mode:'get',bot:'linked',var:'xp',value:'',scope:'user'}},
 setxp:{out:YN,spec:{name:24,mode:['give','take','set','reset'],amount:9,target:60,allow:120},def:{name:'xp',mode:'give',amount:'100',target:'',allow:''}},
-xplevelrole:{out:NX,spec:{level:3,role:40,target:60},def:{level:'5',role:'',target:''}},
-rankcard:{out:NX,spec:{layout:['banner','full','custom','blur','solid','split'],bgid:40,pfp:['left','center','ring','square','hidden'],bar:['round','square','thin','thick','segment'],barcolor:9,textcolor:9,design:700,name:24,xp:24,shape:['image','plain','box','round','bar'],font:['normal','bold','mono','double'],title:60,width:2,fill:2,empty:2},def:{layout:'banner',bgid:'',pfp:'left',bar:'round',barcolor:'#7c5cff',textcolor:'#ffffff',design:'',name:'card',xp:'xp',shape:'image',font:'bold',title:'{username}',width:'12',fill:'▰',empty:'▱'}},
+xplevelrole:{out:NX,entry:true,spec:{level:3,role:40,target:60},def:{level:'5',role:'',target:''}},
+rankcard:{out:NX,spec:{layout:['banner','full','custom','blur','solid','split'],bgid:40,pfp:['left','center','ring','square','hidden'],bar:['round','square','thin','thick','segment'],barcolor:9,textcolor:9,design:700,name:24,xp:24,shape:['image','designed','plain','box','round','bar'],font:['normal','bold','mono','double'],title:60,width:2,fill:2,empty:2},def:{layout:'banner',bgid:'',pfp:'left',bar:'round',barcolor:'#7c5cff',textcolor:'#ffffff',design:'',name:'card',xp:'xp',shape:'image',font:'bold',title:'{username}',width:'12',fill:'▰',empty:'▱'}},
 board:{out:NX,spec:{name:24,count:2,font:['normal','bold','mono','double']},def:{name:'board',count:'10',font:'normal'}},
 setsecret:{out:NX,spec:{key:24,value:300},def:{key:'webhookurl',value:'{args}'}},
 getsecret:{out:NX,spec:{name:24,key:24},def:{name:'secret',key:'webhookurl'}},
@@ -322,7 +322,7 @@ const bar=(p,w,a,b)=>{const n=Math.round(Math.max(0,Math.min(1,p))*w);return a.r
 const BOX={box:['┌','─','┐','│','└','┘'],round:['╭','─','╮','│','╰','╯']}
 export function cardText(P,v,xp,key){
 const L=levelOf(xp),lo=need(L),hi=need(L+1)
-if((!P.shape||P.shape==='image')&&key)return '[[lc:'+key+']]'
+if((!P.shape||P.shape==='image'||P.shape==='designed')&&key)return '[[lc:'+key+']]'
 const w=Math.max(5,Math.min(30,Number(P.width)||12))
 const b=bar((xp-lo)/(hi-lo),w,(P.fill||'▰')[0],(P.empty||'▱')[0])
 const t=fnt(v.title||'',P.font),lv=fnt('Level '+L,P.font),xs=fnt((xp-lo)+'/'+(hi-lo)+' XP',P.font)
@@ -448,6 +448,13 @@ const devs=[]
 const secrets=new Set()
 const hid=s=>{for(const x of secrets)s=s.split(x).join('[hidden]');return s}
 const setv=(name,v)=>{vars[name.toLowerCase()]=clip(v,500);return vars[name.toLowerCase()]}
+const autoRoles=async()=>{
+for(const m of graph.nodes){
+if(m.type!=='xplevelrole'||!m.p.role||graph.edges.some(e=>e.t===m.id))continue
+const R2=s=>hid(render(s,vars)),tt=await tio(m.p,R2),v=await tt.xpGet()
+if(levelOf(v)>=Number(m.p.level)&&acts<8){acts++;await tt.role(R2(m.p.role),true);log.push({id:m.id,did:'xplevelrole',role:m.p.role})}
+}
+}
 async function chain(start,depth){
 let cur=start
 while(cur&&steps<60){
@@ -473,7 +480,7 @@ case'newmember':{const d=await io.joinedDays();branch=d!==null&&d<Number(P.days)
 case'weekday':{const d=wall(ctx.at||Date.now(),P.tz||'UTC').wd;branch=P.day==='weekdays'?d>=1&&d<=5:P.day==='weekend'?d===0||d===6:DAYS.indexOf(P.day)===d;break}
 case'wordlist':{const l=R(P.input).toLowerCase();branch=P.words.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean).some(x=>l.includes(x));break}
 case'if2':{const a=test(P.op,R(P.left),R(P.right)),b=test(P.op2,R(P.left2),R(P.right2));branch=P.join==='or'?a||b:a&&b;break}
-case'xp':{const x=await io.xp(Number(P.amount),Number(P.cooldown)),k=(P.name||'xp').toLowerCase();setv(k,String(x.xp));setv(k+'_level',String(x.level));setv(k+'_next',String(x.next));branch=x.up;log.push({id:n.id,did:'xp'});break}
+case'xp':{const x=await io.xp(Number(P.amount),Number(P.cooldown)),k=(P.name||'xp').toLowerCase();await autoRoles();setv(k,String(x.xp));setv(k+'_level',String(x.level));setv(k+'_next',String(x.next));branch=x.up;log.push({id:n.id,did:'xp'});break}
 case'xpban':{
 const al=String(P.allow||'').split(',').map(x=>x.trim()).filter(Boolean)
 const tt=await tio(P,R)
@@ -510,7 +517,7 @@ const tt=await tio(P,R),v=await tt.adjXp(P.mode,Number(R(P.amount)))
 setv((P.name||'xp').toLowerCase(),String(v));setv((P.name||'xp').toLowerCase()+'_level',String(levelOf(v)))
 branch=true;log.push({id:n.id,did:'setxp',mode:P.mode});break}
 case'xplevelrole':{const tt=await tio(P,R),v=await tt.xpGet();if(P.role&&levelOf(v)>=Number(P.level)&&acts<8){acts++;await tt.role(R(P.role),true);log.push({id:n.id,did:'xplevelrole',role:P.role})}break}
-case'rankcard':{const x=await io.xpGet(),t=cardText(P,{title:R(P.title)},x,io.cardKey?io.cardKey(['layout','bgid','pfp','bar','barcolor','textcolor','design'].map(k=>String(P[k]||'').replace(k==='design'?/[^A-Za-z0-9_-]/g:/[|,]/g,'')).join(',')):'');setv(P.name||'card',t);log.push({id:n.id,did:'rankcard'});break}
+case'rankcard':{const x=await io.xpGet(),t=cardText(P,{title:R(P.title)},x,io.cardKey?io.cardKey(['layout','bgid','pfp','bar','barcolor','textcolor','design'].map(k=>String(P[k]||'').replace(k==='design'?/[^A-Za-z0-9_-]/g:/[|,]/g,'')).join(',')+(P.shape==='designed'?',1':'')):'');setv(P.name||'card',t);log.push({id:n.id,did:'rankcard'});break}
 case'board':{const rows=await io.top(Math.max(1,Math.min(20,Number(P.count)||10)));setv(P.name||'board',rows.map((x,i)=>(i+1)+'. '+fnt(x.name,P.font)+' · Level '+levelOf(x.v)+' ('+x.v+' XP)').join('\n')||'No one has XP yet');log.push({id:n.id,did:'board'});break}
 case'setsecret':if(acts<8){acts++;const v=render(P.value,vars).trim().slice(0,300);if(v&&await io.setSecret(P.key,v)){await io.del();await io.notice('Saved '+P.key+'.')}log.push({id:n.id,did:'setsecret'})}break
 case'getsecret':{const v=await io.getSecret(P.key);if(v){secrets.add(v);vars[(P.name||'secret').toLowerCase()]=v}log.push({id:n.id,did:'getsecret'});break}

@@ -268,9 +268,10 @@ if(!bm||!(bm.admin||(bm.base&P.MANAGE_ROLES)))return
 const role=await c.env.DB.prepare('select id,position,is_everyone from roles where server_id=? and lower(name)=lower(?)').bind(sid,name).first()
 if(!role||role.is_everyone||!(bm.owner||role.position<bm.top))return
 if(!await loadMember(c.env,sid,uid))return
-if(add)await c.env.DB.prepare('insert or ignore into member_roles(server_id,user_id,role_id) values(?,?,?)').bind(sid,uid,role.id).run()
-else await c.env.DB.prepare('delete from member_roles where server_id=? and user_id=? and role_id=?').bind(sid,uid,role.id).run()
-c.pub('s_'+sid,{t:'member.update',uid})
+let ch=0
+if(add)ch=(await c.env.DB.prepare('insert or ignore into member_roles(server_id,user_id,role_id) values(?,?,?)').bind(sid,uid,role.id).run()).meta?.changes||0
+else ch=(await c.env.DB.prepare('delete from member_roles where server_id=? and user_id=? and role_id=?').bind(sid,uid,role.id).run()).meta?.changes||0
+if(ch)c.pub('s_'+sid,{t:'member.update',uid})
 }
 }
 }

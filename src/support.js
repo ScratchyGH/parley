@@ -156,7 +156,7 @@ const rk=await c.env.DB.prepare("select count(*) n from bot_vars where bot_id=? 
 const sp=String(stx||'').split(','),hex=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:null,en=(v,a,d)=>a.includes(v)?v:d
 const style={layout:en(sp[0],['banner','full','custom','blur','solid','split'],'banner'),pfp:en(sp[2],['left','center','ring','square','hidden'],'left'),bar:en(sp[3],['round','square','thin','thick','segment'],'round'),barcolor:hex(sp[4]),textcolor:hex(sp[5]),bg:null}
 if(/^[A-Za-z0-9_-]{4,40}$/.test(sp[1]||'')){const f=await c.env.DB.prepare("select id from files where id=? and mime like 'image/%'").bind(sp[1]).first().catch(()=>null);if(f)style.bg=f.id}
-const design=sp[6]?lcDesign(sp[6]):null
+const design=sp[7]==='1'?(lcDesign(sp[6]||'')||{}):null
 return{design,style,name:u.display_name,id:u.id,avatar_id:u.avatar_id,banner_id:u.banner_id,accent:u.accent,frame:u.frame,level:L,cur:xp-lo,max:hi-lo,xp,rank:(rk&&rk.n||0)+1}
 })
 r.add('GET','/api/connections',async c=>{
