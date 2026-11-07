@@ -64,13 +64,17 @@ u.deleted_at?null:h('button',{class:'btn sm'+(u.labs?' pri':''),title:'Give or t
 u.deleted_at||u.id===S.me.id?null:h('button',{class:'btn sm'+(u.suspended?'':' dng'),on:{click:async()=>{
 if(!u.suspended){suspendDialog(u,run);return}
 try{await POST(`/api/admin/users/${u.id}/suspend`,{suspended:false,reason:'admin action'});run()}catch(e){fail(e)}
-}}},u.suspended?'Unsuspend':'Suspend'))))
+}}},u.suspended?'Unsuspend':'Suspend'),S.me.owner&&!u.deleted_at?h('button',{class:'btn sm',title:'Link a Steam account without proof. Shows as not verified.',on:{click:()=>steamDialog(u)}},'Link Steam'):null)))
 }catch(e){mount(list,h('div',{class:'err'},e.message))}
 }
 q.oninput=debounce(run,300)
 mount(pg,h('h3',null,'Users'),q,list)
 }
 
+function steamDialog(u){
+const inp=h('input',{class:'inp',maxLength:200,placeholder:'Steam profile link or 17-digit ID'})
+dialog('Link Steam to @'+u.username,h('div',null,h('p',{class:'hint'},'Links it without proof from the account owner. It shows on their profile as not verified.'),field('Steam profile',inp)),{footer:close=>[h('button',{class:'btn',on:{click:close}},'Cancel'),h('button',{class:'btn pri',on:{click:async()=>{try{await POST(`/api/admin/users/${u.id}/steam`,{id:inp.value.trim()});close();toast('Steam linked','ok')}catch(e){fail(e)}}}},'Link')]})
+}
 const DURS=[['1','1 hour'],['24','1 day'],['168','7 days'],['720','30 days'],['0','Permanent']]
 export function suspendDialog(u,done){
 const dur=h('select',{class:'sel'},DURS.map(([v,l])=>h('option',{value:v,selected:v==='24'},l)))
