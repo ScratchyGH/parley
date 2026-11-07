@@ -505,11 +505,11 @@ if(r.linked){list=r.list;draw();toast(pv.label+' added','ok')}else{sess[pv.p]=r;
 }
 nm.addEventListener('keydown',e=>{if(e.key==='Enter')go()})
 const chip=cur?h('span',{class:'cn-chip '+(cur.verified?'ok':'')},cur.verified?'Verified':'Not verified'):h('span',{class:'cn-chip'},'Not linked')
-const head=h('div',{class:'cn-head'},h('span',{class:'cn-ico'},connIcon(pv.p,24)),h('div',{class:'cn-t'},h('b',null,pv.label),cur?h('a',{href:cur.url,target:'_blank',rel:'noopener noreferrer'},cur.name):h('small',null,pv.openid?'Sign in through Steam. No code or profile change needed':pv.verify?'Proves it is yours with a code':'Shown on your profile as unverified')),chip)
+const head=h('div',{class:'cn-head'},h('span',{class:'cn-ico'},connIcon(pv.p,24)),h('div',{class:'cn-t'},h('b',null,pv.label),cur?h('a',{href:cur.url,target:'_blank',rel:'noopener noreferrer'},cur.name):h('small',null,pv.openid?'Sign in through Steam, or use a code in your summary':pv.verify?'Proves it is yours with a code':'Shown on your profile as unverified')),chip)
 let body=null
 if(cur)body=h('div',{class:'cn-act'},h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{try{list=(await DEL('/api/connections/'+pv.p)).list;draw()}catch(e){fail(e)}}}},'Disconnect'))
 else if(s)body=h('div',{class:'cn-verify'},h('p',{class:'hint'},'Put this code in '+(pv.hint==='bio'||!pv.hint?'the bio or description':pv.hint)+' of '+s.name+' on '+pv.label+', save, then press Verify. You can remove it afterwards.'),h('div',{class:'cn-code',on:{click:()=>copyText(s.code)},title:'Click to copy'},s.code),h('div',{class:'cn-act'},h('button',{class:'btn pri',type:'button',on:{click:async()=>{try{list=(await POST('/api/connections/verify',{p:pv.p})).list;delete sess[pv.p];draw();toast(pv.label+' linked','ok')}catch(e){fail(e)}}}},'Verify'),h('button',{class:'btn',type:'button',on:{click:()=>{delete sess[pv.p];draw()}}},'Cancel')))
-else if(pv.openid)body=h('div',{class:'cn-act'},h('button',{class:'btn pri',type:'button',on:{click:async()=>{try{location.href=(await GET('/api/connections/steam/login')).url}catch(e){fail(e)}}}},'Sign in with Steam'))
+else if(pv.openid)body=h('div',null,h('div',{class:'cn-act'},h('button',{class:'btn pri',type:'button',on:{click:async()=>{try{location.href=(await GET('/api/connections/steam/login')).url}catch(e){fail(e)}}}},'Sign in with Steam')),h('p',{class:'hint'},'Or prove it with a code in your Steam profile summary:'),h('div',{class:'cn-act'},nm,h('button',{class:'btn',type:'button',on:{click:go}},'Link with code')))
 else body=h('div',{class:'cn-act'},nm,h('button',{class:'btn pri',type:'button',on:{click:go}},pv.verify?'Link':'Add'))
 return h('div',{class:'cn-card'},head,body)
 }))
