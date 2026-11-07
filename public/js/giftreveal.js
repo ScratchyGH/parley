@@ -1,13 +1,18 @@
 import{h,GET,POST,icon,sleep,toast}from'./util.js'
 import{gaming}from'./gamebar.js'
 import{swatch,parIcon}from'./pars.js'
-import{sv,svg}from'./svg.js'
 let busy=false
 const shown=new Set()
 const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches
-const bodyArt=()=>svg(200,'0 0 200 130',sv('defs',null,sv('linearGradient',{id:'gpb',x1:'0',y1:'0',x2:'1',y2:'1'},sv('stop',{offset:'0','stop-color':'#818cf8'}),sv('stop',{offset:'1','stop-color':'#3730a3'}))),sv('rect',{x:'20',y:'8',width:'160',height:'114',rx:'10',fill:'url(#gpb)'}),sv('rect',{x:'20',y:'8',width:'160',height:'18',rx:'6',fill:'#000','fill-opacity':'.28'}),sv('rect',{x:'91',y:'8',width:'18',height:'114',fill:'#fbbf24'}),sv('rect',{x:'91',y:'8',width:'18',height:'114',fill:'#fff','fill-opacity':'.18'}),sv('rect',{x:'20',y:'100',width:'160',height:'22',rx:'8',fill:'#000','fill-opacity':'.16'}))
-const lidArt=()=>svg(200,'0 0 200 78',sv('defs',null,sv('linearGradient',{id:'gpl',x1:'0',y1:'0',x2:'0',y2:'1'},sv('stop',{offset:'0','stop-color':'#c7d2fe'}),sv('stop',{offset:'1','stop-color':'#6366f1'}))),sv('rect',{x:'10',y:'34',width:'180',height:'38',rx:'9',fill:'url(#gpl)'}),sv('rect',{x:'91',y:'34',width:'18',height:'38',fill:'#fbbf24'}),sv('path',{d:'M100 32C84 6 56 8 60 24c2 8 26 8 40 8z',fill:'none',stroke:'#fbbf24','stroke-width':'9','stroke-linejoin':'round'}),sv('path',{d:'M100 32c16-26 44-24 40-8-2 8-26 8-40 8z',fill:'none',stroke:'#f59e0b','stroke-width':'9','stroke-linejoin':'round'}),sv('circle',{cx:'100',cy:'32',r:'10',fill:'#fde68a',stroke:'#d97706','stroke-width':'3'}))
-function box(){return h('div',{class:'gx-pr'},h('div',{class:'gx-pb'},bodyArt()),h('div',{class:'gx-lid'},lidArt()))}
+const face=(cls,t)=>h('div',{class:'gx-f '+cls,style:{transform:t}})
+function box(){
+const s=70,faces=[['gx-side','rotateY(0deg) translateZ('+s+'px)'],['gx-side','rotateY(90deg) translateZ('+s+'px)'],['gx-side','rotateY(180deg) translateZ('+s+'px)'],['gx-side','rotateY(-90deg) translateZ('+s+'px)'],['gx-bot','rotateX(-90deg) translateZ('+s+'px)'],['gx-in','rotateX(90deg) translateZ(62px)']]
+return h('div',{class:'gx-box'},...faces.map(([c,t])=>face(c,t)))
+}
+function lid(){
+const w=78,hh=22,faces=[['gx-lside','rotateY(0deg) translateZ('+w+'px)'],['gx-lside','rotateY(90deg) translateZ('+w+'px)'],['gx-lside','rotateY(180deg) translateZ('+w+'px)'],['gx-lside','rotateY(-90deg) translateZ('+w+'px)'],['gx-ltop','rotateX(90deg) translateZ('+hh+'px)'],['gx-lbot','rotateX(-90deg) translateZ('+hh+'px)']]
+return h('div',{class:'gx-lid'},...faces.map(([c,t])=>face(c,t)),h('div',{class:'gx-bow'},h('i'),h('i'),h('b')))
+}
 function item(g){
 if(g.kind==='pars')return h('div',{class:'gx-item'},parIcon(64),h('b',null,g.label))
 if((g.kind==='bundle'||g.kind==='multi')&&g.items?.length){
@@ -24,17 +29,45 @@ return new Promise(done=>{
 const root=h('div',{class:'gx',role:'dialog','aria-label':'You received a gift'})
 const title=h('div',{class:'gx-t'},h('b',null,g.from_name),g.kind==='multi'?' sent you '+(g.items?.length||'some')+' gifts':' sent you a gift')
 const it=item(g)
-const bx=box()
-const stage=h('div',{class:'gx-stage'},h('div',{class:'gx-shadow'}),bx,it)
+const L=lid(),B=box()
+const stage=h('div',{class:'gx-stage'},h('div',{class:'gx-shadow'}),h('div',{class:'gx-3d'},B,L),it)
 const ok=h('button',{class:'btn pri gx-ok',on:{click:()=>{root.classList.add('gx-out');setTimeout(()=>{root.remove();done()},350)}}},'Nice!')
 root.append(h('div',{class:'gx-glow'}),title,stage,ok)
 document.body.append(root)
-if(reduce()){root.classList.add('gx-still');return}
-const go=(ms,f)=>setTimeout(()=>{if(root.isConnected)f();else done()},ms)
-root.classList.add('gx-drop')
-go(900,()=>{root.classList.remove('gx-drop');bx.classList.add('gx-shake')})
-go(2400,()=>{bx.classList.remove('gx-shake');root.classList.add('gx-open','gx-rise')})
-go(3700,()=>root.classList.add('gx-fall'))
+if(reduce()){root.classList.add('gx-still');root.insertBefore(it,ok);return}
+const three=stage.querySelector('.gx-3d')
+let t0=performance.now()
+const st={lid:{x:0,y:0,z:0,vx:0,vy:0,rx:0,ry:0,rz:0,vrx:0,vry:0,vrz:0},box:{y:0,vy:0,rz:0,vrz:0},free:false,gone:false,item:0}
+const floor=150
+const setLid=()=>{const l=st.lid;L.style.transform=`translate3d(${l.x}px,${-92+l.y}px,${l.z}px) rotateX(${l.rx}deg) rotateY(${l.ry}deg) rotateZ(${l.rz}deg)`}
+const setBox=()=>{three.style.setProperty('--by',st.box.y+'px');three.style.setProperty('--bz',st.box.rz+'deg')}
+setLid()
+let last=0,phase='drop',pt=0
+const frame=now=>{
+if(!root.isConnected){done();return}
+const dt=Math.min(.033,(now-last)/1000);last=now;pt+=dt
+const l=st.lid
+if(phase==='drop'&&pt>0.9){phase='shake';pt=0;root.classList.remove('gx-drop')}
+if(phase==='shake'){
+const k=Math.min(1,pt/1.5),a=Math.sin(pt*58)*(2+k*9)
+l.x=Math.sin(pt*47)*(1+k*5);l.rz=a*.5;l.y=-Math.abs(Math.sin(pt*30))*k*10
+B.style.transform=`translateX(${Math.sin(pt*53)*k*3}px) rotateZ(${Math.sin(pt*41)*k*1.5}deg)`
+if(pt>1.7){phase='pop';pt=0;l.vy=-560;l.vx=170;l.z=40;l.vrz=360;l.vry=240;l.vrx=140;B.style.transform='';root.classList.add('gx-pop')}
+}
+if(phase==='pop'||phase==='rest'||phase==='fall'){
+l.vy+=1500*dt;l.x+=l.vx*dt;l.y+=l.vy*dt;l.rx+=l.vrx*dt;l.ry+=l.vry*dt;l.rz+=l.vrz*dt
+if(phase!=='fall'&&l.y>140){l.y=140;if(Math.abs(l.vy)>140){l.vy*=-.42;l.vx*=.72;l.vrx*=.5;l.vry*=.5;l.vrz*=.55}else{l.vy=0;l.vx*=.9;l.vrx*=.8;l.vry*=.8;l.vrz*=.8}}
+if(phase!=='fall'&&l.y>=140&&Math.abs(l.vx)<6&&Math.abs(l.vrz)<8){l.vx=0;l.vrz=0;l.vrx=0;l.vry=0;l.rx=Math.round(l.rx/90)*90;l.ry=Math.round(l.ry/90)*90;l.rz=Math.round(l.rz/90)*90;if(phase==='pop'){phase='rest';pt=0}}
+}
+if(phase==='pop'&&pt>.25&&!st.item){st.item=1;root.classList.add('gx-rise')}
+if(phase==='rest'&&pt>3.2){phase='fall';pt=0;root.classList.add('gx-fall');st.box.vy=0}
+if(phase==='fall'){st.box.vy+=1900*dt;st.box.y+=st.box.vy*dt;st.box.vrz+=40*dt;st.box.rz+=st.box.vrz*dt;if(st.box.y>900){phase='end';root.classList.add('gx-end')}}
+setLid();setBox()
+if(phase!=='end'||pt<9999)requestAnimationFrame(frame)
+else done()
+}
+const start=()=>{last=performance.now();root.classList.add('gx-drop');requestAnimationFrame(frame)}
+start()
 })
 }
 async function run(){

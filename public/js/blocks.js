@@ -870,15 +870,15 @@ const dlg=dialog('Team',box)
 async function load(){
 try{
 const d=await GET(`/api/bothub/${p.id}/members`)
-const un=h('input',{class:'inp',placeholder:'Username',maxLength:32,'aria-label':'Username'})
-const rl=h('select',{class:'sel','aria-label':'Role',style:{width:'auto'}},[['viewer','Viewer — can view and test'],['editor','Editor — can change blocks'],['maintainer','Maintainer — also listing and releases']].concat(d.role==='owner'?[['coowner','Co-owner — everything except delete and transfer']]:[]).map(([v,t])=>h('option',{value:v},t)))
+const un=h('input',{class:'inp',placeholder:'Username',maxLength:32,'aria-label':'Username',style:{flex:'1 1 150px',minWidth:'150px',width:'auto'}})
+const rl=h('select',{class:'sel','aria-label':'Role',style:{width:'auto',flex:'1 1 200px'}},[['viewer','Viewer — can view and test'],['editor','Editor — can change blocks'],['maintainer','Maintainer — also listing and releases']].concat(d.role==='owner'?[['coowner','Co-owner — everything except delete and transfer']]:[]).map(([v,t])=>h('option',{value:v},t)))
 const mine=d.role
 mount(box,h('div',{class:'bk-tr'},h('div',null,h('b',null,d.owner.display_name),h('p',{class:'hint',style:{margin:'2px 0 0'}},'@'+d.owner.username+' · owner')),null),
 d.members.map(m=>h('div',{class:'bk-tr'},h('div',null,h('b',null,m.display_name),h('p',{class:'hint',style:{margin:'2px 0 0'}},'@'+m.username+' · '+m.role+(m.status==='invited'?' (invited)':''))),
 h('div',{class:'row'},
 mine==='owner'&&m.status==='active'?h('button',{class:'btn sm',on:{click:async()=>{if(!await confirmBox('Transfer ownership?','@'+m.username+' becomes the owner. You stay as a maintainer.','Transfer',true))return;try{await POST(`/api/bothub/${p.id}/transfer`,{username:m.username});toast('Ownership transferred','ok');dlg.close();location.reload()}catch(e){fail(e)}}}},'Make owner'):null,
 (mine==='owner'||(mine==='coowner'&&m.role!=='coowner')||(mine==='maintainer'&&m.role!=='maintainer'&&m.role!=='coowner'))?h('button',{class:'btn sm dng',on:{click:async()=>{try{await DEL(`/api/bothub/${p.id}/members/${m.user_id}`);load()}catch(e){fail(e)}}}},'Remove'):null))),
-mine==='owner'||mine==='coowner'||mine==='maintainer'?h('div',{class:'row'},un,rl,h('button',{class:'btn pri',on:{click:async()=>{try{await POST(`/api/bothub/${p.id}/members`,{username:un.value.trim().replace(/^@+/,''),role:rl.value});toast('Invitation sent','ok');load()}catch(e){fail(e)}}}},'Invite')):null,
+mine==='owner'||mine==='coowner'||mine==='maintainer'?h('div',{class:'row',style:{flexWrap:'wrap',gap:'8px',alignItems:'stretch'}},un,rl,h('button',{class:'btn pri',on:{click:async()=>{try{await POST(`/api/bothub/${p.id}/members`,{username:un.value.trim().replace(/^@+/,''),role:rl.value});toast('Invitation sent','ok');load()}catch(e){fail(e)}}}},'Invite')):null,
 (mine==='owner'||mine==='coowner')?mergeKeyBox(p):null,
 mine!=='owner'?h('button',{class:'btn dng',on:{click:async()=>{if(!await confirmBox('Leave this project?','You lose access until invited again.','Leave',true))return;try{await DEL(`/api/bothub/${p.id}/members/${myId}`);dlg.close();location.href='/lab'}catch(e){fail(e)}}}},'Leave project'):null)
 }catch(e){mount(box,h('div',{class:'err'},e.message))}
