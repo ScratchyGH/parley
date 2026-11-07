@@ -163,3 +163,21 @@ html .intro img,html[data-gpu] .intro img{animation:introPop .9s cubic-bezier(.2
 .ach-m:hover .ach-x,.ach-x:focus-visible{opacity:1}
 .ach-in{align-items:flex-end}
 .ach-in .inp{resize:none;flex:1;max-height:140px}
+
+/* motion: smooth, cheap, respects reduced motion */
+@media (prefers-reduced-motion:no-preference){
+body:not(.rm):not(.perf) :is(.htile,.scard,.dcard,.card,.bh-row,.btn,.pill,.ci,.wbtn,.mem,.ch,.sel,.inp){transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,background-color .18s ease,border-color .18s ease,opacity .2s ease,filter .2s ease}
+body:not(.rm):not(.perf) :is(.htile,.scard,.dcard,.bh-row):hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.28)}
+body:not(.rm):not(.perf) :is(.htile,.scard,.dcard,.bh-row,.btn):active{transform:translateY(0) scale(.985);transition-duration:.08s}
+body:not(.rm):not(.perf) .btn:hover{transform:translateY(-1px)}
+body:not(.rm):not(.perf) :is(.inp,.sel,textarea):focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 35%,transparent)}
+@keyframes mtIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes mtPop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+body:not(.rm):not(.perf) :is(.hh-a>.htile,.sgrid>.scard,.bh-col>.bh-row){animation:mtIn .45s cubic-bezier(.2,.8,.2,1) both}
+body:not(.rm):not(.perf) :is(.hh-a>.htile,.sgrid>.scard,.bh-col>.bh-row):nth-child(2){animation-delay:.04s}
+body:not(.rm):not(.perf) :is(.hh-a>.htile,.sgrid>.scard,.bh-col>.bh-row):nth-child(3){animation-delay:.08s}
+body:not(.rm):not(.perf) :is(.hh-a>.htile,.sgrid>.scard,.bh-col>.bh-row):nth-child(4){animation-delay:.12s}
+body:not(.rm):not(.perf) :is(.hh-a>.htile,.sgrid>.scard,.bh-col>.bh-row):nth-child(n+5){animation-delay:.16s}
+body:not(.rm):not(.perf) :is(.dlg,.modal,.dialog,.toast,.menu,.pop){animation:mtPop .2s cubic-bezier(.2,.8,.2,1) both}
+body:not(.rm):not(.perf) :is(main,.view,#view)>*{animation:mtIn .35s ease both}
+}
