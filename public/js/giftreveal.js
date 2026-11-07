@@ -11,19 +11,19 @@ const dome=()=>svg(200,'0 0 200 150',sv('defs',null,sv('linearGradient',{id:'gxd
 function item(g){
 if(g.kind==='candy')return h('div',{class:'gx-item'},h('div',{class:'gx-cd'},candySvg(84)),h('b',null,g.label))
 if(g.kind==='pars')return h('div',{class:'gx-item'},parIcon(64),h('b',null,g.label))
-if(g.kind==='bundle'&&g.items?.length){
+if((g.kind==='bundle'||g.kind==='multi')&&g.items?.length){
 const el=h('div',{class:'gx-item gx-multi'})
 g.items.forEach((x,i)=>setTimeout(()=>{const n=h('div',{class:'gx-m'},h('div',{class:'gx-sw'},swatch({kind:x.kind,id:x.id,name:x.name,mb:0})||icon('gift')),h('b',null,x.name));i%2?el.prepend(n):el.append(n)},reduce()?0:2600+i*1100))
 return el
 }
-if(g.kind==='bundle')return h('div',{class:'gx-item'},h('div',{class:'gx-big'},icon('gift')),h('b',null,g.label))
+if(g.kind==='bundle'||g.kind==='multi')return h('div',{class:'gx-item'},h('div',{class:'gx-big'},icon('gift')),h('b',null,g.label))
 const sw=swatch({kind:g.kind,id:g.item_id,name:g.label,mb:0})
 return h('div',{class:'gx-item'},sw?h('div',{class:'gx-sw'},sw):h('div',{class:'gx-big'},icon('gift')),h('b',null,g.label))
 }
 function play(g){
 return new Promise(done=>{
 const root=h('div',{class:'gx',role:'dialog','aria-label':'You received a gift'})
-const title=h('div',{class:'gx-t'},h('b',null,g.from_name),' sent you a gift')
+const title=h('div',{class:'gx-t'},h('b',null,g.from_name),g.kind==='multi'?' sent you '+(g.items?.length||'some')+' gifts':' sent you a gift')
 const it=item(g)
 const dm=h('div',{class:'gx-dome'},dome(),h('i',{class:'gx-puff'}),h('i',{class:'gx-puff b'}),h('i',{class:'gx-puff c'}))
 const stage=h('div',{class:'gx-stage'},h('div',{class:'gx-shadow'}),h('div',{class:'gx-plate'},plate()),it,dm)
