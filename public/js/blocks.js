@@ -1,3 +1,4 @@
+import{mergeKeyBox}from'./mergekey.js'
 import{h,mount,icon,GET,PUT,POST,DEL,fail,confirmBox,dialog,ctxMenu,menu,toast,saveBlob,copyText,fmtRel,field}from'./util.js'
 import{mergeGraphs}from'./gmerge.js'
 
@@ -991,12 +992,4 @@ setTimeout(()=>requestAnimationFrame(wire),150)
 return h('div',{class:'bk-wrap'},h('div',{class:'bk-top'},h('h2',null,p.name+' blocks'),h('p',{class:'hint'},'Build how your bot reacts to messages. Connect blocks left to right. It runs inside servers where the bot is added from the Bot hub. It sees only messages sent in text channels where it can read and post.')),
 bar,issues,
 h('div',{class:'bk-main'},palette,viewEl,tip),out)
-}
-
-function mergeKeyBox(p){
-const out=h('code',{style:{userSelect:'all',wordBreak:'break-all'}},'Hidden')
-let shown=false,key=''
-const eye=h('button',{class:'btn sm',type:'button',on:{click:async()=>{try{if(!key)key=(await GET(`/api/bothub/${p.id}/mergekey`)).key;shown=!shown;out.textContent=shown?key:'Hidden';eye.textContent=shown?'Hide':'Show'}catch(e){fail(e)}}}},'Show')
-const re=h('button',{class:'btn sm dng',type:'button',on:{click:async()=>{if(!await confirmBox('Make a new merge key?','Bots linked with the old key are disconnected.','Make new key',true))return;try{key=(await POST(`/api/bothub/${p.id}/mergekey`,{})).key;shown=true;out.textContent=key;eye.textContent='Hide'}catch(e){fail(e)}}}},'New key')
-return h('div',{style:{marginTop:'12px'}},h('b',null,'Merge key'),h('p',{class:'hint'},'Give this to another bot owner. They paste it into a Connect another bot block to share values with this bot. Anyone with the key can link to this bot.'),h('div',{class:'row'},out,eye,re))
 }

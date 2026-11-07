@@ -7,6 +7,7 @@ import{LICENSES,TAGS,licenseName,licenseUrl,isCustom,NOFORK}from'./licenses.js'
 import{pickCropped}from'./cropper.js'
 import{uploadImage}from'./dialogs.js'
 import{blocksEditor}from'./blocks.js'
+import{mergeKeyDialog}from'./mergekey.js'
 import{screenPill,screenPanel}from'./screenui.js'
 
 const hue=s=>{let x=0;for(const c of String(s))x=(x*31+c.charCodeAt(0))%360;return x}
@@ -180,7 +181,7 @@ botIcon(p,'xl'),
 h('div',{class:'bh-hm'},h('h1',null,p.name),h('p',null,p.summary),h('div',{class:'row',style:{flexWrap:'wrap',gap:'12px'}},h('span',{class:'bh-chip'},icon('plus','s'),plural(p.installs,'server')),h('span',{class:'bh-chip'},icon('clock','s'),'Updated '+fmtRel(p.updated_at)),p.rating?h('span',{class:'bh-chip'},icon('star','s'),p.rating+' ('+plural(p.ratings,'rating')+')'):null,p.forks?h('span',{class:'bh-chip'},icon('copy','s'),plural(p.forks,'fork')):null,p.mine?pill(p.visibility):null)),
 h('div',{class:'bh-act'},
 p.visibility!=='private'||p.mine?h('button',{class:'btn pri',on:{click:()=>installDialog(p)}},icon('plus','s'),'Add to server'):null,
-p.mine||p.role?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},icon('flask','s'),'Open blocks'):null,p.mine||(p.role==='maintainer'||p.role==='coowner')?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/edit')}},icon('edit','s'),'Edit'):null,!p.mine&&!p.role&&!NOFORK.has(p.license)?h('button',{class:'btn',on:{click:()=>forkDialog(p)}},icon('copy','s'),'Fork'):null,
+p.mine||p.role?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/blocks')}},icon('flask','s'),'Open blocks'):null,p.mine||p.role==='coowner'?h('button',{class:'btn',type:'button',on:{click:()=>mergeKeyDialog(p)}},icon('copy','s'),'Merge key'):null,p.mine||(p.role==='maintainer'||p.role==='coowner')?h('button',{class:'btn',on:{click:()=>go('/lab/'+p.slug+'/edit')}},icon('edit','s'),'Edit'):null,!p.mine&&!p.role&&!NOFORK.has(p.license)?h('button',{class:'btn',on:{click:()=>forkDialog(p)}},icon('copy','s'),'Fork'):null,
 h('button',{class:'btn',title:'Copy link','aria-label':'Copy link',on:{click:()=>copyText(location.origin+'/bots/'+p.slug)}},icon('link','s'))))
 const nav=h('div',{class:'bh-tabs',role:'tablist'},tabs.map(([k,l])=>h('button',{role:'tab','aria-selected':String((tab||'')===k),class:(tab||'')===k?'on':'',on:{click:()=>go('/bots/'+p.slug+(k?'/'+k:''))}},l)))
 const side=h('aside',{class:'bh-spec'},h('h4',null,'Details'),
