@@ -1,5 +1,6 @@
 import{fail,now,randHex,sha,body,limit}from'./util.js'
 const ipOf=c=>c.req.headers.get('cf-connecting-ip')||'local'
+const nm=v=>{let t=String(v||'').trim();if(/[\/]/.test(t)){t=t.replace(/[?#].*$/,'').replace(/\/+$/,'');t=t.split('/').pop()}return t.replace(/^@/,'')}
 const get=async(env,k)=>{const r=await env.DB.prepare('select v from app_settings where k=?').bind(k).first();try{return r?JSON.parse(r.v):null}catch{return null}}
 const put=(env,k,o)=>env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k) do update set v=excluded.v').bind(k,JSON.stringify(o)).run()
 const KINDS=['lost','banned','bug','other']
@@ -162,7 +163,7 @@ const p0=P[b.p]&&ready(P[b.p],c.env)?P[b.p]:null
 if(!p0){
 const lp=L[b.p]
 if(!lp)fail(400,'Unknown service')
-const ln=String(b.name||'').trim()
+const ln=nm(b.name)
 if(!lp.ok.test(ln))fail(400,'That username does not look right')
 const lo=await get(c.env,'conn:'+c.user.id)||{}
 lo[b.p]={id:ln,name:ln.replace(/^@/,''),at:now(),u:1}
@@ -170,7 +171,7 @@ await put(c.env,'conn:'+c.user.id,lo)
 return{linked:true,list:pubList(lo)}
 }
 const p=p0
-const n=String(b.name||'').trim()
+const n=nm(b.name)
 if(!p.ok.test(n))fail(400,'That username does not look right')
 const W='apple river cloud maple tiger stone happy green lemon piano ocean candy forest rabbit silver garden window pencil bridge sunny'.split(' '),pk=()=>W[crypto.getRandomValues(new Uint8Array(1))[0]%W.length],code=pk()+' '+pk()+' '+pk()+' '+pk()
 await put(c.env,'connp:'+c.user.id+':'+b.p,{n,code,exp:now()+1800000})
@@ -180,7 +181,7 @@ r.add('POST','/api/connections/link',async c=>{
 limit('connln:'+c.user.id,30,3600000)
 const b=await body(c.req,256),p=L[b.p]
 if(!p)fail(400,'Unknown service')
-const n=String(b.name||'').trim()
+const n=nm(b.name)
 if(!p.ok.test(n))fail(400,'That username does not look right')
 const o=await get(c.env,'conn:'+c.user.id)||{}
 o[b.p]={id:n,name:n.replace(/^@/,''),at:now()}
@@ -196,7 +197,7 @@ const s=await get(c.env,k)
 if(!s||s.exp<now())fail(400,'Start again, the code expired')
 let u
 try{u=await p.look(s.n,c.env)}catch{fail(502,p.name+' did not answer, try again in a minute')}
-if(!u)fail(404,'Could not find that '+p.name+' account')
+if(!u)fail(404,'Could not find that '+p.name+' account. Paste your profile link or custom ID, and make the profile and its summary public.')
 const nz=t=>String(t||'').toLowerCase().replace(/[^a-z]+/g,' ');if(!(' '+nz(u.text)+' ').includes(' '+nz(s.code)+' '))fail(400,'The code is not on that '+p.name+' profile yet. Save it there and try again.')
 const xk='connx:'+b.p+':'+u.id,x=await get(c.env,xk)
 if(x&&x!==c.user.id)fail(409,'That '+p.name+' account is already linked to another Parley account')
