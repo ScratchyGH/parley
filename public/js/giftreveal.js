@@ -1,16 +1,13 @@
 import{h,GET,POST,icon,sleep,toast}from'./util.js'
 import{gaming}from'./gamebar.js'
 import{swatch,parIcon}from'./pars.js'
+import{sv,svg}from'./svg.js'
 let busy=false
 const shown=new Set()
 const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches
-const face=(c,r,z)=>h('i',{class:'gx-f '+c,style:{transform:`rotateX(${r[0]}deg) rotateY(${r[1]}deg) translateZ(${z}px)`}})
-const sides=(c,z)=>[0,90,180,270].map(a=>face(c,[0,a],z))
-function box(){
-const bo=h('div',{class:'gx-box'},...sides('gx-side',70),face('gx-bot',[-90,0],70),face('gx-in',[-90,0],64))
-const lid=h('div',{class:'gx-lid'},...sides('gx-lside',78),face('gx-ltop',[90,0],22),face('gx-lbot',[-90,0],22),h('div',{class:'gx-bow'},h('i'),h('i'),h('b')))
-return h('div',{class:'gx-3d'},bo,lid)
-}
+const bodyArt=()=>svg(200,'0 0 200 130',sv('defs',null,sv('linearGradient',{id:'gpb',x1:'0',y1:'0',x2:'1',y2:'1'},sv('stop',{offset:'0','stop-color':'#818cf8'}),sv('stop',{offset:'1','stop-color':'#3730a3'}))),sv('rect',{x:'20',y:'8',width:'160',height:'114',rx:'10',fill:'url(#gpb)'}),sv('rect',{x:'20',y:'8',width:'160',height:'18',rx:'6',fill:'#000','fill-opacity':'.28'}),sv('rect',{x:'91',y:'8',width:'18',height:'114',fill:'#fbbf24'}),sv('rect',{x:'91',y:'8',width:'18',height:'114',fill:'#fff','fill-opacity':'.18'}),sv('rect',{x:'20',y:'100',width:'160',height:'22',rx:'8',fill:'#000','fill-opacity':'.16'}))
+const lidArt=()=>svg(200,'0 0 200 78',sv('defs',null,sv('linearGradient',{id:'gpl',x1:'0',y1:'0',x2:'0',y2:'1'},sv('stop',{offset:'0','stop-color':'#c7d2fe'}),sv('stop',{offset:'1','stop-color':'#6366f1'}))),sv('rect',{x:'10',y:'34',width:'180',height:'38',rx:'9',fill:'url(#gpl)'}),sv('rect',{x:'91',y:'34',width:'18',height:'38',fill:'#fbbf24'}),sv('path',{d:'M100 32C84 6 56 8 60 24c2 8 26 8 40 8z',fill:'none',stroke:'#fbbf24','stroke-width':'9','stroke-linejoin':'round'}),sv('path',{d:'M100 32c16-26 44-24 40-8-2 8-26 8-40 8z',fill:'none',stroke:'#f59e0b','stroke-width':'9','stroke-linejoin':'round'}),sv('circle',{cx:'100',cy:'32',r:'10',fill:'#fde68a',stroke:'#d97706','stroke-width':'3'}))
+function box(){return h('div',{class:'gx-pr'},h('div',{class:'gx-pb'},bodyArt()),h('div',{class:'gx-lid'},lidArt()))}
 function item(g){
 if(g.kind==='pars')return h('div',{class:'gx-item'},parIcon(64),h('b',null,g.label))
 if((g.kind==='bundle'||g.kind==='multi')&&g.items?.length){

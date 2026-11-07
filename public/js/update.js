@@ -37,3 +37,23 @@ if(!document.hidden)check()
 })
 addEventListener('online',check)
 }
+
+export function previewUpdate(mode){
+document.querySelector('.updb')?.remove()
+const t=h('span',null,'5')
+const b=h('div',{class:'updb',role:'status','aria-live':'polite'},h('b',null,'Parley updated'),h('span',null,'Restarting in ',t,' seconds'),h('small',{style:{opacity:.7,marginLeft:'8px'}},'preview only'))
+document.body.append(b)
+if(mode==='call'){t.textContent='when your call ends';setTimeout(()=>b.remove(),5000);return}
+if(mode==='game'){t.textContent='when your game ends';setTimeout(()=>b.remove(),5000);return}
+let n=5
+const tick=()=>{
+if(!b.isConnected)return
+t.textContent=String(n)
+if(n--<=0){b.remove();return}
+setTimeout(tick,1000)
+}
+tick()
+}
+export async function buildInfo(){
+try{const d=await(await fetch('/api/health?lite=1',{cache:'no-store'})).json();return{loaded:cur,live:d&&d.build}}catch{return null}
+}
