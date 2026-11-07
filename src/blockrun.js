@@ -67,7 +67,7 @@ xp:{out:YN,spec:{name:24,amount:4,cooldown:5},def:{name:'xp',amount:'15',cooldow
 xpban:{out:YN,spec:{mode:['ban','unban','check'],target:60,allow:120},def:{mode:'ban',target:'',allow:''}},
 hidecmd:{out:YN,spec:{allow:120},def:{allow:''}},
 botdm:{out:NX,spec:{target:60,text:400},def:{target:'',text:''}},
-connectbot:{out:NX,spec:{key:48,name:24},def:{key:'',name:'linked'}},
+connectbot:{out:NX,entry:true,spec:{key:48,name:24},def:{key:'',name:'linked'}},
 linkvar:{out:NX,spec:{mode:['get','set'],bot:24,var:24,value:40,scope:['server','user']},def:{mode:'get',bot:'linked',var:'xp',value:'',scope:'user'}},
 setxp:{out:YN,spec:{name:24,mode:['give','take','set','reset'],amount:9,target:60,allow:120},def:{name:'xp',mode:'give',amount:'100',target:'',allow:''}},
 xplevelrole:{out:NX,spec:{level:3,role:40,target:60},def:{level:'5',role:'',target:''}},

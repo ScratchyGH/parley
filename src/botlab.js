@@ -250,6 +250,7 @@ try{cur=p.blocks?JSON.parse(p.blocks):null}catch{}
 return json({error:'Someone else saved changes first',conflict:true,rev:p.rev||0,blocks:cur},409)
 }
 const rev=await writeBlocks(c,p,g,b.summary,null)
+if(rev!==null)for(const n of g.nodes||[])if(n.type==='connectbot'&&n.p&&n.p.key){const k=String(n.p.key).trim(),o=await c.env.DB.prepare('select bot_id from bot_projects where merge_key=?').bind(k).first();if(o&&o.bot_id!==p.bot_id)await c.env.DB.prepare('insert or replace into bot_links(bot_id,alias,other_bot_id) values(?,?,?)').bind(p.bot_id,String(n.p.name||'linked').toLowerCase().slice(0,24),o.bot_id).run()}
 if(rev===null){
 const q=await c.env.DB.prepare('select rev,blocks from bot_projects where id=?').bind(p.id).first()
 let cur=null
