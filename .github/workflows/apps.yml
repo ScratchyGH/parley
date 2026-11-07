@@ -147,7 +147,9 @@ jobs:
           distribution: temurin
           java-version: 17
       - run: sudo apt-get update && sudo apt-get install -y imagemagick
-      - run: |
+      - env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
           mkdir cap && cd cap
           npm init -y
           npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/app@6 @capacitor/haptics@6 @capacitor/status-bar@6 @capacitor/splash-screen@6 @capacitor/keyboard@6
@@ -165,6 +167,8 @@ jobs:
           sed -i 's#<item name="android:background">@null</item>#<item name="android:background">\#121211</item><item name="android:windowBackground">\#121211</item><item name="android:statusBarColor">\#121211</item><item name="android:navigationBarColor">\#121211</item>#' android/app/src/main/res/values/styles.xml
           for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do n=${d%%:*}; s=${d##*:}; mkdir -p android/app/src/main/res/mipmap-$n; for f in ic_launcher ic_launcher_round ic_launcher_foreground; do convert ../public/logo-512.png -resize ${s}x${s} android/app/src/main/res/mipmap-$n/$f.png; done; done
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/;s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
+          mkdir -p ~/.android && if [ -n "$KS" ]; then echo "$KS" | base64 -d > ~/.android/debug.keystore; fi
           npx cap sync android
           cd android && ./gradlew assembleDebug
           cp app/build/outputs/apk/debug/app-debug.apk ../../Parley.apk
