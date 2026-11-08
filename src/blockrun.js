@@ -50,7 +50,7 @@ sayto:{out:NX,spec:{channel:40,text:1500},def:{channel:'general',text:''}},
 react:{out:NX,spec:{emoji:40},def:{emoji:'👍'}},
 delete:{out:NX,spec:{},def:{}},
 pin:{out:NX,spec:{},def:{}},
-timeout:{out:NX,spec:{minutes:3,target:60},def:{minutes:'5',target:''}},
+timeout:{out:NX,spec:{minutes:30,target:60},def:{minutes:'5',target:''}},
 addrole:{out:NX,spec:{role:40,target:60},def:{role:'',target:''}},
 removerole:{out:NX,spec:{role:40,target:60},def:{role:'',target:''}},
 stop:{out:[],spec:{},def:{}},
@@ -105,7 +105,7 @@ setnick:{out:NX,spec:{nick:32,target:60},def:{nick:'',target:''}},
 untimeout:{out:NX,spec:{target:60},def:{target:''}},
 kick:{out:NX,spec:{reason:200,target:60},def:{reason:'Removed by bot',target:''}},
 ban:{out:NX,spec:{reason:200,target:60},def:{reason:'Banned by bot',target:''}},
-purge:{out:NX,spec:{count:2,target:60},def:{count:'5',target:''}},
+purge:{out:NX,spec:{count:30,target:60},def:{count:'5',target:''}},
 warnif:{out:YN,entry:true,spec:{n:2,act:['ban','kick','timeout'],reason:200,target:60},def:{n:'3',act:'ban',reason:'Too many warnings',target:''}},
 warn:{out:NX,spec:{name:24,reason:200,target:60},def:{name:'warns',reason:'Warning from bot',target:''}},
 log:{out:NX,spec:{channel:40,text:1500},def:{channel:'mod-log',text:''}},
@@ -244,7 +244,7 @@ if(n.type==='setcount')p.value=num(p.value,-1000000,1000000,'Value')
 if(n.type==='time'&&(parseClock(p.from)===null||parseClock(p.to)===null))bad('Use times like 9:00 PM or 21:30')
 if(T.spec.tz!==undefined){try{new Intl.DateTimeFormat('en-US',{timeZone:p.tz})}catch{p.tz='UTC'}}
 if(n.type==='cooldown')p.seconds=num(p.seconds,1,86400,'Seconds')
-if(n.type==='timeout')p.minutes=num(p.minutes,1,60,'Minutes')
+if(n.type==='timeout'&&!/\{/.test(p.minutes))p.minutes=num(p.minutes,1,60,'Minutes')
 if(n.type==='http'&&!/^https:\/\//i.test(p.url))bad('The URL must start with https://')
 if((n.type==='feed'||n.type==='preview')&&!p.url.includes('{')&&!/^https:\/\//i.test(p.url))bad('The URL must start with https://')
 if(n.type==='item')p.n=num(p.n,1,100,'Item number')
@@ -285,7 +285,7 @@ if(n.type==='longmsg')p.chars=num(p.chars,10,2000,'Characters')
 if(n.type==='emojispam'||n.type==='mentionspam')p.count=num(p.count,1,50,'Count')
 if(n.type==='newmember')p.days=num(p.days,1,365,'Days')
 if(n.type==='slowmode')p.seconds=num(p.seconds,0,21600,'Seconds')
-if(n.type==='purge')p.count=num(p.count,1,10,'Messages')
+if(n.type==='purge'&&!/\{/.test(p.count))p.count=num(p.count,1,10,'Messages')
 if(n.type==='wait')p.seconds=num(p.seconds,1,5,'Seconds')
 if(n.type==='word')p.n=num(p.n,1,50,'Word number')
 if((n.type==='save'||n.type==='load')&&!/^[a-z0-9_]{1,24}$/i.test(p.key))bad('Keys use letters, numbers and underscores')
@@ -537,7 +537,7 @@ case'sayto':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P
 case'react':if(P.emoji&&acts<8){acts++;await io.react(P.emoji);log.push({id:n.id,did:'react',emoji:P.emoji})}break
 case'delete':if(acts<8){acts++;await io.del();log.push({id:n.id,did:'delete'})}break
 case'pin':if(acts<8){acts++;await io.pin();log.push({id:n.id,did:'pin'})}break
-case'timeout':if(acts<8){acts++;await(await tio(P,R)).timeout(Number(P.minutes));log.push({id:n.id,did:'timeout',minutes:P.minutes})}break
+case'timeout':if(acts<8){acts++;const mm=Math.max(1,Math.min(60,Math.round(Number(R(P.minutes)))||5));await(await tio(P,R)).timeout(mm);log.push({id:n.id,did:'timeout',minutes:String(mm)})}break
 case'addrole':case'removerole':if(P.role&&acts<8){acts++;await(await tio(P,R)).role(R(P.role),n.type==='addrole');log.push({id:n.id,did:n.type,role:P.role})}break
 case'notice':{const t=R(P.text).trim().slice(0,300);if(t&&acts<8){acts++;await io.notice(t);log.push({id:n.id,did:'notice',text:t})}break}
 case'unpin':if(acts<8){acts++;await io.unpin();log.push({id:n.id,did:'unpin'})}break
@@ -545,7 +545,7 @@ case'slowmode':if(acts<8){acts++;await io.slowmode(Number(P.seconds));log.push({
 case'setnick':if(acts<8){acts++;await(await tio(P,R)).setNick(R(P.nick).trim().slice(0,32));log.push({id:n.id,did:'setnick'})}break
 case'untimeout':if(acts<8){acts++;await(await tio(P,R)).untimeout();log.push({id:n.id,did:'untimeout'})}break
 case'kick':case'ban':if(acts<8&&heavy<1){acts++;heavy++;await(await tio(P,R))[n.type](R(P.reason).slice(0,200));log.push({id:n.id,did:n.type})}break
-case'purge':if(acts<8){acts++;await(await tio(P,R)).purge(Number(P.count));log.push({id:n.id,did:'purge',count:P.count})}break
+case'purge':if(acts<8){acts++;const pc=Math.max(1,Math.min(10,Math.round(Number(R(P.count)))||1));await(await tio(P,R)).purge(pc);log.push({id:n.id,did:'purge',count:String(pc)})}break
 case'warnif':{const t=await tio(P,R),w=await t.warns();branch=w>=Number(P.n);if(branch&&acts<8&&heavy<1){acts++;heavy++;await t.punish(P.act,R(P.reason).slice(0,200));log.push({id:n.id,did:'warnif',value:String(w)})}break}
 case'warn':if(acts<8){acts++;const w=await(await tio(P,R)).warn(R(P.reason).slice(0,200));log.push({id:n.id,did:'warn',value:setv(P.name||'warns',String(w))});await autoWarn(w)}break
 case'log':{const t=R(P.text).trim();if(t&&sends<4){sends++;await io.sendTo(R(P.channel).replace(/^#/,''),t);log.push({id:n.id,did:'log',text:t})}break}
