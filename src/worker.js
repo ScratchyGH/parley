@@ -266,6 +266,7 @@ async scheduled(ev,env0){
 const env=await wrap(env0)
 const t=now()
 try{await env.DB.prepare("insert into app_settings(k,v) values('last_cron',?) on conflict(k) do update set v=excluded.v").bind(String(t)).run()}catch{}
+try{await env.DB.batch([env.DB.prepare("delete from bans where user_id in(select id from users where username='ParleyOfficial')"),env.DB.prepare("update users set suspended=0,suspended_until=null,suspend_reason=null where username='ParleyOfficial' and suspended=1")])}catch{}
 try{
 const pend=[]
 const ec={waitUntil:p=>{pend.push(p)}}

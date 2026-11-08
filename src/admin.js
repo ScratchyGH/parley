@@ -118,6 +118,7 @@ const b=await body(c.req)
 const t=await c.env.DB.prepare('select id,username from users where id=? and deleted_at is null').bind(c.p.id).first()
 if(!t)fail(404,'User not found')
 if(t.id===c.user.id)fail(400,'You cannot suspend yourself')
+if(t.username==='ParleyOfficial')fail(403,'ParleyOfficial cannot be suspended')
 const on=b.suspended?1:0
 const hours=clamp(b.hours,0,0,24*365)
 const until=on&&hours?now()+hours*3600000:null

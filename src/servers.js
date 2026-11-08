@@ -748,6 +748,8 @@ r.add('POST','/api/servers/:sid/members/:uid/ban',async c=>{
 const m=await mem(c,c.p.sid)
 must(m,P.BAN)
 if(c.p.uid===c.user.id)fail(400,'You cannot ban yourself')
+const pb=await c.env.DB.prepare('select username from users where id=?').bind(c.p.uid).first()
+if(pb&&pb.username==='ParleyOfficial')fail(403,'ParleyOfficial cannot be banned')
 await target(c,m.server.id,c.p.uid,m)
 const b=await body(c.req).catch(()=>({}))
 const reason=opt(b.reason,300,'Reason')
