@@ -356,7 +356,15 @@ async function sessions(pg){
 mount(pg,h('h3',null,'Sessions'),h('div',{class:'hint'},'Loading…'))
 try{
 const d=await GET('/api/sessions')
-mount(pg,h('h3',null,'Sessions'),h('div',{class:'list'},d.sessions.map(s=>h('div',{class:'li'},icon('screen'),h('div',{class:'grow'},h('b',null,(s.ua||'Unknown device').slice(0,80)+(s.current?' (this device)':'')),h('small',null,`${s.ip||'unknown IP'} · active ${fmtRel(s.last_seen)}`)),
+mount(pg,h('h3',null,'Sessions'),
+h('div',{style:{marginBottom:'16px'}},h('button',{class:'btn sm',on:{click:async e=>{
+const btn=e.target
+btn.disabled=true
+try{const{code}=await POST('/api/auth/desktop/start');location.href='parley://login?code='+code}
+catch(x){fail(x)}
+finally{btn.disabled=false}
+}}},'Open in desktop app'),h('div',{class:'hint'},'Signs the Parley desktop app into this account. The link expires in 90 seconds and works once.')),
+h('div',{class:'list'},d.sessions.map(s=>h('div',{class:'li'},icon('screen'),h('div',{class:'grow'},h('b',null,(s.ua||'Unknown device').slice(0,80)+(s.current?' (this device)':'')),h('small',null,`${s.ip||'unknown IP'} · active ${fmtRel(s.last_seen)}`)),
 s.current?null:h('button',{class:'btn sm dng',on:{click:async()=>{try{await DEL('/api/sessions/'+s.id);sessions(pg)}catch(e){fail(e)}}}},'Sign out')))),
 d.sessions.length>1?h('div',{style:{marginTop:'12px'}},h('button',{class:'btn dng',on:{click:async()=>{try{await DEL('/api/sessions');sessions(pg)}catch(e){fail(e)}}}},'Sign out all other devices')):null)
 }catch(e){mount(pg,h('div',{class:'err'},e.message))}

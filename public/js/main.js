@@ -43,6 +43,12 @@ const r=parse()
 const ae=new URLSearchParams(location.search).get('autherror')
 if(ae){history.replaceState(null,'','/');setTimeout(()=>toast(ae,'err'),600)}
 if(r.name==='appeal'){renderAppeal(root,()=>{history.replaceState(null,'','/');boot()});return}
+if(r.name==='desktop-link'){
+history.replaceState(null,'','/')
+if(/^[a-f0-9]{48}$/.test(r.code||'')){try{await POST('/api/auth/desktop/claim',{code:r.code})}catch{}}
+boot()
+return
+}
 try{
 const d=await GET('/api/me')
 if(d.user.is_bot){const{botGate}=await import('./botscreen.js');await botGate(root,d.user);return}

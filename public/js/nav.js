@@ -46,6 +46,7 @@ if(p[0]==='invite')return{name:'invite',code:p[1]}
 if(p[0]==='weareparley')return{name:'wap'}
 if(p[0]==='gift')return{name:'gift',code:p[1]}
 if(p[0]==='appeal')return{name:'appeal'}
+if(p[0]==='desktop-link')return{name:'desktop-link',code:u.searchParams.get('code')}
 return{name:'home',page:'friends'}
 }
 export function lastChan(sid){try{return localStorage.getItem('parley:last:'+sid)}catch{return null}}
