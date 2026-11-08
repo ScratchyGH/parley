@@ -230,6 +230,29 @@ try{await c.env.DB.prepare('insert into passkeys(id,user_id,pub,counter,name,cre
 catch(e){if(String(e.message).includes('UNIQUE'))fail(409,'That passkey is already registered');throw e}
 return json({id,name},201)
 })
+r.add('POST','/api/auth/desktop/start',async c=>{
+limit('dks:'+c.user.id,20,3600000)
+const code=randHex(24)
+await c.env.DB.prepare('insert into desktop_codes(code,user_id,created_at,expires_at,used) values(?,?,?,?,0)').bind(code,c.user.id,now(),now()+90000).run()
+return{code}
+})
+r.add('POST','/api/auth/desktop/claim',async c=>{
+limit('dkc:'+ip(c),30,900000)
+const b=await body(c.req)
+const code=typeof b.code==='string'?b.code:''
+if(!/^[a-f0-9]{48}$/.test(code))fail(400,'That sign-in link is invalid')
+const row=await c.env.DB.prepare('select * from desktop_codes where code=?').bind(code).first()
+await c.env.DB.prepare('delete from desktop_codes where code=?').bind(code).run()
+if(!row||row.used||row.expires_at<now())fail(400,'That sign-in link expired, open it from the browser again')
+const u=await c.env.DB.prepare('select * from users where id=?').bind(row.user_id).first()
+if(!u||u.deleted_at)fail(400,'That account no longer exists')
+await liftIfLapsed(c.env,u)
+if(u.suspended)fail(403,'This account is suspended. You can submit an appeal at /appeal.')
+const sc=await makeSession(c,u.id)
+u.owner=isOwner(c.env,u.username)
+u.admin=!!u.is_admin||u.owner||(c.env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).includes(u.username.toLowerCase())
+return json({user:me(u)},200,{'set-cookie':sc})
+},{auth:false})
 r.add('DELETE','/api/me/passkeys/:id',async c=>{
 if(await lastMethod(c))fail(409,'Set a password or add another sign-in method first')
 await c.env.DB.prepare('delete from passkeys where id=? and user_id=?').bind(c.p.id,c.user.id).run()

@@ -49,8 +49,8 @@ if(VERDICTS.has(k))return VERDICTS.get(k)
 if(FLIGHT.has(k))return FLIGHT.get(k)
 const p=(async()=>{
 try{
-const out=await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf',{image:Array.from(bytes),prompt:'Explicit nudity or sex? YES or NO.',max_tokens:1})
-return remember(k,/^\s*yes/i.test(String(out&&(out.description||out.response)||'')))
+const out=await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf',{image:Array.from(bytes),prompt:'Does this image contain explicit nudity or sexual content? Answer with only the word YES or the word NO.',max_tokens:6})
+return remember(k,/^\W*yes\b/i.test(String(out&&(out.description||out.response)||'').trim()))
 }catch{return false}finally{FLIGHT.delete(k)}
 })()
 FLIGHT.set(k,p)
