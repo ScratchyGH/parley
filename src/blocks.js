@@ -141,7 +141,8 @@ setSecret:async(k,v)=>{const m=await loadMember(c.env,sid,uid);if(!m||!(m.admin|
 as:async t=>{
 const id=(t.match(/<@([a-z0-9_]+)>/i)||[])[1]||t.replace(/^@/,'')
 const u=await c.env.DB.prepare('select u.id,u.username,u.display_name from members m join users u on u.id=m.user_id where m.server_id=? and (u.id=? or u.username=?)').bind(sid,id,id).first()
-return u?makeIo(c,botId,sid,room,u,message):new Proxy({},{get:()=>async()=>0})
+const aid=message&&(message.author&&message.author.id||message.author_id)
+return u?makeIo(c,botId,sid,room,u,message):new Proxy({},{get:(_,k)=>async()=>{if(aid&&k!=='notice')c.pub('u_'+aid,{t:'notice',text:'Could not find a member called "'+id+'" in this server.'});return 0}})
 },
 send:(text,reply)=>say(c,room,sid,botId,text,reply&&message?message.id:null),
 sendTo:async(name,text)=>{
@@ -258,7 +259,10 @@ await publishMsg(c,brr,{t:'msg.update',m})
 },
 timeout:async mins=>{
 const bm=await loadMember(c.env,sid,botId),tm=await loadMember(c.env,sid,uid)
-if(!bm||!tm||!(bm.admin||(bm.base&P.MODERATE))||tm.owner||tm.admin||tm.top>=bm.top)return
+const aid=message&&(message.author&&message.author.id||message.author_id),why=t=>{if(aid)c.pub('u_'+aid,{t:'notice',text:t})}
+if(!bm||!bm.admin&&!(bm.base&P.MODERATE)){why('The bot needs the Moderate Members permission to time people out.');return}
+if(!tm){why('That person is not in this server.');return}
+if(tm.owner||tm.admin||tm.top>=bm.top){why('The bot cannot time out that member. Move the bot role above theirs, and the owner and admins cannot be timed out.');return}
 await c.env.DB.prepare('update members set timeout_until=? where server_id=? and user_id=?').bind(now()+mins*60000,sid,uid).run()
 c.pub('u_'+uid,{t:'notice',text:`You were timed out in ${bm.server.name} for ${mins} minutes`})
 },
