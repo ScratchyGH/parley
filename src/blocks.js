@@ -178,7 +178,10 @@ c.pub('s_'+sid,{t:'server.update'})
 },
 setNick:async nick=>{
 const bm=await loadMember(c.env,sid,botId),tm=await loadMember(c.env,sid,uid)
-if(!bm||!tm||!(bm.admin||(bm.base&P.MODERATE))||tm.owner||tm.admin||tm.top>=bm.top)return
+const aid=message&&(message.author&&message.author.id||message.author_id),why=t=>{if(aid)c.pub('u_'+aid,{t:'notice',text:t})}
+if(!bm||!bm.admin&&!(bm.base&P.MODERATE)){why('The bot needs the Moderate Members permission to change nicknames.');return}
+if(!tm){why('That person is not in this server.');return}
+if(tm.owner||tm.admin||tm.top>=bm.top){why('The bot cannot change that member nickname. Move the bot role above theirs, and the owner and admins cannot be changed.');return}
 await c.env.DB.prepare('update members set nickname=? where server_id=? and user_id=?').bind(nick||null,sid,uid).run()
 c.pub('s_'+sid,{t:'member.update',uid})
 },
