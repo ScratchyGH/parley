@@ -10,7 +10,22 @@ if(FL.nogpubuf)app.commandLine.appendSwitch('disable-gpu-memory-buffer-video-fra
 if(FL.nohw)app.disableHardwareAcceleration()
 const U='https://parley.heavengtwashere.workers.dev/?web=1'
 const O='https://parley.heavengtwashere.workers.dev'
+app.setAsDefaultProtocolClient('parley')
+const codeFrom=url=>{try{const c=new URL(url).searchParams.get('code');return/^[a-f0-9]{48}$/.test(c||'')?c:null}catch{return null}}
+const codeFromArgv=argv=>{for(const a of argv){const c=codeFrom(a);if(c)return c}return null}
+let win=null,pendingCode=codeFromArgv(process.argv)
+const openCode=code=>{
+pendingCode=null
+if(win&&!win.isDestroyed()){win.loadURL(O+'/desktop-link?code='+code);win.show();win.focus()}
+else pendingCode=code
+}
 if(!app.requestSingleInstanceLock())app.quit()
+app.on('second-instance',(e,argv)=>{
+const code=codeFromArgv(argv)
+if(code)openCode(code)
+else if(win){if(win.isMinimized())win.restore();win.focus()}
+})
+app.on('open-url',(e,url)=>{e.preventDefault();const code=codeFrom(url);if(code)openCode(code)})
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
 const pick=(parent,sources)=>new Promise(res=>{
 const p=new BrowserWindow({width:760,height:520,parent,modal:true,show:false,autoHideMenuBar:true,backgroundColor:'#0a0a09',title:'Choose what to share',webPreferences:{contextIsolation:true,sandbox:true,preload:__dirname+'/picker.js'}})
@@ -29,6 +44,7 @@ ipcMain.handle('flags-set',(e,f)=>{if(!trusted(e))return;FL={};for(const k of FK
 ipcMain.handle('flags-restart',e=>{if(!trusted(e))return;app.relaunch();app.exit(0)})
 app.whenReady().then(()=>{
 const w=new BrowserWindow({width:1280,height:800,backgroundColor:'#0a0a09',autoHideMenuBar:true,icon:__dirname+'/icon.png',webPreferences:{contextIsolation:true,sandbox:true,backgroundThrottling:false,preload:__dirname+'/preload.js'}})
+win=w
 const ses=w.webContents.session
 ses.setPermissionRequestHandler((wc,perm,cb,d)=>cb(['media','notifications','fullscreen','clipboard-sanitized-write','clipboard-read'].includes(perm)&&(d.requestingUrl||'').startsWith(O)))
 ses.setPermissionCheckHandler((wc,perm,origin)=>origin.startsWith(O)&&['media','notifications','fullscreen','clipboard-sanitized-write'].includes(perm))
@@ -45,7 +61,8 @@ if(req.audioRequested&&process.platform==='win32')r.audio='loopback'
 cb(r)
 }catch{cb({})}
 })
-w.loadURL(U)
+w.loadURL(pendingCode?O+'/desktop-link?code='+pendingCode:U)
+pendingCode=null
 w.webContents.setWindowOpenHandler(({url})=>{if(url.startsWith(O))return{action:'allow'};shell.openExternal(url);return{action:'deny'}})
 })
 app.on('window-all-closed',()=>app.quit())
