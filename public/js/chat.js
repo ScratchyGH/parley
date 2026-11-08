@@ -289,7 +289,8 @@ const r=m.reply
 main.append(r.deleted?h('div',{class:'rp'},icon('reply','s'),'Original message was deleted'):h('div',{class:'rp',role:'button',tabindex:'0',on:{click:()=>jumpTo(r.id),keydown:e=>{if(e.key==='Enter')jumpTo(r.id)}}},icon('reply','s'),h('b',null,r.author),h('span',null,plain(r.content,100))))
 }
 if(!cont){
-const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click:e=>openProfile(e,m.author)}},m.author.namefx?h('span',{class:'nf '+m.author.namefx},m.author.display_name):m.author.display_name)
+const nick=isDm(C.room)||m.author.bot?null:(S.sdata[chanInfo(C.room)?.sid]?.memberList||[]).find(x=>x.id===m.author.id)?.nickname,shown=nick||m.author.display_name
+const nm=h('b',{class:m.author.nameplate?'np '+m.author.nameplate:null,on:{click:e=>openProfile(e,m.author)}},m.author.namefx?h('span',{class:'nf '+m.author.namefx},shown):shown)
 const un=tw('show_username')&&m.author.username?h('span',{class:'hint tw-un'},'@'+m.author.username):null
 const bdg=m.author.badge?h('span',{class:'bdg-i '+m.author.badge,title:'Badge'}):null
 const ttl=cTitle(m.author)||(m.author.title?h('span',{class:'ttl '+m.author.title}):null)
