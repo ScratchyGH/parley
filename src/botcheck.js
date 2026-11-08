@@ -7,13 +7,13 @@ const out=[]
 if(!g||!g.nodes.length)return out
 const by=new Map(g.nodes.map(n=>[n.id,n]))
 const trig=g.nodes.filter(n=>TYPES[n.type].trigger)
-if(!trig.length&&!g.nodes.some(n=>n.type==='xplevelrole'))out.push({level:'error',msg:'Add a trigger block so the bot knows when to run.'})
+if(!trig.length&&!g.nodes.some(n=>n.type==='xplevelrole'||n.type==='warnif'))out.push({level:'error',msg:'Add a trigger block so the bot knows when to run.'})
 const next=new Map()
 for(const e of g.edges){(next.get(e.f)||next.set(e.f,[]).get(e.f)).push(e.t)}
 const subs=new Map(g.nodes.filter(n=>n.type==='sub').map(n=>[n.p.name.toLowerCase(),n]))
 const reach=new Set()
 const walk=id=>{if(reach.has(id))return;reach.add(id);const n=by.get(id);if(n?.type==='call'){const s=subs.get(n.p.name.toLowerCase());if(s)walk(s.id)}for(const t of next.get(id)||[])walk(t)}
-for(const n of g.nodes)if(TYPES[n.type].trigger||n.type==='xplevelrole')walk(n.id)
+for(const n of g.nodes)if(TYPES[n.type].trigger||n.type==='xplevelrole'||n.type==='warnif')walk(n.id)
 const set=new Set()
 for(const n of g.nodes){
 if(n.p.name&&(LAB[n.type]||['xp','rankcard','board','getsecret','pick','set','count','setcount','math','text','randnum','map','warn','load','getcount','word','combine','clock','userinfo','serverinfo','api','http','feed','preview','jsonget','item','dd','world','ddwebhook','ddembed','ddformat','ddtime','ddsnowflake','ddmention','ddinvitecode','ddemoji','ddlink','moonphase','distance','unitconv','colorconv','morse','roman','caesar','hashtext','uuid','nato','binarytext','foreach'].includes(n.type)))set.add(n.p.name.toLowerCase())
