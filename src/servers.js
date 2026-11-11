@@ -587,6 +587,28 @@ resync(c,ch.server_id)
 return{ok:true}
 })
 
+r.add('POST','/api/channels/:cid/speak-grants',async c=>{
+const{ch,m}=await chanCtx(c,c.p.cid,P.MANAGE_MESSAGES)
+const b=await body(c.req)
+const uid=String(b.user_id||'')
+if(!uid)fail(400,'user_id required')
+const t=await c.env.DB.prepare('select 1 from members where server_id=? and user_id=?').bind(ch.server_id,uid).first()
+if(!t)fail(404,'That person is not in this server')
+await c.env.DB.prepare('insert or replace into speak_grants(channel_id,user_id,granted_by,created_at) values(?,?,?,?)').bind(ch.id,uid,c.user.id,now()).run()
+return{ok:true}
+})
+
+r.add('GET','/api/channels/:cid/speak-grants',async c=>{
+const{ch}=await chanCtx(c,c.p.cid,P.MANAGE_MESSAGES)
+return{grants:(await c.env.DB.prepare('select user_id,granted_by,created_at from speak_grants where channel_id=?').bind(ch.id).all()).results}
+})
+
+r.add('DELETE','/api/channels/:cid/speak-grants',async c=>{
+const{ch}=await chanCtx(c,c.p.cid,P.MANAGE_MESSAGES)
+await c.env.DB.prepare('delete from speak_grants where channel_id=?').bind(ch.id).run()
+return{ok:true}
+})
+
 r.add('POST','/api/servers/:sid/roles',async c=>{
 const m=await mem(c,c.p.sid)
 must(m,P.MANAGE_ROLES)

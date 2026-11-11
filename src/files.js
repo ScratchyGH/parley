@@ -13,21 +13,66 @@ const PUBLIC_KINDS=new Set(['avatar','banner','server_icon','server_banner','ser
 const KINDS=['attachment','avatar','banner','server_icon','server_banner','server_bg','conv_icon','emoji','sticker']
 const PART=16*1048576
 
+function zipVerdict(cd,n){
+const dv=new DataView(cd.buffer,cd.byteOffset,cd.byteLength)
+let p=0,comp=0,unc=0
+const seen=new Set()
+for(let i=0;i<n&&p+46<=cd.length;i++){
+if(dv.getUint32(p,true)!==0x02014b50)break
+let c=dv.getUint32(p+20,true),u=dv.getUint32(p+24,true),off=dv.getUint32(p+42,true)
+const nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true)
+if(u===0xffffffff||c===0xffffffff||off===0xffffffff){
+let q=p+46+nl
+const end=Math.min(cd.length,q+el)
+while(q+4<=end){
+const id=dv.getUint16(q,true),sz=dv.getUint16(q+2,true)
+if(id===1){
+let r=q+4
+if(u===0xffffffff&&r+8<=end){u=Number(dv.getBigUint64(r,true));r+=8}
+if(c===0xffffffff&&r+8<=end){c=Number(dv.getBigUint64(r,true));r+=8}
+if(off===0xffffffff&&r+8<=end)off=Number(dv.getBigUint64(r,true))
+break
+}
+q+=4+sz
+}
+}
+if(seen.has(off))return true
+seen.add(off)
+comp+=c;unc+=u
+p+=46+nl+el+cl
+}
+return unc>4294967296||(unc>104857600&&unc/Math.max(1,comp)>150)
+}
 function zipBomb(b){
 const u=new Uint8Array(b),dv=new DataView(b)
 if(u.length<22||u[0]!==0x50||u[1]!==0x4b)return false
 let e=-1
 for(let i=u.length-22;i>=Math.max(0,u.length-66000);i--)if(u[i]===0x50&&u[i+1]===0x4b&&u[i+2]===5&&u[i+3]===6){e=i;break}
 if(e<0)return false
-const n=dv.getUint16(e+10,true),o=dv.getUint32(e+16,true)
+const n=dv.getUint16(e+10,true),cs=dv.getUint32(e+12,true),o=dv.getUint32(e+16,true)
 if(n>20000)return true
-let p=o,comp=0,unc=0
-for(let i=0;i<n&&p+46<=u.length;i++){
-if(dv.getUint32(p,true)!==0x02014b50)break
-comp+=dv.getUint32(p+20,true);unc+=dv.getUint32(p+24,true)
-p+=46+dv.getUint16(p+28,true)+dv.getUint16(p+30,true)+dv.getUint16(p+32,true)
+if(o>=u.length)return false
+return zipVerdict(u.subarray(o,Math.min(u.length,o+cs)),n)
 }
-return unc>4294967296||(unc>104857600&&unc/Math.max(1,comp)>150)
+async function zipBombObj(env,key,size){
+const head=await env.FILES.get(key,{range:{offset:0,length:4},size})
+if(!head)return false
+const h=new Uint8Array(await head.arrayBuffer())
+if(h[0]!==0x50||h[1]!==0x4b)return false
+const tl=Math.min(size,66000)
+const tail=await env.FILES.get(key,{range:{offset:size-tl,length:tl},size})
+if(!tail)return false
+const t=new Uint8Array(await tail.arrayBuffer())
+const dv=new DataView(t.buffer)
+let e=-1
+for(let i=t.length-22;i>=0;i--)if(t[i]===0x50&&t[i+1]===0x4b&&t[i+2]===5&&t[i+3]===6){e=i;break}
+if(e<0)return false
+const n=dv.getUint16(e+10,true),cs=dv.getUint32(e+12,true),o=dv.getUint32(e+16,true)
+if(n>20000||cs>16777216)return true
+if(cs<46||o+cs>size)return false
+const cd=await env.FILES.get(key,{range:{offset:o,length:cs},size})
+if(!cd)return false
+return zipVerdict(new Uint8Array(await cd.arrayBuffer()),n)
 }
 function sniff(b,type){
 const u=new Uint8Array(b.slice(0,16))
@@ -112,6 +157,7 @@ if(buf.byteLength!==len)fail(400,'Body size does not match Content-Length')
 if(p.typed&&!sniff(buf,p.mime))fail(415,'File content does not match its type')
 if(buf.byteLength<268435456&&zipBomb(buf))fail(415,'This archive looks like a zip bomb and was blocked')
 const look=p.scan&&p.mime.startsWith('image/')&&len>=1500&&len<=3145728
+if(p.scan&&p.mime.startsWith('image/')&&len>3145728)fail(413,'Images over 3 MB cannot be scanned. Shrink it to post it in a channel with the explicit filter on')
 if(look&&explicitText(p.name))fail(422,'This image was blocked by the explicit content filter')
 const scanP=look?imageExplicit(c.env,new Uint8Array(buf)):Promise.resolve(false)
 const id=newId('f')
@@ -130,10 +176,11 @@ console.error('upload store',k.split('~')[0],String(x&&x.message||x))
 }
 }
 if(lastErr)fail(503,'Storage is busy right now. Try again in a moment.')
-if(await scanP){await c.env.FILES.delete(key);fail(422,'This image was blocked by the explicit content filter')}
+const scanRes=await scanP
+if(scanRes===true){await c.env.FILES.delete(key);fail(422,'This image was blocked by the explicit content filter')}
 const sum=want||(obj&&obj.checksums&&obj.checksums.sha256?hex(obj.checksums.sha256):null)
 if(await hashBlocked(c.env,sum)){await c.env.FILES.delete(key);fail(422,'This file is not allowed on Parley')}
-await c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,r2_key,name,mime,size,sha256,verified,created_at,scanned) values(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.user.id,kind,p.room,p.serverId,key,p.name,p.mime,buf.byteLength,sum,want?1:0,now(),look?1:0).run()
+await c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,r2_key,name,mime,size,sha256,verified,created_at,scanned) values(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.user.id,kind,p.room,p.serverId,key,p.name,p.mime,buf.byteLength,sum,want?1:0,now(),look&&scanRes!==null?1:0).run()
 return json({id,name:p.name,mime:p.mime,size:buf.byteLength,kind,sha256:sum},201)
 })
 
@@ -144,6 +191,7 @@ const kind=b.kind||'attachment'
 if(kind!=='attachment')fail(400,'Multipart is for attachments only')
 const size=parseInt(b.size)
 const p=await plan(c,kind,str(b.name,1,200,'name'),size,b.room,null,true)
+if(p.scan&&p.mime.startsWith('image/'))fail(400,'Images in this channel go through the standard upload so they can be scanned')
 if(b.sha256&&!okSha(b.sha256))fail(400,'Invalid checksum')
 const open=await c.env.DB.prepare('select count(*) n from uploads where owner_id=?').bind(c.user.id).first()
 if(open.n>=8)fail(429,'Too many unfinished uploads. Finish or cancel some first.')
@@ -195,6 +243,7 @@ if(typed){
 const head=await c.env.FILES.get(u.r2_key,{range:{offset:0,length:16},size:u.size})
 if(head&&!sniff(await head.arrayBuffer(),u.mime))await bad('File content does not match its type')
 }
+if(await zipBombObj(c.env,u.r2_key,u.size).catch(()=>false))await bad('This archive looks like a zip bomb and was blocked')
 const id=newId('f')
 if(await hashBlocked(c.env,sum||u.sha256))await bad('This file is not allowed on Parley')
 const claim=u.sha256&&sum&&u.sha256!==sum

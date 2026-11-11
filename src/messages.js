@@ -92,7 +92,8 @@ const rr=await resolveRoom(c.env,c.p.room,c.user.id)
 const sp=c.url.searchParams
 const lim=clamp(sp.get('limit'),50,1,50)
 const db=c.env.DB
-const sel='select * from messages where room=? and deleted_at is null'
+const wq=/^[a-z0-9_]+$/i.test(c.user.id)?` and (only_for is null or only_for='${c.user.id}' or author_id='${c.user.id}')`:' and only_for is null'
+const sel='select * from messages where room=? and deleted_at is null'+wq
 let rows,moreBefore=false,moreAfter=false
 if(sp.get('around')){
 const mid=sp.get('around')
@@ -115,10 +116,20 @@ return{messages:hy,more_before:moreBefore,more_after:moreAfter,last_read:rs?.las
 
 r.add('POST','/api/rooms/:room/messages',async c=>{
 const rr=await resolveRoom(c.env,c.p.room,c.user.id)
-if(!(rr.perms&P.SEND))fail(403,rr.kind==='dm'?'You cannot message this person':'You cannot send messages here')
+let grant=false
+if(!(rr.perms&P.SEND)){
+if(rr.kind==='channel'&&(rr.perms&P.VIEW)){grant=!!(await c.env.DB.prepare('select 1 x from speak_grants where channel_id=? and user_id=?').bind(rr.room,c.user.id).first())}
+if(!grant)fail(403,rr.kind==='dm'?'You cannot message this person':'You cannot send messages here')
+}
 limit('msg:'+c.user.id,20,10000)
 const b=await body(c.req,40000)
 let content=typeof b.content==='string'?b.content.replace(/\r\n/g,'\n'):''
+let onlyFor=null
+if(b.only_for&&c.user.is_bot&&rr.kind==='channel'&&!rr.thread){
+const tm=await loadMember(c.env,rr.serverId,String(b.only_for))
+if(!tm)fail(404,'Member not found')
+onlyFor=String(b.only_for)
+}
 let fwdFiles=[]
 if(b.forward_of){
 const src=await c.env.DB.prepare('select m.*,u.display_name from messages m join users u on u.id=m.author_id where m.id=? and m.deleted_at is null').bind(String(b.forward_of)).first()
@@ -186,11 +197,11 @@ const users=[...new Set([...content.matchAll(/<@(u_[a-z0-9]{16})>/g)].map(x=>x[1
 const wantEveryone=content.includes('<@everyone>')&&rr.kind==='channel'&&!!(rr.perms&P.MENTION_ALL)
 const roleIds=rr.kind==='channel'&&(rr.perms&P.MENTION_ALL)?[...new Set([...content.matchAll(/<@&(r_[a-z0-9]{16})>/g)].map(x=>x[1]))].slice(0,5):[]
 const stmts=[
-c.env.DB.prepare('insert into messages(id,room,server_id,author_id,content,reply_to,created_at,nonce,sig) values(?,?,?,?,?,?,?,?,?)').bind(id,rr.room,rr.serverId||null,c.user.id,content,reply?reply.id:null,t,nonce,await signMsg(c.env,{id,room:rr.room,author_id:c.user.id,created_at:t,edited_at:null,content})),
+c.env.DB.prepare('insert into messages(id,room,server_id,author_id,content,reply_to,created_at,nonce,sig,only_for) values(?,?,?,?,?,?,?,?,?,?)').bind(id,rr.room,rr.serverId||null,c.user.id,content,reply?reply.id:null,t,nonce,await signMsg(c.env,{id,room:rr.room,author_id:c.user.id,created_at:t,edited_at:null,content}),onlyFor),
 c.env.DB.prepare('insert into read_state(user_id,room,last_read,mentions) values(?,?,?,0) on conflict(user_id,room) do update set last_read=excluded.last_read,mentions=0').bind(c.user.id,rr.room,id)
 ]
 if(rr.thread)stmts.push(c.env.DB.prepare('update threads set last_msg=?,last_at=?,count=count+1 where id=?').bind(id,t,rr.room))
-else if(rr.kind==='channel')stmts.push(c.env.DB.prepare('update channels set last_msg=? where id=?').bind(id,rr.room))
+else if(rr.kind==='channel'&&!onlyFor)stmts.push(c.env.DB.prepare('update channels set last_msg=? where id=?').bind(id,rr.room))
 else{
 stmts.push(c.env.DB.prepare('update conversations set last_msg=?,last_message_at=? where id=?').bind(id,t,rr.room))
 stmts.push(c.env.DB.prepare('update conv_members set hidden=0 where conv_id=? and hidden=1').bind(rr.room))
@@ -199,8 +210,9 @@ stmts.push(c.env.DB.prepare('update conv_members set accepted=1 where conv_id=? 
 for(const f of files)stmts.push(c.env.DB.prepare('update files set message_id=? where id=?').bind(id,f.id))
 for(const x of fwdCopies)stmts.push(c.env.DB.prepare('insert into files(id,owner_id,kind,room,server_id,message_id,r2_key,name,mime,size,sha256,verified,created_at) values(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(x.id,c.user.id,'attachment',rr.room,rr.serverId||null,id,x.key,x.f.name,x.f.mime,x.f.size,x.f.sha256||null,x.f.verified||0,t))
 if(stk)stmts.push(c.env.DB.prepare('update messages set sticker_id=? where id=?').bind(stk.id,id))
+if(grant)stmts.push(c.env.DB.prepare('delete from speak_grants where channel_id=? and user_id=?').bind(rr.room,c.user.id))
 const notify=[]
-if(rr.kind==='channel'){
+if(rr.kind==='channel'&&!onlyFor){
 for(const uid of users){
 const tm=await loadMember(c.env,rr.serverId,uid)
 if(!tm)continue
@@ -225,9 +237,10 @@ else for(const rid of roleIds)stmts.push(c.env.DB.prepare("insert into read_stat
 await c.env.DB.batch(stmts)
 const row=await c.env.DB.prepare('select * from messages where id=?').bind(id).first()
 const[message]=await hydrate(c.env,[row],c.user.id)
-await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEveryone,roles:roleIds}})
-labsAfter(c,rr,message)
-if(rr.kind==='channel'&&!c.user.is_bot)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
+if(onlyFor)c.pub('u_'+onlyFor,{t:'msg.new',m:message,ment:{users:[],everyone:false,roles:[]}})
+else await publishMsg(c,rr,{t:'msg.new',m:message,ment:{users:notify,everyone:wantEveryone,roles:roleIds}})
+if(!onlyFor)labsAfter(c,rr,message)
+if(rr.kind==='channel'&&!c.user.is_bot&&!onlyFor)fireHooks(c,rr.serverId,'message.create',{id,channel_id:rr.room,author:{id:c.user.id,username:c.user.username,display_name:c.user.display_name},content:content.slice(0,4000),created_at:row.created_at})
 if(rr.kind==='channel'&&filterOn(rr.m.server))c.ec.waitUntil(scanMsg(c,rr,id,content))
 if(rr.kind==='dm'&&rr.conv&&rr.conv.type==='dm')c.ec.waitUntil(touchStreak(c,rr.room,content).catch(()=>{}))
 if(rr.thread)c.pub(rr.hub,{t:'thread.update',thread:{id:rr.thread.id,channel_id:rr.thread.channel_id,name:rr.thread.name,count:rr.thread.count+1,archived:!!rr.thread.archived,locked:!!rr.thread.locked,last_at:t}},{ch:rr.gate})
