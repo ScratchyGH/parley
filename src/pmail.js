@@ -85,7 +85,7 @@ return env.DB.prepare('select id,local,display,pub,prefs from pm_users where id=
 }
 const jparse=(s,d)=>{try{const v=JSON.parse(s);return v&&typeof v==='object'?v:d}catch{return d}}
 const COLOR=/^#[0-9a-f]{6}$/i
-const PREF_KEYS={preset:['midnight','paper','forest','rose','mono','terminal'],density:['compact','comfortable','spacious'],layout:['three','two','list'],font:['system','serif','mono','rounded'],width:['narrow','medium','wide'],radius:['sharp','soft','round']}
+const PREF_KEYS={preset:['dimmed','silver','light','contrast'],density:['compact','comfortable','spacious'],layout:['three','two','list'],font:['default','system','serif','mono'],width:['narrow','medium','wide'],radius:['sharp','soft','round']}
 export function cleanPrefs(o){
 const out={}
 if(!o||typeof o!=='object')return out
