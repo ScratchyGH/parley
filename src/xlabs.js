@@ -449,7 +449,7 @@ return{ok:true}
 r.add('GET',base+'/confessions',async c=>{
 const m=await mgr(c,c.p.sid,P.MODERATE)
 const rows=(await c.env.DB.prepare('select f.id,f.text,f.message_id,f.user_id,f.created_at,u.display_name,u.username from xf_conf f left join users u on u.id=f.user_id where f.server_id=? order by f.created_at desc limit 50').bind(m.server.id).all()).results
-const banned=new Set((await c.env.DB.prepare("select k from xf_state where server_id=? and k like 'cban:%'").bind(m.server.id).all()).results.map(x=>x.k.slice(5)))
+const banned=new Set((await c.env.DB.prepare("select k from xf_state where server_id=? and k>='cban:' and k<'cban;'").bind(m.server.id).all()).results.map(x=>x.k.slice(5)))
 return{items:rows.map(x=>({...x,banned:banned.has(x.user_id)}))}
 })
 r.add('POST',base+'/confessions/:id/remove',async c=>{

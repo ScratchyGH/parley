@@ -16,7 +16,7 @@ await c.env.DB.prepare('insert into app_settings(k,v) values(?,?) on conflict(k)
 return{ab:o}
 })
 r.add('GET','/api/ab',async c=>{
-const rows=(await c.env.DB.prepare("select k,v from app_settings where k like 'ab:%' limit 500").all()).results
+const rows=(await c.env.DB.prepare("select k,v from app_settings where k>='ab:' and k<'ab;' limit 500").all()).results
 const m={}
 for(const x of rows){
 const uid=x.k.slice(3)

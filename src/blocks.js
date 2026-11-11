@@ -130,7 +130,7 @@ return{xp:cur,level:l,next:50*(l+1)*(l+2)-cur,up}
 },
 xpGet:()=>getVar(c,botId,sid,vkey('xp','user',uid)),
 top:async n=>{
-const rows=(await c.env.DB.prepare("select substr(k,4) u,v from bot_vars where bot_id=? and server_id=? and k like 'xp:%' order by v desc limit ?").bind(botId,sid,n).all()).results
+const rows=(await c.env.DB.prepare("select substr(k,4) u,v from bot_vars where bot_id=? and server_id=? and k>='xp:' and k<'xp;' order by v desc limit ?").bind(botId,sid,n).all()).results
 if(!rows.length)return[]
 const us=(await c.env.DB.prepare('select id,display_name from users where id in ('+rows.map(()=>'?').join(',')+')').bind(...rows.map(x=>x.u)).all()).results
 const nm=new Map(us.map(u=>[u.id,u.display_name]))

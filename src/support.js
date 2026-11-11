@@ -133,7 +133,7 @@ return pub(t)
 },{auth:false})
 r.add('GET','/api/admin/support',async c=>{
 if(!c.user.admin)fail(404,'Not found')
-const rows=(await c.env.DB.prepare("select v from app_settings where k like 'sup:%' order by rowid desc limit 150").all()).results
+const rows=(await c.env.DB.prepare("select v from app_settings where k>='sup:' and k<'sup;' order by rowid desc limit 150").all()).results
 return{tickets:rows.map(x=>{try{const t=JSON.parse(x.v);delete t.kh;t.thread=threadOf(t);return t}catch{return null}}).filter(Boolean)}
 })
 r.add('POST','/api/admin/support/:id',async c=>{
@@ -166,7 +166,7 @@ if(!u)fail(404,'Not found')
 const xv=await c.env.DB.prepare('select v from bot_vars where bot_id=? and server_id=? and k=?').bind(bot,sid,'xp:'+uid).first()
 const xp=Math.max(0,Number(xv&&xv.v)||0)
 const L=Math.max(0,Math.floor((-1+Math.sqrt(1+xp/12.5))/2)),lo=50*L*(L+1),hi=50*(L+1)*(L+2)
-const rk=await c.env.DB.prepare("select count(*) n from bot_vars where bot_id=? and server_id=? and k like 'xp:%' and cast(v as real)>?").bind(bot,sid,xp).first()
+const rk=await c.env.DB.prepare("select count(*) n from bot_vars where bot_id=? and server_id=? and k>='xp:' and k<'xp;' and cast(v as real)>?").bind(bot,sid,xp).first()
 const sp=String(stx||'').split(','),hex=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:null,en=(v,a,d)=>a.includes(v)?v:d
 const style={layout:en(sp[0],['banner','full','custom','blur','solid','split'],'banner'),pfp:en(sp[2],['left','center','ring','square','hidden'],'left'),bar:en(sp[3],['round','square','thin','thick','segment'],'round'),barcolor:hex(sp[4]),textcolor:hex(sp[5]),bg:null}
 if(/^[A-Za-z0-9_-]{4,40}$/.test(sp[1]||'')){const f=await c.env.DB.prepare("select id from files where id=? and mime like 'image/%'").bind(sp[1]).first().catch(()=>null);if(f)style.bg=f.id}
