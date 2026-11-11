@@ -1,6 +1,7 @@
 import{h,mount,icon,GET,POST,avatar,fail,fmtRel,coverBg}from'./util.js'
 import{S,on,loadServers,serverUnread,dmUnread,unreadOf,convTitle,convOther}from'./state.js'
 import{go}from'./nav.js'
+import{lang,setLang}from'./i18n.js'
 import{createServerDialog,newDmDialog}from'./dialogs.js'
 import{topBar}from'./shell.js'
 
@@ -55,7 +56,11 @@ e.currentTarget.disabled=true
 try{await POST(`/api/servers/${s.id}/join`,{});await loadServers();go('/s/'+s.id)}catch(x){fail(x);e.target.disabled=false}
 }}},joined?'Open':'Join'))
 }))):null
-mount(body,hero,servers,h('div',{class:'hcols'},chats,disc))
+const info=h('section',{class:'hsec'},h('h2',null,'Help and languages'),h('div',{class:'hinfo'},
+h('a',{class:'icard',href:'/support/'},h('b',null,'Help and support'),h('small',null,'Lost your account, banned, or something broken? Send us a ticket. Your ticket and key are saved on this device so you can check the reply any time.')),
+h('a',{class:'icard',href:'/tr/'},h('b',null,'Görüşme, Parley in Turkish'),h('small',null,'Parley is available in Turkish as Görüşme, with a Turkish interface, notice and reporting page. It runs in the browser, so there is nothing to download.')),
+h('button',{class:'icard',type:'button',on:{click:()=>{setLang(lang()==='tr'?'en':'tr');location.reload()}}},h('b',null,lang()==='tr'?'Switch to English':'Türkçe\'ye geç'),h('small',null,'Change the language of the app on this device.'))))
+mount(body,hero,servers,h('div',{class:'hcols'},chats,disc),info)
 }
 GET('/api/discover?limit=4').then(d=>{found=d.servers;draw()}).catch(()=>{})
 const offs=['servers','convs','friends','unread','settings'].map(e=>on(e,draw))

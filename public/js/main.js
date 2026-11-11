@@ -18,7 +18,9 @@ import{openSettings,settingsPage}from'./settings.js'
 import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
 import{playIntro,endLoading}from'./intro.js'
+import{startI18n}from'./i18n.js'
 playIntro()
+startI18n()
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
 import{showOverlay,hideOverlay}from'./overlay.js'
