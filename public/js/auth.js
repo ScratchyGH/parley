@@ -125,5 +125,5 @@ err.textContent=''
 if(pw.value.length<10){err.textContent='Password must be at least 10 characters';return}
 go.disabled=true
 try{await POST('/api/auth/reset',{email:em.value.trim(),code:code.value.trim(),password:pw.value,totp:tot.value.trim()||undefined});back()}catch(x){err.textContent=x.message;go.disabled=false}
-}}},field('Email',em),send,field('Code',code),field('New password',pw,'At least 10 characters'),field('Two-factor code',tot),err,go),h('div',{class:'row',style:{justifyContent:'center',marginTop:'12px'}},h('button',{class:'btn sm',on:{click:back}},'Back to sign in')))
+}}},field('Email',em),send,h('p',{class:'hint'},'Codes go to your PMail inbox. ',h('a',{href:'/pmail/',target:'_blank',rel:'noopener'},'Open PMail')),field('Code',code),field('New password',pw,'At least 10 characters'),field('Two-factor code',tot),err,go),h('div',{class:'row',style:{justifyContent:'center',marginTop:'12px'}},h('button',{class:'btn sm',on:{click:back}},'Back to sign in')))
 }
