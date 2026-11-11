@@ -8,7 +8,7 @@ const box=h('div',{class:'appnotice'},
 h('b',null,'Update the desktop app'),
 h('p',null,'Screen sharing is fixed in the newest version. Download it and install over this one.'),
 h('div',{class:'an-row'},
-h('a',{class:'an-dl',href:'/get',target:'_blank',on:{click:close}},'Download'),
+h('a',{class:'an-dl',href:'/download/',target:'_blank',on:{click:close}},'Download'),
 h('button',{class:'an-x',on:{click:close}},'Later')))
 document.body.append(box)
 }
