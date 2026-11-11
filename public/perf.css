@@ -42,18 +42,11 @@ html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!importa
 .pc-custom{width:100%;box-sizing:border-box}
 .pc .hint{line-height:1.5}
 @media(max-width:560px){.pc-row{grid-template-columns:1fr}.pc-box{flex-direction:row;justify-content:flex-start;text-align:left;gap:12px;padding:10px 12px}}
-.intro{position:fixed;inset:0;z-index:2147483600;background:radial-gradient(circle at 50% 45%,#1b1424,#0a0a09 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;animation:introOut .6s ease 2.3s forwards}
-.intro,.intro *{animation-play-state:running!important}
-.intro img{position:relative;width:min(62vmin,420px);height:min(62vmin,420px);object-fit:contain;animation:introPop .9s cubic-bezier(.2,.9,.3,1.15) both,introFloat 2.4s ease-in-out .9s infinite}
-.intro-glow{position:absolute;width:min(90vmin,640px);height:min(90vmin,640px);border-radius:50%;background:radial-gradient(circle,rgba(150,120,255,.32),transparent 65%);animation:introGlow 1.2s ease both}
-.intro-wm{position:relative;font:800 clamp(28px,6vmin,48px)/1 system-ui,sans-serif;letter-spacing:.18em;color:#e9e4ff;text-indent:.18em;animation:introWm .7s ease .7s both}
-@keyframes introPop{from{opacity:0;transform:scale(.4) translateY(30px)}to{opacity:1;transform:none}}
-@keyframes introFloat{50%{transform:translateY(-8px)}}
-@keyframes introGlow{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
-@keyframes introWm{from{opacity:0;transform:translateY(10px);letter-spacing:.4em}to{opacity:1;transform:none}}
-@keyframes introOut{to{opacity:0;visibility:hidden;transform:scale(1.04)}}
-html .intro,html[data-gpu] .intro{animation:introOut .6s ease 2.3s forwards!important}
-html .intro img,html[data-gpu] .intro img{animation:introPop .9s cubic-bezier(.2,.9,.3,1.15) both,introFloat 2.4s ease-in-out .9s infinite!important}
+.intro{position:fixed;inset:0;z-index:2147483600;background:#0a0a09;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .25s ease}
+.intro.out{opacity:0;pointer-events:none}
+.intro-wm{font:800 clamp(24px,5vmin,40px)/1 system-ui,sans-serif;letter-spacing:.18em;color:#e9e4ff;text-indent:.18em}
+.intro-spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(233,228,255,.18);border-top-color:#e9e4ff;animation:introSpin .8s linear infinite}
+@keyframes introSpin{to{transform:rotate(360deg)}}
 .msgs .m:hover,.msgs .m:focus-within,.list .m:hover{content-visibility:visible;contain:none}
 @media(hover:hover){
 .m:focus-within:not(:hover) .mact{display:none}
@@ -218,3 +211,5 @@ body:not(.rm):not(.perf) :is(main,.view,#view)>*{animation:mtIn .35s ease both}
 .pvimg{max-width:100%;max-height:55vh;border-radius:10px;background:repeating-conic-gradient(#2a2a35 0 25%,#1d1d26 0 50%) 0 0/16px 16px}
 .chip-th{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none}
 html .chip:has(.chip-th){border-radius:12px;max-width:280px;padding:4px 6px 4px 4px;gap:8px}
+
+html:not(.seps) :is(.ws,.ctx,.ctx-h,.me,.top,.top .tp,.ctb,.cbar,.chips,.panel,.dlg>header,.dlg>footer,.split nav,.menu hr,.vbar,.vpanel,.vstrip,.bh-tabs,.bh-kv,.bh-rel,.bh-sec,.bh-savebar,table.t td){border-color:transparent!important}
