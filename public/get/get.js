@@ -16,7 +16,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e})
 window.addEventListener('appinstalled',()=>{note.textContent='Installed. Open Parley from your apps.';steps.hidden=true})
 function show(list){steps.hidden=false;steps.replaceChildren();const ol=document.createElement('ol');for(const s of list){const li=document.createElement('li');const parts=s.split('|');li.append(parts[0]);if(parts[1]){const b=document.createElement('b');b.textContent=parts[1];li.append(b);if(parts[2])li.append(parts[2])}ol.append(li)}steps.append(ol);steps.scrollIntoView({behavior:'smooth',block:'center'})}
 async function install(){
-if(location.origin!==APP){location.href=APP+'/get/';return}
+if(location.origin!==APP){location.href=APP+location.pathname;return}
 if(ios){show(['Tap the |Share| button in Safari.','Scroll and tap |Add to Home Screen|.','Tap |Add|. Parley now sits on your home screen like any app.']);return}
 if(dp){dp.prompt();try{await dp.userChoice}catch{}dp=null;return}
 if(android)show(['Open the browser menu.','Tap |Install app| or |Add to Home screen|.','Tap |Install|.'])
