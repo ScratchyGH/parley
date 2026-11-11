@@ -18,9 +18,9 @@ ok(await inspectLink({},'http://localhost/x')===false,'inspect refuses localhost
 ok(await inspectLink({},'https://pornhub.com/view')===true,'inspect flags listed host without fetching')
 ok(await inspectLink({},'not a url')===false,'inspect ignores junk')
 ok(await imageExplicit({},new Uint8Array(10))===false,'image scan is off without an AI binding')
-ok(await imageExplicit({AI:{run:async()=>({description:'YES'})}},new Uint8Array(10))===true,'image scan flags a YES answer')
-ok(await imageExplicit({AI:{run:async()=>({description:'No.'})}},new Uint8Array(10))===false,'image scan passes a NO answer')
-ok(await imageExplicit({AI:{run:async()=>{throw new Error('x')}}},new Uint8Array(10))===false,'image scan fails open on errors')
+ok(await imageExplicit({AI:{run:async()=>({description:'YES'})}},new Uint8Array(2000).fill(1))===true,'image scan flags a YES answer')
+ok(await imageExplicit({AI:{run:async()=>({description:'No.'})}},new Uint8Array(2000).fill(2))===false,'image scan passes a NO answer')
+ok(await imageExplicit({AI:{run:async()=>{throw new Error('x')}}},new Uint8Array(2000).fill(3))===null,'image scan reports unscanned on errors')
 const good={description:'A study group',categories:[{name:'Study',channels:[{name:'Math Help',type:'text',topic:'Ask here'},{name:'Quiet Room',type:'voice'},{name:'x',type:'weird'}]}],roles:[{name:'Tutor',color:'#aabbcc'},{name:'@everyone'},{name:'Bad',color:'red'}]}
 const l=cleanLayout(JSON.stringify(good))
 ok(l.categories[0].channels[0].name==='math-help','text channel names are slugged')
