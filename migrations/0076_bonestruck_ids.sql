@@ -1,0 +1,15 @@
+update par_items set data=replace(data,'_trex"','_bonestruck"') where id like '%trex';
+update par_items set id=replace(id,'_trex','_bonestruck') where id in('fr_trex','ef_trex','np_trex','nf_trex','bd_trex','ti_trex','bb_trex','bn_trex');
+update par_owned set item_id=replace(item_id,'_trex','_bonestruck') where item_id like '%\_trex%' escape '\';
+update par_owned set gift_from=replace(gift_from,'bn_trex','bn_bonestruck') where gift_from like '%bn\_trex%' escape '\';
+update gift_inbox set item_id=replace(item_id,'_trex','_bonestruck') where item_id like '%\_trex%' escape '\';
+update users set frame='fr_bonestruck' where frame='fr_trex';
+update users set effect='ef_bonestruck' where effect='ef_trex';
+update users set nameplate='np_bonestruck' where nameplate='np_trex';
+update users set namefx='nf_bonestruck' where namefx='nf_trex';
+update users set badge='bd_bonestruck' where badge='bd_trex';
+update users set title='ti_bonestruck' where title='ti_trex';
+update users set bubble='bb_bonestruck' where bubble='bb_trex';
+update users set settings=replace(settings,'_trex"','_bonestruck"') where settings like '%\_trex"%' escape '\';
+update app_settings set v=replace(v,'_trex"','_bonestruck"') where k like 'wish:%' and v like '%\_trex"%' escape '\';
+update par_items set name='Bonestruck effect' where id='ef_bonestruck';
