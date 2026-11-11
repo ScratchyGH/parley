@@ -1,5 +1,6 @@
 import{fail,now,randHex,sha,pbkdf2,safeEq,str,limit,body,json,newId,enc,unhex}from'./util.js'
 import{newSecret,genCode}from'./totp.js'
+import{TESTS}from'./pmailtest.js'
 const dec=new TextDecoder()
 export const DOMAIN='pmail.parley'
 export const domain=()=>DOMAIN
@@ -619,5 +620,20 @@ r.add('GET','/api/pmail/activity',async c=>{
 const a=await auth(c)
 const q=await c.env.DB.prepare('select ts,kind,detail from pm_activity where user_id=? order by ts desc limit 100').bind(a.u.id).all()
 return{items:q.results||[]}
+},O)
+r.add('GET','/api/pmail/tests',async c=>{
+await auth(c)
+return{tests:TESTS.map(t=>({id:t.id,title:t.title,note:t.note}))}
+},O)
+r.add('POST','/api/pmail/tests',async c=>{
+const a=await auth(c)
+limit('pmt:'+a.u.id,20,600000)
+const b=await body(c.req)
+const list=b.id==='all'?TESTS:TESTS.filter(t=>t.id===b.id)
+if(!list.length)fail(404,'Unknown test')
+const to=addrOf(c.env,a.u.local)
+let n=0
+for(const t of list)if(await deliver(c.env,a.u,{from:'tests@'+domain(c.env),fn:'PMail Test Lab',to:[to],toOne:to,s:t.subject,b:t.body,ts:now()+n}))n++
+return{ok:true,sent:n}
 },O)
 }
