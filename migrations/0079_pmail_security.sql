@@ -1,0 +1,17 @@
+alter table pm_users add column pin_salt text;
+alter table pm_users add column pin_hash text;
+alter table pm_users add column totp_secret text;
+alter table pm_users add column totp_on integer not null default 0;
+alter table pm_users add column totp_last integer not null default 0;
+alter table pm_users add column backup_hashes text;
+alter table pm_users add column fails integer not null default 0;
+alter table pm_users add column locked_until integer not null default 0;
+alter table pm_users add column alerts integer not null default 1;
+alter table pm_users add column lock_min integer not null default 0;
+alter table pm_users add column keep_days integer not null default 0;
+alter table pm_users add column ttl_days integer not null default 14;
+alter table pm_sessions add column locked integer not null default 0;
+alter table pm_sessions add column seen_at integer not null default 0;
+alter table pm_sessions add column fails integer not null default 0;
+create table if not exists pm_activity(id text primary key,user_id text not null,ts integer not null,kind text not null,detail text not null default '');
+create index if not exists pm_activity_user on pm_activity(user_id,ts desc);
