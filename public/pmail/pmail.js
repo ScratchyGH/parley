@@ -14,6 +14,37 @@ for(const c of k.flat(9)){if(c==null||c===false)continue;e.append(c.nodeType?c:d
 return e
 }
 const mount=(el,...k)=>{el.replaceChildren(...k.flat(9).filter(Boolean))}
+const IC={
+inbox:'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z',
+star:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+send:'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z',
+archive:'M21 8v13H3V8M1 3h22v5H1zM10 12h4',
+trash:'M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+folder:'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z',
+pen:'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z',
+gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
+search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35',
+back:'M19 12H5M12 19l-7-7 7-7',
+mail:'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6',
+reply:'M9 17l-5-5 5-5M20 18v-2a4 4 0 0 0-4-4H4',
+fwd:'M15 17l5-5-5-5M4 18v-2a4 4 0 0 1 4-4h12',
+x:'M18 6L6 18M6 6l12 12',
+menu:'M3 12h18M3 6h18M3 18h18',
+out:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+eyeoff:'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22',
+lock:'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM7 11V7a5 5 0 0 1 10 0v4',
+sliders:'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
+}
+const ico=(n,s)=>{
+const v=document.createElementNS('http://www.w3.org/2000/svg','svg')
+v.setAttribute('viewBox','0 0 24 24')
+v.setAttribute('class','i'+(s?' s':''))
+v.setAttribute('aria-hidden','true')
+const p=document.createElementNS('http://www.w3.org/2000/svg','path')
+p.setAttribute('d',IC[n]||IC.mail)
+v.append(p)
+return v
+}
 async function api(m,p,b){
 const r=await fetch('/api/pmail'+p,{method:m,headers:b?{'content-type':'application/json'}:{},body:b?JSON.stringify(b):undefined,credentials:'same-origin',referrerPolicy:'no-referrer'})
 const j=await r.json().catch(()=>({}))
@@ -22,16 +53,18 @@ return j
 }
 let DOM='pmail.parley'
 const S={me:null,folder:'inbox',items:[],more:false,sel:null,msg:null,q:'',busy:false}
-const PRESETS={midnight:['#0e1116','#6ea8fe'],paper:['#f4f1ea','#a8431f'],forest:['#0d1511','#59d38a'],rose:['#17101a','#f27aa8'],mono:['#0a0a0a','#ffffff'],terminal:['#050805','#3dff7a']}
+const PRESETS={dimmed:['#212829','#d46a86'],silver:['#2c3436','#d46a86'],light:['#ffffff','#0969da'],contrast:['#0a0c10','#71b7ff']}
 function theme(p){
 p=p||{}
-root.dataset.preset=p.preset||'midnight'
-for(const k of['density','layout','font','width','radius'])root.dataset[k]=p[k]||({density:'comfortable',layout:'three',font:'system',width:'medium',radius:'soft'})[k]
-for(const[k,v]of[['--accent',p.accent],['--bg',p.bg],['--text',p.text]]){if(v)root.style.setProperty(k,v);else root.style.removeProperty(k)}
+root.dataset.preset=PRESETS[p.preset]?p.preset:'dimmed'
+for(const k of['density','layout','font','width','radius'])root.dataset[k]=p[k]||({density:'comfortable',layout:'three',font:'default',width:'medium',radius:'soft'})[k]
+for(const[k,v]of[['--hi',p.accent],['--bg',p.bg],['--text',p.text]])if(v)root.style.setProperty(k,v);else root.style.removeProperty(k)
 if(p.accent){
 const n=parseInt(p.accent.slice(1),16),l=((n>>16)*299+((n>>8)&255)*587+(n&255)*114)/1000
-root.style.setProperty('--on',l>150?'#0b0b0b':'#ffffff')
-}else root.style.removeProperty('--on')
+root.style.setProperty('--accent','color-mix(in srgb,'+p.accent+' 38%,#000)')
+root.style.setProperty('--on-accent','#fff')
+}else{root.style.removeProperty('--accent');root.style.removeProperty('--on-accent')}
+if(p.bg)root.style.setProperty('--side','color-mix(in srgb,'+p.bg+' 86%,#000)');else root.style.removeProperty('--side')
 }
 function toast(t){const e=h('div',{class:'toast',role:'status'},t);document.body.append(e);setTimeout(()=>e.remove(),2600)}
 const TRACK=/^(utm_.*|fbclid|gclid|gclsrc|dclid|msclkid|mc_eid|mc_cid|igshid|igsh|yclid|_hsenc|_hsmi|mkt_tok|spm|s_cid|vero_id|oly_enc_id|oly_anon_id|trk|trkcampaign|wickedid|twclid|ttclid|li_fat_id|ref_src|ref_url|cmpid|cid|campaign_id|ad_id|si|pk_campaign|pk_kwd|_ga|_gl|scid|sc_cid|epik|ck_subscriber_id)$/i
@@ -41,11 +74,10 @@ try{u=new URL(raw)}catch{return null}
 if(!/^https?:$/.test(u.protocol))return null
 let n=0
 for(const k of[...u.searchParams.keys()])if(TRACK.test(k)){u.searchParams.delete(k);n++}
-if(/^(www\.)?(youtube\.com|youtu\.be)$/.test(u.hostname)){}
 return{href:u.href,host:u.hostname,n}
 }
 let shielded=0
-function body(text){
+function bodyNodes(text){
 shielded=0
 const out=[]
 const re=/https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/gi
@@ -70,14 +102,14 @@ if(d.getFullYear()===n.getFullYear())return d.toLocaleDateString([],{month:'shor
 return d.toLocaleDateString([],{year:'numeric',month:'short',day:'numeric'})
 }
 const full=ts=>new Date(ts).toLocaleString([],{dateStyle:'medium',timeStyle:'short'})
-const hero=()=>h('section',{class:'hero'},h('div',null,h('h1',{class:'mark'},'P',h('b',null,'Mail')),h('p',{class:'tag'},'Mail that keeps to itself.')),h('ol',{class:'promises'},
-h('li',null,h('i',null,'01'),h('div',null,h('b',null,'Nothing tracks you'),h('span',null,'Plain text only. No pixels, no remote images, links cleaned of trackers.'))),
-h('li',null,h('i',null,'02'),h('div',null,h('b',null,'Sealed before it is stored'),h('span',null,'Every message is encrypted to your own key. Your password opens it.'))),
-h('li',null,h('i',null,'03'),h('div',null,h('b',null,'Yours to arrange'),h('span',null,'Throwaway aliases, rules, folders, themes and layouts.')))))
-const page=box=>mount($,h('div',{class:'auth'},hero(),h('div',{class:'formside'},box)))
+const initial=s=>(String(s||'?').trim()[0]||'?').toUpperCase()
+const page=(box,below)=>mount($,h('div',{class:'auth'},box,below))
+const tiles=()=>h('div',{class:'tiles'},
+h('div',{class:'tile'},h('div',{class:'tic'},ico('eyeoff',1)),h('div',null,h('b',null,'No trackers'),h('small',null,'Plain text only. No pixels, no remote images, links cleaned.'))),
+h('div',{class:'tile'},h('div',{class:'tic'},ico('lock',1)),h('div',null,h('b',null,'Encrypted for you'),h('small',null,'Every message is sealed to your own key before it is stored.'))),
+h('div',{class:'tile'},h('div',{class:'tic'},ico('sliders',1)),h('div',null,h('b',null,'Yours to shape'),h('small',null,'Aliases, rules, folders, themes and layouts.'))))
 function auth(){
 theme({})
-let owner=false
 api('GET','/check?local=aaa').then(r=>{if(r.domain&&r.domain!==DOM){DOM=r.domain;for(const e of document.querySelectorAll('.addr span'))e.textContent='@'+DOM}}).catch(()=>{})
 let mode='in'
 const box=h('div',{class:'authbox'})
@@ -86,57 +118,50 @@ const err=h('div',{class:'err',role:'alert'})
 const a=h('input',{autocomplete:'username',autocapitalize:'none',spellcheck:'false',placeholder:'yourname',maxlength:'30'})
 const pw=h('input',{type:'password',autocomplete:mode==='up'?'new-password':'current-password',placeholder:mode==='up'?'At least 10 characters':'Password'})
 const dn=h('input',{placeholder:'Optional',maxlength:'40'})
-const go=h('button',{class:'btn pri',type:'submit'},mode==='up'?'Create my PMail':'Sign in')
-const dom=DOM
+const go=h('button',{class:'btn pri wide',type:'submit'},mode==='up'?'Create my PMail':'Sign in')
 const form=h('form',{onsubmit:async e=>{
 e.preventDefault()
-go.disabled=true;err.textContent=''
+go.disabled=true;err.textContent='';err.className='err'
 try{
-if(mode==='up'){
-const r=await api('POST','/signup',{local:a.value.trim().toLowerCase(),password:pw.value,display:dn.value})
-recovery(r)
-}else{
-await api('POST','/login',{address:a.value.trim().toLowerCase(),password:pw.value})
-await boot()
-}
+if(mode==='up'){recovery(await api('POST','/signup',{local:a.value.trim().toLowerCase(),password:pw.value,display:dn.value}))}
+else{await api('POST','/login',{address:a.value.trim().toLowerCase(),password:pw.value});await boot()}
 }catch(x){err.textContent=x.message;go.disabled=false}
 }},
-h('label',{class:'f'},h('span',null,mode==='up'?'Choose your address':'Address'),h('div',{class:'addr'},a,h('span',null,'@'+dom))),
+h('label',{class:'f'},h('span',null,mode==='up'?'Choose your address':'Address'),h('div',{class:'addr'},a,h('span',null,'@'+DOM))),
 mode==='up'?h('label',{class:'f'},h('span',null,'Name shown on messages'),dn):null,
 h('label',{class:'f'},h('span',null,'Password'),pw),
-mode==='in'?h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();reset()}},'Forgot your password? Use your recovery code.')):h('p',{class:'hint'},'Your password encrypts your mailbox. Nobody, including us, can reset it without your recovery code.'),
+mode==='in'?h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();reset()}},'Forgot your password? Use your recovery code.')):h('p',{class:'hint'},'Your password locks your mailbox. Nobody can reset it without your recovery code.'),
 err,go)
-if(mode==='up'){let t;a.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(async()=>{const v=a.value.trim().toLowerCase();if(v.length<3){err.textContent='';return}try{const r=await api('GET','/check?local='+encodeURIComponent(v));err.textContent=r.ok?'':r.reason;err.className=r.ok?'err ok':'err'}catch{}},350)})}
+if(mode==='up'){let t;a.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(async()=>{const v=a.value.trim().toLowerCase();if(v.length<3){err.textContent='';return}try{const r=await api('GET','/check?local='+encodeURIComponent(v));err.textContent=r.ok?'That address is free':r.reason;err.className=r.ok?'err ok':'err'}catch{}},350)})}
 mount(box,
-h('h2',null,mode==='up'?'Get your address':'Welcome back'),
+h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),
+h('h1',null,'PMail'),
+h('p',{class:'sub'},'Private mail for Parley'),
 h('div',{class:'tabs'},h('button',{class:mode==='in'?'on':'',type:'button',onclick:()=>{mode='in';draw()}},'Sign in'),h('button',{class:mode==='up'?'on':'',type:'button',onclick:()=>{mode='up';draw()}},'Create PMail')),
-form,
-owner?h('p',{class:'hint'},h('a',{href:'#',onclick:async e=>{e.preventDefault();try{await api('POST','/owner-open',{});await boot()}catch(x){toast(x.message)}}},'Open parley@'+DOM+' as the Parley owner')):null
-)
+form)
 a.focus()
 }
 draw()
-page(box)
-api('GET','/owner-status').then(r=>{if(r.owner){owner=true;draw()}}).catch(()=>{})
+page(box,tiles())
 }
 function recovery(r){
-const box=h('div',{class:'authbox'})
-mount(box,h('h2',null,'Welcome, '+r.address.split('@')[0]),
-h('p',null,'Your address is ',h('b',null,r.address),'.'),
-h('div',{class:'rec'},h('div',{class:'hint'},'Your recovery code. Shown once.'),h('code',null,r.recovery),h('div',{class:'hint'},'Write it down or save it in a password manager. If you forget your password it is the only way to open your mail.')),
-h('button',{class:'btn pri',onclick:()=>boot()},'I saved it, open my inbox'))
+const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'You are in'),
+h('p',{class:'sub'},'Your address is ',h('b',null,r.address)),
+h('div',{class:'rec'},h('div',{class:'hint'},'Your recovery code. Shown once.'),h('code',null,r.recovery),h('div',{class:'hint'},'Write it down or keep it in a password manager. If you forget your password, this is the only way to open your mail.')),
+h('button',{class:'btn pri wide',onclick:()=>boot()},'I saved it, open my inbox'))
 page(box)
 }
 function reset(){
 const err=h('div',{class:'err',role:'alert'})
 const a=h('input',{placeholder:'yourname',autocapitalize:'none'}),rc=h('input',{placeholder:'xxxxx-xxxxx-xxxxx-xxxxx',autocapitalize:'none',spellcheck:'false'}),pw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
-const box=h('div',{class:'authbox'},h('h2',null,'Reset password'),h('p',{class:'hint'},'Enter your address and recovery code. Your mail stays intact.'),
+const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'Reset password'),h('p',{class:'sub'},'Enter your recovery code. Your mail stays intact.'),
 h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/reset',{address:a.value,recovery:rc.value,next:pw.value});toast('Password changed. Sign in.');auth()}catch(x){err.textContent=x.message}}},
 h('label',{class:'f'},h('span',null,'Address'),a),h('label',{class:'f'},h('span',null,'Recovery code'),rc),h('label',{class:'f'},h('span',null,'New password'),pw),err,
-h('div',{},h('button',{class:'btn pri',type:'submit'},'Set new password'),' ',h('button',{class:'btn',type:'button',onclick:auth},'Back'))))
+h('button',{class:'btn pri wide',type:'submit'},'Set new password'),h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();auth()}},'Back to sign in'))))
 page(box)
 }
 const NAMES={inbox:'Inbox',starred:'Starred',sent:'Sent',archive:'Archive',trash:'Trash'}
+const NIC={inbox:'inbox',starred:'star',sent:'send',archive:'archive',trash:'trash'}
 const fname=f=>NAMES[f]||(f.startsWith('f:')?f.slice(2):f)
 async function load(more){
 if(S.busy)return
@@ -146,45 +171,56 @@ const before=more&&S.items.length?S.items[S.items.length-1].ts:''
 const r=await api('GET','/list?folder='+encodeURIComponent(S.folder)+(before?'&before='+before:''))
 S.items=more?S.items.concat(r.items):r.items
 S.more=r.more
-}catch(e){if(e.status===401)return auth();toast(e.message)}
+}catch(e){S.busy=false;if(e.status===401)return auth();toast(e.message)}
 S.busy=false
 paintList()
 }
 async function refreshMe(){
 try{S.me=await api('GET','/me');theme(S.me.prefs)}catch(e){if(e.status===401)auth()}
 }
-const fold=()=>['inbox','starred','sent','archive','trash']
-let pend=null
+const FOLDERS=['inbox','starred','sent','archive','trash']
 function shell(){
-const side=h('nav',{class:'side',id:'side','aria-label':'Folders'})
-const list=h('div',{class:'list',id:'list',tabindex:'-1'})
-const read=h('article',{class:'read',id:'read'},h('div',{class:'empty'},'Select a message'))
 const q=h('input',{type:'search',placeholder:'Search this folder',id:'q','aria-label':'Search this folder',value:S.q,oninput:e=>{S.q=e.target.value;paintList()}})
 mount($,h('div',{class:'shell'},
-h('header',{class:'top'},h('button',{class:'ico menu',onclick:()=>side.classList.toggle('open'),'aria-label':'Menu'},'☰'),h('h1',{class:'mk'},'P',h('b',null,'Mail')),q,h('span',{class:'sp'}),h('span',{class:'who'},S.me.address),h('button',{class:'btn sm',onclick:()=>settings()},'Settings'),h('button',{class:'btn sm',onclick:async()=>{try{await api('POST','/logout',{})}catch{}S.me=null;auth()}},'Sign out')),
-h('div',{class:'cols'},side,list,read)))
+h('nav',{class:'rail','aria-label':'PMail'},
+h('a',{class:'wbtn on',href:'/pmail/',title:'PMail'},h('img',{src:'/mascot-sm.webp',alt:'PMail'})),
+h('div',{class:'sep'}),
+h('button',{class:'wbtn pri',title:'Write (c)',onclick:()=>compose()},ico('pen')),
+h('div',{class:'gap'}),
+h('a',{class:'wbtn',href:'/',title:'Back to Parley'},ico('back')),
+h('button',{class:'wbtn',title:'Settings',onclick:()=>settings()},ico('gear'))),
+h('aside',{class:'ctx',id:'side'},
+h('div',{class:'ctx-h'},'Mail'),
+h('div',{class:'find'},ico('search',1),q),
+h('div',{class:'nav',id:'nav'}),
+h('div',{class:'me'},h('div',{class:'av'},initial(S.me.display||S.me.local)),h('div',null,h('b',null,S.me.display||S.me.local),h('small',null,S.me.address)),h('button',{class:'ib',title:'Sign out','aria-label':'Sign out',onclick:async()=>{try{await api('POST','/logout',{})}catch{}S.me=null;auth()}},ico('out')))),
+h('section',{class:'listcol'},h('div',{class:'lh'},h('button',{class:'ib menu',onclick:()=>document.getElementById('side').classList.toggle('open'),'aria-label':'Folders'},ico('menu')),h('span',{id:'lt'}),h('button',{class:'btn sm menu',onclick:()=>compose()},'Write')),h('div',{class:'list',id:'list',tabindex:'-1'})),
+h('article',{class:'read',id:'read'},h('div',{class:'empty'},ico('mail'),'Select a message'))))
 paintSide()
 paintList()
 if(S.msg)paintMsg()
 }
 function paintSide(){
-const side=document.getElementById('side')
-if(!side)return
+const nav=document.getElementById('nav')
+if(!nav)return
 const c=S.me.counts||{}
-const btn=(f,label)=>h('button',{class:'fo'+(S.folder===f?' on':''),onclick:()=>go(f)},label,(c[f]&&c[f].un&&f!=='trash'&&f!=='sent')?h('i',null,c[f].un):null)
-mount(side,h('button',{class:'btn pri',onclick:()=>compose()},'Write'),
-fold().map(f=>btn(f,NAMES[f])),
+const btn=(f,label,ic)=>{const un=c[f]&&c[f].un&&f!=='trash'&&f!=='sent'?c[f].un:0;return h('button',{class:'nv'+(S.folder===f?' on':''),onclick:()=>go(f)},ico(ic),h('span',null,label),un?h('em',null,un):null)}
+const act=S.me.aliases.filter(a=>a.enabled)
+mount(nav,
+FOLDERS.map(f=>btn(f,NAMES[f],NIC[f])),
 S.me.prefs.folders.length?h('h4',null,'Folders'):null,
-S.me.prefs.folders.map(f=>btn('f:'+f,f)),
+S.me.prefs.folders.map(f=>btn('f:'+f,f,'folder')),
 h('h4',null,'Your addresses'),
-h('div',{class:'mine'},h('div',null,S.me.address),S.me.aliases.filter(a=>a.enabled).slice(0,4).map(a=>h('div',{title:a.label},a.addr+'@'+S.me.domain)),S.me.aliases.filter(a=>a.enabled).length>4?h('div',null,'and '+(S.me.aliases.filter(a=>a.enabled).length-4)+' more'):null))
+h('div',{class:'mine'},h('div',null,S.me.address),act.slice(0,4).map(a=>h('div',{title:a.label},a.addr+'@'+S.me.domain)),act.length>4?h('div',null,'and '+(act.length-4)+' more'):null))
+const lt=document.getElementById('lt')
+if(lt)lt.textContent=fname(S.folder)
 }
 async function go(f){
 S.folder=f;S.sel=null;S.msg=null;S.items=[]
 document.getElementById('side')?.classList.remove('open')
 document.getElementById('read')?.classList.remove('open')
 paintSide()
-mount(document.getElementById('read'),h('div',{class:'empty'},'Select a message'))
+mount(document.getElementById('read'),h('div',{class:'empty'},ico('mail'),'Select a message'))
 await load()
 }
 function paintList(){
@@ -194,12 +230,17 @@ const q=S.q.trim().toLowerCase()
 const items=q?S.items.filter(i=>(i.s+' '+i.fn+' '+i.from+' '+i.to+' '+i.sn).toLowerCase().includes(q)):S.items
 mount(el,
 S.busy&&!S.items.length?h('div',{class:'empty'},'Loading'):null,
-!S.busy&&!items.length?h('div',{class:'empty'},q?'Nothing matches in the loaded messages.':'Nothing here yet.'):null,
-items.map(i=>h('div',{class:'row'+(i.read?'':' un')+(S.sel===i.id?' on':''),tabindex:'0',role:'button',onclick:()=>openMsg(i.id),onkeydown:e=>{if(e.key==='Enter')openMsg(i.id)}},
-h('span',{class:'fr'},S.folder==='sent'||i.folder==='sent'?'To '+i.to:(i.fn||i.from)),
+!S.busy&&!items.length?h('div',{class:'empty'},ico('inbox'),q?'Nothing matches in the loaded messages.':'Nothing here yet.'):null,
+items.map(i=>{
+const sent=S.folder==='sent'||i.folder==='sent'
+const who=sent?'To '+i.to:(i.fn||i.from)
+return h('div',{class:'row'+(i.read?'':' un')+(S.sel===i.id?' on':''),tabindex:'0',role:'button',onclick:()=>openMsg(i.id),onkeydown:e=>{if(e.key==='Enter')openMsg(i.id)}},
+h('div',{class:'av'},initial(sent?i.to:(i.fn||i.from))),
+h('span',{class:'fr'},who),
 h('span',{class:'dt'},i.star?h('span',{class:'star'},'★ '):null,fmt(i.ts)),
 h('span',{class:'su'},i.s),
-i.sn?h('span',{class:'sn'},i.sn):null)),
+i.sn?h('span',{class:'sn'},i.sn):null)
+}),
 S.more?h('div',{class:'empty'},h('button',{class:'btn',onclick:()=>load(true)},'Load older')):null)
 }
 async function openMsg(id){
@@ -218,41 +259,43 @@ function paintMsg(){
 const m=S.msg,el=document.getElementById('read')
 if(!el||!m)return
 const fm=S.me.prefs.folders
-const mv=h('select',{'aria-label':'Move to',onchange:async e=>{const f=e.target.value;if(!f)return;await act('/msg/'+m.id,{folder:f});closeMsg();toast('Moved to '+fname(f))}},h('option',{value:''},'Move to'),['inbox','archive','trash'].filter(f=>f!==m.folder).map(f=>h('option',{value:f},NAMES[f])),fm.filter(f=>'f:'+f!==m.folder).map(f=>h('option',{value:'f:'+f},f)))
-const nodes=body(m.b)
+const mv=h('select',{'aria-label':'Move to',title:'Move to',onchange:async e=>{const f=e.target.value;if(!f)return;await act('/msg/'+m.id,{folder:f});closeMsg();toast('Moved to '+fname(f))}},h('option',{value:''},'Move to'),['inbox','archive','trash'].filter(f=>f!==m.folder).map(f=>h('option',{value:f},NAMES[f])),fm.filter(f=>'f:'+f!==m.folder).map(f=>h('option',{value:'f:'+f},f)))
+const nodes=bodyNodes(m.b)
 const shieldN=shielded
+const ib=(n,t,fn,cls)=>h('button',{class:'ib'+(cls?' '+cls:''),title:t,'aria-label':t,onclick:fn},ico(n))
 mount(el,
-h('div',{class:'bar'},
-h('button',{class:'btn sm back',onclick:closeMsg},'Back'),
-h('button',{class:'btn sm',onclick:()=>compose({to:m.from,subject:/^re:/i.test(m.s)?m.s:'Re: '+m.s,body:'\n\n'+m.from+' wrote:\n'+m.b.split('\n').map(l=>'> '+l).join('\n'),sig:true})},'Reply'),
-h('button',{class:'btn sm',onclick:()=>compose({subject:/^fwd:/i.test(m.s)?m.s:'Fwd: '+m.s,body:'\n\n---------- Forwarded ----------\nFrom: '+m.from+'\nDate: '+full(m.ts)+'\n\n'+m.b})},'Forward'),
-h('button',{class:'btn sm',onclick:async()=>{await act('/msg/'+m.id,{star:!m.star});m.star=!m.star;paintMsg()}},m.star?'★ Starred':'☆ Star'),
-h('button',{class:'btn sm',onclick:async()=>{await act('/msg/'+m.id,{read:false});closeMsg()}},'Mark unread'),
-m.folder!=='archive'&&m.folder!=='sent'?h('button',{class:'btn sm',onclick:async()=>{await act('/msg/'+m.id,{folder:'archive'});closeMsg();toast('Archived')}},'Archive'):null,
+h('div',{class:'rbar'},
+ib('back','Back',closeMsg,'back'),
+ib('reply','Reply',()=>compose({to:m.from,subject:/^re:/i.test(m.s)?m.s:'Re: '+m.s,body:'\n\n'+m.from+' wrote:\n'+m.b.split('\n').map(l=>'> '+l).join('\n'),sig:true})),
+ib('fwd','Forward',()=>compose({subject:/^fwd:/i.test(m.s)?m.s:'Fwd: '+m.s,body:'\n\n---------- Forwarded ----------\nFrom: '+m.from+'\nDate: '+full(m.ts)+'\n\n'+m.b})),
+ib('star',m.star?'Unstar':'Star',async()=>{await act('/msg/'+m.id,{star:!m.star});m.star=!m.star;paintMsg()},m.star?'star':''),
+m.folder!=='archive'&&m.folder!=='sent'?ib('archive','Archive',async()=>{await act('/msg/'+m.id,{folder:'archive'});closeMsg();toast('Archived')}):null,
+ib('mail','Mark unread',async()=>{await act('/msg/'+m.id,{read:false});closeMsg()}),
+h('span',{class:'sp'}),
 mv,
-h('button',{class:'btn sm dng',onclick:async()=>{await act('/delete-msg/'+m.id,{});closeMsg();toast(m.folder==='trash'?'Deleted for good':'Moved to Trash')}},m.folder==='trash'?'Delete forever':'Delete')),
+ib('trash',m.folder==='trash'?'Delete forever':'Delete',async()=>{await act('/delete-msg/'+m.id,{});closeMsg();toast(m.folder==='trash'?'Deleted for good':'Moved to Trash')})),
+h('div',{class:'rbody'},
 h('h2',null,m.s),
-h('dl',{class:'meta'},h('dt',null,'From'),h('dd',null,m.fn?m.fn+' <'+m.from+'>':m.from),h('dt',null,'To'),h('dd',null,(m.all||[m.to]).join(', ')),h('dt',null,'Date'),h('dd',null,full(m.ts))),
+h('div',{class:'who'},h('div',{class:'av'},initial(m.fn||m.from)),h('div',null,h('b',null,m.fn||m.from),h('small',null,(m.fn?m.from+' · ':'')+'to '+(m.all||[m.to]).join(', ')),h('small',null,full(m.ts)))),
 shieldN?h('div',{class:'note'},'Removed '+shieldN+' tracking parameter'+(shieldN>1?'s':'')+' from links in this message.'):null,
-h('div',{class:'msg'},nodes))
+h('div',{class:'msg'},nodes)))
 }
 function closeMsg(){
 S.sel=null;S.msg=null
 document.getElementById('read')?.classList.remove('open')
 const el=document.getElementById('read')
-if(el)mount(el,h('div',{class:'empty'},'Select a message'))
+if(el)mount(el,h('div',{class:'empty'},ico('mail'),'Select a message'))
 paintList()
 }
 function compose(o){
 o=o||{}
 document.querySelector('.comp')?.remove()
-const to=h('input',{value:o.to||'',placeholder:'name@'+S.me.domain+', another@'+S.me.domain,autocapitalize:'none',spellcheck:'false','aria-label':'To'})
+const to=h('input',{value:o.to||'',placeholder:'To: name@'+S.me.domain,autocapitalize:'none',spellcheck:'false','aria-label':'To'})
 const sub=h('input',{value:o.subject||'',placeholder:'Subject',maxlength:'200','aria-label':'Subject'})
-const bd=h('textarea',{'aria-label':'Message'},'')
+const bd=h('textarea',{'aria-label':'Message',placeholder:'Write your message'},'')
 bd.value=o.body||''
 const err=h('div',{class:'err',role:'alert'})
 const sig=h('input',{type:'checkbox',checked:true})
-sig.style.width='auto'
 const send=h('button',{class:'btn pri',onclick:async()=>{
 send.disabled=true;err.textContent=''
 try{
@@ -262,9 +305,9 @@ await refreshMe()
 if(S.folder==='sent')await load()
 paintSide()
 }catch(x){err.textContent=x.message;send.disabled=false}
-}},'Send')
+}},ico('send',1),'Send')
 const c=h('div',{class:'comp',role:'dialog','aria-label':'New message'},
-h('header',null,'New message',h('button',{class:'ico',onclick:()=>{if(!bd.value.trim()||confirm('Discard this message?'))c.remove()},'aria-label':'Close'},'✕')),
+h('header',null,'New message',h('button',{class:'ib',onclick:()=>{if(!bd.value.trim()||confirm('Discard this message?'))c.remove()},'aria-label':'Close'},ico('x'))),
 h('div',{class:'in'},to,sub,bd,err),
 h('footer',null,send,S.me.prefs.sig?h('label',{class:'hint'},sig,' Add signature'):null,h('span',{class:'hint'},'Plain text. Nothing remote can load.')))
 document.body.append(c)
@@ -274,10 +317,11 @@ if(o.to)bd.setSelectionRange(0,0)
 function settings(tab){
 tab=tab||'look'
 const dlg=h('div',{class:'dlg',role:'dialog','aria-label':'Settings'})
-const scrim=h('div',{class:'scrim',onmousedown:e=>{if(e.target===scrim){scrim.remove();paintSide();if(S.msg)paintMsg()}}},dlg)
+const scrim=h('div',{class:'scrim',onmousedown:e=>{if(e.target===scrim)close()}},dlg)
 const close=()=>{scrim.remove();paintSide();paintList();if(S.msg)paintMsg()}
 const save=async(p,extra)=>{try{const r=await api('POST','/prefs',{prefs:p,...(extra||{})});S.me.prefs=r.prefs;if(extra&&extra.display!==undefined)S.me.display=extra.display;theme(S.me.prefs)}catch(e){toast(e.message)}}
-const seg=(key,opts)=>h('div',{class:'seg'},opts.map(([v,l])=>h('button',{type:'button',class:(S.me.prefs[key]===undefined||S.me.prefs[key]===''?opts[0][0]:S.me.prefs[key])===v?'on':'',onclick:async()=>{await save({[key]:v});draw()}},l)))
+const cur=(key,opts)=>{const v=S.me.prefs[key];return v===undefined||v===''?opts[0][0]:v}
+const seg=(key,opts)=>h('div',{class:'seg'},opts.map(([v,l])=>h('button',{type:'button',class:cur(key,opts)===v?'on':'',onclick:async()=>{await save({[key]:v});draw()}},l)))
 const tabs=[['look','Look'],['addr','Addresses'],['rules','Rules'],['sec','Security'],['priv','Privacy']]
 const draw=()=>{
 const p=S.me.prefs
@@ -285,28 +329,26 @@ let body
 if(tab==='look'){
 const sig=h('textarea',{maxlength:'400','aria-label':'Signature'});sig.value=p.sig||'';sig.style.minHeight='70px'
 const nm=h('input',{value:S.me.display||'',maxlength:'40',placeholder:'Shown on your messages'})
-const ac=h('input',{type:'color',value:p.accent||PRESETS[p.preset||'midnight'][1]}),bg=h('input',{type:'color',value:p.bg||PRESETS[p.preset||'midnight'][0]})
-for(const i of[ac,bg])i.style.cssText='height:40px;padding:3px'
+const ac=h('input',{type:'color',value:p.accent||PRESETS[p.preset||'dimmed'][1]}),bg=h('input',{type:'color',value:p.bg||PRESETS[p.preset||'dimmed'][0]})
 body=h('div',null,
-h('div',{class:'swatches'},Object.entries(PRESETS).map(([k,[b,a]])=>h('button',{class:'sw'+((p.preset||'midnight')===k?' on':''),onclick:async()=>{await save({preset:k,accent:'',bg:'',text:''});draw()}},h('i',{id:'s_'+k}),h('span',null,k==='midnight'?'Ink':k)))),
+h('h4',null,'Theme'),
+h('div',{class:'swatches'},Object.entries(PRESETS).map(([k,[b,a]])=>{const i=h('i');i.style.background='linear-gradient(135deg,'+b+' 55%,'+a+' 55%)';return h('button',{class:'sw'+((p.preset||'dimmed')===k?' on':''),onclick:async()=>{await save({preset:k,accent:'',bg:'',text:''});draw()}},i,h('span',null,k))})),
 h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Accent colour'),ac),h('label',{class:'f'},h('span',null,'Background'),bg)),
 h('p',null,h('button',{class:'btn sm',onclick:async()=>{await save({accent:ac.value,bg:bg.value});draw()}},'Apply colours'),' ',h('button',{class:'btn sm',onclick:async()=>{await save({accent:'',bg:'',text:''});draw()}},'Reset colours')),
+h('h4',null,'Layout'),
 h('div',{class:'g2'},
-h('div',null,h('p',{class:'hint'},'Layout'),seg('layout',[['three','Three panes'],['two','Two panes'],['list','Single list']])),
+h('div',null,h('p',{class:'hint'},'Panes'),seg('layout',[['three','Three panes'],['two','Two panes'],['list','Single list']])),
 h('div',null,h('p',{class:'hint'},'Density'),seg('density',[['comfortable','Comfortable'],['compact','Compact'],['spacious','Spacious']])),
-h('div',null,h('p',{class:'hint'},'Font'),seg('font',[['system','System'],['serif','Serif'],['mono','Mono'],['rounded','Rounded']])),
+h('div',null,h('p',{class:'hint'},'Font'),seg('font',[['default','Parley'],['system','System'],['serif','Serif'],['mono','Mono']])),
 h('div',null,h('p',{class:'hint'},'Reading width'),seg('width',[['medium','Medium'],['narrow','Narrow'],['wide','Wide']])),
 h('div',null,h('p',{class:'hint'},'Corners'),seg('radius',[['soft','Soft'],['sharp','Sharp'],['round','Round']])),
 h('div',null,h('p',{class:'hint'},'List previews'),seg('preview',[[true,'Show'],[false,'Hide']]))),
-h('hr',{}),
+h('h4',null,'You'),
 h('label',{class:'f'},h('span',null,'Your name on messages'),nm),
 h('label',{class:'f'},h('span',null,'Signature'),sig),
 h('button',{class:'btn pri',onclick:async()=>{await save({sig:sig.value},{display:nm.value});toast('Saved')}},'Save name and signature'),
-h('p',{class:'hint'},'Keyboard shortcuts: c write, / search, j and k move, e archive, # delete, s star.'),
+h('p',{class:'hint'},'Shortcuts: c write, / search, j and k move, e archive, # delete, s star.'),
 h('label',{class:'f'},h('input',{type:'checkbox',checked:p.keys!==false,onchange:async e=>{await save({keys:e.target.checked})}}),' Enable keyboard shortcuts'))
-body.querySelector('hr').style.cssText='border:0;border-top:1px solid var(--line);margin:18px 0'
-for(const[k,[b,a]]of Object.entries(PRESETS)){const i=body.querySelector('#s_'+k);if(i)i.style.background='linear-gradient(135deg,'+b+' 55%,'+a+' 55%)'}
-for(const i of body.querySelectorAll('input[type=checkbox]'))i.style.width='auto'
 }else if(tab==='addr'){
 const lb=h('input',{placeholder:'What is it for? e.g. Shopping',maxlength:'40'}),cu=h('input',{placeholder:'Pick a name, or leave empty for a random one',autocapitalize:'none',maxlength:'30'})
 const err=h('div',{class:'err'})
@@ -315,9 +357,9 @@ h('p',null,'Your main address is ',h('b',null,S.me.address),'. Anything sent to 
 h('h4',null,'Aliases'),
 h('p',{class:'hint'},'Give each service its own alias. When one gets spammed or sold, turn it off and the rest keep working.'),
 S.me.aliases.length?S.me.aliases.map(a=>h('div',{class:'line'},h('span',null,a.addr+'@'+S.me.domain,h('br'),h('small',null,a.label||'No label')),h('button',{class:'btn sm',onclick:async()=>{try{const r=await api('POST','/alias/'+a.addr,{enabled:!a.enabled});S.me.aliases=r.aliases;draw()}catch(e){toast(e.message)}}},a.enabled?'Turn off':'Turn on'),h('button',{class:'btn sm dng',onclick:async()=>{if(!confirm('Delete this alias? Mail sent to it will bounce.'))return;try{const r=await api('POST','/alias/'+a.addr,{remove:true});S.me.aliases=r.aliases;draw()}catch(e){toast(e.message)}}},'Delete'))):h('p',{class:'hint'},'No aliases yet.'),
+h('h4',null,'New alias'),
 h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Label'),lb),h('label',{class:'f'},h('span',null,'Custom name (optional)'),cu)),err,
 h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{const r=await api('POST','/alias',{label:lb.value,addr:cu.value});S.me.aliases=r.aliases;draw()}catch(e){err.textContent=e.message}}},'Create alias'))
-body.querySelector('.g2').style.marginTop='14px'
 }else if(tab==='rules'){
 const rules=p.rules.slice(),folders=p.folders.slice()
 const fl=h('input',{placeholder:'New folder name',maxlength:'24'})
@@ -336,21 +378,19 @@ h('p',{class:'hint'},'Rules run when mail arrives, in order.'),
 rules.length?rules.map((r,i)=>h('div',{class:'line'},h('span',null,({from:'From',subject:'Subject',body:'Body'})[r.field]+' contains "'+r.has+'" → '+({folder:'move to '+r.folder,read:'mark as read',star:'star',trash:'send to Trash'})[r.act]),h('button',{class:'btn sm dng',onclick:()=>{rules.splice(i,1);sv()}},'Remove'))):h('p',{class:'hint'},'No rules yet.'),
 h('div',{class:'g2'},rf,rt,ra,folders.length?rfo:h('span',{class:'hint'},'Create a folder to move mail')),
 h('p',null,h('button',{class:'btn pri',onclick:()=>{const t=rt.value.trim();if(!t)return;if(ra.value==='folder'&&!folders.length)return toast('Create a folder first');rules.push({field:rf.value,has:t,act:ra.value,folder:ra.value==='folder'?rfo.value:''});sv()}},'Add rule')))
-for(const e of body.querySelectorAll('.g2'))e.style.margin='12px 0'
 }else if(tab==='sec'){
-const cur=h('input',{type:'password',autocomplete:'current-password'}),nw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
+const cu=h('input',{type:'password',autocomplete:'current-password'}),nw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
 const err=h('div',{class:'err'})
 const ss=h('div',null,h('p',{class:'hint'},'Loading sessions'))
 api('GET','/sessions').then(r=>mount(ss,r.sessions.map(s=>h('div',{class:'line'},h('span',null,s.label,s.current?' (this device)':'',h('br'),h('small',null,'Signed in '+full(s.created_at))),s.current?null:h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{id:s.id});settings('sec')}},'Sign out'))),r.sessions.length>1?h('p',null,h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{});settings('sec')}},'Sign out everywhere else')):null)).catch(()=>{})
 body=h('div',null,
 h('h4',null,'Signed-in devices'),ss,
 h('h4',null,'Change password'),
-h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Current password'),cur),h('label',{class:'f'},h('span',null,'New password'),nw)),err,
-h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{await api('POST','/password',{current:cur.value,next:nw.value});toast('Password changed. Other devices were signed out.');cur.value='';nw.value=''}catch(e){err.textContent=e.message}}},'Change password'),
+h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Current password'),cu),h('label',{class:'f'},h('span',null,'New password'),nw)),err,
+h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{await api('POST','/password',{current:cu.value,next:nw.value});toast('Password changed. Other devices were signed out.');cu.value='';nw.value=''}catch(e){err.textContent=e.message}}},'Change password'),
 h('h4',null,'Delete account'),
 h('p',{class:'hint'},'Deletes your address, aliases and every message. It cannot be undone.'),
 h('button',{class:'btn dng',onclick:async()=>{const pw=prompt('Type your password to delete this PMail account and all its mail.');if(!pw)return;try{await api('POST','/destroy',{password:pw});S.me=null;scrim.remove();auth()}catch(e){toast(e.message)}}},'Delete my PMail'))
-for(const e of body.querySelectorAll('h4'))e.style.margin='22px 0 8px'
 }else{
 body=h('div',null,h('ul',{class:'facts'},
 h('li',null,h('b',null,'No tracking pixels'),'PMail messages are plain text. There is no HTML, so nothing can embed a hidden image or script, and the page itself loads nothing from other sites.'),
@@ -361,9 +401,10 @@ h('li',null,h('b',null,'Closed system'),'PMail sends and receives only between P
 h('li',null,h('b',null,'Strict page'),'The PMail page blocks all third-party content, sends no referrer and uses a cookie that is HttpOnly and never sent cross-site.'),
 h('li',null,h('b',null,'What is stored'),'Your address, name, settings, and for each message the sender, recipient and time, with the subject and body encrypted. Messages live in the Parley database.')))
 }
-mount(dlg,h('header',null,'PMail settings',h('button',{class:'ico',onclick:close,'aria-label':'Close'},'✕')),h('div',{class:'st',role:'tablist'},tabs.map(([k,l])=>h('button',{class:tab===k?'on':'',role:'tab',onclick:()=>{tab=k;draw()}},l))),h('section',null,body))
+mount(dlg,h('header',null,'PMail settings',h('button',{class:'ib',onclick:close,'aria-label':'Close'},ico('x'))),h('div',{class:'st',role:'tablist'},tabs.map(([k,l])=>h('button',{class:tab===k?'on':'',role:'tab',onclick:()=>{tab=k;draw()}},l))),h('section',null,body))
 }
 draw()
+document.querySelector('.scrim')?.remove()
 document.body.append(scrim)
 }
 document.addEventListener('keydown',e=>{
@@ -385,11 +426,8 @@ else if(k==='Escape')closeMsg()
 }
 })
 async function boot(){
-try{
-S.me=await api('GET','/me')
-}catch{
-S.me=null
-return auth()
+try{S.me=await api('GET','/me')}catch{
+try{await api('POST','/owner-open',{});S.me=await api('GET','/me')}catch{S.me=null;return auth()}
 }
 theme(S.me.prefs)
 S.folder='inbox';S.items=[];S.msg=null;S.sel=null
