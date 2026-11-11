@@ -70,8 +70,14 @@ if(d.getFullYear()===n.getFullYear())return d.toLocaleDateString([],{month:'shor
 return d.toLocaleDateString([],{year:'numeric',month:'short',day:'numeric'})
 }
 const full=ts=>new Date(ts).toLocaleString([],{dateStyle:'medium',timeStyle:'short'})
+const hero=()=>h('section',{class:'hero'},h('div',null,h('h1',{class:'mark'},'P',h('b',null,'Mail')),h('p',{class:'tag'},'Mail that keeps to itself.')),h('ol',{class:'promises'},
+h('li',null,h('i',null,'01'),h('div',null,h('b',null,'Nothing tracks you'),h('span',null,'Plain text only. No pixels, no remote images, links cleaned of trackers.'))),
+h('li',null,h('i',null,'02'),h('div',null,h('b',null,'Sealed before it is stored'),h('span',null,'Every message is encrypted to your own key. Your password opens it.'))),
+h('li',null,h('i',null,'03'),h('div',null,h('b',null,'Yours to arrange'),h('span',null,'Throwaway aliases, rules, folders, themes and layouts.')))))
+const page=box=>mount($,h('div',{class:'auth'},hero(),h('div',{class:'formside'},box)))
 function auth(){
 theme({})
+let owner=false
 api('GET','/check?local=aaa').then(r=>{if(r.domain&&r.domain!==DOM){DOM=r.domain;for(const e of document.querySelectorAll('.addr span'))e.textContent='@'+DOM}}).catch(()=>{})
 let mode='in'
 const box=h('div',{class:'authbox'})
@@ -102,33 +108,33 @@ mode==='in'?h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();
 err,go)
 if(mode==='up'){let t;a.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(async()=>{const v=a.value.trim().toLowerCase();if(v.length<3){err.textContent='';return}try{const r=await api('GET','/check?local='+encodeURIComponent(v));err.textContent=r.ok?'':r.reason;err.className=r.ok?'err ok':'err'}catch{}},350)})}
 mount(box,
-h('h1',{class:'logo'},'P',h('b',null,'Mail')),
-h('p',{class:'hint'},'Private mail with no trackers and a look you control.'),
+h('h2',null,mode==='up'?'Get your address':'Welcome back'),
 h('div',{class:'tabs'},h('button',{class:mode==='in'?'on':'',type:'button',onclick:()=>{mode='in';draw()}},'Sign in'),h('button',{class:mode==='up'?'on':'',type:'button',onclick:()=>{mode='up';draw()}},'Create PMail')),
 form,
-h('ul',{class:'perks'},h('li',null,'Plain text only. No tracking pixels, no remote images.'),h('li',null,'Every message is encrypted for you before it is stored.'),h('li',null,'Throwaway aliases and rules, themes and layouts.'))
+owner?h('p',{class:'hint'},h('a',{href:'#',onclick:async e=>{e.preventDefault();try{await api('POST','/owner-open',{});await boot()}catch(x){toast(x.message)}}},'Open parley@'+DOM+' as the Parley owner')):null
 )
 a.focus()
 }
 draw()
-mount($,h('div',{class:'auth'},box))
+page(box)
+api('GET','/owner-status').then(r=>{if(r.owner){owner=true;draw()}}).catch(()=>{})
 }
 function recovery(r){
 const box=h('div',{class:'authbox'})
-mount(box,h('h1',{class:'logo'},'Welcome, ',h('b',null,r.address.split('@')[0])),
+mount(box,h('h2',null,'Welcome, '+r.address.split('@')[0]),
 h('p',null,'Your address is ',h('b',null,r.address),'.'),
 h('div',{class:'rec'},h('div',{class:'hint'},'Your recovery code. Shown once.'),h('code',null,r.recovery),h('div',{class:'hint'},'Write it down or save it in a password manager. If you forget your password it is the only way to open your mail.')),
 h('button',{class:'btn pri',onclick:()=>boot()},'I saved it, open my inbox'))
-mount($,h('div',{class:'auth'},box))
+page(box)
 }
 function reset(){
 const err=h('div',{class:'err',role:'alert'})
 const a=h('input',{placeholder:'yourname',autocapitalize:'none'}),rc=h('input',{placeholder:'xxxxx-xxxxx-xxxxx-xxxxx',autocapitalize:'none',spellcheck:'false'}),pw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
-const box=h('div',{class:'authbox'},h('h1',{class:'logo'},'Reset password'),h('p',{class:'hint'},'Enter your address and recovery code. Your mail stays intact.'),
+const box=h('div',{class:'authbox'},h('h2',null,'Reset password'),h('p',{class:'hint'},'Enter your address and recovery code. Your mail stays intact.'),
 h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/reset',{address:a.value,recovery:rc.value,next:pw.value});toast('Password changed. Sign in.');auth()}catch(x){err.textContent=x.message}}},
 h('label',{class:'f'},h('span',null,'Address'),a),h('label',{class:'f'},h('span',null,'Recovery code'),rc),h('label',{class:'f'},h('span',null,'New password'),pw),err,
 h('div',{},h('button',{class:'btn pri',type:'submit'},'Set new password'),' ',h('button',{class:'btn',type:'button',onclick:auth},'Back'))))
-mount($,h('div',{class:'auth'},box))
+page(box)
 }
 const NAMES={inbox:'Inbox',starred:'Starred',sent:'Sent',archive:'Archive',trash:'Trash'}
 const fname=f=>NAMES[f]||(f.startsWith('f:')?f.slice(2):f)
@@ -155,7 +161,7 @@ const list=h('div',{class:'list',id:'list',tabindex:'-1'})
 const read=h('article',{class:'read',id:'read'},h('div',{class:'empty'},'Select a message'))
 const q=h('input',{type:'search',placeholder:'Search this folder',id:'q','aria-label':'Search this folder',value:S.q,oninput:e=>{S.q=e.target.value;paintList()}})
 mount($,h('div',{class:'shell'},
-h('header',{class:'top'},h('button',{class:'ico menu',onclick:()=>side.classList.toggle('open'),'aria-label':'Menu'},'☰'),h('h1',{class:'logo'},'P',h('b',null,'Mail')),q,h('span',{class:'sp'}),h('span',{class:'who'},S.me.address),h('button',{class:'btn sm',onclick:()=>settings()},'Settings'),h('button',{class:'btn sm',onclick:async()=>{try{await api('POST','/logout',{})}catch{}S.me=null;auth()}},'Sign out')),
+h('header',{class:'top'},h('button',{class:'ico menu',onclick:()=>side.classList.toggle('open'),'aria-label':'Menu'},'☰'),h('h1',{class:'mk'},'P',h('b',null,'Mail')),q,h('span',{class:'sp'}),h('span',{class:'who'},S.me.address),h('button',{class:'btn sm',onclick:()=>settings()},'Settings'),h('button',{class:'btn sm',onclick:async()=>{try{await api('POST','/logout',{})}catch{}S.me=null;auth()}},'Sign out')),
 h('div',{class:'cols'},side,list,read)))
 paintSide()
 paintList()
@@ -171,8 +177,7 @@ fold().map(f=>btn(f,NAMES[f])),
 S.me.prefs.folders.length?h('h4',null,'Folders'):null,
 S.me.prefs.folders.map(f=>btn('f:'+f,f)),
 h('h4',null,'Your addresses'),
-h('div',{class:'hint'},h('div',null,S.me.address),S.me.aliases.filter(a=>a.enabled).slice(0,4).map(a=>h('div',{title:a.label},a.addr+'@'+S.me.domain)),S.me.aliases.filter(a=>a.enabled).length>4?h('div',null,'and '+(S.me.aliases.filter(a=>a.enabled).length-4)+' more'):null))
-for(const e of side.querySelectorAll('.hint'))e.style.padding='0 10px'
+h('div',{class:'mine'},h('div',null,S.me.address),S.me.aliases.filter(a=>a.enabled).slice(0,4).map(a=>h('div',{title:a.label},a.addr+'@'+S.me.domain)),S.me.aliases.filter(a=>a.enabled).length>4?h('div',null,'and '+(S.me.aliases.filter(a=>a.enabled).length-4)+' more'):null))
 }
 async function go(f){
 S.folder=f;S.sel=null;S.msg=null;S.items=[]
@@ -227,7 +232,7 @@ m.folder!=='archive'&&m.folder!=='sent'?h('button',{class:'btn sm',onclick:async
 mv,
 h('button',{class:'btn sm dng',onclick:async()=>{await act('/delete-msg/'+m.id,{});closeMsg();toast(m.folder==='trash'?'Deleted for good':'Moved to Trash')}},m.folder==='trash'?'Delete forever':'Delete')),
 h('h2',null,m.s),
-h('div',{class:'meta'},h('b',null,m.fn||m.from),m.fn?' <'+m.from+'>':'',h('br'),'To '+(m.all||[m.to]).join(', '),h('br'),full(m.ts)),
+h('dl',{class:'meta'},h('dt',null,'From'),h('dd',null,m.fn?m.fn+' <'+m.from+'>':m.from),h('dt',null,'To'),h('dd',null,(m.all||[m.to]).join(', ')),h('dt',null,'Date'),h('dd',null,full(m.ts))),
 shieldN?h('div',{class:'note'},'Removed '+shieldN+' tracking parameter'+(shieldN>1?'s':'')+' from links in this message.'):null,
 h('div',{class:'msg'},nodes))
 }
@@ -283,7 +288,7 @@ const nm=h('input',{value:S.me.display||'',maxlength:'40',placeholder:'Shown on 
 const ac=h('input',{type:'color',value:p.accent||PRESETS[p.preset||'midnight'][1]}),bg=h('input',{type:'color',value:p.bg||PRESETS[p.preset||'midnight'][0]})
 for(const i of[ac,bg])i.style.cssText='height:40px;padding:3px'
 body=h('div',null,
-h('div',{class:'swatches'},Object.entries(PRESETS).map(([k,[b,a]])=>h('button',{class:'sw'+((p.preset||'midnight')===k?' on':''),onclick:async()=>{await save({preset:k,accent:'',bg:'',text:''});draw()}},h('i',{id:'s_'+k}),h('span',null,k[0].toUpperCase()+k.slice(1))))),
+h('div',{class:'swatches'},Object.entries(PRESETS).map(([k,[b,a]])=>h('button',{class:'sw'+((p.preset||'midnight')===k?' on':''),onclick:async()=>{await save({preset:k,accent:'',bg:'',text:''});draw()}},h('i',{id:'s_'+k}),h('span',null,k==='midnight'?'Ink':k)))),
 h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Accent colour'),ac),h('label',{class:'f'},h('span',null,'Background'),bg)),
 h('p',null,h('button',{class:'btn sm',onclick:async()=>{await save({accent:ac.value,bg:bg.value});draw()}},'Apply colours'),' ',h('button',{class:'btn sm',onclick:async()=>{await save({accent:'',bg:'',text:''});draw()}},'Reset colours')),
 h('div',{class:'g2'},
