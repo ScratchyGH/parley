@@ -52,8 +52,10 @@ if(!u)return
 m=measure(u)
 K.set(c,m)
 }
-if(!av.offsetWidth)return
-const kx=f.offsetWidth/av.offsetWidth,ky=f.offsetHeight/av.offsetHeight,v=await m
+if(!av.offsetWidth){const n=(+av.dataset.tries||0)+1;if(n<6){av.dataset.tries=n;setTimeout(()=>{P.add(av);if(!q)q=requestAnimationFrame(flush)},400*n)}return}
+const kx=f.offsetWidth/av.offsetWidth,ky=f.offsetHeight/av.offsetHeight
+let v=await m
+if(!v){const cs=getComputedStyle(av),w=parseFloat(cs.getPropertyValue('--fhole'));if(w>0)v={w,h:w,cx:0,cy:0,r:(parseFloat(cs.getPropertyValue('--fround'))||0)/100}}
 apply(av,v&&{s:+(Math.min(v.w*kx,v.h*ky)*1.03).toFixed(3),dx:+(v.cx*kx*100).toFixed(2),dy:+(v.cy*ky*100).toFixed(2),r:+(v.r*100).toFixed(1)})
 }
 const scan=root=>{
