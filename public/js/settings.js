@@ -50,6 +50,8 @@ let labs=false
 const nav=h('nav',{'aria-label':'Settings sections'})
 const pg=h('div',{class:'pg'})
 const drawNav=()=>mount(nav,[...PAGES,...(labs?[['labs','Experimental']]:[]),...(S.me.admin?[['admin','Admin']]:[])].map(([k,l])=>h('button',{class:cur===k?'on':'','aria-current':cur===k?'page':null,on:{click:()=>go('/settings/'+k)}},l)),
+h('h4',null,'Help'),
+h('button',{on:{click:()=>{location.href='/support/'}}},'Help and support'),
 h('h4',null,'Session'),
 h('button',{on:{click:async()=>{
 try{await POST('/api/auth/logout',{})}catch{}

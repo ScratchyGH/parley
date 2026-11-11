@@ -327,7 +327,10 @@ return h('div',{class:'row sp',style:{padding:'4px 0'}},h('span',null,it.name),h
 })
 const who=h('input',{class:'inp',placeholder:'Username'}),amt=h('input',{class:'inp',type:'number',placeholder:'Amount (negative removes)',style:{width:'170px'}}),why=h('input',{class:'inp',placeholder:'Reason'})
 const gr=h('button',{class:'btn',on:{click:async()=>{try{await POST('/api/admin/pars/grant',{user:who.value,amount:Number(amt.value),note:why.value});toast('Done')}catch(e){fail(e)}}}},'Grant or adjust')
-return h('section',{class:'lab'},h('h3',null,'Pars'),h('p',{class:'hint'},d.total_supply+' Pars held by '+d.holders+' people.'),cfg.map(c=>c.row),save,h('h4',null,'Prices'),items,h('h4',null,'Bonus Pars'),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},who,amt,why,gr))
+const keep=h('input',{class:'inp',placeholder:'Usernames to keep, separated by commas',style:{flex:'1',minWidth:'220px'}})
+const rst=h('button',{class:'btn dng',on:{click:async()=>{const ok=await confirmBox('Reset everyone to 100 Pars?','Every account except the names you listed goes back to 100 Pars. This cannot be undone.','Reset',true);if(!ok)return;try{const r=await POST('/api/admin/pars/reset',{except:keep.value,confirm:'RESET'});toast('Reset '+r.reset+' accounts','ok')}catch(e){fail(e)}}}},'Reset economy')
+const rsec=S.me.owner?[h('h4',null,'Reset economy'),h('p',{class:'hint'},'Sets every account to 100 Pars. Names listed below are left alone.'),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},keep,rst)]:[]
+return h('section',{class:'lab'},h('h3',null,'Pars'),h('p',{class:'hint'},d.total_supply+' Pars held by '+d.holders+' people.'),cfg.map(c=>c.row),save,h('h4',null,'Prices'),items,h('h4',null,'Bonus Pars'),h('div',{class:'row',style:{gap:'8px',flexWrap:'wrap'}},who,amt,why,gr),rsec)
 }
 export function loadoutBox(){
 const KS=[['frame','Avatar frame'],['effect','Avatar effect'],['nameplate','Nameplate'],['namefx','Name style'],['badge','Badge'],['title','Title'],['bubble','Message style'],['acard','Avatar card style']]
