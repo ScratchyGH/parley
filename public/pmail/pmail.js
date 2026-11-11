@@ -48,6 +48,7 @@ return v
 async function api(m,p,b){
 const r=await fetch('/api/pmail'+p,{method:m,headers:b?{'content-type':'application/json'}:{},body:b?JSON.stringify(b):undefined,credentials:'same-origin',referrerPolicy:'no-referrer'})
 const j=await r.json().catch(()=>({}))
+if(r.status===423||(r.ok&&j.locked&&p==='/me')){lockScreen();const e=new Error('PMail is locked');e.status=423;throw e}
 if(!r.ok){const e=new Error(j.error||'Error '+r.status);e.status=r.status;throw e}
 return j
 }
@@ -118,18 +119,21 @@ const err=h('div',{class:'err',role:'alert'})
 const a=h('input',{autocomplete:'username',autocapitalize:'none',spellcheck:'false',placeholder:'yourname',maxlength:'30'})
 const pw=h('input',{type:'password',autocomplete:mode==='up'?'new-password':'current-password',placeholder:mode==='up'?'At least 10 characters':'Password'})
 const dn=h('input',{placeholder:'Optional',maxlength:'40'})
+const cd=h('input',{autocomplete:'one-time-code',autocapitalize:'none',spellcheck:'false',placeholder:'6-digit code or backup code'})
+const cl=h('label',{class:'f',hidden:true},h('span',null,'Authenticator code'),cd)
 const go=h('button',{class:'btn pri wide',type:'submit'},mode==='up'?'Create my PMail':'Sign in')
 const form=h('form',{onsubmit:async e=>{
 e.preventDefault()
 go.disabled=true;err.textContent='';err.className='err'
 try{
 if(mode==='up'){recovery(await api('POST','/signup',{local:a.value.trim().toLowerCase(),password:pw.value,display:dn.value}))}
-else{await api('POST','/login',{address:a.value.trim().toLowerCase(),password:pw.value});await boot()}
+else{const r=await api('POST','/login',{address:a.value.trim().toLowerCase(),password:pw.value,code:cd.value});if(r.need==='2fa'){cl.hidden=false;err.textContent='Enter the code from your authenticator app, or one of your backup codes.';cd.focus();go.disabled=false;return}await boot()}
 }catch(x){err.textContent=x.message;go.disabled=false}
 }},
 h('label',{class:'f'},h('span',null,mode==='up'?'Choose your address':'Address'),h('div',{class:'addr'},a,h('span',null,'@'+DOM))),
 mode==='up'?h('label',{class:'f'},h('span',null,'Name shown on messages'),dn):null,
 h('label',{class:'f'},h('span',null,'Password'),pw),
+mode==='in'?cl:null,
 mode==='in'?h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();reset()}},'Forgot your password? Use your recovery code.')):h('p',{class:'hint'},'Your password locks your mailbox. Nobody can reset it without your recovery code.'),
 err,go)
 if(mode==='up'){let t;a.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(async()=>{const v=a.value.trim().toLowerCase();if(v.length<3){err.textContent='';return}try{const r=await api('GET','/check?local='+encodeURIComponent(v));err.textContent=r.ok?'That address is free':r.reason;err.className=r.ok?'err ok':'err'}catch{}},350)})}
@@ -153,15 +157,49 @@ page(box)
 }
 function reset(){
 const err=h('div',{class:'err',role:'alert'})
-const a=h('input',{placeholder:'yourname',autocapitalize:'none'}),rc=h('input',{placeholder:'xxxxx-xxxxx-xxxxx-xxxxx',autocapitalize:'none',spellcheck:'false'}),pw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
+const a=h('input',{placeholder:'yourname',autocapitalize:'none'}),rc=h('input',{placeholder:'xxxxx-xxxxx-xxxxx-xxxxx',autocapitalize:'none',spellcheck:'false'}),pw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'}),cd=h('input',{placeholder:'Only if two-factor is on',autocapitalize:'none',spellcheck:'false'})
 const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'Reset password'),h('p',{class:'sub'},'Enter your recovery code. Your mail stays intact.'),
-h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/reset',{address:a.value,recovery:rc.value,next:pw.value});toast('Password changed. Sign in.');auth()}catch(x){err.textContent=x.message}}},
-h('label',{class:'f'},h('span',null,'Address'),a),h('label',{class:'f'},h('span',null,'Recovery code'),rc),h('label',{class:'f'},h('span',null,'New password'),pw),err,
+h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/reset',{address:a.value,recovery:rc.value,next:pw.value,code:cd.value});toast('Password changed. Sign in.');auth()}catch(x){err.textContent=x.message}}},
+h('label',{class:'f'},h('span',null,'Address'),a),h('label',{class:'f'},h('span',null,'Recovery code'),rc),h('label',{class:'f'},h('span',null,'New password'),pw),h('label',{class:'f'},h('span',null,'Authenticator or backup code'),cd),err,
 h('button',{class:'btn pri wide',type:'submit'},'Set new password'),h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();auth()}},'Back to sign in'))))
 page(box)
 }
 const NAMES={inbox:'Inbox',starred:'Starred',sent:'Sent',archive:'Archive',trash:'Trash'}
 const NIC={inbox:'inbox',starred:'star',sent:'send',archive:'archive',trash:'trash'}
+const ACT={signup:'Account created',login:'Signed in',login_fail:'Failed sign-in',lockout:'Sign-ins paused',password:'Password changed',reset:'Password reset',pin_on:'PIN lock turned on',pin_off:'PIN lock turned off',unlock_fail:'Wrong PIN',unlock_lockout:'Signed out after wrong PINs',['2fa_on']:'Two-factor turned on',['2fa_off']:'Two-factor turned off',backup_regen:'New backup codes',recovery_regen:'New recovery code',session_revoke:'Devices signed out',settings:'Security settings changed'}
+const BAD=new Set(['login_fail','lockout','unlock_fail','unlock_lockout'])
+function ask(title,note,fields){
+return new Promise(res=>{
+const ins=fields.map(([k,l,t,a])=>[k,l,h('input',{type:t||'password',autocomplete:'off',...(a||{})})])
+const done=v=>{sc.remove();res(v)}
+const form=h('form',{class:'dlg ask',onsubmit:e=>{e.preventDefault();done(Object.fromEntries(ins.map(([k,,i])=>[k,i.value])))}},
+h('header',null,title),
+h('section',null,note?(typeof note==='string'?h('p',{class:'hint'},note):note):null,ins.map(([,l,i])=>h('label',{class:'f'},h('span',null,l),i)),h('div',{class:'row'},h('button',{class:'btn',type:'button',onclick:()=>done(null)},'Cancel'),h('button',{class:'btn pri',type:'submit'},'Continue'))))
+const sc=h('div',{class:'scrim top',onmousedown:e=>{if(e.target===sc)done(null)}},form)
+document.body.append(sc)
+ins[0][2].focus()
+})
+}
+function modal(title,...k){
+return new Promise(res=>{
+const done=()=>{sc.remove();res()}
+const sc=h('div',{class:'scrim top'},h('div',{class:'dlg ask'},h('header',null,title),h('section',null,k,h('div',{class:'row'},h('button',{class:'btn pri',onclick:done},'Done')))))
+document.body.append(sc)
+})
+}
+function lockScreen(){
+if(document.querySelector('.lockbox'))return
+document.querySelectorAll('.scrim,.comp').forEach(e=>e.remove())
+const err=h('div',{class:'err',role:'alert'})
+const pin=h('input',{class:'pin',type:'password',inputmode:'numeric',autocomplete:'off',maxlength:'8','aria-label':'PIN'})
+const out=async()=>{try{await api('POST','/logout',{})}catch{}S.me=null;auth()}
+const box=h('div',{class:'authbox lockbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'PMail is locked'),h('p',{class:'sub'},'Enter your PIN to continue'),
+h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/unlock',{pin:pin.value});await boot()}catch(x){pin.value='';err.textContent=x.message;if(x.status===401){S.me=null;auth()}}}},pin,err,h('button',{class:'btn pri wide',type:'submit'},'Unlock')),
+h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();out()}},'Sign out instead')))
+page(box)
+pin.focus()
+}
+async function lockNow(){try{await api('POST','/lock',{});lockScreen()}catch(e){toast(e.message)}}
 const fname=f=>NAMES[f]||(f.startsWith('f:')?f.slice(2):f)
 async function load(more){
 if(S.busy)return
@@ -188,6 +226,7 @@ h('div',{class:'sep'}),
 h('button',{class:'wbtn pri',title:'Write (c)',onclick:()=>compose()},ico('pen')),
 h('div',{class:'gap'}),
 h('a',{class:'wbtn',href:'/',title:'Back to Parley'},ico('back')),
+S.me.sec&&S.me.sec.pin?h('button',{class:'wbtn',title:'Lock now',onclick:lockNow},ico('lock')):null,
 h('button',{class:'wbtn',title:'Settings',onclick:()=>settings()},ico('gear'))),
 h('aside',{class:'ctx',id:'side'},
 h('div',{class:'ctx-h'},'Mail'),
@@ -322,7 +361,7 @@ const close=()=>{scrim.remove();paintSide();paintList();if(S.msg)paintMsg()}
 const save=async(p,extra)=>{try{const r=await api('POST','/prefs',{prefs:p,...(extra||{})});S.me.prefs=r.prefs;if(extra&&extra.display!==undefined)S.me.display=extra.display;theme(S.me.prefs)}catch(e){toast(e.message)}}
 const cur=(key,opts)=>{const v=S.me.prefs[key];return v===undefined||v===''?opts[0][0]:v}
 const seg=(key,opts)=>h('div',{class:'seg'},opts.map(([v,l])=>h('button',{type:'button',class:cur(key,opts)===v?'on':'',onclick:async()=>{await save({[key]:v});draw()}},l)))
-const tabs=[['look','Look'],['addr','Addresses'],['rules','Rules'],['sec','Security'],['priv','Privacy']]
+const tabs=[['look','Look'],['addr','Addresses'],['rules','Rules'],['sec','Security'],['log','Activity'],['priv','Privacy']]
 const draw=()=>{
 const p=S.me.prefs
 let body
@@ -379,18 +418,60 @@ rules.length?rules.map((r,i)=>h('div',{class:'line'},h('span',null,({from:'From'
 h('div',{class:'g2'},rf,rt,ra,folders.length?rfo:h('span',{class:'hint'},'Create a folder to move mail')),
 h('p',null,h('button',{class:'btn pri',onclick:()=>{const t=rt.value.trim();if(!t)return;if(ra.value==='folder'&&!folders.length)return toast('Create a folder first');rules.push({field:rf.value,has:t,act:ra.value,folder:ra.value==='folder'?rfo.value:''});sv()}},'Add rule')))
 }else if(tab==='sec'){
-const cu=h('input',{type:'password',autocomplete:'current-password'}),nw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
+const sc=S.me.sec||{}
 const err=h('div',{class:'err'})
 const ss=h('div',null,h('p',{class:'hint'},'Loading sessions'))
-api('GET','/sessions').then(r=>mount(ss,r.sessions.map(s=>h('div',{class:'line'},h('span',null,s.label,s.current?' (this device)':'',h('br'),h('small',null,'Signed in '+full(s.created_at))),s.current?null:h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{id:s.id});settings('sec')}},'Sign out'))),r.sessions.length>1?h('p',null,h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{});settings('sec')}},'Sign out everywhere else')):null)).catch(()=>{})
+api('GET','/sessions').then(r=>mount(ss,r.sessions.map(s=>h('div',{class:'line'},h('span',null,s.label,s.current?' (this device)':'',h('br'),h('small',null,'Signed in '+full(s.created_at)+(s.seen_at?', active '+full(s.seen_at):''))),s.current?null:h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{id:s.id});settings('sec')}},'Sign out'))),r.sessions.length>1?h('p',null,h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{});settings('sec')}},'Sign out everywhere else')):null)).catch(()=>{})
+if(sc.owner){
+body=h('div',null,h('p',{class:'hint'},'This is the Parley owner mailbox. It opens from your Parley account, so it has no PMail password, PIN or two-factor code of its own.'),h('h4',null,'Signed-in devices'),ss)
+}else{
+const cu=h('input',{type:'password',autocomplete:'current-password'}),nw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
+const again=async()=>{await refreshMe();shell();settings('sec')}
+const guard=f=>async()=>{try{await f()}catch(e){toast(e.message)}}
+const codeF=['code','Authenticator or backup code','text',{autocomplete:'one-time-code',autocapitalize:'none'}]
+const pwF=['password','Password','password',{autocomplete:'current-password'}]
+const row=(t,d,...ctl)=>h('div',{class:'sec-row'},h('div',null,h('b',null,t),h('small',null,d)),ctl)
+const opts=(key,list,fmt)=>h('div',{class:'seg'},list.map(v=>h('button',{type:'button',class:sc[key]===v?'on':'',onclick:guard(async()=>{await api('POST','/security',{[key]:v});await again()})},fmt(v))))
+const showCodes=codes=>modal('Backup codes',h('p',{class:'hint'},'Each code works once if you lose your authenticator. Keep them somewhere safe. They are shown only now.'),h('div',{class:'codes'},codes.map(x=>h('code',null,x))),h('p',null,h('button',{class:'btn sm',onclick:()=>navigator.clipboard&&navigator.clipboard.writeText(codes.join('\n')).then(()=>toast('Copied'))},'Copy all')))
+const on2fa=guard(async()=>{
+const v=await ask('Turn on two-factor','Enter your password to begin.',[pwF]);if(!v)return
+const t=await api('POST','/2fa/setup',{password:v.password})
+const c=await ask('Add to your authenticator',h('div',null,h('p',{class:'hint'},'In an authenticator app such as Aegis, 2FAS, Authy or 1Password, add a time-based key and type in this setup key:'),h('code',{class:'secret'},t.secret),h('p',{class:'hint'},h('a',{href:t.uri},'Open in an authenticator app on this device'),'. Then enter the 6-digit code it shows.')),[['code','6-digit code','text',{inputmode:'numeric',maxlength:'6',autocomplete:'one-time-code'}]])
+if(!c)return
+const r=await api('POST','/2fa/enable',{code:c.code})
+await showCodes(r.backup_codes)
+await again()
+})
+const off2fa=guard(async()=>{const v=await ask('Turn off two-factor','This makes sign-in need only your password.',[pwF,codeF]);if(!v)return;await api('POST','/2fa/disable',v);await again()})
+const regen=guard(async()=>{const v=await ask('New backup codes','Old backup codes stop working.',[pwF,codeF]);if(!v)return;const r=await api('POST','/2fa/backup',v);await showCodes(r.backup_codes);await again()})
+const setPin=guard(async()=>{const v=await ask(sc.pin?'Change PIN':'Set a PIN','A PIN locks PMail on this device without signing you out. Use 4 to 8 digits.',[pwF,['pin','New PIN','password',{inputmode:'numeric',maxlength:'8'}]]);if(!v)return;await api('POST','/pin',v);await again()})
+const offPin=guard(async()=>{const v=await ask('Turn off PIN lock',null,[pwF]);if(!v)return;await api('POST','/pin',{...v,off:true});await again()})
+const newRec=guard(async()=>{const v=await ask('New recovery code','The old recovery code stops working.',sc.totp?[pwF,codeF]:[pwF]);if(!v)return;const r=await api('POST','/recovery',v);await modal('Your new recovery code',h('div',{class:'rec'},h('code',null,r.recovery),h('div',{class:'hint'},'Write it down or keep it in a password manager.')))})
+const chip=on=>h('span',{class:'chip'+(on?' on':'')},on?'On':'Off')
 body=h('div',null,
+h('h4',null,'Sign-in protection'),
+row('Two-factor authentication','A code from an authenticator app, asked after your password.',chip(sc.totp),sc.totp?h('button',{class:'btn sm dng',onclick:off2fa},'Turn off'):h('button',{class:'btn sm pri',onclick:on2fa},'Set up')),
+sc.totp?row('Backup codes',sc.backup_left+' unused. Each works once if you lose your authenticator.',h('button',{class:'btn sm',onclick:regen},'Get new codes')):null,
+row('Recovery code','Opens your mailbox if you forget your password.',h('button',{class:'btn sm',onclick:newRec},'Create new')),
+row('Stay signed in for','How long this device remembers you.',opts('ttl_days',[1,7,14,30],v=>v+(v===1?' day':' days'))),
+row('Security alerts','Mail to your inbox about new devices, lockouts and security changes.',h('button',{class:'btn sm',onclick:guard(async()=>{await api('POST','/security',{alerts:!sc.alerts});await again()})},sc.alerts?'On':'Off')),
+h('h4',null,'Screen lock'),
+row('PIN lock','Locks PMail with a PIN without signing you out. Five wrong PINs sign this device out.',chip(sc.pin),h('button',{class:'btn sm pri',onclick:setPin},sc.pin?'Change':'Set PIN'),sc.pin?h('button',{class:'btn sm dng',onclick:offPin},'Turn off'):null),
+row('Auto-lock after idle',sc.pin?'Locks after this long without use.':'Set a PIN first.',opts('lock_min',[0,1,5,15,30,60],v=>v?v+' min':'Off'),sc.pin?h('button',{class:'btn sm',onclick:lockNow},'Lock now'):null),
+h('h4',null,'Mail retention'),
+row('Delete mail automatically','Removes mail older than this on sign-in. Starred mail is kept.',opts('keep_days',[0,7,30,90,365],v=>v?(v===365?'1 year':v+' days'):'Never')),
 h('h4',null,'Signed-in devices'),ss,
 h('h4',null,'Change password'),
 h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Current password'),cu),h('label',{class:'f'},h('span',null,'New password'),nw)),err,
 h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{await api('POST','/password',{current:cu.value,next:nw.value});toast('Password changed. Other devices were signed out.');cu.value='';nw.value=''}catch(e){err.textContent=e.message}}},'Change password'),
 h('h4',null,'Delete account'),
 h('p',{class:'hint'},'Deletes your address, aliases and every message. It cannot be undone.'),
-h('button',{class:'btn dng',onclick:async()=>{const pw=prompt('Type your password to delete this PMail account and all its mail.');if(!pw)return;try{await api('POST','/destroy',{password:pw});S.me=null;scrim.remove();auth()}catch(e){toast(e.message)}}},'Delete my PMail'))
+h('button',{class:'btn dng',onclick:guard(async()=>{const v=await ask('Delete PMail','This deletes your address and all mail. It cannot be undone.',sc.totp?[pwF,codeF]:[pwF]);if(!v)return;await api('POST','/destroy',v);S.me=null;scrim.remove();auth()})},'Delete my PMail'))
+}
+}else if(tab==='log'){
+const lg=h('div',{class:'log'},h('p',{class:'hint'},'Sign-ins, failed attempts and security changes on your mailbox. It cannot be edited or cleared. The latest 100 entries are kept.'),h('p',{class:'hint'},'Loading'))
+api('GET','/activity').then(r=>mount(lg,h('p',{class:'hint'},'Sign-ins, failed attempts and security changes on your mailbox. It cannot be edited or cleared. The latest 100 entries are kept.'),r.items.length?r.items.map(i=>h('div',{class:'line'},h('span',{class:BAD.has(i.kind)?'bad':''},h('b',null,ACT[i.kind]||i.kind),h('small',null,i.detail),h('small',null,full(i.ts))))):h('p',{class:'hint'},'Nothing yet.'))).catch(()=>{})
+body=lg
 }else{
 body=h('div',null,h('ul',{class:'facts'},
 h('li',null,h('b',null,'No tracking pixels'),'PMail messages are plain text. There is no HTML, so nothing can embed a hidden image or script, and the page itself loads nothing from other sites.'),
@@ -408,7 +489,7 @@ document.querySelector('.scrim')?.remove()
 document.body.append(scrim)
 }
 document.addEventListener('keydown',e=>{
-if(!S.me||S.me.prefs.keys===false||e.ctrlKey||e.metaKey||e.altKey)return
+if(!S.me||!S.me.prefs||document.querySelector('.lockbox')||S.me.prefs.keys===false||e.ctrlKey||e.metaKey||e.altKey)return
 const t=e.target
 if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)){if(e.key==='Escape')t.blur();return}
 if(document.querySelector('.scrim'))return
@@ -426,7 +507,8 @@ else if(k==='Escape')closeMsg()
 }
 })
 async function boot(){
-try{S.me=await api('GET','/me')}catch{
+try{S.me=await api('GET','/me')}catch(e){
+if(e.status===423)return
 try{await api('POST','/owner-open',{});S.me=await api('GET','/me')}catch{S.me=null;return auth()}
 }
 theme(S.me.prefs)
