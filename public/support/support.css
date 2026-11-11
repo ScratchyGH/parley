@@ -16,3 +16,13 @@ button:disabled{opacity:.6}
 .err{color:var(--err);font-weight:600}
 .code{font:700 18px ui-monospace,monospace;background:var(--bg);border-radius:10px;padding:12px;user-select:all;word-break:break-all}
 .res{color:var(--soft);white-space:pre-wrap}
+
+.trow{display:flex;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a28}
+.lnk{background:none;border:0;padding:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;text-align:left}
+.lnk.dim,.dim{opacity:.6}
+.msg{padding:10px 12px;margin:8px 0;border-radius:8px;background:rgba(255,255,255,.05)}
+.msg.staff{background:rgba(255,255,255,.1)}
+.msg p{margin:4px 0 0;white-space:pre-wrap}
+.tk{padding:12px 0;border-bottom:1px solid #2a2a28}
+#fu{margin-top:12px}
+a.btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--acc);color:#1b1400;font-weight:600;text-decoration:none}

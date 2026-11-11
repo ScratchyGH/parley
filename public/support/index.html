@@ -37,13 +37,29 @@
 <p>Keep this ticket number and key. Use them below to see our reply.</p>
 <div class="code" id="tk"></div>
 </section>
+<section class="box" id="mine" hidden>
+<h2>Your tickets on this device</h2>
+<div id="minelist"></div>
+</section>
 <form class="box" id="s" autocomplete="off">
 <h2>Check a ticket</h2>
 <label>Ticket number<input name="id" maxlength="12" required></label>
 <label>Key<input name="key" maxlength="32" required></label>
 <button type="submit">Check</button>
-<div class="res" id="res"></div>
 </form>
+<section class="box" id="view" hidden>
+<h2 id="vh">Ticket</h2>
+<div id="thread"></div>
+<form id="fu" autocomplete="off">
+<label>Reply<textarea name="message" rows="3" maxlength="2000" required></textarea></label>
+<div class="err" id="ferr" role="alert"></div>
+<button type="submit">Send reply</button>
+</form>
+</section>
+<section class="box" id="staff" hidden>
+<h2>Staff queue</h2>
+<div id="queue"></div>
+</section>
 </main>
 <script src="support.js"></script>
 </body>
