@@ -1,5 +1,9 @@
 import{sessionUser}from'./auth.js'
-import{fail,body}from'./util.js'
+import{fail,body,sha,safeEq,limit,json}from'./util.js'
+const PIN='9ns8'
+const passFor=async d=>sha('school-pin:'+PIN+':'+d)
+const dayKey=()=>{const c=clock(new Date());return c.y+'-'+c.m+'-'+c.d}
+const cookieOf=req=>{const m=/(?:^|;\s*)sk=([a-f0-9]{64})/.exec(req.headers.get('cookie')||'');return m?m[1]:''}
 const HOME=[34.9496,-81.932]
 const MILES=15
 const TOWNS=new Set(['spartanburg','boiling springs','duncan','lyman','wellford','inman','moore','roebuck','pacolet','reidville','woodruff','landrum','chesnee','cowpens','campobello','fingerville','enoree','startex','mayo'])
@@ -57,8 +61,8 @@ if(s==null||e==null||c.min<s||c.min>=e)return null
 const h=Math.floor(e/60),m=e%60
 return{reopen:(h%12||12)+':'+String(m).padStart(2,'0')+(h<12?' AM':' PM')}
 }
-const ALLOW=/^\/(support(\/|$)|api\/support(\/|$)|api\/health$|closed$)/
-const page=t=>`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Parley is closed for school</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d0d10;color:#ececf1;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px}main{max-width:460px}h1{font-size:30px;line-height:1.15;margin:0 0 12px}p{color:#a5a5b3;margin:0 0 14px}b{color:#ececf1}small{display:block;margin-top:28px;color:#6f6f7c}a{color:#e0728f}</style></head><body><main><h1>Parley is closed during school hours</h1><p>It is school time in Spartanburg, so Parley is switched off. It opens again at <b>${t}</b>, Eastern.</p><p>Go learn something. The servers will still be here.</p><small>Not in Spartanburg? Your connection may look like it is. <a href="/support/">Tell support</a>.</small></main></body></html>`
+const ALLOW=/^\/(support(\/|$)|api\/support(\/|$)|api\/health$|api\/school\/unlock$|closed$)/
+const page=t=>`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Parley is closed for school</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d0d10;color:#ececf1;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px}main{max-width:460px}h1{font-size:30px;line-height:1.15;margin:0 0 12px}p{color:#a5a5b3;margin:0 0 14px}b{color:#ececf1}form{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:22px}label{color:#a5a5b3}input{width:96px;background:#16161b;border:1px solid #2c2c35;border-radius:8px;color:#ececf1;font:20px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-align:center;padding:8px}input:focus{outline:2px solid #e0728f}button{background:#e0728f;color:#1a0610;border:0;border-radius:8px;padding:10px 16px;font:700 15px system-ui;cursor:pointer}i{flex-basis:100%;color:#f0806a;font-style:normal;min-height:1.2em}small{display:block;margin-top:28px;color:#6f6f7c}a{color:#e0728f}</style></head><body><main><h1>Parley is closed during school hours</h1><p>It is school time in Spartanburg, so Parley is switched off. It opens again at <b>${t}</b>, Eastern.</p><p>Go learn something. The servers will still be here.</p><form id=f autocomplete=off><label for=p>Have a PIN?</label><input id=p maxlength=4 size=4 inputmode=text autocomplete=off autocapitalize=none spellcheck=false aria-label=PIN><button>Open</button><i id=e></i></form><script>const f=document.getElementById('f'),p=document.getElementById('p'),e=document.getElementById('e');async function go(){e.textContent='';try{const r=await fetch('/api/school/unlock',{method:'POST',headers:{'content-type':'application/json'},credentials:'same-origin',body:JSON.stringify({pin:p.value})});if(r.ok){location.replace('/');return}const j=await r.json().catch(()=>({}));e.textContent=j.error||'Wrong PIN';p.value='';p.focus()}catch{e.textContent='Network error'}}f.onsubmit=ev=>{ev.preventDefault();go()};p.oninput=()=>{if(p.value.length===4)go()};p.focus()</script><small>Not in Spartanburg? Your connection may look like it is. <a href="/support/">Tell support</a>.</small></main></body></html>`
 export async function schoolGate(env,req,url){
 const cf=req.cf
 if(!cf||cf.regionCode!=='SC')return null
@@ -70,14 +74,22 @@ if(p==='/closed')return new Response(null,{status:302,headers:{location:'/'}})
 return null
 }
 if(ALLOW.test(p)&&p!=='/closed')return null
+if(cookieOf(req)&&safeEq(cookieOf(req),await passFor(dayKey())))return null
 if(/(?:^|;\s*)sid=/.test(req.headers.get('cookie')||'')){
 try{const u=await sessionUser(env,req);if(u&&u.admin)return null}catch{}
 }
 const h={'cache-control':'no-store'}
 if(p.startsWith('/api/')||p==='/ws')return new Response(JSON.stringify({error:'Parley is closed during school hours in Spartanburg. It opens at '+st.reopen+' Eastern.',schoolHours:true}),{status:403,headers:{...h,'content-type':'application/json'}})
-return new Response(page(st.reopen),{status:200,headers:{...h,'content-type':'text/html;charset=utf-8','x-frame-options':'DENY'}})
+return new Response(page(st.reopen),{status:423,headers:{...h,'content-type':'text/html;charset=utf-8','x-frame-options':'DENY'}})
 }
 export default function(r){
+r.add('POST','/api/school/unlock',async c=>{
+limit('sp:'+(c.req.headers.get('cf-connecting-ip')||'local'),10,600000)
+const b=await body(c.req,200)
+if(String(b.pin||'').trim().toLowerCase()!==PIN)fail(403,'Wrong PIN')
+const sec=c.url.protocol==='https:'?'; Secure':''
+return json({ok:true},200,{'set-cookie':'sk='+await passFor(dayKey())+'; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200'+sec})
+},{auth:false})
 r.add('GET','/api/admin/school-block',async c=>{
 if(!c.user.admin)fail(404,'Not found')
 return await config(c.env)
