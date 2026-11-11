@@ -278,7 +278,10 @@ r.add('GET','/api/pmail/owner-status',async c=>({owner:isOwner(c)}),{auth:true})
 r.add('POST','/api/pmail/owner-open',async c=>{
 if(!isOwner(c))fail(403,'Only the Parley owner can open this mailbox')
 const u=await ownerBox(c.env)
+const o=await c.env.DB.prepare('select pin_hash,locked_until from pm_users where id=?').bind(u.id).first()
+if(o&&o.locked_until>now())fail(429,'Too many wrong PINs. Try again in '+Math.ceil((o.locked_until-now())/60000)+' minutes.')
 const tok=await newSession(c,u,await ownerPriv(c.env,u))
+if(o&&o.pin_hash)await c.env.DB.prepare('update pm_sessions set locked=1 where id=?').bind(await sha('pm:'+tok)).run()
 await logAct(c,u.id,'login','Parley owner account · '+here(c))
 return json({ok:true},200,{'set-cookie':setCookie(c.url,tok,ttlOf(null)/1000)})
 },{auth:true})
@@ -489,6 +492,7 @@ const a=await auth(c,true)
 const b=await body(c.req)
 limit('pmu:'+a.sid,30,600000)
 if(!a.locked)return{ok:true}
+if(a.u.locked_until>now())fail(429,'Too many wrong PINs. Try again in '+Math.ceil((a.u.locked_until-now())/60000)+' minutes.')
 const pin=String(b.pin||'').slice(0,12)
 if(a.u.pin_hash&&safeEq(await pbkdf2(pin,a.u.pin_salt,ITERS),a.u.pin_hash)){
 await c.env.DB.prepare('update pm_sessions set locked=0,fails=0,seen_at=? where id=?').bind(now(),a.sid).run()
@@ -498,6 +502,7 @@ const s=await c.env.DB.prepare('select fails from pm_sessions where id=?').bind(
 const n=(s&&s.fails||0)+1
 if(n>=MAX_FAILS){
 await c.env.DB.prepare('delete from pm_sessions where id=?').bind(a.sid).run()
+await c.env.DB.prepare('update pm_users set locked_until=? where id=?').bind(now()+LOCKOUT,a.u.id).run()
 await logAct(c,a.u.id,'unlock_lockout','Signed out after '+MAX_FAILS+' wrong PINs')
 await alert(c,a.u,'PIN entered wrong 5 times','Someone entered the wrong PIN '+MAX_FAILS+' times on a locked PMail session. That session was signed out.')
 return json({error:'Too many wrong PINs. Sign in again.',gone:true},401,{'set-cookie':setCookie(c.url,'',0)})
@@ -508,10 +513,9 @@ fail(403,'Wrong PIN. '+(MAX_FAILS-n)+' tries left.')
 },O)
 r.add('POST','/api/pmail/pin',async c=>{
 const a=await auth(c)
-real(a)
 limit('pmpin:'+a.u.id,10,3600000)
 const b=await body(c.req)
-if(!await pwOk(a.u,b.password))fail(403,'Password is wrong')
+if(a.u.local!==OWNER_LOCAL&&!await pwOk(a.u,b.password))fail(403,'Password is wrong')
 if(b.off){
 await c.env.DB.prepare('update pm_users set pin_hash=null,pin_salt=null,lock_min=0 where id=?').bind(a.u.id).run()
 await c.env.DB.prepare('update pm_sessions set locked=0 where user_id=?').bind(a.u.id).run()
@@ -527,7 +531,6 @@ return{ok:true}
 },O)
 r.add('POST','/api/pmail/security',async c=>{
 const a=await auth(c)
-real(a)
 const b=await body(c.req)
 const pick1=(v,ok,d)=>ok.includes(Number(v))?Number(v):d
 const lm=pick1(b.lock_min,[0,1,5,15,30,60],a.u.lock_min||0)
