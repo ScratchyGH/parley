@@ -238,6 +238,7 @@ const url=new URL(req.url)
 try{
 if(url.pathname==='/ws')return await ws(req,env,url)
 if(/^\/(kids|connect)(\/|$)/.test(url.pathname))return new Response('Not found',{status:404,headers:{'content-type':'text/plain'}})
+if(/^\/get(\/|$)/.test(url.pathname)&&(req.method==='GET'||req.method==='HEAD')&&!/\.\w+$/.test(url.pathname))return new Response(null,{status:301,headers:{location:'/download/'+url.search}})
 if(!url.pathname.startsWith('/api/')){
 const lc=/(?:^|;\s*)parley_lang=(\w+)/.exec(req.headers.get('cookie')||'')?.[1]
 if(url.pathname==='/'&&req.method==='GET'&&!lc&&!url.searchParams.get('lang')&&(req.cf?.country==='TR'||/^\s*tr\b/i.test(req.headers.get('accept-language')||'')))return new Response(null,{status:302,headers:{location:'/tr/','cache-control':'private, no-store',vary:'accept-language, cookie'}})
