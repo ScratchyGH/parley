@@ -40,6 +40,7 @@ import banhammerRoutes from'./banhammer.js'
 import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
 import supportRoutes from'./support.js'
+import pmailRoutes from'./pmail.js'
 import abRoutes from'./ab.js'
 import turkeyRoutes from'./turkey.js'
 import teamupRoutes from'./teamup.js'
@@ -89,6 +90,7 @@ legalRoutes(router)
 modaiRoutes(router)
 banhammerRoutes(router)
 supportRoutes(router)
+pmailRoutes(router)
 abRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
@@ -246,6 +248,7 @@ let res=await env.ASSETS.fetch(req)
 const h=new Headers(res.headers)
 if(url.pathname==='/'&&/^(en|tr)$/.test(url.searchParams.get('lang')||''))h.append('set-cookie','parley_lang='+url.searchParams.get('lang')+'; Path=/; Max-Age=31536000; SameSite=Lax; Secure')
 for(const[k,v]of Object.entries(SEC))h.set(k,v)
+if(url.pathname.startsWith('/pmail')){h.set('referrer-policy','no-referrer');h.set('permissions-policy','camera=(), microphone=(), geolocation=(), display-capture=(), interest-cohort=()');h.set('cache-control','no-cache')}
 if(/^\/(get|download)(\/|$)/.test(url.pathname)){h.delete('x-frame-options');const cs=h.get('content-security-policy');if(cs)h.set('content-security-policy',cs.replace("frame-ancestors 'none'",'frame-ancestors https://scratchygh.github.io'))}
 const card=await cardFor(env,url)
 if(card&&(h.get('content-type')||'').includes('text/html')){
