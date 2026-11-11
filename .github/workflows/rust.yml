@@ -1,0 +1,96 @@
+name: ParleyRUST
+on:
+  workflow_dispatch:
+  push:
+    tags: ['rust-v*']
+    branches: [main]
+    paths:
+      - 'rust/**'
+      - '.github/workflows/rust.yml'
+permissions:
+  contents: write
+env:
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh release view rust || gh release create rust --title ParleyRUST --notes "Parley rebuilt in Rust" --latest=false
+  build:
+    needs: prep
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-latest, target: "", id: win}
+          - {os: macos-latest, target: aarch64-apple-darwin, id: macarm}
+          - {os: macos-latest, target: x86_64-apple-darwin, id: macintel}
+          - {os: ubuntu-22.04, target: "", id: linux}
+          - {os: ubuntu-22.04-arm, target: "", id: linuxarm}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - if: startsWith(matrix.id, 'linux')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: rust/src-tauri
+      - shell: bash
+        working-directory: rust
+        run: |
+          npm i -g @tauri-apps/cli@2
+          tauri icon ../public/logo-512.png
+          if [ -n "${{ matrix.target }}" ]; then tauri build --target ${{ matrix.target }}; else tauri build; fi
+      - shell: bash
+        run: |
+          B=rust/src-tauri/target
+          up(){ f=$(find $B -path '*bundle*' -name "$1" | head -1); [ -n "$f" ] && cp "$f" "$2" && gh release upload rust "$2" --clobber; }
+          case "${{ matrix.id }}" in
+          win) up '*-setup.exe' ParleyRUST-Setup.exe; up '*.msi' ParleyRUST.msi;;
+          macarm) up '*.dmg' ParleyRUST-AppleSilicon.dmg;;
+          macintel) up '*.dmg' ParleyRUST-Intel.dmg;;
+          linux) up '*.AppImage' ParleyRUST.AppImage; up '*.deb' ParleyRUST.deb; up '*.rpm' ParleyRUST.rpm;;
+          linuxarm) up '*.deb' ParleyRUST-arm64.deb; up '*.rpm' ParleyRUST-arm64.rpm;;
+          esac
+  android:
+    needs: prep
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: rust/src-tauri
+      - working-directory: rust
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+          npm i -g @tauri-apps/cli@2
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;26.1.10909125"
+          export NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125
+          tauri icon ../public/logo-512.png
+          tauri android init
+          tauri android build --apk --debug
+      - run: |
+          f=$(find rust/src-tauri/gen/android -name '*.apk' | head -1)
+          cp "$f" ParleyRUST.apk
+          gh release upload rust ParleyRUST.apk --clobber
