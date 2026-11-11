@@ -1,6 +1,8 @@
 import{fail,now,randHex,sha,pbkdf2,safeEq,str,limit,body,json,newId,enc,unhex}from'./util.js'
 const dec=new TextDecoder()
-export const domain=env=>String(env.PMAIL_DOMAIN||'pmail.parley').toLowerCase()
+export const DOMAIN='pmail.parley'
+export const domain=()=>DOMAIN
+const OWNER_LOCAL='parley'
 const RESERVED=new Set(['parley','admin','administrator','postmaster','abuse','support','security','noreply','no-reply','root','mailer-daemon','pmail','help','staff','system','webmaster','hostmaster','info','contact'])
 const LOCAL=/^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])$/
 const FOLDERS=['inbox','sent','archive','trash']
@@ -56,7 +58,25 @@ const m=/^([^@\s]{1,64})@([^@\s]+)$/.exec(String(a||'').trim().toLowerCase())
 if(!m||m[2]!==domain(env))return null
 return m[1].replace(/\+.*$/,'')
 }
+async function ownerBox(env){
+let u=await env.DB.prepare('select id,local,display,pub,prefs,priv_enc from pm_users where local=?').bind(OWNER_LOCAL).first()
+if(u)return u
+const kp=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey'])
+const pkcs8=new Uint8Array(await crypto.subtle.exportKey('pkcs8',kp.privateKey))
+const pub=b64(new Uint8Array(await crypto.subtle.exportKey('raw',kp.publicKey)))
+let k=await env.DB.prepare("select v from app_settings where k='pmail_owner_key'").first()
+if(!k){await env.DB.prepare("insert or ignore into app_settings(k,v) values('pmail_owner_key',?)").bind(randHex(32)).run();k=await env.DB.prepare("select v from app_settings where k='pmail_owner_key'").first()}
+const id=newId('pu')
+const none=randHex(16)
+await env.DB.prepare('insert or ignore into pm_users(id,local,display,pass_salt,pass_hash,pass_iters,kdf_salt,pub,priv_enc,rec_salt,priv_rec,prefs,created_at) values(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,OWNER_LOCAL,'Parley',none,randHex(32),ITERS,none,pub,await lock(await aesKey(unhex(k.v),['encrypt']),pkcs8),none,'-','{}',now()).run()
+return env.DB.prepare('select id,local,display,pub,prefs,priv_enc from pm_users where local=?').bind(OWNER_LOCAL).first()
+}
+async function ownerPriv(env,u){
+const k=await env.DB.prepare("select v from app_settings where k='pmail_owner_key'").first()
+return unlock(await aesKey(unhex(k.v),['decrypt']),u.priv_enc)
+}
 async function resolve(env,local){
+if(local===OWNER_LOCAL)return ownerBox(env)
 const u=await env.DB.prepare('select id,local,display,pub,prefs from pm_users where local=?').bind(local).first()
 if(u)return u
 const a=await env.DB.prepare('select user_id from pm_alias where addr=? and enabled=1').bind(local).first()
@@ -168,6 +188,7 @@ return json({ok:true,address:addrOf(c.env,l),recovery:rec},200,{'set-cookie':set
 r.add('POST','/api/pmail/login',async c=>{
 const b=await body(c.req)
 const l=String(b.address||'').trim().toLowerCase().replace(/@.*$/,'')
+if(l===OWNER_LOCAL)fail(403,'This mailbox opens from the Parley owner account')
 limit('pml:'+ipOf(c),20,600000)
 limit('pml:'+l,8,600000)
 const u=await c.env.DB.prepare('select * from pm_users where local=?').bind(l).first()
@@ -179,6 +200,14 @@ try{pkcs8=await unlock(await pwKey(pw,u.kdf_salt,['decrypt']),u.priv_enc)}catch{
 const tok=await newSession(c,u,pkcs8)
 return json({ok:true},200,{'set-cookie':setCookie(c.url,tok,TTL/1000)})
 },O)
+const isOwner=c=>String(c.user&&c.user.username||'').toLowerCase()===String(c.env.OWNER_USERNAME||'ParleyOfficial').toLowerCase()
+r.add('GET','/api/pmail/owner-status',async c=>({owner:isOwner(c)}),{auth:true})
+r.add('POST','/api/pmail/owner-open',async c=>{
+if(!isOwner(c))fail(403,'Only the Parley owner can open this mailbox')
+const u=await ownerBox(c.env)
+const tok=await newSession(c,u,await ownerPriv(c.env,u))
+return json({ok:true},200,{'set-cookie':setCookie(c.url,tok,TTL/1000)})
+},{auth:true})
 r.add('POST','/api/pmail/logout',async c=>{
 const t=cookieOf(c.req,'pm')
 if(t)await c.env.DB.prepare('delete from pm_sessions where id=?').bind(await sha('pm:'+t)).run()
