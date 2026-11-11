@@ -4,7 +4,31 @@ import{iters,ip}from'./auth.js'
 const RE=/^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/
 const mask=e=>{const[a,b]=e.split('@');return a.slice(0,2)+'***@'+b}
 const six=()=>String(crypto.getRandomValues(new Uint32Array(1))[0]%1000000).padStart(6,'0')
-export const mailOn=env=>!!(env.SMTP_HOST||env.BREVO_API_KEY||env.RESEND_API_KEY)
+const gmailOn=env=>!!(env.GOOGLE_CLIENT_ID&&env.GOOGLE_CLIENT_SECRET&&env.GOOGLE_REFRESH_TOKEN)
+const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode(...u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+const b64s=t=>btoa(String.fromCharCode(...new TextEncoder().encode(t)))
+const h2=t=>/^[\x20-\x7e]*$/.test(t)?t:'=?UTF-8?B?'+b64s(t)+'?='
+let GTOK=null
+async function gmailToken(env){
+if(GTOK&&GTOK.exp>Date.now()+60000)return GTOK.t
+const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,client_secret:env.GOOGLE_CLIENT_SECRET,refresh_token:env.GOOGLE_REFRESH_TOKEN,grant_type:'refresh_token'})})
+const j=await r.json().catch(()=>({}))
+if(!r.ok||!j.access_token)throw new Error(j.error_description||j.error||('Google returned '+r.status))
+GTOK={t:j.access_token,exp:Date.now()+(j.expires_in||3600)*1000}
+return GTOK.t
+}
+async function gmailSend(env,to,subject,text,html){
+const tok=await gmailToken(env)
+const from=env.MAIL_FROM||(env.GMAIL_USER?'Parley <'+env.GMAIL_USER+'>':'')
+const bd='parley'+crypto.randomUUID().replace(/-/g,'')
+const raw=[...(from?['From: '+from]:[]),'To: '+to,'Subject: '+h2(subject),'MIME-Version: 1.0','Content-Type: multipart/alternative; boundary="'+bd+'"','','--'+bd,'Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',b64s(text).replace(/(.{76})/g,'$1\r\n'),'--'+bd,'Content-Type: text/html; charset=UTF-8','Content-Transfer-Encoding: base64','',b64s(html).replace(/(.{76})/g,'$1\r\n'),'--'+bd+'--',''].join('\r\n')
+const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{authorization:'Bearer '+tok,'content-type':'application/json'},body:JSON.stringify({raw:b64u(new TextEncoder().encode(raw))})})
+if(r.ok)return
+GTOK=null
+let m='';try{m=(await r.json()).error?.message||''}catch{}
+throw new Error(m||('Gmail returned '+r.status))
+}
+export const mailOn=env=>!!(gmailOn(env)||env.SMTP_HOST||env.BREVO_API_KEY||env.RESEND_API_KEY)
 const esc=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 function view(m){
 const text=[m.title,'',...m.lines,...(m.code?['','Your code: '+m.code]:[]),...(m.note?['',m.note]:[]),'','Parley'].join('\n')
@@ -13,8 +37,11 @@ const html=`<!doctype html><html><body style="margin:0;padding:0;background:#f3f
 return{text,html}
 }
 export async function sendMailDetail(env,to,subject,msg){
-if(!mailOn(env))return{ok:false,error:'No mail service is set. Add SMTP_HOST, SMTP_USER and SMTP_PASS (or BREVO_API_KEY) to the Worker.'}
+if(!mailOn(env))return{ok:false,error:'No mail service is set. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REFRESH_TOKEN (Gmail API) to the Worker.'}
 const{text,html}=view(msg)
+if(gmailOn(env)){
+try{await gmailSend(env,to,subject,text,html);return{ok:true,via:'gmail'}}catch(e){console.error('gmail',String(e&&e.message||e));return{ok:false,error:'Gmail: '+String(e&&e.message||e)}}
+}
 if(env.SMTP_HOST){
 try{
 const from=env.MAIL_FROM||env.SMTP_FROM||('Parley <'+env.SMTP_USER+'>')
@@ -92,7 +119,7 @@ const b=await body(c.req)
 const to=str(b.email,3,120,'Email').trim().toLowerCase()
 if(!RE.test(to))fail(400,'Enter a valid email address')
 const r=await sendMailDetail(c.env,to,'Parley test email',{title:'Test email',lines:['If you can read this, Parley can send email.'],note:'Sent from the admin panel.'})
-const via=c.env.SMTP_HOST?'SMTP ('+c.env.SMTP_HOST+')':c.env.BREVO_API_KEY?'Brevo':c.env.RESEND_API_KEY?'Resend':'none'
+const via=gmailOn(c.env)?'Gmail':c.env.SMTP_HOST?'SMTP ('+c.env.SMTP_HOST+')':c.env.BREVO_API_KEY?'Brevo':c.env.RESEND_API_KEY?'Resend':'none'
 return{ok:r.ok,error:r.error||null,from:c.env.MAIL_FROM||c.env.SMTP_FROM||c.env.SMTP_USER||'Parley <onboarding@resend.dev>',via,key:via!=='none'}
 })
 r.add('POST','/api/me/email/verify',async c=>{

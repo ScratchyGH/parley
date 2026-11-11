@@ -446,6 +446,22 @@ await inbox(c.env,u.id,String(b.from||c.user.display_name||'Parley').slice(0,60)
 c.pub('u_'+u.id,{t:'pars.gift'})
 return{ok:true,to:u.username}
 })
+r.add('POST','/api/admin/pars/reset',async c=>{
+if(!c.user.owner)fail(404,'Not found')
+limit('parreset:'+c.user.id,3,60000)
+const b=await body(c.req,4000)
+if(b.confirm!=='RESET')fail(400,'Type RESET to confirm')
+const ex=[...new Set((Array.isArray(b.except)?b.except:String(b.except||'').split(/[\s,]+/)).map(x=>String(x).trim().replace(/^@/,'').toLowerCase()).filter(Boolean))].slice(0,60)
+const ph=ex.length?' and lower(username) not in ('+ex.map(()=>'?').join(',')+')':''
+const w="coalesce(is_bot,0)=0 and pars!=100"+ph
+const t=now()
+const res=await c.env.DB.batch([
+c.env.DB.prepare("insert into par_tx(id,user_id,delta,kind,ref,note,created_at) select 'pt'||lower(hex(randomblob(10))),id,100-pars,'reset',null,'Economy reset',? from users where "+w).bind(t,...ex),
+c.env.DB.prepare('update users set pars=100 where '+w).bind(...ex),
+c.env.DB.prepare('insert into mod_log(id,server_id,actor_id,action,target_id,detail,created_at) values(?,?,?,?,?,?,?)').bind(newId('ml'),null,c.user.id,'pars.reset',null,'except '+ex.join(','),t)
+])
+return{ok:true,reset:res[1]?.meta?.changes||0,kept:ex.length}
+})
 r.add('POST','/api/admin/pars/grant',async c=>{
 guard(c)
 limit('parad:'+c.user.id,60,60000)

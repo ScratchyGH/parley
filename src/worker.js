@@ -239,8 +239,11 @@ try{
 if(url.pathname==='/ws')return await ws(req,env,url)
 if(/^\/(kids|connect)(\/|$)/.test(url.pathname))return new Response('Not found',{status:404,headers:{'content-type':'text/plain'}})
 if(!url.pathname.startsWith('/api/')){
+const lc=/(?:^|;\s*)parley_lang=(\w+)/.exec(req.headers.get('cookie')||'')?.[1]
+if(url.pathname==='/'&&req.method==='GET'&&!lc&&!url.searchParams.get('lang')&&(req.cf?.country==='TR'||/^\s*tr\b/i.test(req.headers.get('accept-language')||'')))return new Response(null,{status:302,headers:{location:'/tr/','cache-control':'private, no-store',vary:'accept-language, cookie'}})
 let res=await env.ASSETS.fetch(req)
 const h=new Headers(res.headers)
+if(url.pathname==='/'&&/^(en|tr)$/.test(url.searchParams.get('lang')||''))h.append('set-cookie','parley_lang='+url.searchParams.get('lang')+'; Path=/; Max-Age=31536000; SameSite=Lax; Secure')
 for(const[k,v]of Object.entries(SEC))h.set(k,v)
 if(url.pathname==='/get'||url.pathname.startsWith('/get/')){h.delete('x-frame-options');const cs=h.get('content-security-policy');if(cs)h.set('content-security-policy',cs.replace("frame-ancestors 'none'",'frame-ancestors https://scratchygh.github.io'))}
 const card=await cardFor(env,url)

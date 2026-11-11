@@ -110,26 +110,40 @@ const id=randHex(5),key=randHex(8)
 await put(c.env,'sup:'+id,{id,kh:await sha(key),kind,user:String(b.username||'').trim().slice(0,40),contact:String(b.contact||'').trim().slice(0,120),msg,status:'open',at:now(),reply:'',uid:c.user?.id||null})
 return{id,key}
 },{auth:false})
+const threadOf=t=>t.thread||[{from:'user',text:t.msg,at:t.at},...(t.reply?[{from:'staff',text:t.reply,at:t.at}]:[])]
+const pub=t=>({id:t.id,status:t.status,reply:t.reply,kind:t.kind,at:t.at,thread:threadOf(t)})
+const owned=async(c,b)=>{const t=await get(c.env,'sup:'+String(b.id||'').slice(0,12));if(!t||t.kh!==await sha(String(b.key||'')))fail(404,'Ticket not found');return t}
 r.add('POST','/api/support/status',async c=>{
 limit('sups:'+ipOf(c),30,600000)
-const b=await body(c.req,512)
-const t=await get(c.env,'sup:'+String(b.id||'').slice(0,12))
-if(!t||t.kh!==await sha(String(b.key||'')))fail(404,'Ticket not found')
-return{status:t.status,reply:t.reply,kind:t.kind,at:t.at}
+return pub(await owned(c,await body(c.req,512)))
+},{auth:false})
+r.add('POST','/api/support/followup',async c=>{
+limit('supf:'+ipOf(c),10,3600000)
+const b=await body(c.req,4096)
+const t=await owned(c,b)
+const m=String(b.message||'').trim().slice(0,2000)
+if(m.length<2)fail(400,'Write a message first')
+if(t.status==='closed')fail(400,'This ticket is closed. Open a new one.')
+t.thread=threadOf(t)
+if(t.thread.length>60)fail(400,'This ticket is too long. Open a new one.')
+t.thread.push({from:'user',text:m,at:now()})
+t.status='open'
+await put(c.env,'sup:'+t.id,t)
+return pub(t)
 },{auth:false})
 r.add('GET','/api/admin/support',async c=>{
 if(!c.user.admin)fail(404,'Not found')
 const rows=(await c.env.DB.prepare("select v from app_settings where k like 'sup:%' order by rowid desc limit 150").all()).results
-return{tickets:rows.map(x=>{try{const t=JSON.parse(x.v);delete t.kh;return t}catch{return null}}).filter(Boolean)}
+return{tickets:rows.map(x=>{try{const t=JSON.parse(x.v);delete t.kh;t.thread=threadOf(t);return t}catch{return null}}).filter(Boolean)}
 })
 r.add('POST','/api/admin/support/:id',async c=>{
 if(!c.user.admin)fail(404,'Not found')
 const t=await get(c.env,'sup:'+c.p.id)
 if(!t)fail(404,'Ticket not found')
 const b=await body(c.req,4096)
-if(typeof b.reply==='string')t.reply=b.reply.trim().slice(0,1500)
+if(typeof b.reply==='string'&&b.reply.trim()){t.reply=b.reply.trim().slice(0,1500);t.thread=threadOf(t).filter(x=>x.text);t.thread.push({from:'staff',text:t.reply,at:now()})}
 if(['open','answered','closed'].includes(b.status))t.status=b.status
-else if(t.reply)t.status='answered'
+else if(typeof b.reply==='string'&&b.reply.trim())t.status='answered'
 await put(c.env,'sup:'+t.id,t)
 return{ok:true}
 })
