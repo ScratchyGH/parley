@@ -138,7 +138,7 @@ mode==='in'?h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();
 err,go)
 if(mode==='up'){let t;a.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(async()=>{const v=a.value.trim().toLowerCase();if(v.length<3){err.textContent='';return}try{const r=await api('GET','/check?local='+encodeURIComponent(v));err.textContent=r.ok?'That address is free':r.reason;err.className=r.ok?'err ok':'err'}catch{}},350)})}
 mount(box,
-h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),
+h('img',{class:'mas',src:'/pmail/logo.svg',alt:''}),
 h('h1',null,'PMail'),
 h('p',{class:'sub'},'Private mail for Parley'),
 h('div',{class:'tabs'},h('button',{class:mode==='in'?'on':'',type:'button',onclick:()=>{mode='in';draw()}},'Sign in'),h('button',{class:mode==='up'?'on':'',type:'button',onclick:()=>{mode='up';draw()}},'Create PMail')),
@@ -149,7 +149,7 @@ draw()
 page(box,tiles())
 }
 function recovery(r){
-const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'You are in'),
+const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/pmail/logo.svg',alt:''}),h('h2',null,'You are in'),
 h('p',{class:'sub'},'Your address is ',h('b',null,r.address)),
 h('div',{class:'rec'},h('div',{class:'hint'},'Your recovery code. Shown once.'),h('code',null,r.recovery),h('div',{class:'hint'},'Write it down or keep it in a password manager. If you forget your password, this is the only way to open your mail.')),
 h('button',{class:'btn pri wide',onclick:()=>boot()},'I saved it, open my inbox'))
@@ -158,7 +158,7 @@ page(box)
 function reset(){
 const err=h('div',{class:'err',role:'alert'})
 const a=h('input',{placeholder:'yourname',autocapitalize:'none'}),rc=h('input',{placeholder:'xxxxx-xxxxx-xxxxx-xxxxx',autocapitalize:'none',spellcheck:'false'}),pw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'}),cd=h('input',{placeholder:'Only if two-factor is on',autocapitalize:'none',spellcheck:'false'})
-const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'Reset password'),h('p',{class:'sub'},'Enter your recovery code. Your mail stays intact.'),
+const box=h('div',{class:'authbox'},h('img',{class:'mas',src:'/pmail/logo.svg',alt:''}),h('h2',null,'Reset password'),h('p',{class:'sub'},'Enter your recovery code. Your mail stays intact.'),
 h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/reset',{address:a.value,recovery:rc.value,next:pw.value,code:cd.value});toast('Password changed. Sign in.');auth()}catch(x){err.textContent=x.message}}},
 h('label',{class:'f'},h('span',null,'Address'),a),h('label',{class:'f'},h('span',null,'Recovery code'),rc),h('label',{class:'f'},h('span',null,'New password'),pw),h('label',{class:'f'},h('span',null,'Authenticator or backup code'),cd),err,
 h('button',{class:'btn pri wide',type:'submit'},'Set new password'),h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();auth()}},'Back to sign in'))))
@@ -193,7 +193,7 @@ document.querySelectorAll('.scrim,.comp').forEach(e=>e.remove())
 const err=h('div',{class:'err',role:'alert'})
 const pin=h('input',{class:'pin',type:'password',inputmode:'numeric',autocomplete:'off',maxlength:'8','aria-label':'PIN'})
 const out=async()=>{try{await api('POST','/logout',{})}catch{}S.me=null;auth()}
-const box=h('div',{class:'authbox lockbox'},h('img',{class:'mas',src:'/mascot-sm.webp',alt:''}),h('h2',null,'PMail is locked'),h('p',{class:'sub'},'Enter your PIN to continue'),
+const box=h('div',{class:'authbox lockbox'},h('img',{class:'mas',src:'/pmail/logo.svg',alt:''}),h('h2',null,'PMail is locked'),h('p',{class:'sub'},'Enter your PIN to continue'),
 h('form',{onsubmit:async e=>{e.preventDefault();err.textContent='';try{await api('POST','/unlock',{pin:pin.value});await boot()}catch(x){pin.value='';err.textContent=x.message;if(x.status===401){S.me=null;auth()}}}},pin,err,h('button',{class:'btn pri wide',type:'submit'},'Unlock')),
 h('p',{class:'hint'},h('a',{href:'#',onclick:e=>{e.preventDefault();out()}},'Sign out instead')))
 page(box)
@@ -221,7 +221,7 @@ function shell(){
 const q=h('input',{type:'search',placeholder:'Search this folder',id:'q','aria-label':'Search this folder',value:S.q,oninput:e=>{S.q=e.target.value;paintList()}})
 mount($,h('div',{class:'shell'},
 h('nav',{class:'rail','aria-label':'PMail'},
-h('a',{class:'wbtn on',href:'/pmail/',title:'PMail'},h('img',{src:'/mascot-sm.webp',alt:'PMail'})),
+h('a',{class:'wbtn on',href:'/pmail/',title:'PMail'},h('img',{src:'/pmail/logo.svg',alt:'PMail'})),
 h('div',{class:'sep'}),
 h('button',{class:'wbtn pri',title:'Write (c)',onclick:()=>compose()},ico('pen')),
 h('div',{class:'gap'}),
@@ -361,7 +361,7 @@ const close=()=>{scrim.remove();paintSide();paintList();if(S.msg)paintMsg()}
 const save=async(p,extra)=>{try{const r=await api('POST','/prefs',{prefs:p,...(extra||{})});S.me.prefs=r.prefs;if(extra&&extra.display!==undefined)S.me.display=extra.display;theme(S.me.prefs)}catch(e){toast(e.message)}}
 const cur=(key,opts)=>{const v=S.me.prefs[key];return v===undefined||v===''?opts[0][0]:v}
 const seg=(key,opts)=>h('div',{class:'seg'},opts.map(([v,l])=>h('button',{type:'button',class:cur(key,opts)===v?'on':'',onclick:async()=>{await save({[key]:v});draw()}},l)))
-const tabs=[['look','Look'],['addr','Addresses'],['rules','Rules'],['sec','Security'],['log','Activity'],['priv','Privacy']]
+const tabs=[['look','Look'],['addr','Addresses'],['rules','Rules'],['sec','Security'],['log','Activity'],['tests','Test lab'],['priv','Privacy']]
 const draw=()=>{
 const p=S.me.prefs
 let body
@@ -466,6 +466,11 @@ h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{await api('
 sc.owner?null:h('h4',null,'Delete account'),
 sc.owner?null:h('p',{class:'hint'},'Deletes your address, aliases and every message. It cannot be undone.'),
 sc.owner?null:h('button',{class:'btn dng',onclick:guard(async()=>{const v=await ask('Delete PMail','This deletes your address and all mail. It cannot be undone.',sc.totp?[pwF,codeF]:[pwF]);if(!v)return;await api('POST','/destroy',v);S.me=null;scrim.remove();auth()})},'Delete my PMail'))
+}else if(tab==='tests'){
+const list=h('div',null,h('p',{class:'hint'},'Loading'))
+const send=async id=>{try{const r=await api('POST','/tests',{id});toast(r.sent+(r.sent===1?' test message':' test messages')+' sent to your inbox');await refreshMe();await load();paintSide()}catch(e){toast(e.message)}}
+api('GET','/tests').then(r=>mount(list,h('p',{class:'hint'},'Sends crafted messages to your own inbox so you can see how PMail treats what people might send. Messages are plain text, so markup should appear as text and nothing should run or load. You can also paste any HTML into Write and send it to yourself.'),h('p',null,h('button',{class:'btn pri',onclick:()=>send('all')},'Send all tests')),r.tests.map(t=>h('div',{class:'sec-row'},h('div',null,h('b',null,t.title),h('small',null,t.note)),h('button',{class:'btn sm',onclick:()=>send(t.id)},'Send'))))).catch(()=>{})
+body=list
 }else if(tab==='log'){
 const lg=h('div',{class:'log'},h('p',{class:'hint'},'Sign-ins, failed attempts and security changes on your mailbox. It cannot be edited or cleared. The latest 100 entries are kept.'),h('p',{class:'hint'},'Loading'))
 api('GET','/activity').then(r=>mount(lg,h('p',{class:'hint'},'Sign-ins, failed attempts and security changes on your mailbox. It cannot be edited or cleared. The latest 100 entries are kept.'),r.items.length?r.items.map(i=>h('div',{class:'line'},h('span',{class:BAD.has(i.kind)?'bad':''},h('b',null,ACT[i.kind]||i.kind),h('small',null,i.detail),h('small',null,full(i.ts))))):h('p',{class:'hint'},'Nothing yet.'))).catch(()=>{})
