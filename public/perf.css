@@ -267,3 +267,23 @@ html:not(.seps) :is(.dmcall,.ov-top,.wn-head,.wn-dlg footer,.bk-grp,.bk-cf,.bk-t
 html:not(.seps) :is(.ws,.ctx,.me,.top,.panel,.dmcall,.vbar,.vpanel,.vstrip,.split nav){box-shadow:none!important}
 html:not(.seps) hr,html:not(.seps) .menu hr,html:not(.seps) .mb hr{border-color:transparent!important;background:transparent!important}
 html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="border-bottom"]{border-bottom-color:transparent!important}
+
+.shop{display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 32px;align-items:start}
+.shop>*{grid-column:2;min-width:0}
+.shop>.par-hero{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:20px 24px;margin-bottom:18px;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+.shop>.par-hero .par-bal{font-size:36px;letter-spacing:-.02em}
+.shop>.sh-nav{grid-column:1;grid-row:2/span 60;position:sticky;top:8px;flex-direction:column;align-items:stretch;gap:2px;border:0!important;margin:0;padding:0;background:none}
+.shop>.sh-nav button{text-align:left;border:0!important;border-radius:8px!important;padding:9px 12px!important;font-size:14px;color:var(--muted)}
+.shop>.sh-nav button:hover{background:var(--hover)!important;color:var(--strong)}
+.shop>.sh-nav button.on{background:var(--sel)!important;color:var(--strong)!important;border:0!important}
+.shop .par-sec{margin:0 0 34px}
+.shop .par-sec>h3{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0 0 14px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.bgrid .bcard{width:auto}
+.bcard{border-radius:12px;padding:18px;gap:14px}
+.par-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.par-card{border-radius:12px;padding:12px;background:var(--panel)}
+.par-card .pc-top{min-height:110px;border-radius:10px}
+.par-card .pc-act{border:0;padding-top:4px}
+.par-card h4,.par-card b{font-size:15px}
+@media(max-width:860px){.shop{grid-template-columns:minmax(0,1fr)}.shop>*{grid-column:1}.shop>.sh-nav{grid-column:1;grid-row:auto;position:sticky;top:0;z-index:4;flex-direction:row;overflow-x:auto;background:var(--bg);padding:6px 0}.shop>.sh-nav button{white-space:nowrap}.bgrid{grid-template-columns:1fr}}
