@@ -80,7 +80,7 @@ if(it.kind==='boost')return h('div',{class:'par-big'},h('span',{class:'par-bi'},
 return null
 }
 export function parsPage(pg){
-const box=h('div',null,h('div',{class:'hint'},'Loading'))
+const box=h('div',{class:'shop'},h('div',{class:'hint'},'Loading'))
 mount(pg,box)
 let tick=[]
 load()
@@ -108,7 +108,7 @@ mount(box,
 h('div',{class:'par-hero'},parIcon(40),h('div',{style:{flex:'1',minWidth:0}},h('div',{class:'par-bal'},String(d.balance)),h('div',{class:'hint',style:{margin:'4px 0 0'}},'Earn '+d.rate+' Pars for every hour you actively use Parley. Today: '+hrs+' of '+d.daily_cap_hours+' hours counted.'),h('div',{class:'par-bar',role:'progressbar','aria-valuenow':String(pct),'aria-valuemin':'0','aria-valuemax':'100','aria-label':'Daily Pars progress'},h('i',{style:{width:pct+'%'}})),h('div',{class:'hint',style:{margin:'6px 0 0'}},d.notice))),
 h('nav',{class:'sh-nav','aria-label':'Shop sections'},[...tss.map(i=>['ts-'+i.id,i.name]),reg.length?['bn','Bundles']:null,...cats.map(([k,l])=>[k,l]),['gift','Gift Pars'],['own','Your items']].filter(Boolean).map(([id,l])=>{const b=h('button',{'data-sec':id,on:{click:()=>go(id)}},l);navBtns.push(b);return b})),
 ...tss.map(i=>tsSection(d,i)),
-reg.length?sec('bn','Bundles','Hover to pause',carousel(d,reg)):null,
+reg.length?sec('bn','Bundles',null,carousel(d,reg)):null,
 ...cats.map(([k,l])=>sec(k,l,null,lazyGrid(d,items.filter(i=>i.kind===k)))),
 sec('gift','Gift Pars',null,giftBox(d)),
 sec('own','Your items',null,own(d)),
@@ -134,14 +134,14 @@ const isB=it.kind==='bundle'
 if(!COS.has(it.kind)&&!isB)return null
 const v=isB?variantsOf(it)[vk]:null,pr=isB?v.gift_price:it.price
 const cant=d.balance<pr
-return h('button',{class:'gift-b',disabled:cant,title:cant?'You need '+(pr-d.balance)+' more Pars':'Buy as a gift link',on:{click:async e=>{if(!await confirmBox('Buy as gift link',it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')+' for '+pr+' Pars. You get a link to send in any chat.'+(isB&&v.vanity_days?' Gift links include the cosmetics but not the vanity link.':''),'Buy and copy link',false))return;const b=e.currentTarget;b.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id,variant:isB?vk:undefined});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');load()}catch(x){b.disabled=false;fail(x)}}}},icon('link'))
+return h('button',{class:'gift-b',disabled:cant,title:cant?'You need '+(pr-d.balance)+' more Pars':'Buy as a gift link',on:{click:async e=>{const b0=e.currentTarget;if(!await confirmBox('Buy as gift link',it.name+(isB&&Object.keys(variantsOf(it)).length>1?' ('+v.label+')':'')+' for '+pr+' Pars. You get a link to send in any chat.'+(isB&&v.vanity_days?' Gift links include the cosmetics but not the vanity link.':''),'Buy and copy link',false))return;const b=b0;b.disabled=true;try{const r=await POST('/api/pars/giftlink',{item:it.id,variant:isB?vk:undefined});await copyText(location.origin+'/gift/'+r.code);toast('Gift link copied. Send it in any chat','ok');load()}catch(x){b.disabled=false;fail(x)}}}},icon('link'))
 }
 function card(d,it){
 const have=(COS.has(it.kind)||it.kind==='unlock')&&owns(d,it.id)
 const eq=d[it.kind]===it.id
 const cant=d.balance<it.price
 const wl=(d.wish||[]).includes(it.id)
-const heart=have?null:h('button',{class:'btn sm',type:'button','aria-pressed':String(wl),title:wl?'Remove from wishlist':'Add to wishlist',on:{click:async e=>{try{const r=await POST('/api/pars/wishlist',{item:it.id});d.wish=r.ids;e.currentTarget.setAttribute('aria-pressed',String(r.ids.includes(it.id)));e.currentTarget.textContent=r.ids.includes(it.id)?'♥':'♡'}catch(x){fail(x)}}}},wl?'♥':'♡')
+const heart=have?null:h('button',{class:'btn sm',type:'button','aria-pressed':String(wl),title:wl?'Remove from wishlist':'Add to wishlist',on:{click:async e=>{const b=e.currentTarget;try{const r=await POST('/api/pars/wishlist',{item:it.id});d.wish=r.ids;const on=r.ids.includes(it.id);b.setAttribute('aria-pressed',String(on));b.title=on?'Remove from wishlist':'Add to wishlist';b.textContent=on?'♥':'♡'}catch(x){fail(x)}}}},wl?'♥':'♡')
 return h('div',{class:'par-card'+(have?' have':'')+(eq?' eq':'')},h('div',{class:'pc-top'},have?h('span',{class:'pc-flag'},eq?'Equipped':'Owned'):null,swatch(it)),h('b',null,it.name),h('div',{class:'hint',style:{margin:0}},it.descr),h('div',{class:'pc-act'},h('span',{class:'par-price'},parIcon(14),' '+it.price),heart,have?h('button',{class:'btn sm',on:{click:async()=>{try{await POST('/api/pars/equip',{kind:it.kind,item:eq?null:it.id});load()}catch(e){fail(e)}}}},eq?'Unequip':'Equip'):h('button',{class:'btn sm pri buy',disabled:cant,title:cant?'You need '+(it.price-d.balance)+' more Pars':'',on:{click:()=>buy(d,it)}},'Buy'),linkBtn(d,it),giftBtn(d,it)))
 }
 function preview(d,it,v){
@@ -175,8 +175,7 @@ draw()
 return wrap
 }
 function carousel(d,list){
-const track=h('div',{class:'car-track',style:{'--dur':Math.max(30,list.length*14)+'s'}},list.map(it=>bundleCard(d,it,'bcard',false)),list.map(it=>bundleCard(d,it,'bcard',true)))
-return h('div',{class:'car'},track)
+return h('div',{class:'bgrid'},list.map(it=>bundleCard(d,it,'bcard',false)))
 }
 function tsSection(d,it){
 const bd=bundleData(it),v=variantsOf(it).main,end=bd.ends_at,start=bd.starts_at||0

@@ -816,8 +816,9 @@ const r=anchor.getBoundingClientRect()
 const rows=others.map(m=>{
 const here=inCall.has(m.id)
 return h('div',{class:'li',style:{padding:'6px 10px',minWidth:'240px'}},avatar(m,28),h('div',{class:'grow'},h('b',null,m.display_name),h('small',null,here?'In the call':'Not in the call')),here?null:h('button',{class:'btn sm',on:{click:async e=>{
-e.currentTarget.disabled=true
-try{await POST(`/api/conversations/${room}/ring`,{user_ids:[m.id]});e.currentTarget.textContent='Ringing'}catch(x){fail(x);e.currentTarget.disabled=false}
+const b=e.currentTarget
+b.disabled=true
+try{await POST(`/api/conversations/${room}/ring`,{user_ids:[m.id]});b.textContent='Ringing'}catch(x){fail(x);b.disabled=false}
 }}},'Ring'))
 })
 const missing=others.filter(m=>!inCall.has(m.id))
