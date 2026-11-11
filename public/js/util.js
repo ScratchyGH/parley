@@ -121,6 +121,7 @@ let r
 try{r=await fetch(path,init)}catch{const e=new Error('Network error. Check your connection.');e.status=0;throw e}
 let data=null
 if((r.headers.get('content-type')||'').includes('json'))data=await r.json().catch(()=>null)
+if(r.status===403&&data?.schoolHours){location.replace('/closed');throw new Error(data.error)}
 if(!r.ok){const e=new Error(data?.error||`Request failed (${r.status})`);e.status=r.status;e.data=data;throw e}
 return data
 }
