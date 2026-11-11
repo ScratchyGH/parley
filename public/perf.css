@@ -245,3 +245,25 @@ html.rv27 .btn.pri{background:var(--accent);box-shadow:none}
 .ts .ts-time,.ts .par-price,.ts.sx-xmas .ts-time,.ts.sx-xmas .par-price{color:var(--hi)}
 .ts .pb-list span.plus,.ts.sx-xmas .pb-list span.plus{background:var(--accent);color:var(--on-accent)}
 .ts .pb-list span,.ts.sx-xmas .pb-list span{color:var(--text)}
+.hinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.icard{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--text);text-decoration:none;text-align:left;font:inherit;cursor:pointer}
+.icard:hover{border-color:var(--hi)}
+.icard b{color:var(--strong);font-size:15px}
+.icard small{color:var(--muted);line-height:1.45;font-size:13px}
+html .ts[class]{background:var(--panel)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-left:3px solid var(--hi)!important;border-radius:10px!important;box-shadow:none!important;padding:18px 20px!important;gap:20px!important}
+html .ts[class]::before,html .ts[class]::after{display:none!important}
+html .ts[class] h3{color:var(--strong)!important;font-family:var(--font)!important;font-size:20px!important;font-weight:700}
+html .ts[class] .hint,html .ts[class] .ts-time{color:var(--muted)!important}
+html .ts[class] .ts-tag{background:none!important;color:var(--text)!important;border:1px solid var(--border);padding:1px 9px;font-weight:600;font-size:11px;letter-spacing:.02em}
+html .ts[class] .par-price{color:var(--strong)!important;background:none!important}
+html .ts[class] .pb-list span,html .ts[class] .pb-list span.plus{background:var(--surf2)!important;color:var(--text)!important;border:1px solid var(--border);font-weight:500}
+html .sh-nav button.on,html .sh-nav button[aria-current=true]{background:none!important;color:var(--strong)!important;border-bottom:2px solid var(--hi)!important}
+html .sh-nav button{background:none!important;border-radius:0!important}
+.par-card .pc-act .par-price,.par-card .par-price{background:none!important;padding:0!important;border:0!important;color:var(--strong)}
+.par-card .pc-top{box-shadow:none}
+.par-card .btn.pri,.par-bundle .btn.pri{background:var(--accent);border:1px solid var(--hi);color:var(--on-accent)}
+.par-card .btn:disabled,.par-bundle .btn:disabled{background:none;color:var(--muted);border:1px solid var(--border);opacity:1}
+html:not(.seps) :is(.dmcall,.ov-top,.wn-head,.wn-dlg footer,.bk-grp,.bk-cf,.bk-tr,.bh-rv,.scr-r,.legal-h,.gd-row,.dbt th,.dbt td,.tabbar,.sh-nav,.par-card .pc-act,.mb hr,.main,.chat,.msgs,.composer,.cmp,.cbox-wrap,.mem-list,.sb,.ctx-list,.rail,.panel-h,.ph,.sp-page,.sp-page nav,.ov-body>.split>nav,.hh,.hsec,.dlg,.pg h3,.pg h4,.row.sp,.li){border-color:transparent!important}
+html:not(.seps) :is(.ws,.ctx,.me,.top,.panel,.dmcall,.vbar,.vpanel,.vstrip,.split nav){box-shadow:none!important}
+html:not(.seps) hr,html:not(.seps) .menu hr,html:not(.seps) .mb hr{border-color:transparent!important;background:transparent!important}
+html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="border-bottom"]{border-bottom-color:transparent!important}
