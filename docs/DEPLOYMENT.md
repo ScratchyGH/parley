@@ -21,7 +21,7 @@ Cloudflare D1 is the default database and file store. Each of these is switched 
 
 | Service | Secrets | What it does | Free limits (check current terms) |
 | --- | --- | --- | --- |
-| PMail (built in) | none. Optional variable `PMAIL_DOMAIN` (default `pmail.parley`) | Parley's own mail site at `/pmail/`. Confirmation codes, password resets and security alerts go to PMail inboxes. No outside service or secret needed. | Uses your D1 database |
+| PMail (built in) | none. | Parley's own mail site at `/pmail/`. Confirmation codes, password resets and security alerts go to PMail inboxes. No outside service or secret needed. | Uses your D1 database |
 | SMTP (any mailbox, works for every recipient) | `SMTP_HOST` (your own mail server), `SMTP_PORT` (default `465`), `SMTP_USER`, `SMTP_PASS`, optional `MAIL_FROM` | Optional. Sends the same emails to addresses outside PMail through your own mailbox. |
 | Brevo | `BREVO_API_KEY`, `MAIL_FROM` (a sender address you verified in Brevo) | Free API sender, used when SMTP is not set. |
 | Resend | `RESEND_API_KEY`, optional variable `MAIL_FROM` (like `Parley <no-reply@example.com>`) | Sends email confirmation codes, password reset codes and security alerts. Without a verified domain Resend only sends from `onboarding@resend.dev` to your own address | 3,000 emails a month on the free plan |
