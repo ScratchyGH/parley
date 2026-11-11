@@ -422,14 +422,12 @@ const sc=S.me.sec||{}
 const err=h('div',{class:'err'})
 const ss=h('div',null,h('p',{class:'hint'},'Loading sessions'))
 api('GET','/sessions').then(r=>mount(ss,r.sessions.map(s=>h('div',{class:'line'},h('span',null,s.label,s.current?' (this device)':'',h('br'),h('small',null,'Signed in '+full(s.created_at)+(s.seen_at?', active '+full(s.seen_at):''))),s.current?null:h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{id:s.id});settings('sec')}},'Sign out'))),r.sessions.length>1?h('p',null,h('button',{class:'btn sm',onclick:async()=>{await api('POST','/sessions/revoke',{});settings('sec')}},'Sign out everywhere else')):null)).catch(()=>{})
-if(sc.owner){
-body=h('div',null,h('p',{class:'hint'},'This is the Parley owner mailbox. It opens from your Parley account, so it has no PMail password, PIN or two-factor code of its own.'),h('h4',null,'Signed-in devices'),ss)
-}else{
 const cu=h('input',{type:'password',autocomplete:'current-password'}),nw=h('input',{type:'password',autocomplete:'new-password',placeholder:'At least 10 characters'})
 const again=async()=>{await refreshMe();shell();settings('sec')}
 const guard=f=>async()=>{try{await f()}catch(e){toast(e.message)}}
 const codeF=['code','Authenticator or backup code','text',{autocomplete:'one-time-code',autocapitalize:'none'}]
 const pwF=['password','Password','password',{autocomplete:'current-password'}]
+const pws=sc.owner?[]:[pwF]
 const row=(t,d,...ctl)=>h('div',{class:'sec-row'},h('div',null,h('b',null,t),h('small',null,d)),ctl)
 const opts=(key,list,fmt)=>h('div',{class:'seg'},list.map(v=>h('button',{type:'button',class:sc[key]===v?'on':'',onclick:guard(async()=>{await api('POST','/security',{[key]:v});await again()})},fmt(v))))
 const showCodes=codes=>modal('Backup codes',h('p',{class:'hint'},'Each code works once if you lose your authenticator. Keep them somewhere safe. They are shown only now.'),h('div',{class:'codes'},codes.map(x=>h('code',null,x))),h('p',null,h('button',{class:'btn sm',onclick:()=>navigator.clipboard&&navigator.clipboard.writeText(codes.join('\n')).then(()=>toast('Copied'))},'Copy all')))
@@ -444,30 +442,30 @@ await again()
 })
 const off2fa=guard(async()=>{const v=await ask('Turn off two-factor','This makes sign-in need only your password.',[pwF,codeF]);if(!v)return;await api('POST','/2fa/disable',v);await again()})
 const regen=guard(async()=>{const v=await ask('New backup codes','Old backup codes stop working.',[pwF,codeF]);if(!v)return;const r=await api('POST','/2fa/backup',v);await showCodes(r.backup_codes);await again()})
-const setPin=guard(async()=>{const v=await ask(sc.pin?'Change PIN':'Set a PIN','A PIN locks PMail on this device without signing you out. Use 4 to 8 digits.',[pwF,['pin','New PIN','password',{inputmode:'numeric',maxlength:'8'}]]);if(!v)return;await api('POST','/pin',v);await again()})
-const offPin=guard(async()=>{const v=await ask('Turn off PIN lock',null,[pwF]);if(!v)return;await api('POST','/pin',{...v,off:true});await again()})
+const setPin=guard(async()=>{const v=await ask(sc.pin?'Change PIN':'Set a PIN','A PIN locks PMail on this device without signing you out. Use 4 to 8 digits.',[...pws,['pin','New PIN','password',{inputmode:'numeric',maxlength:'8'}]]);if(!v)return;await api('POST','/pin',v);await again()})
+const offPin=guard(async()=>{const v=sc.owner?{}:await ask('Turn off PIN lock',null,[pwF]);if(!v)return;await api('POST','/pin',{...v,off:true});await again()})
 const newRec=guard(async()=>{const v=await ask('New recovery code','The old recovery code stops working.',sc.totp?[pwF,codeF]:[pwF]);if(!v)return;const r=await api('POST','/recovery',v);await modal('Your new recovery code',h('div',{class:'rec'},h('code',null,r.recovery),h('div',{class:'hint'},'Write it down or keep it in a password manager.')))})
 const chip=on=>h('span',{class:'chip'+(on?' on':'')},on?'On':'Off')
 body=h('div',null,
-h('h4',null,'Sign-in protection'),
-row('Two-factor authentication','A code from an authenticator app, asked after your password.',chip(sc.totp),sc.totp?h('button',{class:'btn sm dng',onclick:off2fa},'Turn off'):h('button',{class:'btn sm pri',onclick:on2fa},'Set up')),
-sc.totp?row('Backup codes',sc.backup_left+' unused. Each works once if you lose your authenticator.',h('button',{class:'btn sm',onclick:regen},'Get new codes')):null,
-row('Recovery code','Opens your mailbox if you forget your password.',h('button',{class:'btn sm',onclick:newRec},'Create new')),
+sc.owner?h('p',{class:'hint'},'This is the Parley owner mailbox. It opens from your Parley account, so it has no password or two-factor code of its own. A PIN adds a lock on top: every new session starts locked until the PIN is entered.'):null,
+sc.owner?null:h('h4',null,'Sign-in protection'),
+sc.owner?null:row('Two-factor authentication','A code from an authenticator app, asked after your password.',chip(sc.totp),sc.totp?h('button',{class:'btn sm dng',onclick:off2fa},'Turn off'):h('button',{class:'btn sm pri',onclick:on2fa},'Set up')),
+sc.totp&&!sc.owner?row('Backup codes',sc.backup_left+' unused. Each works once if you lose your authenticator.',h('button',{class:'btn sm',onclick:regen},'Get new codes')):null,
+sc.owner?null:row('Recovery code','Opens your mailbox if you forget your password.',h('button',{class:'btn sm',onclick:newRec},'Create new')),
 row('Stay signed in for','How long this device remembers you.',opts('ttl_days',[1,7,14,30],v=>v+(v===1?' day':' days'))),
-row('Security alerts','Mail to your inbox about new devices, lockouts and security changes.',h('button',{class:'btn sm',onclick:guard(async()=>{await api('POST','/security',{alerts:!sc.alerts});await again()})},sc.alerts?'On':'Off')),
+sc.owner?null:row('Security alerts','Mail to your inbox about new devices, lockouts and security changes.',h('button',{class:'btn sm',onclick:guard(async()=>{await api('POST','/security',{alerts:!sc.alerts});await again()})},sc.alerts?'On':'Off')),
 h('h4',null,'Screen lock'),
 row('PIN lock','Locks PMail with a PIN without signing you out. Five wrong PINs sign this device out.',chip(sc.pin),h('button',{class:'btn sm pri',onclick:setPin},sc.pin?'Change':'Set PIN'),sc.pin?h('button',{class:'btn sm dng',onclick:offPin},'Turn off'):null),
 row('Auto-lock after idle',sc.pin?'Locks after this long without use.':'Set a PIN first.',opts('lock_min',[0,1,5,15,30,60],v=>v?v+' min':'Off'),sc.pin?h('button',{class:'btn sm',onclick:lockNow},'Lock now'):null),
 h('h4',null,'Mail retention'),
 row('Delete mail automatically','Removes mail older than this on sign-in. Starred mail is kept.',opts('keep_days',[0,7,30,90,365],v=>v?(v===365?'1 year':v+' days'):'Never')),
 h('h4',null,'Signed-in devices'),ss,
-h('h4',null,'Change password'),
-h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Current password'),cu),h('label',{class:'f'},h('span',null,'New password'),nw)),err,
-h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{await api('POST','/password',{current:cu.value,next:nw.value});toast('Password changed. Other devices were signed out.');cu.value='';nw.value=''}catch(e){err.textContent=e.message}}},'Change password'),
-h('h4',null,'Delete account'),
-h('p',{class:'hint'},'Deletes your address, aliases and every message. It cannot be undone.'),
-h('button',{class:'btn dng',onclick:guard(async()=>{const v=await ask('Delete PMail','This deletes your address and all mail. It cannot be undone.',sc.totp?[pwF,codeF]:[pwF]);if(!v)return;await api('POST','/destroy',v);S.me=null;scrim.remove();auth()})},'Delete my PMail'))
-}
+sc.owner?null:h('h4',null,'Change password'),
+sc.owner?null:[h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Current password'),cu),h('label',{class:'f'},h('span',null,'New password'),nw)),err,
+h('button',{class:'btn pri',onclick:async()=>{err.textContent='';try{await api('POST','/password',{current:cu.value,next:nw.value});toast('Password changed. Other devices were signed out.');cu.value='';nw.value=''}catch(e){err.textContent=e.message}}},'Change password')],
+sc.owner?null:h('h4',null,'Delete account'),
+sc.owner?null:h('p',{class:'hint'},'Deletes your address, aliases and every message. It cannot be undone.'),
+sc.owner?null:h('button',{class:'btn dng',onclick:guard(async()=>{const v=await ask('Delete PMail','This deletes your address and all mail. It cannot be undone.',sc.totp?[pwF,codeF]:[pwF]);if(!v)return;await api('POST','/destroy',v);S.me=null;scrim.remove();auth()})},'Delete my PMail'))
 }else if(tab==='log'){
 const lg=h('div',{class:'log'},h('p',{class:'hint'},'Sign-ins, failed attempts and security changes on your mailbox. It cannot be edited or cleared. The latest 100 entries are kept.'),h('p',{class:'hint'},'Loading'))
 api('GET','/activity').then(r=>mount(lg,h('p',{class:'hint'},'Sign-ins, failed attempts and security changes on your mailbox. It cannot be edited or cleared. The latest 100 entries are kept.'),r.items.length?r.items.map(i=>h('div',{class:'line'},h('span',{class:BAD.has(i.kind)?'bad':''},h('b',null,ACT[i.kind]||i.kind),h('small',null,i.detail),h('small',null,full(i.ts))))):h('p',{class:'hint'},'Nothing yet.'))).catch(()=>{})
