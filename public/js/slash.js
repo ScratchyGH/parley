@@ -1,5 +1,5 @@
 const FACE={shrug:'¯\\\\\\_(ツ)\\_/¯',tableflip:'(╯°□°)╯︵ ┻━┻',unflip:'┬─┬ ノ( ゜-゜ノ)',lenny:'( ͡° ͜ʖ ͡°)'}
-export const COMMANDS=[['/shrug [text]','Adds ¯\\_(ツ)_/¯'],['/tableflip [text]','Adds (╯°□°)╯︵ ┻━┻'],['/unflip [text]','Adds ┬─┬ ノ( ゜-゜ノ)'],['/lenny [text]','Adds ( ͡° ͜ʖ ͡°)'],['/me text','Sends text in italics'],['/spoiler text','Hides text behind a spoiler'],['/gif [search]','Opens the GIF picker'],['/roll [2d6]','Rolls dice, up to 20d1000'],['/flip','Flips a coin'],['/choose a | b | c','Picks one option for you'],['/8ball [question]','Asks the magic 8 ball'],['/clap [text]','Puts claps between the words'],['/mock [text]','aLtErNaTiNg cAsE'],['/catchup','AI summary of recent messages here'],['/remind 30m [text]','Reminds you later, like 10m, 2h or 1d']]
+export const COMMANDS=[['/shrug [text]','Adds ¯\\_(ツ)_/¯'],['/tableflip [text]','Adds (╯°□°)╯︵ ┻━┻'],['/unflip [text]','Adds ┬─┬ ノ( ゜-゜ノ)'],['/lenny [text]','Adds ( ͡° ͜ʖ ͡°)'],['/me text','Sends text in italics'],['/spoiler text','Hides text behind a spoiler'],['/gif [search]','Opens the GIF picker'],['/roll [2d6]','Rolls dice, up to 20d1000'],['/flip','Flips a coin'],['/choose a | b | c','Picks one option for you'],['/8ball [question]','Asks the magic 8 ball'],['/clap [text]','Puts claps between the words'],['/mock [text]','aLtErNaTiNg cAsE'],['/catchup','AI summary of recent messages here'],['/remind 30m [text]','Reminds you later, like 10m, 2h or 1d'],['/allow @user','Lets one person send a single message in a locked channel'],['/resetspeak','Clears every one-message pass in this channel']]
 export function slash(text){
 const m=/^\/([a-z]+)(?:\s+([\s\S]*))?$/i.exec(text)
 if(!m)return{text}
@@ -28,6 +28,8 @@ const A=['It is certain.','Without a doubt.','Yes, definitely.','Most likely.','
 return{text:'🎱 '+(rest?rest+' — ':'')+'**'+A[crypto.getRandomValues(new Uint32Array(1))[0]%A.length]+'**'}
 }
 if(cmd==='catchup')return{catchup:true}
+if(cmd==='allow'||cmd==='speak'){const m=/<@([^>]+)>/.exec(rest);return m?{speak:m[1]}:{error:'Mention someone: /allow @name'}}
+if(cmd==='resetspeak')return{speakReset:true}
 if(cmd==='remind'){
 const r=/^(\S+)\s+([\s\S]+)$/.exec(rest)
 return r?{remind:{when:r[1],note:r[2]}}:{error:'Use /remind 30m call mom'}

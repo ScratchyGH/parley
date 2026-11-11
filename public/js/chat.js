@@ -793,10 +793,12 @@ async function submit(){
 if(!C||!C.ta||C.sendBtn?.disabled)return
 let raw=C.ta.value.replace(/\s+$/,'')
 if(!C.editing){
-const sl=slash(raw)
+const sl=slash(/^\/(allow|speak)\b/i.test(raw)?encodeMentions(raw):raw)
 if(sl.error){toast(sl.error,'err');return}
 if(sl.gif!==undefined){C.ta.value='';autoGrow();openGif(sl.gif);return}
 if(sl.catchup){C.ta.value='';autoGrow();catchUp(C.room);return}
+if(sl.speak){C.ta.value='';autoGrow();try{await POST('/api/channels/'+C.room+'/speak-grants',{user_id:sl.speak});toast('They can send one message here')}catch(e){toast(e.message||'Could not allow that','err')}return}
+if(sl.speakReset){C.ta.value='';autoGrow();try{await DEL('/api/channels/'+C.room+'/speak-grants');toast('One-message passes cleared')}catch(e){toast(e.message||'Could not reset','err')}return}
 if(sl.remind){const mn=parseDelay(sl.remind.when);if(!mn){toast('Use a time like 30m, 2h or 1d','err');return}C.ta.value='';autoGrow();remind(mn,sl.remind.note);return}
 raw=sl.text
 }

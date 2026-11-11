@@ -17,7 +17,7 @@ import{inviteJoinDialog,profileCard,reportDialog,shortcutsDialog,quickSwitcher,c
 import{openSettings,settingsPage}from'./settings.js'
 import{serverSettingsPage}from'./ssettings.js'
 import{ping,desktop}from'./notify.js'
-import{playIntro}from'./intro.js'
+import{playIntro,endLoading}from'./intro.js'
 playIntro()
 import{startP2P}from'./p2p/index.js'
 import{startPars,parsPage,parIcon}from'./pars.js'
@@ -42,7 +42,7 @@ applyCachedLook()
 const r=parse()
 const ae=new URLSearchParams(location.search).get('autherror')
 if(ae){history.replaceState(null,'','/');setTimeout(()=>toast(ae,'err'),600)}
-if(r.name==='appeal'){renderAppeal(root,()=>{history.replaceState(null,'','/');boot()});return}
+if(r.name==='appeal'){endLoading();renderAppeal(root,()=>{history.replaceState(null,'','/');boot()});return}
 if(r.name==='desktop-link'){
 history.replaceState(null,'','/')
 if(/^[a-f0-9]{48}$/.test(r.code||'')){try{await POST('/api/auth/desktop/claim',{code:r.code})}catch{}}
@@ -58,7 +58,7 @@ if(e.status===401)showAuth()
 else{
 {const{bootError}=await import('./errscreens.js');mount(root,bootError(e))}
 }
-}
+}finally{endLoading()}
 }
 function showAuth(note){
 stopAll()
@@ -98,7 +98,6 @@ import('./bgm.js').then(m=>m.bgmBoot())
 import('./framefit.js').then(m=>m.frameFit())
 import('./activity.js').then(m=>m.startActivity())
 import('./ab.js').then(m=>m.abBoot())
-import('./turkey.js').then(m=>m.turkeyBoot())
 setTimeout(maybeTour,2600)
 }
 

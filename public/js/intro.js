@@ -1,15 +1,17 @@
+let el=null
 export function playIntro(force){
 try{
-if(!force){
-if(sessionStorage.getItem('intro')||matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.gpu==='0')return
-sessionStorage.setItem('intro','1')
-}
 document.querySelector('.intro')?.remove()
-const el=document.createElement('div');el.className='intro'
-const glow=document.createElement('div');glow.className='intro-glow'
-const im=document.createElement('img');im.src='/mascot.webp';im.alt=''
+el=document.createElement('div');el.className='intro'
 const wm=document.createElement('div');wm.className='intro-wm';wm.textContent='Parley'
-el.append(glow,im,wm);document.body.append(el)
-setTimeout(()=>el.remove(),2900)
+const sp=document.createElement('div');sp.className='intro-spin'
+el.append(wm,sp);document.body.append(el)
+setTimeout(endLoading,force?1200:10000)
 }catch{}
+}
+export function endLoading(){
+const e=el;el=null
+if(!e)return
+e.classList.add('out')
+setTimeout(()=>e.remove(),300)
 }

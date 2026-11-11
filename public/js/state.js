@@ -210,13 +210,14 @@ root.style.setProperty('--border','color-mix(in srgb,'+s.ui_bg+' 70%,#fff)')
 const rm=s.reduced_motion===undefined?matchMedia('(prefers-reduced-motion: reduce)').matches:s.reduced_motion
 root.classList.toggle('rm',!!rm||!!s.performance)
 root.classList.toggle('perf',!!s.performance)
+root.classList.toggle('seps',!!s.sep_lines)
 root.classList.toggle('nohw',s.hwaccel===false)
 root.classList.toggle('amoled',!!s.amoled&&!s.performance&&dark)
 amoled()
 for(const k of['mail','inv','names','dm','srv'])root.classList.toggle('st-'+k,st(k))
 const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',col[s.theme||'dimmed'])
-if(!over&&S.me){try{localStorage.setItem('parley:look',JSON.stringify({uid:S.me.id,s:Object.fromEntries(['theme','density','font_size','font_ui','font_msg','ui_color','ui_bg','reduced_motion','performance'].filter(k=>s[k]!==undefined).map(k=>[k,s[k]]))}))}catch{}}
+if(!over&&S.me){try{localStorage.setItem('parley:look',JSON.stringify({uid:S.me.id,s:Object.fromEntries(['theme','density','font_size','font_ui','font_msg','ui_color','ui_bg','sep_lines','reduced_motion','performance'].filter(k=>s[k]!==undefined).map(k=>[k,s[k]]))}))}catch{}}
 }
 export function applyCachedLook(){
 try{const c=JSON.parse(localStorage.getItem('parley:look')||'null');if(c&&c.s){applySettings(c.s);return true}}catch{}
