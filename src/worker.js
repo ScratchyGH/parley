@@ -41,6 +41,7 @@ import toolsRoutes,{deliverReminders}from'./tools.js'
 import streakRoutes from'./streaks.js'
 import supportRoutes from'./support.js'
 import pmailRoutes from'./pmail.js'
+import schoolRoutes,{schoolGate}from'./school.js'
 import abRoutes from'./ab.js'
 import turkeyRoutes from'./turkey.js'
 import teamupRoutes from'./teamup.js'
@@ -91,6 +92,7 @@ modaiRoutes(router)
 banhammerRoutes(router)
 supportRoutes(router)
 pmailRoutes(router)
+schoolRoutes(router)
 abRoutes(router)
 toolsRoutes(router)
 streakRoutes(router)
@@ -238,6 +240,8 @@ async fetch(req,env0,ec){
 const env=await wrap(env0)
 const url=new URL(req.url)
 try{
+const gate=await schoolGate(env,req,url)
+if(gate)return gate
 if(url.pathname==='/ws')return await ws(req,env,url)
 if(/^\/(kids|connect)(\/|$)/.test(url.pathname))return new Response('Not found',{status:404,headers:{'content-type':'text/plain'}})
 if(/^\/get(\/|$)/.test(url.pathname)&&(req.method==='GET'||req.method==='HEAD')&&!/\.\w+$/.test(url.pathname))return new Response(null,{status:301,headers:{location:'/download/'+url.search}})
