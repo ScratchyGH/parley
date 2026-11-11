@@ -1,0 +1,10 @@
+update par_items set name='Bone thorn frame',descr='A ring of bone and thorns with a skeletal hand and a fanged skull on top. Only in the Nightmare bundle.' where id='fr_trex';
+update par_items set name='Nightmare effect',descr='A cold grey glow and a ring of thorns that slowly turns around your avatar. Only in the Nightmare bundle.' where id='ef_trex';
+update par_items set name='Bone nameplate',descr='Dark steel with a jagged edge and a blood red stripe. Only in the Nightmare bundle.' where id='np_trex';
+update par_items set name='Pale name',descr='Letters that shimmer from bone white to blood red. Only in the Nightmare bundle.' where id='nf_trex';
+update par_items set name='Skull badge',descr='A skull next to your name. Only in the Nightmare bundle.' where id='bd_trex';
+update par_items set name='Nightmare title',descr='Shows "Nightmare" next to your name. Only in the Nightmare bundle.' where id='ti_trex';
+update par_items set name='Thorn message style',descr='Messages get a grey edge with a blood red slash. Only in the Nightmare bundle.' where id='bb_trex';
+update par_items set name='Nightmare bundle',descr='A ring of bone and thorns with a skeletal hand and a fanged skull, a cold glow with turning thorns, a bone nameplate, a pale name, a badge, a title, a message style and a 3 month vanity link.',data=json_set(data,'$.variants.main.label','Nightmare') where id='bn_trex';
+update par_items set descr='A red ring with a torn headband, fluttering tails and throwing stars. Only in the Ninja bundle.' where id='fr_ninja';
+update par_items set descr='A red ring with a torn headband and throwing stars, a spinning star effect, a shadow nameplate, a steel name, a badge, a title, a message style and a 3 month vanity link.' where id='bn_ninja';
