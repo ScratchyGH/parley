@@ -14,10 +14,7 @@ html[data-gpu="0"] [class*="ef_"]::before,html[data-gpu="0"] [class*="ef_"]::aft
 .updb button{pointer-events:auto;min-height:44px;touch-action:manipulation}
 @media (pointer:coarse){.updb{left:50%!important;bottom:calc(90px + env(safe-area-inset-bottom))!important}}
 
-.par-card{content-visibility:auto;contain-intrinsic-size:auto 190px;contain:layout style}
 .par-card:not(:hover) *,.par-card:not(:hover) *::before,.par-card:not(:hover) *::after{animation-play-state:paused!important}
-.par-grid{content-visibility:auto;contain-intrinsic-size:auto 600px}
-.par-card .frm,.par-card .av{will-change:auto}
 html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!important}
 .sb,.main,.mem-list{contain:layout style}
 .unf-th img,.mw img{content-visibility:auto}
@@ -30,9 +27,6 @@ html.bg *,html.bg *::before,html.bg *::after{animation-play-state:paused!importa
 .gpm-set{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
 .gpm-set label{font-size:13px}
 .wwrap .bdg{left:auto;right:-6px;bottom:-6px;top:auto}
-.par-card .pc-act{flex-wrap:wrap}
-.par-card .pc-act .par-price{margin-right:auto}
-.par-card .pc-act .btn{margin-left:0}
 .dlg.pc-dlg{width:min(580px,100%)}
 .pc{min-width:0}
 .pc-box{min-width:0;overflow:hidden}
@@ -221,14 +215,9 @@ html:not(.seps) :is(.ws,.ctx,.ctx-h,.me,.top,.top .tp,.ctb,.cbar,.chips,.panel,.
 .par-bar i{background:var(--hi)}
 .par-chip{background:var(--surf);color:var(--text);border:1px solid var(--border);font-weight:600}
 .par-sec>h3{font-family:var(--font);font-size:17px;font-weight:700;margin:6px 0 12px}
-.par-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.par-card{border-radius:10px;padding:10px;gap:8px;background:var(--panel);transition:border-color .15s}
 .par-card:hover{transform:none;border-color:var(--hi)}
-.par-card .pc-top{background:var(--bg);border-radius:8px;min-height:92px}
-.par-card .pc-act{border-top:1px solid var(--border);padding-top:8px}
 .par-price{font-weight:700;font-variant-numeric:tabular-nums}
 .par-bundle{border-radius:10px;background:var(--panel)}
-.bcard{background:var(--panel);border-radius:10px}
 .gift-b{border-radius:8px}
 html.rv27 .btn{border-radius:8px}
 html.rv27 .btn.pri{background:var(--accent);box-shadow:none}
@@ -238,40 +227,9 @@ html.rv27 .btn.pri{background:var(--accent);box-shadow:none}
 .icard:hover{border-color:var(--hi)}
 .icard b{color:var(--strong);font-size:15px}
 .icard small{color:var(--muted);line-height:1.45;font-size:13px}
-.par-card .pc-act .par-price,.par-card .par-price{background:none!important;padding:0!important;border:0!important;color:var(--strong)}
-.par-card .pc-top{box-shadow:none}
-.par-card .btn.pri,.par-bundle .btn.pri{background:var(--accent);border:1px solid var(--hi);color:var(--on-accent)}
 .par-card .btn:disabled,.par-bundle .btn:disabled{background:none;color:var(--muted);border:1px solid var(--border);opacity:1}
 html:not(.seps) :is(.dmcall,.ov-top,.wn-head,.wn-dlg footer,.bk-grp,.bk-cf,.bk-tr,.bh-rv,.scr-r,.legal-h,.gd-row,.dbt th,.dbt td,.tabbar,.sh-nav,.par-card .pc-act,.mb hr,.main,.chat,.msgs,.composer,.cmp,.cbox-wrap,.mem-list,.sb,.ctx-list,.rail,.panel-h,.ph,.sp-page,.sp-page nav,.ov-body>.split>nav,.hh,.hsec,.dlg,.pg h3,.pg h4,.row.sp,.li){border-color:transparent!important}
 html:not(.seps) :is(.ws,.ctx,.me,.top,.panel,.dmcall,.vbar,.vpanel,.vstrip,.split nav){box-shadow:none!important}
 html:not(.seps) hr,html:not(.seps) .menu hr,html:not(.seps) .mb hr{border-color:transparent!important;background:transparent!important}
 html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="border-bottom"]{border-bottom-color:transparent!important}
 
-.shop .par-sec{margin:0 0 34px}
-.shop .par-sec>h3{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0 0 14px}
-.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.bgrid .bcard{width:auto}
-.bcard{border-radius:12px;padding:18px;gap:14px}
-.par-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.par-card{border-radius:12px;padding:12px;background:var(--panel)}
-.par-card .pc-top{min-height:110px;border-radius:10px}
-.par-card .pc-act{border:0;padding-top:4px}
-.par-card h4,.par-card b{font-size:15px}
-.sh-nav{display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;position:sticky;top:-18px;z-index:60;margin:16px 0 0;padding:0;background:var(--bg);border-bottom:1px solid var(--border)}
-.sh-nav::-webkit-scrollbar{display:none}
-.sh-nav button{flex:0 0 auto;padding:10px 14px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);font-weight:600;cursor:pointer}
-.sh-nav button:hover{color:var(--strong);border-bottom-color:var(--border)}
-.sh-nav button.on{color:var(--strong);border-bottom-color:var(--hi)}
-div.ts{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr) minmax(200px,260px);gap:28px;align-items:start;padding:18px 20px;color:var(--text);background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--hi);border-radius:10px}
-.ts h3{margin:0;font-family:var(--font);font-size:20px;font-weight:700;color:var(--strong)}
-.ts .hint,.ts-time{color:var(--muted)}
-.ts-time{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px}
-.ts-tag{display:inline-block;align-self:flex-start;padding:1px 9px;border:1px solid var(--border);border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--text)}
-.ts .pb-prev{display:flex;flex-direction:column;align-items:center;gap:14px;justify-self:center;align-self:center;padding:18px 0}
-.ts .pb-list{display:flex;flex-wrap:wrap;gap:6px}
-.ts .pb-list span{padding:2px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surf2);color:var(--text);font-size:12px;font-weight:500}
-.ts .pb-buy{display:flex;flex-direction:column;align-items:stretch;align-self:end;gap:10px}
-.ts .pb-buy .row{flex-wrap:wrap}
-.ts .par-price{color:var(--strong);font-size:26px}
-@media(max-width:1100px){div.ts{grid-template-columns:minmax(200px,260px) minmax(0,1fr)}.ts .pb-buy{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}}
-@media(max-width:700px){div.ts{grid-template-columns:minmax(0,1fr)}.ts .pb-buy{flex-direction:column;align-items:stretch}}
