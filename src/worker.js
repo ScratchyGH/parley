@@ -205,6 +205,18 @@ r2.headers.set('x-pres',hide?'invisible':user.presence)
 return stub.fetch(r2)
 }
 
+const SITE='https://parley.heavengtwashere.workers.dev'
+const PAGES=[['/',1],['/free-discord-alternative/'],['/download/'],['/support/'],['/tr/',1],['/tr/yasal']]
+const sitemap=o=>'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'+PAGES.map(([p,alt])=>'<url><loc>'+o+p+'</loc>'+(alt?'<xhtml:link rel="alternate" hreflang="en" href="'+o+'/"/><xhtml:link rel="alternate" hreflang="tr" href="'+o+'/tr/"/>':'')+'</url>').join('\n')+'\n</urlset>\n'
+function seoOrigin(res,o){
+const fix=v=>v&&v.startsWith(SITE)?o+v.slice(SITE.length):v
+let buf=''
+return new HTMLRewriter()
+.on('link[rel=canonical],link[rel=alternate]',{element(e){e.setAttribute('href',fix(e.getAttribute('href')))}})
+.on('meta[property^="og:"],meta[name^="twitter:"]',{element(e){const c=e.getAttribute('content');if(c)e.setAttribute('content',fix(c))}})
+.on('script[type="application/ld+json"]',{text(t){buf+=t.text;if(t.lastInTextNode){t.replace(buf.split(SITE).join(o),{html:true});buf=''}else t.remove()}})
+.transform(res)
+}
 const SEC={'x-content-type-options':'nosniff','referrer-policy':'same-origin','x-frame-options':'DENY'}
 
 let tdb=null
@@ -244,12 +256,15 @@ if(/^\/get(\/|$)/.test(url.pathname)&&(req.method==='GET'||req.method==='HEAD')&
 if(!url.pathname.startsWith('/api/')){
 const lc=/(?:^|;\s*)parley_lang=(\w+)/.exec(req.headers.get('cookie')||'')?.[1]
 if(url.pathname==='/'&&req.method==='GET'&&!lc&&!url.searchParams.get('lang')&&(req.cf?.country==='TR'||/^\s*tr\b/i.test(req.headers.get('accept-language')||'')))return new Response(null,{status:302,headers:{location:'/tr/','cache-control':'private, no-store',vary:'accept-language, cookie'}})
+if(url.pathname==='/robots.txt')return new Response('User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /ws\nDisallow: /pmail/\n\nSitemap: '+url.origin+'/sitemap.xml\n',{headers:{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=3600'}})
+if(url.pathname==='/sitemap.xml')return new Response(sitemap(url.origin),{headers:{'content-type':'application/xml; charset=utf-8','cache-control':'public, max-age=3600'}})
 let res=await env.ASSETS.fetch(req)
 const h=new Headers(res.headers)
 if(url.pathname==='/'&&/^(en|tr)$/.test(url.searchParams.get('lang')||''))h.append('set-cookie','parley_lang='+url.searchParams.get('lang')+'; Path=/; Max-Age=31536000; SameSite=Lax; Secure')
 for(const[k,v]of Object.entries(SEC))h.set(k,v)
 if(url.pathname.startsWith('/pmail')){h.set('referrer-policy','no-referrer');h.set('permissions-policy','camera=(), microphone=(), geolocation=(), display-capture=(), interest-cohort=()');h.set('cache-control','no-cache')}
 if(/^\/(get|download)(\/|$)/.test(url.pathname)){h.delete('x-frame-options');const cs=h.get('content-security-policy');if(cs)h.set('content-security-policy',cs.replace("frame-ancestors 'none'",'frame-ancestors https://scratchygh.github.io'))}
+if(url.origin!==SITE&&(h.get('content-type')||'').includes('text/html')&&!url.pathname.startsWith('/pmail'))res=seoOrigin(res,url.origin)
 const card=await cardFor(env,url)
 if(card&&(h.get('content-type')||'').includes('text/html')){
 const m={'og:title':card[0],'twitter:title':card[0],'og:description':card[1],'twitter:description':card[1],'description':card[1],'og:url':url.href}
