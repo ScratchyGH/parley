@@ -24,6 +24,7 @@ import signinRoutes from'./signin.js'
 import labRoutes from'./lab.js'
 import xlabsRoutes,{xlabsCron}from'./xlabs.js'
 import gifRoutes from'./gifs.js'
+import partubeRoutes from'./partube.js'
 import caseRoutes from'./cases.js'
 import emailRoutes from'./email.js'
 import templateRoutes from'./templates.js'
@@ -99,6 +100,7 @@ caseRoutes(router)
 emailRoutes(router)
 templateRoutes(router)
 gifRoutes(router)
+partubeRoutes(router)
 signinRoutes(router)
 labRoutes(router)
 
