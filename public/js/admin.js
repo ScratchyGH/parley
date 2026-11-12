@@ -9,16 +9,17 @@ import{REVAMP_AT,previewRestart,previewToggle,previewActive}from'./revamp.js'
 import{programAdmin}from'./exp.js'
 import{screeningAdmin}from'./screenui.js'
 import{aiBadge,modaiPanel,handledList}from'./modai.js'
+import{partube}from'./partube.js'
 
 export function adminView(pg){
 let cur='stats'
-const tabs=[['stats','Overview'],['gui','GUI preview'],['upd','Test updates'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],['achat','Admin chat'],['mailtest','Email test'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
+const tabs=[['stats','Overview'],['gui','GUI preview'],['upd','Test updates'],['users','Users'],['reports','Reports'],['appeals','Appeals'],['support','Support'],['log','Audit log'],['studio','Server studio'],['pars','Pars'],['seasons','Seasonal bundles'],['rv27','New Year revamp'],['program','Experimental program'],['screening','Bot screening'],['achat','Admin chat'],['partube','ParTube'],['mailtest','Email test'],...(S.me.owner?[['backups','Backups'],['db','Database']]:[])]
 const nav=h('div',{class:'tabs',role:'tablist',style:{marginBottom:'14px',flexWrap:'wrap'}})
 const body=h('div')
 function draw(){
 mount(nav,tabs.map(([k,l])=>h('button',{type:'button',role:'tab','aria-selected':String(cur===k),class:cur===k?'on':'',on:{click:()=>{cur=k;draw()}}},l)))
 mount(body)
-const fn={backups,stats,gui:b=>b.append(guiPreview()),upd:b=>b.append(testUpdates()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin()),achat:adminChat,mailtest:mailTest}[cur]
+const fn={backups,stats,gui:b=>b.append(guiPreview()),upd:b=>b.append(testUpdates()),users,reports,appeals,support,log,db,studio,rv27:b=>b.append(rvAdmin()),seasons:async b=>{try{b.append(await seasonAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},pars:async b=>{try{b.append(await parsAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},program:async b=>{try{b.append(await programAdmin())}catch(e){mount(b,h('div',{class:'err'},e.message))}},screening:b=>b.append(screeningAdmin()),achat:adminChat,partube:b=>b.append(partube()),mailtest:mailTest}[cur]
 fn(body)
 }
 mount(pg,h('h3',null,'Admin'),h('button',{class:'btn sm',type:'button',style:{marginBottom:'10px'},on:{click:async()=>{const{botScreen}=await import('./botscreen.js');const ov=h('div',{style:{position:'fixed',inset:'0',zIndex:'9999',background:'var(--bg,#111)',overflow:'auto'}});document.body.append(ov);botScreen(ov,{name:'Example Bot',description:'This is a test of the bot sign-in screen.',servers:3},{preview:true,done:()=>ov.remove()})}}},'Preview bot sign-in screen'),nav,body)
