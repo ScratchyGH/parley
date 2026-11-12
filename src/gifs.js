@@ -6,7 +6,7 @@ import{explicitText}from'./safety.js'
 const MAX=30*1048576
 const base=env=>(env.GIF_API_BASE||(env.TENOR_API_KEY?'https://tenor.googleapis.com/v2':'')).replace(/\/+$/,'')
 const key=env=>env.GIF_API_KEY||env.TENOR_API_KEY||''
-const hosts=env=>(env.GIF_MEDIA_HOSTS||'tenor.com,klipy.com,giphy.com,cdn.otakugifs.xyz,cdn.purrbot.site,nekos.best,upload.wikimedia.org').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
+const hosts=env=>(env.GIF_MEDIA_HOSTS||'tenor.com,klipy.com,giphy.com,cdn.otakugifs.xyz,cdn.purrbot.site,nekos.best,upload.wikimedia.org,cdn2.thecatapi.com,cataas.com,cdn2.thedogapi.com,gifree.iamtushak.workers.dev').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
 
 export function mediaUrl(env,v){
 let u
@@ -95,10 +95,34 @@ return{id:'k:'+String(m.id).slice(0,70),title:String(m.title||'').slice(0,120),p
 return{results:items,next:o.has_next?String(pg+1):''}
 }
 
+const GIFREE='https://gifree.iamtushak.workers.dev/api/v1'
+async function gifree(q,pos){
+const u=new URL(GIFREE+(q?'/search':'/trending'))
+if(q){u.searchParams.set('q',q);u.searchParams.set('limit','24');u.searchParams.set('providers','reactions,cats,dogs,commons');if(pos)u.searchParams.set('pageToken',pos)}
+let res
+try{res=await fetch(u,{headers:UA})}catch{return null}
+if(!res.ok)return null
+let d
+try{d=await res.json()}catch{return null}
+if(!d||!d.success||!d.data)return null
+const items=(d.data.items||[]).map(m=>{
+if(!m.url)return null
+return{id:'g:'+String(m.id).slice(0,70),title:String(m.title||'').slice(0,120),preview:(m.renditions&&m.renditions.small)||m.previewUrl||m.url,url:m.url,w:m.width||0,h:m.height||0}
+}).filter(x=>x&&!explicitText(x.title))
+const next=q?d.metadata&&d.metadata.pagination&&d.metadata.pagination.nextPageToken:d.data.nextPageToken
+return{results:items,next:String(next||'')}
+}
+
 async function upstream(c,path,params){
-if(c.env.KLIPY_API_KEY)return klipy(c,params)
+if(c.env.KLIPY_API_KEY){
+let r=null
+try{r=await klipy(c,params)}catch{}
+if(r&&(r.results.length||params.pos))return r
+if(params.pos)return{results:[],next:''}
+return await gifree(params.q||'',params.pos)||r||keyless(params.q||'')
+}
 const b=base(c.env)
-if(!b)return keyless(params.q||'')
+if(!b)return await gifree(params.q||'',params.pos)||keyless(params.q||'')
 const u=new URL(b+path)
 u.searchParams.set('key',key(c.env))
 u.searchParams.set('client_key','parley')
@@ -130,7 +154,7 @@ return{buf,type}
 }
 
 export default function(r){
-r.add('GET','/api/gifs/status',async c=>({enabled:true,note:c.env.KLIPY_API_KEY||base(c.env)?'':'Built-in search: reaction GIFs from otakugifs.xyz, purrbot.site and nekos.best plus Wikimedia Commons. No API key needed.'}))
+r.add('GET','/api/gifs/status',async c=>({enabled:true,note:c.env.KLIPY_API_KEY||base(c.env)?'':'Built-in search through GiFree: reaction GIFs, cats, dogs and Wikimedia Commons. No API key needed.'}))
 
 r.add('GET','/api/gifs/search',async c=>{
 limit('gif:'+c.user.id,60,60000)
