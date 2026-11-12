@@ -61,7 +61,7 @@ const drawTabs=()=>mount(tabs,[['trending','Trending'],['search','Search'],['sav
 q.addEventListener('input',debounce(()=>{if(tab!=='search'){tab='search';drawTabs()}run()},350))
 more.addEventListener('click',()=>{if(!busy)run(true)})
 GET('/api/gifs/favs').then(d=>{for(const g of d.results)favs.set(g.id,g)}).catch(()=>{})
-const d=dialog(title||'Choose a GIF',h('div',{class:'bd gifbd'},tabs,q,grid,note,h('div',{class:'row',style:{justifyContent:'center'}},more)),{cls:'gifdlg'})
+const d=dialog(title||'Choose a GIF',h('div',{class:'bd gifbd'},tabs,q,grid,note,h('div',{class:'row',style:{justifyContent:'center'}},more),h('a',{class:'gcredit',href:'https://gifree.iamtushak.workers.dev/',target:'_blank',rel:'noopener noreferrer'},'Powered Mostly By GiFree')),{cls:'gifdlg'})
 close=d.close
 drawTabs()
 run()
