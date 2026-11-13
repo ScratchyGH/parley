@@ -55,7 +55,11 @@ setTimeout(()=>POST('/api/pars/beat',{w:[],v:true}).catch(()=>{}),1500)
 setTimeout(checkGifts,3000)
 on('pars.gift',()=>checkGifts())
 }
-export const parIcon=(s=18)=>svg(s,'0 0 24 24',sv('circle',{cx:'12',cy:'12',r:'11',fill:'#d9870b'}),sv('circle',{cx:'12',cy:'12',r:'10',fill:'#f5b82e'}),sv('circle',{cx:'12',cy:'12',r:'7.6',fill:'#fcd462'}),sv('circle',{cx:'12',cy:'12',r:'7.6',fill:'none',stroke:'#d9870b','stroke-width':'.8'}),sv('path',{d:'M9.6 16.6V7.4h3a2.7 2.7 0 0 1 0 5.4h-3',fill:'none',stroke:'#7c3f06','stroke-width':'2.1','stroke-linecap':'round','stroke-linejoin':'round'}))
+export const parIcon=(s=18)=>{
+const face=cls=>h('i',{class:'pc-f '+cls},svg(24,'0 0 24 24',sv('path',{d:'M9.3 17.4V6.9h3.6a3.2 3.2 0 0 1 0 6.4H9.3',fill:'none',stroke:'currentColor','stroke-width':'2.6','stroke-linecap':'round','stroke-linejoin':'round'})))
+const el=h('span',{class:'pcoin','aria-hidden':'true',style:{'--s':s+'px'}},h('span',{class:'pc-b'},h('span',{class:'pc-s'},Array.from({length:7},(_,k)=>h('i',{class:'pc-e',style:{'--k':k-3}})),face('pc-fr'),face('pc-bk'))))
+return el
+}
 const KINDS=[['vanity','Server upgrades'],['boost','Upload boosts'],['frame','Avatar frames'],['effect','Avatar effects'],['nameplate','Nameplates'],['namefx','Name styles'],['badge','Badges'],['title','Titles'],['bubble','Message styles'],['acard','Avatar card styles'],['unlock','Custom items']]
 const EQ=['nameplate','frame','effect','namefx','badge','title','bubble','acard']
 const COS=new Set(EQ)
