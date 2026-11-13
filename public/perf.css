@@ -233,3 +233,24 @@ html:not(.seps) :is(.ws,.ctx,.me,.top,.panel,.dmcall,.vbar,.vpanel,.vstrip,.spli
 html:not(.seps) hr,html:not(.seps) .menu hr,html:not(.seps) .mb hr{border-color:transparent!important;background:transparent!important}
 html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="border-bottom"]{border-bottom-color:transparent!important}
 
+
+.mw:has(>.m[class*=" bb_"]):has(+.mw:not(:has(>.sepd)):has(>.m[class*=" bb_"]))>.m{margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.mw:has(>.m[class*=" bb_"])+.mw:not(:has(>.sepd)):has(>.m[class*=" bb_"])>.m{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}
+
+/* v-fix: avatars never let tall/wide GIFs escape the pfp box */
+.av{contain:layout}
+.av>img{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;max-width:none;max-height:none;object-fit:cover;object-position:center;border-radius:var(--avr,inherit);overflow:hidden;z-index:1}
+.av.has-img{overflow:visible}
+.scrow .av>img,.scard .av>img{border-radius:inherit}
+
+/* v-fix: bundle chips wrap as pills in every bundle card */
+.pb-list{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.pb-list span{display:inline-block;white-space:nowrap;line-height:1.5}
+.ts .pb-list span{padding:2px 10px}
+
+/* v-fix: GIF picker + in-message GIFs */
+.gifgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));grid-auto-rows:130px;gap:8px;padding:2px}
+.gif{aspect-ratio:auto;height:130px;border-radius:12px;border:1px solid var(--border);transition:transform .12s,border-color .12s}
+.gif:hover{transform:translateY(-1px);border-color:var(--accent)}
+.gpick img{object-fit:cover;object-position:center;border-radius:inherit}
+.att img[src*="gif"],.att video{width:auto;height:auto;max-width:min(360px,100%);max-height:300px;object-fit:contain}
