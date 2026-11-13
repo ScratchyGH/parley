@@ -4,9 +4,9 @@ import{h,icon,dialog,field,toast,fail}from'./util.js'
 const LK='parley.act'
 const L={play:'Playing ',listen:'Listening to ',watch:'Watching ',custom:''}
 const R=[[/^\/games/,'play','Parley Games'],[/^\/pars/,'custom','Browsing the Pars shop'],[/^\/bots|^\/lab/,'custom','Building a bot']]
-let manual=null,auto=null
+let manual=null,auto=null,steam=null
 try{manual=JSON.parse(localStorage.getItem(LK)||'null')}catch{}
-export const myAct=()=>manual||auto
+export const myAct=()=>manual||steam||auto
 export const actText=a=>a?(L[a.k]||'')+a.n:''
 const push=()=>{
 let a=myAct()
@@ -40,6 +40,18 @@ emit('act')
 }else if(m.t==='presence'&&m.s==='offline'){delete S.act[m.uid];emit('act')}
 })
 on('settings',push)
+const poll=async()=>{
+if(!S.me||document.hidden)return
+try{
+const r=await fetch('/api/users/'+S.me.id+'/connections',{credentials:'same-origin'})
+if(!r.ok)return
+const d=await r.json()
+const n=d.playing&&d.playing.game
+if((n||null)!==(steam&&steam.n)){steam=n?{k:'play',n,t:steam&&steam.n===n?steam.t:Date.now()}:null;push()}
+}catch{}
+}
+setTimeout(poll,2500)
+setInterval(poll,60000)
 route()
 if(manual)push()
 }
