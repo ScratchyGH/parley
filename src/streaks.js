@@ -15,10 +15,10 @@ const PIPE=REW.map(r=>({n:r.n,pars:r.pars||0,items:r.items.map(x=>({id:x[0],kind
 const hash=s=>{let h=0;const x=String(s||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');for(let i=0;i<x.length;i++)h=(h*31+x.charCodeAt(i))>>>0;return h.toString(36)}
 const dayOf=t=>Math.floor(t/DAY)
 export function view(r,me,t=now()){
-const d=dayOf(t),alive=d-r.last_day<=1&&r.last_day>0
+const d=dayOf(t),fz=r.freezes||0,gap=d-r.last_day,alive=r.last_day>0&&(gap<=1||(gap===2&&fz>0))
 const done=r.day===d&&r.a_n>=2&&r.b_n>=2
 const mine=me===r.a?r.a_n:r.b_n,theirs=me===r.a?r.b_n:r.a_n
-return{id:r.id,friend:me===r.a?r.b:r.a,count:alive?r.count:0,best:r.best,done_today:done,at_risk:alive&&r.last_day===d-1&&!done,mine:r.day===d?mine:0,theirs:r.day===d?theirs:0,ends_at:(r.last_day+2)*DAY}
+return{id:r.id,friend:me===r.a?r.b:r.a,count:alive?r.count:0,best:r.best,done_today:done,at_risk:alive&&gap>=1&&!done,frozen:alive&&gap===2&&fz>0&&!done,freezes:fz,mine:r.day===d?mine:0,theirs:r.day===d?theirs:0,ends_at:(r.last_day+(fz>0?3:2))*DAY}
 }
 export async function touchStreak(c,conv,content){
 const text=String(content||'').trim()
@@ -41,26 +41,30 @@ const side=me===a?'a':'b',h=hash(text)
 if(h===r[side+'_h'])return
 r[side+'_n']++
 r[side+'_h']=h
-let bonus=0,hit=null
+let bonus=0,hit=null,froze=false
 if(r.a_n>=2&&r.b_n>=2&&r.last_day<d){
-r.count=r.last_day===d-1?r.count+1:1
+const gp=d-r.last_day
+if(gp===1)r.count++
+else if(gp===2&&r.freezes>0&&r.count>0){r.count++;r.freezes--;froze=true}
+else r.count=1
+if(r.count%7===0&&r.freezes<2)r.freezes++
 r.last_day=d
 r.best=Math.max(r.best,r.count)
 hit=r.count
 const old=ages.every(u=>t-u.created_at>3*DAY)
 if(old)for(const[n,amt]of MILE)if(r.count>=n&&r.claimed<n){r.claimed=n;bonus=amt}
 }
-const st=[c.env.DB.prepare('update streaks set count=?,best=?,last_day=?,day=?,a_n=?,b_n=?,a_h=?,b_h=?,claimed=? where id=?').bind(r.count,r.best,r.last_day,r.day,r.a_n,r.b_n,r.a_h,r.b_h,r.claimed,id)]
+const st=[c.env.DB.prepare('update streaks set count=?,best=?,last_day=?,day=?,a_n=?,b_n=?,a_h=?,b_h=?,claimed=?,freezes=? where id=?').bind(r.count,r.best,r.last_day,r.day,r.a_n,r.b_n,r.a_h,r.b_h,r.claimed,r.freezes,id)]
 if(bonus)for(const u of[a,b])st.push(c.env.DB.prepare('insert into par_tx(id,user_id,delta,kind,ref,note,created_at) values(?,?,?,?,?,?,?)').bind(newId('pt'),u,bonus,'streak','st'+id+':'+r.claimed,r.claimed+' day streak',t),c.env.DB.prepare('update users set pars=pars+? where id=?').bind(bonus,u))
 try{await c.env.DB.batch(st)}catch(e){if(!String(e&&e.message).includes('UNIQUE'))throw e}
 if(hit){const gb=REW.filter(r=>hit>=r.n).flatMap(r=>r.items);if(gb.length)for(const u of[a,b]){try{const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${gb.map(()=>'?').join(',')})`).bind(u,...gb.map(x=>x[0])).all()).results.map(y=>y.item_id));const ins=gb.filter(x=>!have.has(x[0])).map(x=>c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),u,x[0],null,null,t));if(ins.length)await c.env.DB.batch(ins)}catch{}}}
-if(hit)for(const u of[a,b])c.pub('u_'+u,{t:'streak',conv,count:hit,bonus,friend:u===a?b:a})
+if(hit)for(const u of[a,b])c.pub('u_'+u,{t:'streak',conv,count:hit,bonus,froze,friend:u===a?b:a})
 else c.pub('u_'+other,{t:'streak.sync',conv})
 }
 export default function(r){
 r.add('GET','/api/streaks',async c=>{
 const me=c.user.id
-const rows=(await c.env.DB.prepare('select * from streaks where (a=? or b=?) and last_day>=? order by count desc limit 100').bind(me,me,dayOf(now())-1).all()).results
+const rows=(await c.env.DB.prepare('select * from streaks where (a=? or b=?) and last_day>=? order by count desc limit 100').bind(me,me,dayOf(now())-2).all()).results
 const out=rows.map(x=>view(x,me)).filter(x=>x.count>0||x.mine||x.theirs)
 const top=Math.max(0,...rows.map(x=>x.best||0))
 if(top>0){try{const gb=REW.filter(r=>top>=r.n).flatMap(r=>r.items);const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${gb.map(()=>'?').join(',')})`).bind(me,...gb.map(x=>x[0])).all()).results.map(y=>y.item_id));const ins=gb.filter(x=>!have.has(x[0])).map(x=>c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),me,x[0],null,null,now()));if(ins.length)await c.env.DB.batch(ins)}catch{}}
