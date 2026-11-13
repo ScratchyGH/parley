@@ -2,14 +2,14 @@ import{now,newId}from'./util.js'
 const DAY=86400000
 const REW=[
 {n:1,items:[['bd_streaker','badge','New Streaker']]},
-{n:3,items:[['np_spark','nameplate','Spark']]},
+{n:3,items:[['np_kindling','nameplate','Kindling']]},
 {n:7,pars:10,items:[['fr_streak','frame','Streak Ring']]},
-{n:14,pars:20,items:[['ti_dailyduo','title','Daily Duo']]},
-{n:30,pars:50,items:[['bd_keeper','badge','Streak Keeper'],['nf_keeper','namefx','Keeper Glow']]},
-{n:50,pars:75,items:[['np_blaze','nameplate','Blaze']]},
-{n:100,pars:150,items:[['bd_century','badge','Centurion'],['fr_inferno','frame','Inferno']]},
-{n:200,pars:300,items:[['ti_unbroken','title','Unbroken']]},
-{n:365,pars:500,items:[['bd_evergreen','badge','Evergreen'],['fr_evergreen','frame','Evergreen'],['np_evergreen','nameplate','Evergreen']]}]
+{n:14,pars:20,items:[['nf_twin','namefx','Twin Flame'],['ti_dailyduo','title','Daily Duo']]},
+{n:30,pars:50,items:[['ef_flare','effect','Flare'],['bd_keeper','badge','Streak Keeper']]},
+{n:50,pars:75,items:[['np_wildfire','nameplate','Wildfire'],['bb_streak','bubble','Ember messages']]},
+{n:100,pars:150,items:[['fr_phoenix','frame','Phoenix'],['ti_unbroken','title','Unbroken'],['bd_century','badge','Centurion']]},
+{n:200,pars:300,items:[['ef_eternal','effect','Eternal Flame'],['np_sunforged','nameplate','Sunforged']]},
+{n:365,pars:500,items:[['fr_eternal','frame','Laurel Crown'],['nf_evergreen','namefx','Evergreen'],['bb_eternal','bubble','Laurel messages'],['ti_evergreen','title','Evergreen'],['bd_evergreen','badge','Evergreen']]}]
 const MILE=REW.filter(r=>r.pars).map(r=>[r.n,r.pars])
 const PIPE=REW.map(r=>({n:r.n,pars:r.pars||0,items:r.items.map(x=>({id:x[0],kind:x[1],name:x[2]}))}))
 const hash=s=>{let h=0;const x=String(s||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');for(let i=0;i<x.length;i++)h=(h*31+x.charCodeAt(i))>>>0;return h.toString(36)}
