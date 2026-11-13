@@ -234,8 +234,8 @@ html:not(.seps) hr,html:not(.seps) .menu hr,html:not(.seps) .mb hr{border-color:
 html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="border-bottom"]{border-bottom-color:transparent!important}
 
 
-.mw:has(>.m[class*=" bb_"]):has(+.mw:not(:has(>.sepd)):has(>.m[class*=" bb_"]))>.m{margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
-.mw:has(>.m[class*=" bb_"])+.mw:not(:has(>.sepd)):has(>.m[class*=" bb_"])>.m{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}
+.mw:has(>.m[class*=" bb_"]):has(+.mw>.m.cont[class*=" bb_"]):not(:has(+.mw>.sepd))>.m{margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.mw:has(>.m[class*=" bb_"])+.mw:not(:has(>.sepd))>.m.cont[class*=" bb_"]{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}
 
 /* v-fix: avatars never let tall/wide GIFs escape the pfp box */
 .av{contain:layout}
