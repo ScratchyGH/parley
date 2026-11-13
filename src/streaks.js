@@ -1,6 +1,8 @@
 import{now,newId}from'./util.js'
 const DAY=86400000
 const MILE=[[7,10],[14,20],[30,50],[50,75],[100,150],[200,300],[365,500]]
+const BADGE=[[1,'bd_streaker','New Streaker'],[30,'bd_keeper','Streak Keeper'],[100,'bd_century','Centurion'],[365,'bd_evergreen','Evergreen']]
+const PIPE=[...new Set([...MILE.map(x=>x[0]),...BADGE.map(x=>x[0])])].sort((x,y)=>x-y).map(n=>{const m=MILE.find(x=>x[0]===n),b=BADGE.find(x=>x[0]===n);return{n,pars:m?m[1]:0,badge:b?b[1]:null,badge_name:b?b[2]:null}})
 const hash=s=>{let h=0;const x=String(s||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');for(let i=0;i<x.length;i++)h=(h*31+x.charCodeAt(i))>>>0;return h.toString(36)}
 const dayOf=t=>Math.floor(t/DAY)
 export function view(r,me,t=now()){
@@ -42,6 +44,7 @@ if(old)for(const[n,amt]of MILE)if(r.count>=n&&r.claimed<n){r.claimed=n;bonus=amt
 const st=[c.env.DB.prepare('update streaks set count=?,best=?,last_day=?,day=?,a_n=?,b_n=?,a_h=?,b_h=?,claimed=? where id=?').bind(r.count,r.best,r.last_day,r.day,r.a_n,r.b_n,r.a_h,r.b_h,r.claimed,id)]
 if(bonus)for(const u of[a,b])st.push(c.env.DB.prepare('insert into par_tx(id,user_id,delta,kind,ref,note,created_at) values(?,?,?,?,?,?,?)').bind(newId('pt'),u,bonus,'streak','st'+id+':'+r.claimed,r.claimed+' day streak',t),c.env.DB.prepare('update users set pars=pars+? where id=?').bind(bonus,u))
 try{await c.env.DB.batch(st)}catch(e){if(!String(e&&e.message).includes('UNIQUE'))throw e}
+if(hit){const gb=BADGE.filter(x=>hit>=x[0]);if(gb.length)for(const u of[a,b]){try{const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${gb.map(()=>'?').join(',')})`).bind(u,...gb.map(x=>x[1])).all()).results.map(y=>y.item_id));const ins=gb.filter(x=>!have.has(x[1])).map(x=>c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),u,x[1],null,null,t));if(ins.length)await c.env.DB.batch(ins)}catch{}}}
 if(hit)for(const u of[a,b])c.pub('u_'+u,{t:'streak',conv,count:hit,bonus,friend:u===a?b:a})
 else c.pub('u_'+other,{t:'streak.sync',conv})
 }
@@ -50,6 +53,6 @@ r.add('GET','/api/streaks',async c=>{
 const me=c.user.id
 const rows=(await c.env.DB.prepare('select * from streaks where (a=? or b=?) and last_day>=? order by count desc limit 100').bind(me,me,dayOf(now())-1).all()).results
 const out=rows.map(x=>view(x,me)).filter(x=>x.count>0||x.mine||x.theirs)
-return{streaks:out}
+return{streaks:out,rewards:PIPE}
 })
 }
