@@ -187,7 +187,7 @@ return{url:'https://steamcommunity.com/openid/login?'+q}
 })
 r.add('GET','/api/connections/steam/return',async c=>{
 const u=new URL(c.req.url),home=u.origin+'/settings/connections'
-const go=m=>new Response(null,{status:302,headers:{location:home+(m?'?steam='+m:'')}})
+const go=(m,w)=>new Response(null,{status:302,headers:{location:home+(m?'?steam='+m+(w?'&w='+encodeURIComponent(String(w).slice(0,40)):''):'')}})
 const n=u.searchParams.get('n')||'',st=await get(c.env,'stn:'+n)
 await c.env.DB.prepare('delete from app_settings where k=?').bind('stn:'+n).run()
 if(!st||st.exp<now()||st.u!==c.user.id)return go('expired')
@@ -197,9 +197,11 @@ if(!m||u.searchParams.get('openid.mode')!=='id_res')return go('cancelled')
 if(u.searchParams.get('openid.return_to')!==u.origin+'/api/connections/steam/return?n='+n)return go('failed')
 const vp=new URLSearchParams();for(const[k,v]of u.searchParams)if(k.startsWith('openid.'))vp.set(k,v)
 vp.set('openid.mode','check_authentication')
-let ok=false
-try{const t=await fetch('https://steamcommunity.com/openid/login',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:vp}).then(r=>r.text());ok=/is_valid\s*:\s*true/.test(t)}catch{}
-if(!ok)return go('failed')
+let ok=false,why=''
+for(let i=0;i<2&&!ok;i++){
+try{const rs=await fetch('https://steamcommunity.com/openid/login',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded','user-agent':XUA['user-agent'],accept:'*/*'},body:vp});const t=await rs.text();ok=/is_valid\s*:\s*true/.test(t);if(!ok)why=rs.status+(rs.ok?' invalid':'')}catch(e){why='fetch '+String(e&&e.message||e)}
+}
+if(!ok)return go('failed',why)
 const id=m[1],xk='connx:steam:'+id,x=await get(c.env,xk)
 if(x&&x!==c.user.id)return go('taken')
 let name=id
