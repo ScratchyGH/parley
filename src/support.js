@@ -286,30 +286,48 @@ await c.env.DB.prepare('delete from app_settings where k=?').bind('connx:'+c.p.p
 return{list:pubList(o)}
 })
 const PLAY=new Map()
-async function playing(o){
-const st=o&&o.steam;if(!st||st.u||!st.id)return null
-const hit=PLAY.get(st.id);if(hit&&hit.t>Date.now())return hit.v
-let v=null
+const XUA={'user-agent':'Mozilla/5.0 (compatible; Parley/1; +https://parley.heavengtwashere.workers.dev)',accept:'text/xml,application/xml,*/*'}
+const unc=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').trim()
+async function playing(o,env){
+const st=o&&o.steam;if(!st||st.u||!st.id)return{v:null,hint:''}
+const hit=PLAY.get(st.id);if(hit&&hit.t>Date.now())return hit.r
+let v=null,hint='',done=false
+const mk=(name,app)=>({game:String(name).slice(0,80),app:app&&/^\d{1,10}$/.test(String(app))?String(app):null,link:app&&/^\d{1,10}$/.test(String(app))?'https://store.steampowered.com/app/'+app:null,provider:'Steam',desc:''})
+if(env&&env.STEAM_API_KEY){
 try{
-const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:UA}).then(r=>r.ok?r.text():'')
-const g=/<inGameInfo>([\s\S]*?)<\/inGameInfo>/.exec(x)
-if(g){
-const un=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').trim()
-const nm=/<gameName>([\s\S]*?)<\/gameName>/.exec(g[1]),ln=/<gameLink>([\s\S]*?)<\/gameLink>/.exec(g[1])
-const app=/\/app\/(\d+)/.exec(un(ln&&ln[1]))
-if(nm){
-v={game:un(nm[1]).slice(0,80),app:app?app[1]:null,link:app?'https://store.steampowered.com/app/'+app[1]:null,provider:'Steam',desc:''}
-if(app){try{const d=await fetch('https://store.steampowered.com/api/appdetails?appids='+app[1]+'&filters=short_description',{headers:UA}).then(r=>r.json());const dd=d&&d[app[1]]&&d[app[1]].data;if(dd&&dd.short_description)v.desc=String(dd.short_description).replace(/<[^>]*>/g,'').slice(0,160)}catch{}}
-}}
+const j=await fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key='+encodeURIComponent(env.STEAM_API_KEY)+'&steamids='+st.id,{headers:UA}).then(r=>r.ok?r.json():null)
+const p=j&&j.response&&j.response.players&&j.response.players[0]
+if(p){done=true;if(p.communityvisibilitystate!==3)hint='profile';else if(p.gameextrainfo)v=mk(p.gameextrainfo,p.gameid)}
 }catch{}
+}
+if(!done){
+try{
+const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:XUA}).then(r=>r.ok?r.text():'')
+if(x){
+const pv=/<privacyState>([\s\S]*?)<\/privacyState>/.exec(x)
+if(pv&&unc(pv[1])!=='public')hint='profile'
+else{
+const g=/<inGameInfo>([\s\S]*?)<\/inGameInfo>/.exec(x)
+const nm=g&&/<gameName>([\s\S]*?)<\/gameName>/.exec(g[1]),ln=g&&/<gameLink>([\s\S]*?)<\/gameLink>/.exec(g[1])
+if(nm){const app=/\/app\/(\d+)/.exec(unc(ln&&ln[1]));v=mk(unc(nm[1]),app&&app[1])}
+else if(/<onlineState>in-game<\/onlineState>/.test(x))hint='details'
+}
+}
+}catch{}
+}
+if(v&&v.app){try{const d=await fetch('https://store.steampowered.com/api/appdetails?appids='+v.app+'&filters=short_description',{headers:UA}).then(r=>r.json());const dd=d&&d[v.app]&&d[v.app].data;if(dd&&dd.short_description)v.desc=String(dd.short_description).replace(/<[^>]*>/g,'').slice(0,160)}catch{}}
+const r={v,hint}
 if(PLAY.size>500)PLAY.clear()
-PLAY.set(st.id,{t:Date.now()+(v?60000:30000),v})
-return v
+PLAY.set(st.id,{t:Date.now()+(v?45000:30000),r})
+return r
 }
 r.add('GET','/api/users/:uid/connections',async c=>{
 limit('connget:'+c.user.id,120,60000)
 const o=await get(c.env,'conn:'+c.p.uid)
-return{list:pubList(o),playing:await playing(o)}
+const p=await playing(o,c.env)
+const out={list:pubList(o),playing:p.v}
+if(c.p.uid===c.user.id&&o&&o.steam&&p.hint)out.steam=p.hint
+return out
 })
 r.add('GET','/api/gameimg/:app',async c=>{
 limit('gimg:'+c.user.id,200,60000)
