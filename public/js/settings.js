@@ -539,5 +539,5 @@ return h('div',{class:'cn-card'},head,body)
 }))
 mount(pg,h('h3',null,'Connections'),h('p',{class:'hint'},'Linked accounts show as icons on your profile. Verified ones are proven with a code in your bio.'),box)
 draw()
-try{const q=new URLSearchParams(location.search).get('steam');if(q){history.replaceState(null,'',location.pathname);const M={ok:['Steam connected','ok'],cancelled:['Steam sign in was cancelled','err'],taken:['That Steam account is linked to another Parley account','err'],expired:['That Steam sign in expired. Try again.','err'],failed:['Steam could not confirm the sign in. Try again.','err']}[q];if(M)toast(M[0],M[1])}}catch{}
+try{const qs=new URLSearchParams(location.search),q=qs.get('steam'),qw=qs.get('w');if(q){history.replaceState(null,'',location.pathname);const M={ok:['Steam connected','ok'],cancelled:['Steam sign in was cancelled','err'],taken:['That Steam account is linked to another Parley account','err'],expired:['That Steam sign in expired. Try again.','err'],failed:['Steam could not confirm the sign in. Try again.','err']}[q];if(M)toast(M[0]+(qw?' ('+qw+')':''),M[1])}}catch{}
 }
