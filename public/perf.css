@@ -254,3 +254,8 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .gif:hover{transform:translateY(-1px);border-color:var(--accent)}
 .gpick img{object-fit:cover;object-position:center;border-radius:inherit}
 .att img[src*="gif"],.att video{width:auto;height:auto;max-width:min(360px,100%);max-height:300px;object-fit:contain}
+
+/* v-fix: idle moon and do-not-disturb bar status icons */
+.st.idle{background:var(--warn) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23161616' d='M21 14.2A9 9 0 0 1 9.8 3 9 9 0 1 0 21 14.2z'/%3E%3C/svg%3E") center/84% no-repeat}
+.st.busy{background:linear-gradient(#161616,#161616) center/62% 24% no-repeat,var(--err)}
+.st.idle,.st.busy{box-shadow:0 0 0 .5px rgba(0,0,0,.25)}
