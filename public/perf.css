@@ -318,8 +318,8 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .ti_unbroken{color:#fca5a5;background:linear-gradient(90deg,rgba(69,10,10,.75),rgba(220,38,38,.25))}.ti_unbroken::before{content:"Unbroken"}
 .nf_keeper{background:linear-gradient(90deg,#f97316,#fde68a,#ef4444,#f97316) 0 0/300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:bnshine 5s linear infinite}
 .rm .nf_keeper,.perf .nf_keeper,.rm .np_blaze,.perf .np_blaze,.rm .fr_inferno .frm,.perf .fr_inferno .frm{animation:none!important}
-.sp-fm{display:inline-grid;place-items:center;width:30px;height:30px;margin:6px 8px 6px 6px}
-.sp-fm .av{width:18px;height:18px;font-size:9px}
+.sp-fm{display:inline-grid;place-items:center;width:44px;height:44px;margin:2px 4px}
+.sp-fm .av{width:26px;height:26px;font-size:11px}
 .sp-np{padding:0 7px;font-size:11px;margin-right:2px}
 .sp-b small{color:var(--muted);font-size:10.5px;margin-left:2px}
 .sp-b .nf,.sp-b .ttl{margin-left:0}
