@@ -62,6 +62,8 @@ r.add('GET','/api/streaks',async c=>{
 const me=c.user.id
 const rows=(await c.env.DB.prepare('select * from streaks where (a=? or b=?) and last_day>=? order by count desc limit 100').bind(me,me,dayOf(now())-1).all()).results
 const out=rows.map(x=>view(x,me)).filter(x=>x.count>0||x.mine||x.theirs)
+const top=Math.max(0,...rows.map(x=>x.best||0))
+if(top>0){try{const gb=REW.filter(r=>top>=r.n).flatMap(r=>r.items);const have=new Set((await c.env.DB.prepare(`select item_id from par_owned where user_id=? and item_id in (${gb.map(()=>'?').join(',')})`).bind(me,...gb.map(x=>x[0])).all()).results.map(y=>y.item_id));const ins=gb.filter(x=>!have.has(x[0])).map(x=>c.env.DB.prepare('insert into par_owned(id,user_id,item_id,server_id,gift_from,created_at) values(?,?,?,?,?,?)').bind(newId('po'),me,x[0],null,null,now()));if(ins.length)await c.env.DB.batch(ins)}catch{}}
 return{streaks:out,rewards:PIPE}
 })
 }
