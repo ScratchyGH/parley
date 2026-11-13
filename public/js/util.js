@@ -25,6 +25,7 @@ export const clear=el=>{while(el.firstChild)el.firstChild.remove();return el}
 export const mount=(el,...kids)=>add(clear(el),kids)
 
 const ICONS={
+snow:'M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 4l3 2 3-2M9 20l3-2 3 2',
 image:'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M8.5 9.5h.01',
 hash:'M4 9h16M4 15h16M10 3L8 21M16 3l-2 18',
 volume:'M11 5L6 9H2v6h4l5 4V5z M15.5 8.5a5 5 0 0 1 0 7 M19 5a9 9 0 0 1 0 14',

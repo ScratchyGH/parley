@@ -7,7 +7,7 @@ export const streakOf=id=>M.get(id)
 export function streakChip(userId){
 const s=M.get(userId)
 if(!s||!(s.count>0))return null
-return h('span',{class:'stk'+(s.at_risk?' risk':''),role:'button',tabindex:'0',title:(s.at_risk?'Streak ends soon. Both of you need to message today. ':'')+s.count+' day streak. Click to see rewards',on:{click:e=>{e.stopPropagation();e.preventDefault();streakDialog(s)},keydown:e=>{if(e.key==='Enter'||e.key===' '){e.stopPropagation();e.preventDefault();streakDialog(s)}}}},icon('flame'),String(s.count))
+return h('span',{class:'stk'+(s.frozen?' frz':s.at_risk?' risk':''),role:'button',tabindex:'0',title:(s.frozen?'Frozen. A freeze will save it if you both message today. ':s.at_risk?'Streak ends soon. Both of you need to message today. ':'')+s.count+' day streak. Click to see rewards',on:{click:e=>{e.stopPropagation();e.preventDefault();streakDialog(s)},keydown:e=>{if(e.key==='Enter'||e.key===' '){e.stopPropagation();e.preventDefault();streakDialog(s)}}}},icon('flame'),String(s.count))
 }
 const KL={badge:'Badge',frame:'Frame',nameplate:'Nameplate',title:'Title',namefx:'Name style',effect:'Effect',bubble:'Message style'}
 const me=()=>S.me||{display_name:'You'}
@@ -47,6 +47,7 @@ const pct=nextI<0?100:Math.max(0,Math.min(100,Math.round(((s.count-prior)/(list[
 const pipe=h('ol',{class:'sp-pipe'},cols)
 dialog('Streak rewards',h('div',{class:'bd sp'},
 h('div',{class:'sp-head'},h('span',{class:'sp-fl'},icon('flame')),h('div',null,h('b',null,s.count+' day streak'),h('small',null,'Best '+best+(nextI>=0?' · next reward at day '+list[nextI].n:' · every reward unlocked'))),h('div',{class:'sp-pct'},pct+'%')),
+h('div',{class:'sp-frz'+(s.frozen?' on':'')},icon('snow'),h('div',null,h('b',null,(s.freezes||0)+' streak freeze'+((s.freezes||0)===1?'':'s')),h('small',null,s.frozen?'Frozen. Message today to use a freeze and keep your streak.':'Miss a day and a freeze keeps it alive automatically. Earn one every 7 days, up to 2.'))),
 h('div',{class:'sp-bar'},h('i',{style:{width:pct+'%'}})),
 pipe,
 h('p',{class:'hint'},'Rewards go to both of you and land in your Pars wardrobe. Message each other at least twice a day to keep the streak alive. Pars bonuses need accounts older than 3 days.')),{cls:'sp-dlg'})
@@ -65,7 +66,7 @@ const go=async()=>{await loadStreaks();redraw()}
 setTimeout(go,2500)
 setInterval(()=>{if(!document.hidden)go()},300000)
 on('streak',m=>{
-toast(m.count+' day streak unlocked'+(m.bonus?' (+'+m.bonus+' Pars)':''),'ok')
+toast((m.froze?'Freeze used, streak saved. ':'')+m.count+' day streak unlocked'+(m.bonus?' (+'+m.bonus+' Pars)':''),'ok')
 go()
 })
 on('streak.sync',go)
