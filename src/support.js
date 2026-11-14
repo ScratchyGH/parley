@@ -295,13 +295,11 @@ const st=o&&o.steam;if(!st||st.u||!st.id)return{v:null,hint:''}
 const hit=PLAY.get(st.id);if(hit&&hit.t>Date.now())return hit.r
 let v=null,hint='',done=false
 const mk=(name,app)=>({game:String(name).slice(0,80),app:app&&/^\d{1,10}$/.test(String(app))?String(app):null,link:app&&/^\d{1,10}$/.test(String(app))?'https://store.steampowered.com/app/'+app:null,provider:'Steam',desc:''})
-if(env&&env.STEAM_API_KEY){
 try{
-const j=await fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key='+encodeURIComponent(env.STEAM_API_KEY)+'&steamids='+st.id,{headers:UA}).then(r=>r.ok?r.json():null)
+const j=await fetch('https://steamdirect.iamtushak.workers.dev/ISteamUser/GetPlayerSummaries/v2/?steamids='+st.id,{headers:UA}).then(r=>r.ok?r.json():null)
 const p=j&&j.response&&j.response.players&&j.response.players[0]
 if(p){done=true;if(p.communityvisibilitystate!==3)hint='profile';else if(p.gameextrainfo)v=mk(p.gameextrainfo,p.gameid)}
 }catch{}
-}
 if(!done){
 try{
 const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:XUA}).then(r=>r.ok?r.text():'')
