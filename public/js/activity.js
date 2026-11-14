@@ -12,7 +12,7 @@ const push=()=>{
 let a=myAct()
 if(!setting('show_activity',true))a=null
 if(S.me){if(a)S.act[S.me.id]=a;else delete S.act[S.me.id]}
-sendAll({t:'activity',a})
+sendAll({t:'activity',a:a?{...a,s:1}:null})
 emit('act')
 }
 export function setActivity(a){
@@ -31,11 +31,11 @@ for(const k of['pushState','replaceState']){const o=history[k];history[k]=functi
 addEventListener('popstate',route)
 on('ev',({m})=>{
 if(m.t==='ready'){
-for(const p of m.presence||[]){if(p.a)S.act[p.uid]=p.a;else delete S.act[p.uid]}
-if(myAct())push()
+for(const p of m.presence||[]){if(p.a&&p.a.s)S.act[p.uid]=p.a;else delete S.act[p.uid]}
+push()
 emit('act')
 }else if(m.t==='activity'){
-if(m.a)S.act[m.uid]=m.a;else delete S.act[m.uid]
+if(m.a&&m.a.s)S.act[m.uid]=m.a;else delete S.act[m.uid]
 emit('act')
 }else if(m.t==='presence'&&m.s==='offline'){delete S.act[m.uid];emit('act')}
 })
@@ -53,7 +53,6 @@ if((n||null)!==(steam&&steam.n)){steam=n?{k:'play',n,t:steam&&steam.n===n?steam.
 setTimeout(poll,2500)
 setInterval(poll,60000)
 route()
-if(manual)push()
 }
 const since=t=>{const m=Math.floor((Date.now()-t)/60000);return m<1?'just started':m<60?m+' min':Math.floor(m/60)+'h '+m%60+'m'}
 export function actWidget(u){
