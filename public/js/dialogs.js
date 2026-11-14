@@ -241,18 +241,20 @@ const own=u.id===S.me.id
 const el=h('div',{class:'pcard'+(u.acard?' '+u.acard:'')})
 const act=h('div',{class:'row',style:{flexWrap:'wrap',marginTop:'6px'}})
 const refresh=async()=>{await loadFriends();closeMenu();profileCard({id,x,y,sid})}
-const btn=(label,fn,cls='')=>h('button',{class:'btn sm '+cls,on:{click:async()=>{try{await fn()}catch(e){fail(e)}}}},label)
-if(own)act.append(btn('Edit profile',()=>{closeMenu();emit('ui:settings','profile')}))
+const btn=(label,fn,cls='',ic='')=>h('button',{class:'btn sm '+(ic?'sq ':'')+cls,title:label,'aria-label':label,on:{click:async()=>{try{await fn()}catch(e){fail(e)}}}},ic?icon(ic):label)
+if(own)act.append(btn('Edit profile',()=>{closeMenu();emit('ui:settings','profile')},'pri','edit'))
 else{
-act.append(btn('Message',async()=>{closeMenu();await openDm(u.id)},'pri'))
-if(rel.friend)act.append(btn('Remove friend',async()=>{await DEL('/api/friends/'+u.id);refresh()}))
-else if(rel.pending==='incoming')act.append(btn('Accept request',async()=>{await POST(`/api/friends/${u.id}/accept`,{});refresh()}))
-else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await DEL('/api/friends/'+u.id);refresh()}))
-else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()}))
-act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()}))
-act.append(btn('Send cake',async()=>{await POST('/api/banhammer/cake',{to:u.username});toast('Cake sent','ok')}))
-if(canHammer())act.append(btn('Use ban hammer',()=>{closeMenu();banhammerDialog(u)},'dng'))
+act.append(btn('Message',async()=>{closeMenu();await openDm(u.id)},'pri','chat'))
+if(rel.friend)act.append(btn('Remove friend',async()=>{await DEL('/api/friends/'+u.id);refresh()},'','x'))
+else if(rel.pending==='incoming')act.append(btn('Accept request',async()=>{await POST(`/api/friends/${u.id}/accept`,{});refresh()},'','check'))
+else if(rel.pending==='outgoing')act.append(btn('Cancel request',async()=>{await DEL('/api/friends/'+u.id);refresh()},'','x'))
+else act.append(btn('Add friend',async()=>{await POST('/api/friends/request',{username:u.username});toast('Friend request sent','ok');refresh()},'','useradd'))
+act.append(btn(rel.blocked?'Unblock':'Block',async()=>{if(rel.blocked)await DEL('/api/blocks/'+u.id);else{if(!await confirmBox('Block '+u.display_name,'They will not be able to message you or call you, and you will not see their direct messages.','Block',true))return;await POST('/api/blocks/'+u.id,{})}refresh()},'','ban'))
+act.append(btn('Send cake',async()=>{await POST('/api/banhammer/cake',{to:u.username});toast('Cake sent','ok')},'','gift'))
+if(canHammer())act.append(btn('Use ban hammer',()=>{closeMenu();banhammerDialog(u)},'dng','hand'))
 }
+const mem0=sid?S.sdata[sid]?.memberList?.find(m=>m.id===u.id):null
+if(!own){act.append(btn('Copy ID',()=>copyText(u.id),'','copy'),btn('Report user',()=>{closeMenu();emit('ui:report',{type:'user',id:u.id})},'','flag'));if(mem0)act.append(btn('Moderation',()=>{closeMenu();menu(memberMenu(sid,mem0),x,y)},'','shield'))}
 const hero=heroBox(u.accent,u.banner_id)
 const BADGE={owner:'Owner',staff:'Staff',experimental:'Experimental',bot:'Bot'}
 const badges=(u.badges||[]).length?h('div',{class:'badges'},u.badges.map(b=>h('span',{class:'badge '+b},BADGE[b]||b))):null
@@ -275,8 +277,7 @@ stxt(u)?h('div',{style:{margin:'6px 0'}},stxt(u)):null,actWidget(u),pw,conns,
 badges,links,
 u.bio?h('div',{class:'mb',style:{margin:'8px 0',maxHeight:'64px',overflow:'auto'}},render(u.bio,{})):null,
 h('div',{class:'hint'},`${data.mutual_servers} mutual server${data.mutual_servers===1?'':'s'} · Joined ${new Date(u.created_at).toLocaleDateString()}`),
-wish,note,act,
-!own?h('div',{class:'row',style:{marginTop:'6px'}},btn('Copy ID',()=>copyText(u.id)),btn('Report user',()=>{closeMenu();emit('ui:report',{type:'user',id:u.id})}),sid&&mem?btn('Moderation',()=>{closeMenu();const items=memberMenu(sid,mem);menu(items,x,y)}):null):null))
+wish,note,act))
 popup(el,Math.min(x,innerWidth-400),Math.min(y,innerHeight-460),'')
 }
 
