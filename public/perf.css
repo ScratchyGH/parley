@@ -380,8 +380,9 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .pcard .pnote{margin:6px 0;min-height:0;height:34px;padding:6px 10px;font-size:12px;resize:none}
 .pcard .row{gap:6px}
 .pcard .gpw{margin:6px 0}
-.pcard .gpw-i{width:104px;aspect-ratio:616/353;height:auto;align-self:center;border-radius:0}
-.pcard .gpw-t{padding:6px 8px 6px 0}
+.pcard .gpw{align-items:center;padding:8px 10px;gap:12px}
+.pcard .gpw-i{width:52px;height:52px;aspect-ratio:1;object-fit:cover;border-radius:12px;flex:none}
+.pcard .gpw-t{padding:0}
 .pcard .gpw-t p{display:none}
 .pcard .cnx{margin:6px 0}
 .pcard .row .btn.sq{flex:0 0 auto;width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}
