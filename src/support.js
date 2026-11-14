@@ -304,7 +304,7 @@ if(p){done=true;if(p.communityvisibilitystate!==3)hint='profile';else if(p.gamee
 }catch{}}
 if(st&&!v&&hint!=='profile'){
 try{
-const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:XUA}).then(r=>r.ok?r.text():'')
+const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1&_='+Date.now(),{headers:XUA,cf:{cacheTtl:0}}).then(r=>r.ok?r.text():'')
 if(x){
 const pv=/<privacyState>([\s\S]*?)<\/privacyState>/.exec(x)
 if(pv&&unc(pv[1])!=='public')hint='profile'
