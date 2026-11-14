@@ -92,7 +92,7 @@ jobs:
           const cmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)-(y[i]||0)}return 0}
           let busy=false,done=null,lastCheck=0
           const get=async(name,dest,sha)=>{
-          const r=await fetch('__FEED__/'+name,{redirect:'follow'})
+          const r=await fetch('__SITE__/api/dl/apps/'+name,{redirect:'follow'})
           if(!r.ok||!r.body)throw new Error('http')
           const h=crypto.createHash('sha256'),out=fs.createWriteStream(dest)
           await new Promise((ok,no)=>{const s=Readable.fromWeb(r.body);s.on('data',c=>h.update(c));s.on('error',no);out.on('error',no);out.on('finish',ok);s.pipe(out)})
@@ -125,7 +125,7 @@ jobs:
           if(busy)return
           busy=true;lastCheck=Date.now()
           try{
-          const j=await fetch('__FEED__/desktop.json',{redirect:'follow'}).then(r=>r.ok?r.json():null)
+          const j=await fetch('__SITE__/api/dl/apps/desktop.json',{redirect:'follow'}).then(r=>r.ok?r.json():null)
           if(j&&j.version&&j.version!==done&&cmp(j.version,app.getVersion())>0){done=j.version;if(process.platform==='darwin')await mac(j);else await deb(j)}
           }catch{done=null}
           busy=false
