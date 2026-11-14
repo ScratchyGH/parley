@@ -300,7 +300,7 @@ const j=await fetch('https://steamdirect.iamtushak.workers.dev/ISteamUser/GetPla
 const p=j&&j.response&&j.response.players&&j.response.players[0]
 if(p){done=true;if(p.communityvisibilitystate!==3)hint='profile';else if(p.gameextrainfo)v=mk(p.gameextrainfo,p.gameid)}
 }catch{}
-if(!done){
+if(!v&&hint!=='profile'){
 try{
 const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:XUA}).then(r=>r.ok?r.text():'')
 if(x){
@@ -310,7 +310,7 @@ else{
 const g=/<inGameInfo>([\s\S]*?)<\/inGameInfo>/.exec(x)
 const nm=g&&/<gameName>([\s\S]*?)<\/gameName>/.exec(g[1]),ln=g&&/<gameLink>([\s\S]*?)<\/gameLink>/.exec(g[1])
 if(nm){const app=/\/app\/(\d+)/.exec(unc(ln&&ln[1]));v=mk(unc(nm[1]),app&&app[1])}
-else if(/<onlineState>in-game<\/onlineState>/.test(x))hint='details'
+else{const sm=/<stateMessage>([\s\S]*?)<\/stateMessage>/.exec(x),gm=sm&&/^In-Game(?:<br\s*\/?>|\s)+([\s\S]+)$/i.exec(unc(sm[1]));if(gm&&gm[1].trim())v=mk(gm[1].replace(/<[^>]*>/g,'').trim(),null);else if(/<onlineState>in-game<\/onlineState>/.test(x))hint='details'}
 }
 }
 }catch{}
