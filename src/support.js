@@ -315,6 +315,7 @@ else{const sm=/<stateMessage>([\s\S]*?)<\/stateMessage>/.exec(x),gm=sm&&/^In-Gam
 }
 }catch{}
 }
+if(v&&!v.app){try{const d=await fetch('https://store.steampowered.com/api/storesearch/?term='+encodeURIComponent(v.game)+'&cc=us&l=en',{headers:UA}).then(r=>r.json());const it=(d.items||[]).find(i=>String(i.name).toLowerCase()===v.game.toLowerCase())||(d.items||[])[0];if(it&&it.id){v.app=String(it.id);v.link='https://store.steampowered.com/app/'+it.id}}catch{}}
 if(v&&v.app){try{const d=await fetch('https://store.steampowered.com/api/appdetails?appids='+v.app+'&filters=short_description',{headers:UA}).then(r=>r.json());const dd=d&&d[v.app]&&d[v.app].data;if(dd&&dd.short_description)v.desc=String(dd.short_description).replace(/<[^>]*>/g,'').slice(0,160)}catch{}}
 const r={v,hint}
 if(PLAY.size>500)PLAY.clear()
