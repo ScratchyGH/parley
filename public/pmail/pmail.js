@@ -55,8 +55,13 @@ return j
 let DOM='pmail.parley'
 const S={me:null,folder:'inbox',items:[],more:false,sel:null,msg:null,q:'',busy:false}
 const PRESETS={dimmed:['#212829','#d46a86'],silver:['#2c3436','#d46a86'],light:['#ffffff','#0969da'],contrast:['#0a0c10','#71b7ff']}
+let CUR={}
+const shared=()=>{try{if(localStorage.getItem('pmail.own')==='1')return null;const v=JSON.parse(localStorage.getItem('parley.theme')||'null');return v&&PRESETS[v.t]?v:null}catch{return null}}
+const own=v=>{try{if(v)localStorage.setItem('pmail.own','1');else localStorage.removeItem('pmail.own')}catch{}}
 function theme(p){
-p=p||{}
+CUR=p=p||{}
+const sh=shared()
+if(sh)p={...p,preset:sh.t,accent:sh.a,bg:sh.b,text:''}
 root.dataset.preset=PRESETS[p.preset]?p.preset:'dimmed'
 for(const k of['density','layout','font','width','radius'])root.dataset[k]=p[k]||({density:'comfortable',layout:'three',font:'default',width:'medium',radius:'soft'})[k]
 for(const[k,v]of[['--hi',p.accent],['--bg',p.bg],['--text',p.text]])if(v)root.style.setProperty(k,v);else root.style.removeProperty(k)
@@ -371,9 +376,10 @@ const nm=h('input',{value:S.me.display||'',maxlength:'40',placeholder:'Shown on 
 const ac=h('input',{type:'color',value:p.accent||PRESETS[p.preset||'dimmed'][1]}),bg=h('input',{type:'color',value:p.bg||PRESETS[p.preset||'dimmed'][0]})
 body=h('div',null,
 h('h4',null,'Theme'),
-h('div',{class:'swatches'},Object.entries(PRESETS).map(([k,[b,a]])=>{const i=h('i');i.style.background='linear-gradient(135deg,'+b+' 55%,'+a+' 55%)';return h('button',{class:'sw'+((p.preset||'dimmed')===k?' on':''),onclick:async()=>{await save({preset:k,accent:'',bg:'',text:''});draw()}},i,h('span',null,k))})),
+(()=>{let has=false;try{has=!!JSON.parse(localStorage.getItem('parley.theme')||'null')}catch{}return has?h('p',{class:'hint'},shared()?'Following your Parley theme. ':'Using PMail\'s own theme. ',h('button',{class:'btn sm',onclick:()=>{own(!!shared());theme(CUR);draw()}},shared()?'Use PMail\'s own':'Follow Parley')):null})(),
+h('div',{class:'swatches'},Object.entries(PRESETS).map(([k,[b,a]])=>{const i=h('i');i.style.background='linear-gradient(135deg,'+b+' 55%,'+a+' 55%)';return h('button',{class:'sw'+((p.preset||'dimmed')===k?' on':''),onclick:async()=>{own(true);await save({preset:k,accent:'',bg:'',text:''});draw()}},i,h('span',null,k))})),
 h('div',{class:'g2'},h('label',{class:'f'},h('span',null,'Accent colour'),ac),h('label',{class:'f'},h('span',null,'Background'),bg)),
-h('p',null,h('button',{class:'btn sm',onclick:async()=>{await save({accent:ac.value,bg:bg.value});draw()}},'Apply colours'),' ',h('button',{class:'btn sm',onclick:async()=>{await save({accent:'',bg:'',text:''});draw()}},'Reset colours')),
+h('p',null,h('button',{class:'btn sm',onclick:async()=>{own(true);await save({accent:ac.value,bg:bg.value});draw()}},'Apply colours'),' ',h('button',{class:'btn sm',onclick:async()=>{await save({accent:'',bg:'',text:''});draw()}},'Reset colours')),
 h('h4',null,'Layout'),
 h('div',{class:'g2'},
 h('div',null,h('p',{class:'hint'},'Panes'),seg('layout',[['three','Three panes'],['two','Two panes'],['list','Single list']])),
@@ -521,3 +527,4 @@ await load()
 }
 setInterval(async()=>{if(!S.me||document.hidden)return;try{const m=await api('GET','/me');const before=S.me.counts.inbox?S.me.counts.inbox.n:0;S.me.counts=m.counts;S.me.aliases=m.aliases;if((m.counts.inbox?m.counts.inbox.n:0)!==before&&S.folder==='inbox'&&!S.busy)await load();paintSide()}catch{}},45000)
 boot()
+addEventListener('storage',e=>{if(e.key==='parley.theme'||e.key==='pmail.own')theme(CUR)})
