@@ -213,6 +213,7 @@ root.classList.toggle('perf',!!s.performance)
 root.classList.toggle('seps',!!s.sep_lines)
 root.classList.toggle('nohw',s.hwaccel===false)
 root.classList.toggle('amoled',!!s.amoled&&!s.performance&&dark)
+try{localStorage.setItem('parley.theme',JSON.stringify({t:s.theme||'dimmed',a:dark&&s.ui_color||'',b:dark&&s.ui_bg||''}))}catch{}
 amoled()
 for(const k of['mail','inv','names','dm','srv'])root.classList.toggle('st-'+k,st(k))
 const col={dimmed:'#212829',silver:'#242b2d',light:'#f6f8fa',contrast:'#010409'}
