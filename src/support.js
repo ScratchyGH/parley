@@ -291,16 +291,18 @@ const PLAY=new Map()
 const XUA={'user-agent':'Mozilla/5.0 (compatible; Parley/1; +https://parley.heavengtwashere.workers.dev)',accept:'text/xml,application/xml,*/*'}
 const unc=t=>String(t||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').trim()
 async function playing(o,env){
-const st=o&&o.steam;if(!st||st.u||!st.id)return{v:null,hint:''}
-const hit=PLAY.get(st.id);if(hit&&hit.t>Date.now())return hit.r
+const st=o&&o.steam&&!o.steam.u&&o.steam.id?o.steam:null,rb=o&&o.roblox&&!o.roblox.u&&o.roblox.id?o.roblox:null
+if(!st&&!rb)return{v:null,hint:''}
+const key=(st?st.id:'')+'|'+(rb?rb.id:'')
+const hit=PLAY.get(key);if(hit&&hit.t>Date.now())return hit.r
 let v=null,hint='',done=false
 const mk=(name,app)=>({game:String(name).slice(0,80),app:app&&/^\d{1,10}$/.test(String(app))?String(app):null,link:app&&/^\d{1,10}$/.test(String(app))?'https://store.steampowered.com/app/'+app:null,provider:'Steam',desc:''})
-try{
+if(st){try{
 const j=await fetch('https://steamdirect.iamtushak.workers.dev/ISteamUser/GetPlayerSummaries/v2/?steamids='+st.id,{headers:UA}).then(r=>r.ok?r.json():null)
 const p=j&&j.response&&j.response.players&&j.response.players[0]
 if(p){done=true;if(p.communityvisibilitystate!==3)hint='profile';else if(p.gameextrainfo)v=mk(p.gameextrainfo,p.gameid)}
-}catch{}
-if(!v&&hint!=='profile'){
+}catch{}}
+if(st&&!v&&hint!=='profile'){
 try{
 const x=await fetch('https://steamcommunity.com/profiles/'+st.id+'/?xml=1',{headers:XUA}).then(r=>r.ok?r.text():'')
 if(x){
@@ -315,11 +317,16 @@ else{const sm=/<stateMessage>([\s\S]*?)<\/stateMessage>/.exec(x),gm=sm&&/^In-Gam
 }
 }catch{}
 }
-if(v&&!v.app){try{const d=await fetch('https://store.steampowered.com/api/storesearch/?term='+encodeURIComponent(v.game)+'&cc=us&l=en',{headers:UA}).then(r=>r.json());const it=(d.items||[]).find(i=>String(i.name).toLowerCase()===v.game.toLowerCase())||(d.items||[])[0];if(it&&it.id){v.app=String(it.id);v.link='https://store.steampowered.com/app/'+it.id}}catch{}}
-if(v&&v.app){try{const d=await fetch('https://store.steampowered.com/api/appdetails?appids='+v.app+'&filters=short_description',{headers:UA}).then(r=>r.json());const dd=d&&d[v.app]&&d[v.app].data;if(dd&&dd.short_description)v.desc=String(dd.short_description).replace(/<[^>]*>/g,'').slice(0,160)}catch{}}
+if(!v&&rb){try{
+const pr=await fetch('https://presence.roblox.com/v1/presence/users',{method:'POST',headers:{...UA,'content-type':'application/json'},body:JSON.stringify({userIds:[Number(rb.id)]})}).then(r=>r.ok?r.json():null)
+const q=pr&&pr.userPresences&&pr.userPresences[0]
+if(q&&q.userPresenceType===2&&q.lastLocation){const pl=q.rootPlaceId||q.placeId;v={game:String(q.lastLocation).slice(0,80),app:null,img:q.universeId?'/api/gameimg/rbx/'+q.universeId:null,link:pl?'https://www.roblox.com/games/'+pl:null,provider:'Roblox',desc:''}}
+}catch{}}
+if(v&&v.provider==='Steam'&&!v.app){try{const d=await fetch('https://store.steampowered.com/api/storesearch/?term='+encodeURIComponent(v.game)+'&cc=us&l=en',{headers:UA}).then(r=>r.json());const it=(d.items||[]).find(i=>String(i.name).toLowerCase()===v.game.toLowerCase())||(d.items||[])[0];if(it&&it.id){v.app=String(it.id);v.link='https://store.steampowered.com/app/'+it.id}}catch{}}
+if(v&&v.provider==='Steam'&&v.app){try{const d=await fetch('https://store.steampowered.com/api/appdetails?appids='+v.app+'&filters=short_description',{headers:UA}).then(r=>r.json());const dd=d&&d[v.app]&&d[v.app].data;if(dd&&dd.short_description)v.desc=String(dd.short_description).replace(/<[^>]*>/g,'').slice(0,160)}catch{}}
 const r={v,hint}
 if(PLAY.size>500)PLAY.clear()
-PLAY.set(st.id,{t:Date.now()+(v?45000:30000),r})
+PLAY.set(key,{t:Date.now()+(v?45000:30000),r})
 return r
 }
 r.add('GET','/api/users/:uid/connections',async c=>{
@@ -330,10 +337,21 @@ const out={list:pubList(o),playing:p.v}
 if(c.p.uid===c.user.id&&o&&o.steam&&p.hint)out.steam=p.hint
 return out
 })
+r.add('GET','/api/gameimg/rbx/:u',async c=>{
+limit('gimg:'+c.user.id,200,60000)
+if(!/^\d{1,15}$/.test(c.p.u))fail(404,'Not found')
+const j=await fetch('https://thumbnails.roblox.com/v1/games/icons?universeIds='+c.p.u+'&returnPolicy=PlaceHolder&size=256x256&format=Png&isCircular=false',{headers:UA}).then(r=>r.ok?r.json():null)
+const url=j&&j.data&&j.data[0]&&j.data[0].imageUrl
+if(!url||!/^https:\/\/[a-z0-9.-]+\.rbxcdn\.com\//i.test(url))fail(404,'Not found')
+const res=await fetch(url,{headers:UA})
+if(!res.ok)fail(404,'Not found')
+return new Response(res.body,{headers:{'content-type':res.headers.get('content-type')||'image/png','cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
+})
 r.add('GET','/api/gameimg/:app',async c=>{
 limit('gimg:'+c.user.id,200,60000)
 if(!/^\d{1,10}$/.test(c.p.app))fail(404,'Not found')
-const res=await fetch('https://cdn.cloudflare.steamstatic.com/steam/apps/'+c.p.app+'/header.jpg',{headers:UA})
+let res=await fetch('https://cdn.cloudflare.steamstatic.com/steam/apps/'+c.p.app+'/capsule_616x353.jpg',{headers:UA})
+if(!res.ok)res=await fetch('https://cdn.cloudflare.steamstatic.com/steam/apps/'+c.p.app+'/header.jpg',{headers:UA})
 if(!res.ok)fail(404,'Not found')
 return new Response(res.body,{headers:{'content-type':'image/jpeg','cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
 })
