@@ -106,7 +106,8 @@ async function plan(c,kind,rawName,len,roomQ,serverQ,multi){
 if(!KINDS.includes(kind))fail(400,'Invalid upload kind')
 const name=safeName(rawName||'file')
 const e=ext(name)
-if(BLOCKED.has(e))fail(415,'This file type is not allowed')
+const ownerHtml=!!c.user.owner&&kind==='attachment'&&(e==='html'||e==='htm')
+if(BLOCKED.has(e)&&!ownerHtml)fail(415,'This file type is not allowed')
 const maxMb=parseInt(c.env.MAX_UPLOAD_MB)||100
 const bigMb=parseInt(c.env.MAX_FILE_MB)||1024
 let lim=kind==='attachment'?(multi?bigMb:maxMb):(kind==='emoji'?1:kind==='sticker'?2:10)
@@ -134,6 +135,7 @@ const used=await c.env.DB.prepare('select coalesce((select sum(size) from files 
 if(used.s+len>quota)fail(413,'You have reached your storage quota. Delete some uploads to free space.')
 let mime='application/octet-stream'
 if(IMG[e])mime=IMG[e]
+else if(ownerHtml)mime='text/html; charset=utf-8'
 else if(kind!=='attachment')fail(415,'Only images are allowed here')
 else if(INLINE_MEDIA[e])mime=INLINE_MEDIA[e]
 else if(TEXT.includes(e))mime='text/plain; charset=utf-8'
