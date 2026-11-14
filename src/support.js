@@ -347,15 +347,13 @@ const res=await fetch(url,{headers:UA})
 if(!res.ok)fail(404,'Not found')
 return new Response(res.body,{headers:{'content-type':res.headers.get('content-type')||'image/png','cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
 })
-const ICON=new Map()
 r.add('GET','/api/gameicon/:app',async c=>{
 limit('gimg:'+c.user.id,200,60000)
 if(!/^\d{1,10}$/.test(c.p.app))fail(404,'Not found')
-let hash=ICON.get(c.p.app)
-if(hash===undefined){hash=null;try{const t=await fetch('https://steamcommunity.com/app/'+c.p.app,{headers:{'user-agent':'Mozilla/5.0 (compatible; Parley/1)',accept:'text/html'}}).then(r=>r.ok?r.text():'');const m=new RegExp('apps/'+c.p.app+'/([a-f0-9]{30,64})\\.jpg').exec(t);if(m)hash=m[1]}catch{}if(ICON.size>1000)ICON.clear();ICON.set(c.p.app,hash)}
-let res=hash?await fetch('https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/'+c.p.app+'/'+hash+'.jpg',{headers:UA}):null
-if(!res||!res.ok)res=await fetch('https://cdn.cloudflare.steamstatic.com/steam/apps/'+c.p.app+'/capsule_231x87.jpg',{headers:UA})
-if(!res.ok)fail(404,'Not found')
+const B='https://cdn.cloudflare.steamstatic.com/steam/apps/'+c.p.app+'/'
+let res=null
+for(const f of['library_600x900_2x.jpg','library_600x900.jpg','capsule_616x353.jpg','header.jpg']){res=await fetch(B+f,{headers:UA});if(res.ok)break}
+if(!res||!res.ok)fail(404,'Not found')
 return new Response(res.body,{headers:{'content-type':'image/jpeg','cache-control':'private, max-age=86400','x-content-type-options':'nosniff'}})
 })
 r.add('GET','/api/gameimg/:app',async c=>{
