@@ -288,7 +288,6 @@ return h('div',{class:'ctx-b'},kids)
 
 function presenceMenu(anchor){
 statusMenu(anchor,p=>{if(p)sendAll({t:'presence',s:p});renderCtx()},[
-{icon:'star',label:'Set activity',fn:()=>activityDialog()},
 {icon:'user',label:'Edit profile',fn:()=>openSettings('profile')},
 S.me.admin?{icon:'shield',label:'Admin panel',fn:()=>openSettings('admin')}:null,
 {icon:'compass',label:'Guide through Parley',fn:()=>startTour(true)},
