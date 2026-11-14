@@ -87,6 +87,53 @@ jobs:
           setInterval(check,3600*1000)
           app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check();if(!wayland)refresh()})
           }
+          function fallback(){
+          const fs=require('fs'),os=require('os'),path=require('path'),crypto=require('crypto'),{spawn,execFile}=require('child_process'),{Readable}=require('stream')
+          const cmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)-(y[i]||0)}return 0}
+          let busy=false,done=null,lastCheck=0
+          const get=async(name,dest,sha)=>{
+          const r=await fetch('__FEED__/'+name,{redirect:'follow'})
+          if(!r.ok||!r.body)throw new Error('http')
+          const h=crypto.createHash('sha256'),out=fs.createWriteStream(dest)
+          await new Promise((ok,no)=>{const s=Readable.fromWeb(r.body);s.on('data',c=>h.update(c));s.on('error',no);out.on('error',no);out.on('finish',ok);s.pipe(out)})
+          if(sha&&h.digest('hex')!==sha){fs.rmSync(dest,{force:true});throw new Error('hash')}
+          }
+          const ask=(detail,btn,fn)=>dialog.showMessageBox(win,{type:'info',buttons:[btn,'Later'],defaultId:0,title:'Parley update',message:'A new version of the Parley app is ready.',detail}).then(r=>{if(r.response===0)fn()})
+          const mac=async j=>{
+          const dir=fs.mkdtempSync(path.join(os.tmpdir(),'parley-'))
+          const zip=path.join(dir,'Parley.zip')
+          await get('Parley.zip',zip,j.zip)
+          await new Promise((ok,no)=>execFile('ditto',['-xk',zip,dir],e=>e?no(e):ok()))
+          const nw=path.join(dir,'Parley.app')
+          if(!fs.existsSync(nw))throw new Error('app')
+          let dst=path.resolve(process.execPath,'../../..')
+          if(!dst.endsWith('.app')||dst.startsWith('/Volumes/'))dst='/Applications/Parley.app'
+          const go=()=>{
+          const sh=path.join(dir,'u.sh')
+          fs.writeFileSync(sh,'#!/bin/sh\nwhile kill -0 '+process.pid+' 2>/dev/null; do sleep 0.5; done\nrm -rf "$1.old"\n[ -e "$1" ] && mv "$1" "$1.old"\nif mv "$2" "$1"; then rm -rf "$1.old"; xattr -cr "$1"; else [ -e "$1.old" ] && mv "$1.old" "$1"; fi\nopen "$1"\n',{mode:0o755})
+          spawn('/bin/sh',[sh,dst,nw],{detached:true,stdio:'ignore'}).unref()
+          app.quit()
+          }
+          ask('Parley will restart to finish updating.','Restart now',go)
+          }
+          const deb=async j=>{
+          const f=path.join(app.getPath('downloads'),'Parley-'+j.version+'.deb')
+          await get('Parley.deb',f,j.deb)
+          ask('The new version is downloaded. Open the installer to update.','Open installer',()=>shell.openPath(f))
+          }
+          const check=async()=>{
+          if(busy)return
+          busy=true;lastCheck=Date.now()
+          try{
+          const j=await fetch('__FEED__/desktop.json',{redirect:'follow'}).then(r=>r.ok?r.json():null)
+          if(j&&j.version&&j.version!==done&&cmp(j.version,app.getVersion())>0){done=j.version;if(process.platform==='darwin')await mac(j);else await deb(j)}
+          }catch{done=null}
+          busy=false
+          }
+          setTimeout(check,8000)
+          setInterval(check,3600*1000)
+          app.on('browser-window-focus',()=>{if(Date.now()-lastCheck>1800*1000)check()})
+          }
           if(process.platform==='linux'){
           app.commandLine.appendSwitch('enable-features','WebRTCPipeWireCapturer,WaylandWindowDecorations')
           app.commandLine.appendSwitch('ozone-platform-hint','auto')
@@ -123,7 +170,7 @@ jobs:
           if(!wayland)win.webContents.once('did-finish-load',()=>setTimeout(()=>{refresh();mkPicker()},1500))
           win.on('close',()=>{quitting=true})
           win.webContents.setWindowOpenHandler(({url})=>{shell.openExternal(url);return{action:'deny'}})
-          if(app.isPackaged&&process.platform!=='darwin')updates()
+          if(app.isPackaged){if(process.platform==='win32'||process.env.APPIMAGE)updates();else fallback()}
           })
           app.on('window-all-closed',()=>app.quit())
           EOF
@@ -337,5 +384,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -R out
+          V="1.${{ github.run_number }}.0"
+          Z=$(sha256sum out/Parley.zip 2>/dev/null | cut -d' ' -f1)
+          D=$(sha256sum out/Parley.deb 2>/dev/null | cut -d' ' -f1)
+          echo "{\"version\":\"$V\",\"zip\":\"$Z\",\"deb\":\"$D\"}" > out/desktop.json
+          cat out/desktop.json
           gh release create apps --repo "$GITHUB_REPOSITORY" --title "Parley apps" --notes "Parley apps for Windows (installer and portable), Mac, Linux (AppImage, deb), Android and Ubuntu Touch. The desktop apps check this release for updates. The Android file is debug-signed for sideloading. The Mac app is unsigned: right-click it and choose Open the first time." || true
           ls out/*.yml && gh release upload apps out/* --clobber --repo "$GITHUB_REPOSITORY"
