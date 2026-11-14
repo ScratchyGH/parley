@@ -99,7 +99,7 @@ return
 if(m.t==='activity'){
 let x=null
 const o=m.a
-if(o&&['play','listen','watch','custom'].includes(o.k)&&typeof o.n==='string'&&o.n.trim())x={k:o.k,n:o.n.trim().slice(0,40),t:Number.isFinite(o.t)?Math.min(o.t,Date.now()):Date.now()}
+if(o&&o.s===1&&['play','listen','watch','custom'].includes(o.k)&&typeof o.n==='string'&&o.n.trim())x={s:1,k:o.k,n:o.n.trim().slice(0,40),t:Number.isFinite(o.t)?Math.min(o.t,Date.now()):Date.now()}
 ws.serializeAttachment({...a,act:x})
 if(a.pres!=='invisible')await this.broadcast({t:'activity',uid:a.uid,a:x})
 return
