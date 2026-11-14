@@ -41,7 +41,7 @@ emit('act')
 })
 on('settings',push)
 const poll=async()=>{
-if(!S.me||document.hidden)return
+if(!S.me)return
 try{
 const r=await fetch('/api/users/'+S.me.id+'/connections',{credentials:'same-origin'})
 if(!r.ok)return
