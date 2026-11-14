@@ -381,7 +381,7 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .pcard .row{gap:6px}
 .pcard .gpw{margin:6px 0}
 .pcard .gpw{align-items:center;padding:8px 10px;gap:12px}
-.pcard .gpw-i{width:52px;height:52px;aspect-ratio:1;object-fit:cover;border-radius:12px;flex:none}
+.pcard .gpw-i{width:60px;height:60px;aspect-ratio:1;object-fit:cover;object-position:50% 30%;border-radius:12px;flex:none;image-rendering:auto}
 .pcard .gpw-t{padding:0}
 .pcard .gpw-t p{display:none}
 .pcard .cnx{margin:6px 0}
