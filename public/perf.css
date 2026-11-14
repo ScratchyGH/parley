@@ -369,3 +369,19 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .sp-frz b{display:block;color:var(--strong)}
 .sp-frz small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}
 .sp-frz.on{background:rgba(56,189,248,.16);border-color:#38bdf8;box-shadow:0 0 18px rgba(56,189,248,.25)}
+
+/* compact profile card */
+.pcard{width:340px!important}
+.pcard .hero{height:68px!important}
+.pcard .bd{padding:0 16px 12px!important}
+.pcard .bd>h3{margin-top:6px!important;font-size:18px!important}
+.pcard .badges,.pcard .plinks{gap:6px!important;margin:6px 0!important}
+.pcard .hint{margin:4px 0!important;font-size:12px}
+.pcard .pnote{margin:6px 0!important;min-height:0!important;height:32px;padding:6px 10px;font-size:12px;resize:none}
+.pcard .row{gap:6px!important}
+.pcard .btn.sm{padding:5px 10px!important;font-size:12px!important;min-height:0!important}
+.pcard .gpw{margin:6px 0}
+.pcard .gpw-i{width:72px}
+.pcard .gpw-t{padding:6px 8px 6px 0}
+.pcard .gpw-t p{display:none}
+.pcard .cnx{margin:6px 0!important}
