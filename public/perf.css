@@ -371,22 +371,18 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .sp-frz.on{background:rgba(56,189,248,.16);border-color:#38bdf8;box-shadow:0 0 18px rgba(56,189,248,.25)}
 
 /* compact profile card */
-.pcard{width:340px!important}
-.pcard .hero{height:68px!important}
-.pcard .bd{padding:0 16px 12px!important}
-.pcard .bd>h3{margin-top:6px!important;font-size:18px!important}
-.pcard .badges,.pcard .plinks{gap:6px!important;margin:6px 0!important}
-.pcard .hint{margin:4px 0!important;font-size:12px}
-.pcard .pnote{margin:6px 0!important;min-height:0!important;height:32px;padding:6px 10px;font-size:12px;resize:none}
-.pcard .row{gap:6px!important}
-.pcard .btn.sm{padding:5px 10px!important;font-size:12px!important;min-height:0!important}
+.pcard{width:360px}
+.pcard .hero{height:88px}
+.pcard .bd{padding:0 16px 14px}
+.pcard .bd>h3{margin-top:8px!important;font-size:19px}
+.pcard .badges,.pcard .plinks{gap:6px;margin:6px 0}
+.pcard .hint{margin:4px 0;font-size:12px}
+.pcard .pnote{margin:6px 0;min-height:0;height:34px;padding:6px 10px;font-size:12px;resize:none}
+.pcard .row{gap:6px}
 .pcard .gpw{margin:6px 0}
-.pcard .gpw-i{width:72px}
+.pcard .gpw-i{width:104px;aspect-ratio:616/353;height:auto;align-self:center;border-radius:0}
 .pcard .gpw-t{padding:6px 8px 6px 0}
 .pcard .gpw-t p{display:none}
-.pcard .cnx{margin:6px 0!important}
-
-.pcard .row .btn.sq{flex:0 0 auto!important;width:36px;height:36px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}
+.pcard .cnx{margin:6px 0}
+.pcard .row .btn.sq{flex:0 0 auto;width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}
 .pcard .btn.sq .i{width:18px;height:18px;margin:0}
-.pcard .bd>.row{justify-content:flex-start;margin-top:8px!important}
-.pcard .gpw-i{width:104px;aspect-ratio:616/353;height:auto;align-self:center;border-radius:0}
