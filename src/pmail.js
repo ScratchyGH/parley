@@ -1,3 +1,4 @@
+import{impersonates}from'./names.js'
 import{fail,now,randHex,sha,pbkdf2,safeEq,str,limit,body,json,newId,enc,unhex}from'./util.js'
 import{newSecret,genCode}from'./totp.js'
 import{TESTS}from'./pmailtest.js'
@@ -221,7 +222,7 @@ r.add('GET','/api/pmail/check',async c=>{
 limit('pmc:'+ipOf(c),60,60000)
 const l=String(c.url.searchParams.get('local')||'').trim().toLowerCase()
 if(!LOCAL.test(l)||/\.\.|[._-]{2}/.test(l))return{ok:false,domain:domain(c.env),reason:'Use 3 to 30 letters, numbers, dots, dashes or underscores'}
-if(RESERVED.has(l))return{ok:false,domain:domain(c.env),reason:'That name is reserved'}
+if(RESERVED.has(l)||impersonates(l))return{ok:false,domain:domain(c.env),reason:'That name is reserved'}
 const t=await c.env.DB.prepare('select 1 x from pm_users where local=? union select 1 from pm_alias where addr=?').bind(l,l).first()
 return t?{ok:false,domain:domain(c.env),reason:'Already taken'}:{ok:true,domain:domain(c.env)}
 },O)
@@ -230,7 +231,7 @@ limit('pms:'+ipOf(c),5,3600000)
 const b=await body(c.req)
 const l=String(b.local||'').trim().toLowerCase()
 if(!LOCAL.test(l)||/\.\.|[._-]{2}/.test(l))fail(400,'Use 3 to 30 letters, numbers, dots, dashes or underscores')
-if(RESERVED.has(l))fail(400,'That name is reserved')
+if(RESERVED.has(l)||impersonates(l))fail(400,'That name is reserved')
 const pw=str(b.password,10,200,'Password')
 const display=clean(b.display).replace(/[<>]/g,'').trim().slice(0,40)
 if(await c.env.DB.prepare('select 1 x from pm_users where local=? union select 1 from pm_alias where addr=?').bind(l,l).first())fail(409,'That address is taken')
@@ -396,7 +397,7 @@ if(n.n>=25)fail(400,'You can have up to 25 aliases')
 let addr=''
 const custom=String(b.addr||'').trim().toLowerCase()
 if(custom){
-if(!LOCAL.test(custom)||/\.\.|[._-]{2}/.test(custom)||RESERVED.has(custom))fail(400,'That alias name is not allowed')
+if(!LOCAL.test(custom)||/\.\.|[._-]{2}/.test(custom)||RESERVED.has(custom)||impersonates(custom))fail(400,'That alias name is not allowed')
 addr=custom
 }
 for(let i=0;i<8;i++){

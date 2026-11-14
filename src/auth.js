@@ -272,7 +272,7 @@ r.add('PATCH','/api/me',async c=>{
 const b=await body(c.req,16384)
 const sets=[],vals=[]
 const add=(col,v)=>{sets.push(col+'=?');vals.push(v)}
-if('display_name'in b){const dn=cleanName(b.display_name,1,32,'Display name');if(dnProblem(dn))fail(400,dnProblem(dn));add('display_name',dn)}
+if('display_name'in b){const dn=cleanName(b.display_name,1,32,'Display name');if(dnProblem(dn,c.user))fail(400,dnProblem(dn,c.user));add('display_name',dn)}
 if('bio'in b)add('bio',opt(b.bio,500,'Bio'))
 if('pronouns'in b)add('pronouns',opt(b.pronouns,32,'Pronouns'))
 if('status_emoji'in b){

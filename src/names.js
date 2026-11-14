@@ -14,12 +14,22 @@ for(const w of LONG)if(sq.includes(w.replace(/(.)\1+/g,'$1')))return true
 const tk=f.split(/[^\p{L}]+/u).filter(Boolean)
 return tk.some(x=>SHORT.has(x.replace(/(.)\1+/gu,'$1')))
 }
-export const dnProblem=s=>badName(s)?'That name is not allowed':null
+const CONF={'а':'a','е':'e','о':'o','р':'p','с':'c','і':'i','ј':'j','у':'y','ѕ':'s','ӏ':'l','ɑ':'a','ο':'o','ρ':'p','ν':'v','ı':'i','ⅼ':'l','ǀ':'l','|':'l','ɪ':'i','ʟ':'l','ᴘ':'p','ᴀ':'a','ʀ':'r','ᴇ':'e','ʏ':'y'}
+export function impersonates(s){
+const t=String(s).normalize('NFKD').replace(/[\u0300-\u036f\u200b-\u200f\u2060\u00ad\ufeff]/g,'').toLowerCase()
+const f=[...t].map(c=>CONF[c]||FOLD[c]||c).join('')
+const sk=skeleton(f.replace(/[^\p{L}\p{N}|]+/gu,''))
+const sq=sk.replace(/(.)\1+/g,'$1')
+return sk.includes('parley')||sq.includes('parley')||sq.includes('parly')||/p[a4@]r+[l1i|]+[e3]+y/.test(sq)
+}
+export const isStaff=u=>!!(u&&(u.admin||u.owner))
+export const dnProblem=(s,u)=>badName(s)?'That name is not allowed':(!isStaff(u)&&impersonates(s))?'Names containing Parley or look-alikes of it are reserved':null
 export function nameProblem(env,name,{bot=false}={}){
 const sk=skeleton(name)
 const admins=(env.ADMIN_USERNAMES||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
 if(admins.includes(name.toLowerCase()))return null
 if(RESERVED.has(sk))return'That username is reserved'
+if(impersonates(name))return'Usernames containing Parley or look-alikes of it are reserved'
 if(badName(name))return'That username is not allowed'
 if(!bot&&/^(deleted|wh|bot)[_-]/i.test(name))return'That username is reserved'
 return null

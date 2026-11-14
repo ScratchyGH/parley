@@ -1,7 +1,7 @@
 import{explicitText}from'./safety.js'
 import{fail,now,newId,str,int,limit,body,json,randHex,sha,placeholders}from'./util.js'
 import{P,loadMember}from'./perms.js'
-import{skeleton}from'./names.js'
+import{skeleton,impersonates}from'./names.js'
 import{ownsVanity}from'./pars.js'
 
 const nm=(v,n,min=1,max=32)=>{
@@ -98,7 +98,7 @@ if(slug!==null){
 if(!/^[a-z0-9-]{3,32}$/.test(slug))fail(400,'Use 3 to 32 letters, numbers or dashes')
 if(/^[a-z0-9]{8,12}$/.test(slug)&&!slug.includes('-'))fail(400,'That looks like a random invite code. Add a dash or change the length.')
 if(explicitText(slug.replace(/-/g,'')))fail(400,'That name is not allowed')
-if(skeleton(slug)==='parley'||['admin','support','discover','invite','api'].includes(slug))fail(400,'That name is reserved')
+if(skeleton(slug)==='parley'||impersonates(slug)||['admin','support','discover','invite','api'].includes(slug))fail(400,'That name is reserved')
 }
 if(slug!==null&&slug!==m.server.vanity&&!(await ownsVanity(c.env,m.server.id)))fail(402,'Unlock vanity links for this server in the Pars shop (25 Pars)')
 try{await c.env.DB.prepare('update servers set vanity=? where id=?').bind(slug,m.server.id).run()}

@@ -1,3 +1,4 @@
+import{impersonates}from'./names.js'
 import{ownsVanity}from'./pars.js'
 import{place,putAny}from'./store.js'
 import{signMsg}from'./sign.js'
@@ -243,7 +244,7 @@ export default function(r){
 r.add('POST','/api/servers',async c=>{
 limit('mksrv:'+c.user.id,10,3600000)
 const b=await body(c.req)
-const name=clean(nameOk(str(b.name,2,60,'Server name')))
+const name=clean(nameOk(str(b.name,2,60,'Server name')));if(!c.user.admin&&impersonates(name))fail(400,'Server names containing Parley or look-alikes of it are reserved')
 const desc=clean(opt(b.description,500,'Description'))
 const pub=b.is_public?1:0
 const cat=b.category&&CATS.includes(b.category)?b.category:''
@@ -298,7 +299,7 @@ must(m,P.MANAGE_SERVER)
 const b=await body(c.req)
 const sets=[],vals=[]
 const add=(k,v)=>{sets.push(k+'=?');vals.push(v)}
-if('name'in b)add('name',clean(nameOk(str(b.name,2,60,'Server name'))))
+if('name'in b){const nn=clean(nameOk(str(b.name,2,60,'Server name')));if(!c.user.admin&&impersonates(nn))fail(400,'Server names containing Parley or look-alikes of it are reserved');add('name',nn)}
 if('description'in b)add('description',clean(opt(b.description,500,'Description')))
 if('is_public'in b)add('is_public',b.is_public?1:0)
 if('category'in b){if(b.category&&!CATS.includes(b.category))fail(400,'Invalid category');add('category',b.category||'')}
