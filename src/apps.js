@@ -1,6 +1,16 @@
+import{fail,limit}from'./util.js'
 let cache={at:0,v:null,ok:false}
 const REPO='ScratchyGH/parley'
 export default function(r){
+r.add('GET','/api/dl/:tag/:name',async c=>{
+limit('dl:'+(c.req.headers.get('cf-connecting-ip')||'local'),30,60000)
+if(!/^(apps|rust)$/.test(c.p.tag)||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(exe|msi|dmg|zip|deb|rpm|AppImage|apk|click|yml|json)$/.test(c.p.name))fail(404,'Not found')
+const res=await fetch('https://github.com/'+REPO+'/releases/download/'+c.p.tag+'/'+encodeURIComponent(c.p.name),{redirect:'follow',cf:{cacheEverything:true,cacheTtl:600}})
+if(!res.ok||!res.body)fail(404,'Not found')
+const h={'content-type':'application/octet-stream','content-disposition':'attachment; filename="'+c.p.name+'"','cache-control':'public, max-age=300','x-content-type-options':'nosniff'}
+const n=res.headers.get('content-length');if(n)h['content-length']=n
+return new Response(res.body,{headers:h})
+},{auth:false})
 r.add('GET','/api/app/downloads',async c=>{
 if(cache.v&&Date.now()-cache.at<(cache.ok?600000:60000))return cache.v
 let out={windows:null,portable:null,deb:null,mac:null,linux:null,android:null,ubuntutouch:null}
@@ -28,6 +38,7 @@ if(!ok){
 const B='https://github.com/'+REPO+'/releases/download/apps/'
 out={windows:{url:B+'Parley-Setup.exe',size:0},portable:{url:B+'Parley-Portable.exe',size:0},deb:{url:B+'Parley.deb',size:0},mac:{url:B+'Parley.dmg',size:0},ubuntutouch:{url:B+'Parley.click',size:0},linux:{url:B+'Parley.AppImage',size:0},android:{url:B+'Parley.apk',size:0}}
 }
+for(const k of Object.keys(out)){const x=out[k];const m=x&&typeof x==='object'&&k!=='android'&&/\/releases\/download\/apps\/([^/?#]+)$/.exec(x.url||'');if(m)out[k]={...x,url:'/api/dl/apps/'+m[1]}}
 cache={at:Date.now(),v:out,ok}
 return out
 })
