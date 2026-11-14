@@ -389,3 +389,4 @@ html:not(.seps) .row.sp[style*="border-bottom"],html:not(.seps) .pg [style*="bor
 .pcard .row .btn.sq{flex:0 0 auto!important;width:36px;height:36px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}
 .pcard .btn.sq .i{width:18px;height:18px;margin:0}
 .pcard .bd>.row{justify-content:flex-start;margin-top:8px!important}
+.pcard .gpw-i{width:104px;aspect-ratio:616/353;height:auto;align-self:center;border-radius:0}
