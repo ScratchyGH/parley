@@ -174,6 +174,13 @@ if(env.TURSO_URL||!blobs)c.push('d')
 return c[hash(key)%c.length]+'~'+key
 }
 
+export function fallbackTags(env,len){
+const t=[]
+if(len<=PART_BYTES){if(env.SUPABASE_URL&&env.SUPABASE_KEY)t.push('s');if(env.FIREBASE_SA)t.push('f')}
+for(let i=1;i<=8;i++)if(env['BLOB'+i])t.push('b'+i)
+t.push('d')
+return t
+}
 export function d1Store(env){
 const cache={}
 const resolve=full=>{
@@ -234,7 +241,7 @@ return self
 export async function putAny(env,key0,buf,opts){
 const bare=key0.replace(/^[a-z0-9]+~/,'')
 const tries=[place(env,bare,buf.byteLength)]
-if(env.FILES&&env.FILES.shim)for(const tg of['d','b1','b2','b3'])if(tg==='d'||env['BLOB'+tg[1]])tries.push(tg+'~'+bare)
+if(env.FILES&&env.FILES.shim)for(const tg of fallbackTags(env,buf.byteLength))if(!tries[0].startsWith(tg+'~'))tries.push(tg+'~'+bare)
 let err
 for(const k of tries){try{await env.FILES.put(k,buf,opts);return k}catch(e){err=e;console.error('putAny',k.split('~')[0],String(e&&e.message||e))}}
 throw err

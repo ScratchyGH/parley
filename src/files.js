@@ -2,7 +2,7 @@ import{hashBlocked}from'./legal.js'
 import{boostMb}from'./pars.js'
 import{fail,now,newId,limit,str,clamp,body,hex,json}from'./util.js'
 import{resolveRoom,loadMember,P,need}from'./perms.js'
-import{place}from'./store.js'
+import{place,fallbackTags}from'./store.js'
 import{imageExplicit,filterOn,explicitText}from'./safety.js'
 
 const IMG={png:'image/png',apng:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',jxl:'image/jxl',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',tif:'image/tiff',tiff:'image/tiff',ico:'image/x-icon'}
@@ -168,7 +168,7 @@ const opts={httpMetadata:{contentType:p.mime}}
 if(want)opts.sha256=want
 let obj,key=key0
 const tries=[key0]
-if(c.env.FILES&&c.env.FILES.shim){for(const tg of['d','b1','b2','b3'])if(!key0.startsWith(tg+'~')&&(tg==='d'||c.env['BLOB'+tg[1]]))tries.push(tg+'~'+key0.replace(/^[a-z0-9]+~/,''))}
+if(c.env.FILES&&c.env.FILES.shim){for(const tg of fallbackTags(c.env,len))if(!key0.startsWith(tg+'~'))tries.push(tg+'~'+key0.replace(/^[a-z0-9]+~/,''))}
 let lastErr
 for(const k of tries){
 try{obj=await c.env.FILES.put(k,buf,opts);key=k;lastErr=null;break}catch(x){
