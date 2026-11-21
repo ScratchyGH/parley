@@ -308,11 +308,11 @@ await deliverReminders(env,ec).catch(()=>{})
 await Promise.allSettled(pend)
 try{await screenQueue(env,2)}catch{}
 }catch(e){console.error('scheduled send',String(e&&e.message||e))}
-const ks=(await env.DB.prepare("select k,v from app_settings where k in ('last_sweep','prune_v1')").all().catch(()=>({results:[]}))).results
+const ks=(await env.DB.prepare("select k,v from app_settings where k in ('last_sweep','prune_v2')").all().catch(()=>({results:[]}))).results
 const last=ks.find(x=>x.k==='last_sweep')
 if(last&&t-Number(last.v)<20*3600000){
-if(!ks.some(x=>x.k==='prune_v1')){
-await env.DB.prepare("insert or ignore into app_settings(k,v) values('prune_v1','1')").run().catch(()=>{})
+if(!ks.some(x=>x.k==='prune_v2')){
+await env.DB.prepare("insert or ignore into app_settings(k,v) values('prune_v2','1')").run().catch(()=>{})
 await prune(env,t)
 }
 return
@@ -355,7 +355,23 @@ const q=[
 "delete from webauthn_challenges where expires_at<"+t,
 "delete from notifications where created_at<"+(t-30*D),
 "delete from sessions where expires_at<"+t,
-"delete from login_attempts where reset_at<"+t
+"delete from login_attempts where reset_at<"+t,
+"delete from email_codes where expires_at<"+t,
+"delete from kp_psess where exp<"+t,
+"delete from kp_ksess where exp<"+t,
+"delete from kp_chal where exp<"+t,
+"delete from kp_codes where exp<"+(t-D)+" or used_at is not null and used_at<"+(t-D)+" or revoked=1 and created_at<"+(t-7*D),
+"delete from pm_sessions where expires_at<"+t,
+"delete from pm_activity where ts<"+(t-30*D),
+"delete from scheduled_msgs where status!='pending' and send_at<"+(t-7*D),
+"delete from reminders where done=1 and at<"+(t-7*D),
+"delete from reports where status!='open' and created_at<"+(t-90*D),
+"delete from content_reports where status!='open' and resolved_at is not null and resolved_at<"+(t-90*D),
+"delete from appeals where status!='open' and created_at<"+(t-90*D),
+"delete from gift_inbox where seen=1 and created_at<"+(t-30*D),
+"delete from admin_chat where created_at<"+(t-30*D),
+"delete from event_night_runs where finished_at is not null and finished_at<"+(t-30*D),
+"delete from user_devices where last_seen<"+(t-180*D)
 ]
 for(const x of q)await env.DB.prepare(x).run().catch(()=>{})
 }
